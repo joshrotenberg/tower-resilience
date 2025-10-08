@@ -6,6 +6,7 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 rust-version.workspace = true
+readme = "../../README.md"
 description = "A circuit breaker middleware for Tower services"
 keywords = ["tower", "middleware", "resilience", "circuit-breaker"]
 categories = ["asynchronous", "web-programming"]

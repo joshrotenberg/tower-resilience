@@ -3,6 +3,7 @@ name = "tower-resilience"
 version = "0.1.0"
 edition = "2021"
 rust-version.workspace = true
+readme = "../../README.md"
 license = "MIT OR Apache-2.0"
 authors = ["Josh Rotenberg <joshrotenberg@gmail.com>"]
 description = "Composable resilience and fault-tolerance middleware for Tower services"

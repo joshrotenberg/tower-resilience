@@ -6,6 +6,7 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 rust-version.workspace = true
+readme = "../../README.md"
 description = "Bulkhead pattern for Tower services - resource isolation and concurrency limiting"
 
 [dependencies]
