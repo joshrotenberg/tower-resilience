@@ -12,7 +12,7 @@ categories = ["asynchronous", "network-programming"]
 
 [dependencies]
 # Core is always included
-tower-resilience-core = { version = "0.2.0", path = "../tower-resilience-core" }
+tower-resilience-core = { workspace = true }
 
 # Optional pattern dependencies
 tower-circuitbreaker = { version = "0.2.0", path = "../tower-circuitbreaker", optional = true }
