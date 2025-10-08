@@ -64,13 +64,7 @@ impl Circuit {
         Self::default()
     }
 
-<<<<<<< HEAD
     pub(crate) fn new_with_atomic(state_atomic: std::sync::Arc<AtomicU8>) -> Self {
-=======
-    pub(crate) fn new_with_atomic(
-        state_atomic: std::sync::Arc<std::sync::atomic::AtomicU8>,
-    ) -> Self {
->>>>>>> a820a59 (feat: add time-based sliding window to circuit breaker)
         Self {
             state: CircuitState::Closed,
             state_atomic,
@@ -376,12 +370,7 @@ impl Circuit {
         }
 
         self.state = state;
-<<<<<<< HEAD
         self.state_atomic.store(state as u8, Ordering::Release);
-=======
-        self.state_atomic
-            .store(state as u8, std::sync::atomic::Ordering::Release);
->>>>>>> a820a59 (feat: add time-based sliding window to circuit breaker)
         self.last_state_change = std::time::Instant::now();
         self.success_count = 0;
         self.failure_count = 0;
