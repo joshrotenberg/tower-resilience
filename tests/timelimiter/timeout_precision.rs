@@ -6,7 +6,7 @@ use super::TestError;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterConfig;
 
 // Windows has less precise timers, so use larger tolerance
 const TOLERANCE_MS: u64 = 30;

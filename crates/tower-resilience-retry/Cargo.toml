@@ -1,0 +1,25 @@
+[package]
+name = "tower-resilience-retry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Enhanced retry middleware for Tower services with advanced backoff strategies"
+
+[dependencies]
+tower-resilience-core = { workspace = true }
+tower = { workspace = true }
+futures = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+rand = "0.9"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+[features]
+default = []
+metrics = ["tower-resilience-core/metrics"]
+tracing = ["tower-resilience-core/tracing"]

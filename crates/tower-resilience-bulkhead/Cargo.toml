@@ -1,0 +1,30 @@
+[package]
+name = "tower-resilience-bulkhead"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Bulkhead pattern for Tower services - resource isolation and concurrency limiting"
+
+[dependencies]
+tower-resilience-core = { workspace = true }
+tower = { workspace = true }
+tower-layer = { workspace = true }
+tower-service = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+thiserror = { workspace = true }
+
+# Optional dependencies
+tracing = { workspace = true, optional = true }
+metrics = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros", "rt-multi-thread"] }
+
+[features]
+default = []
+tracing = ["dep:tracing"]
+metrics = ["dep:metrics"]

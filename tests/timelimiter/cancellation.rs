@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterConfig;
 
 /// A guard that sets a flag when dropped, allowing us to detect future cancellation.
 struct DropGuard {

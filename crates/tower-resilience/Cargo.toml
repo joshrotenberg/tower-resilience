@@ -15,20 +15,20 @@ categories = ["asynchronous", "network-programming"]
 tower-resilience-core = { workspace = true }
 
 # Optional pattern dependencies
-tower-circuitbreaker = { version = "0.2.0", path = "../tower-circuitbreaker", optional = true }
-tower-bulkhead = { version = "0.2.0", path = "../tower-bulkhead", optional = true }
-tower-timelimiter = { version = "0.1.0", path = "../tower-timelimiter", optional = true }
-tower-cache = { version = "0.1.0", path = "../tower-cache", optional = true }
-tower-retry-plus = { version = "0.2.0", path = "../tower-retry-plus", optional = true }
+tower-resilience-circuitbreaker = { version = "0.2.0", path = "../tower-resilience-circuitbreaker", optional = true }
+tower-resilience-bulkhead = { version = "0.2.0", path = "../tower-resilience-bulkhead", optional = true }
+tower-resilience-timelimiter = { version = "0.1.0", path = "../tower-resilience-timelimiter", optional = true }
+tower-resilience-cache = { version = "0.1.0", path = "../tower-resilience-cache", optional = true }
+tower-resilience-retry = { version = "0.2.0", path = "../tower-resilience-retry", optional = true }
 
 [features]
 default = []
 # Individual patterns
-circuitbreaker = ["dep:tower-circuitbreaker"]
-bulkhead = ["dep:tower-bulkhead"]
-timelimiter = ["dep:tower-timelimiter"]
-cache = ["dep:tower-cache"]
-retry = ["dep:tower-retry-plus"]
+circuitbreaker = ["dep:tower-resilience-circuitbreaker"]
+bulkhead = ["dep:tower-resilience-bulkhead"]
+timelimiter = ["dep:tower-resilience-timelimiter"]
+cache = ["dep:tower-resilience-cache"]
+retry = ["dep:tower-resilience-retry"]
 # Enable all patterns
 full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry"]
 

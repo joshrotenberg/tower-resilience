@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterConfig;
 
 #[tokio::test]
 async fn success_within_timeout() {

@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tower::{Layer, Service, ServiceExt};
-use tower_retry_plus::{
+use tower_resilience_retry::{
     ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval, RetryConfig,
 };
 

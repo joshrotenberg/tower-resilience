@@ -13,7 +13,7 @@ use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tower::{Layer, Service, ServiceExt};
-use tower_cache::CacheConfig;
+use tower_resilience_cache::CacheConfig;
 
 #[derive(Clone, Debug)]
 struct ComplexRequest {

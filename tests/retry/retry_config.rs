@@ -11,7 +11,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt};
-use tower_retry_plus::{ExponentialBackoff, ExponentialRandomBackoff, FnInterval, RetryConfig};
+use tower_resilience_retry::{
+    ExponentialBackoff, ExponentialRandomBackoff, FnInterval, RetryConfig,
+};
 
 #[derive(Debug, Clone)]
 struct TestError;

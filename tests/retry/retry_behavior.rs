@@ -10,7 +10,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tower::{Layer, Service, ServiceExt};
-use tower_retry_plus::RetryConfig;
+use tower_resilience_retry::RetryConfig;
 
 #[derive(Debug, Clone)]
 struct TestError {

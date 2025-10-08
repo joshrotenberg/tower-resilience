@@ -5,7 +5,7 @@
 
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_ratelimiter_plus::RateLimiterConfig;
+use tower_resilience_ratelimiter::RateLimiterConfig;
 
 #[tokio::main]
 async fn main() {

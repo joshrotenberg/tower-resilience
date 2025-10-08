@@ -4,7 +4,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tower::Service;
-use tower_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
 
 /// Test 100 concurrent calls hitting closed circuit
 #[tokio::test]
@@ -25,8 +25,9 @@ async fn concurrent_calls_closed_circuit() {
         .name("concurrent-closed")
         .build();
 
-    let cb: Arc<tokio::sync::Mutex<tower_circuitbreaker::CircuitBreaker<_, (), &str, String>>> =
-        Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let cb: Arc<
+        tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, (), &str, String>>,
+    > = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
 
     // Spawn 100 concurrent tasks
     let mut handles = vec![];
@@ -127,8 +128,9 @@ async fn state_transition_during_concurrent_calls() {
         .name("transition-concurrent")
         .build();
 
-    let cb: Arc<tokio::sync::Mutex<tower_circuitbreaker::CircuitBreaker<_, (), (), &str>>> =
-        Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let cb: Arc<
+        tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str>>,
+    > = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
 
     // Spawn tasks that will cause state transitions
     let mut handles = vec![];
@@ -173,8 +175,9 @@ async fn atomic_state_read_consistency() {
         .name("atomic-state")
         .build();
 
-    let cb: Arc<tokio::sync::Mutex<tower_circuitbreaker::CircuitBreaker<_, (), &str, String>>> =
-        Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let cb: Arc<
+        tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, (), &str, String>>,
+    > = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
 
     // Read state from multiple tasks concurrently
     let mut handles = vec![];
@@ -226,8 +229,9 @@ async fn concurrent_success_failure_recording() {
         .name("concurrent-recording")
         .build();
 
-    let cb: Arc<tokio::sync::Mutex<tower_circuitbreaker::CircuitBreaker<_, (), &str, &str>>> =
-        Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let cb: Arc<
+        tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, (), &str, &str>>,
+    > = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
 
     let mut handles = vec![];
     for _ in 0..100 {
@@ -262,7 +266,8 @@ async fn concurrent_half_open_calls() {
         .name("concurrent-halfopen")
         .build();
 
-    let mut cb: tower_circuitbreaker::CircuitBreaker<_, (), (), &str> = layer.layer(service);
+    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str> =
+        layer.layer(service);
 
     // Trip the circuit
     for _ in 0..5 {

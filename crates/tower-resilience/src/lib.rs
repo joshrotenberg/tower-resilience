@@ -75,16 +75,16 @@ pub use tower_resilience_core as core;
 
 // Re-export patterns based on features
 #[cfg(feature = "circuitbreaker")]
-pub use tower_circuitbreaker as circuitbreaker;
+pub use tower_resilience_circuitbreaker as circuitbreaker;
 
 #[cfg(feature = "bulkhead")]
-pub use tower_bulkhead as bulkhead;
+pub use tower_resilience_bulkhead as bulkhead;
 
 #[cfg(feature = "timelimiter")]
-pub use tower_timelimiter as timelimiter;
+pub use tower_resilience_timelimiter as timelimiter;
 
 #[cfg(feature = "cache")]
-pub use tower_cache as cache;
+pub use tower_resilience_cache as cache;
 
 #[cfg(feature = "retry")]
-pub use tower_retry_plus as retry;
+pub use tower_resilience_retry as retry;

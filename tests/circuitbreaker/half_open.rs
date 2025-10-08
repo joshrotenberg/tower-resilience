@@ -5,7 +5,7 @@ use std::sync::{
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::Service;
-use tower_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
 
 /// Test multiple concurrent calls in half-open state
 #[tokio::test]
@@ -193,7 +193,7 @@ async fn rapid_state_cycling() {
 /// Test half-open with time-based window
 #[tokio::test]
 async fn half_open_with_time_based_window() {
-    use tower_circuitbreaker::SlidingWindowType;
+    use tower_resilience_circuitbreaker::SlidingWindowType;
 
     let call_count = Arc::new(AtomicUsize::new(0));
     let c = Arc::clone(&call_count);

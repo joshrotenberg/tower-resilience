@@ -1,0 +1,27 @@
+[package]
+name = "tower-resilience-timelimiter"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+authors = ["Josh Rotenberg <josh@rotenberg.io>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/joshrotenberg/tower-resilience"
+description = "Advanced timeout handling for Tower services"
+keywords = ["tower", "timeout", "timelimiter", "resilience"]
+categories = ["asynchronous", "network-programming"]
+
+[dependencies]
+tower-resilience-core = { workspace = true }
+tower = "0.5"
+futures = "0.3"
+tokio = { version = "1", features = ["time"] }
+thiserror = "2.0"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+tower = { version = "0.5", features = ["util"] }
+
+[features]
+default = []
+metrics = ["tower-resilience-core/metrics"]
+tracing = ["tower-resilience-core/tracing"]
