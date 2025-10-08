@@ -14,6 +14,7 @@ tower-bulkhead = { path = "crates/tower-bulkhead" }
 tower-cache = { path = "crates/tower-cache" }
 tower-retry-plus = { path = "crates/tower-retry-plus" }
 tower-timelimiter = { path = "crates/tower-timelimiter" }
+tower-ratelimiter-plus = { path = "crates/tower-ratelimiter-plus" }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
