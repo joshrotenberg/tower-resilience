@@ -1,4 +1,5 @@
 use std::time::Duration;
+use tower::Layer;
 use tower_bulkhead::BulkheadConfig;
 
 /// Test max_concurrent_calls = 1 (minimum valid)
@@ -6,9 +7,7 @@ use tower_bulkhead::BulkheadConfig;
 async fn max_concurrent_one() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = BulkheadConfig::<(), String>::builder()
-        .max_concurrent_calls(1)
-        .build();
+    let layer = BulkheadConfig::builder().max_concurrent_calls(1).build();
 
     let mut bulkhead = layer.layer(service);
 
@@ -22,7 +21,7 @@ async fn max_concurrent_one() {
 async fn max_concurrent_large_value() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(10000)
         .build();
 
@@ -41,7 +40,7 @@ async fn max_wait_duration_zero() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::ZERO))
         .build();
@@ -56,7 +55,7 @@ async fn max_wait_duration_zero() {
 async fn max_wait_duration_none() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(5)
         .max_wait_duration(None)
         .build();
@@ -74,9 +73,7 @@ fn builder_defaults() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
     // Should build with defaults
-    let layer = BulkheadConfig::<(), String>::builder()
-        .max_concurrent_calls(10)
-        .build();
+    let layer = BulkheadConfig::builder().max_concurrent_calls(10).build();
 
     let _bulkhead = layer.layer(service);
 }
@@ -86,7 +83,7 @@ fn builder_defaults() {
 fn builder_with_all_options() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(20)
         .max_wait_duration(Some(Duration::from_secs(5)))
         .name("test-bulkhead")
@@ -104,7 +101,7 @@ fn builder_with_all_options() {
 fn builder_with_custom_name() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(10)
         .name("my-custom-bulkhead")
         .build();
@@ -117,7 +114,7 @@ fn builder_with_custom_name() {
 fn builder_with_event_listeners() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(10)
         .on_call_permitted(|_count| {
             // Custom logic
@@ -144,7 +141,7 @@ async fn config_immutable_after_build() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(2)
         .max_wait_duration(Some(Duration::from_secs(1)))
         .build();
@@ -165,7 +162,7 @@ fn very_large_max_concurrent() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
     // Should handle large values (but not usize::MAX as that's impractical)
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(100_000)
         .build();
 
@@ -177,7 +174,7 @@ fn very_large_max_concurrent() {
 fn very_long_timeout() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(10)
         .max_wait_duration(Some(Duration::from_secs(3600))) // 1 hour
         .build();
@@ -191,9 +188,7 @@ fn builder_reusable() {
     let service1 = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
     let service2 = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = BulkheadConfig::<(), String>::builder()
-        .max_concurrent_calls(10)
-        .build();
+    let layer = BulkheadConfig::builder().max_concurrent_calls(10).build();
 
     let _bulkhead1 = layer.layer(service1);
     let _bulkhead2 = layer.layer(service2);
@@ -214,7 +209,7 @@ fn various_wait_durations() {
     ];
 
     for duration in durations {
-        let layer = BulkheadConfig::<(), String>::builder()
+        let layer = BulkheadConfig::builder()
             .max_concurrent_calls(10)
             .max_wait_duration(duration)
             .build();

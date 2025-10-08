@@ -1,6 +1,6 @@
 use std::time::Duration;
 use tokio::time::sleep;
-use tower::Service;
+use tower::{Layer, Service};
 use tower_bulkhead::{BulkheadConfig, BulkheadError};
 
 /// Test immediate rejection with 0ms timeout
@@ -11,7 +11,7 @@ async fn timeout_zero_immediate_rejection() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::ZERO))
         .build();
@@ -42,7 +42,7 @@ async fn timeout_matches_service_duration() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(100)))
         .build();
@@ -79,7 +79,7 @@ async fn timeout_very_short() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(1)))
         .build();
@@ -114,7 +114,7 @@ async fn timeout_very_long() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_secs(10)))
         .build();
@@ -138,7 +138,7 @@ async fn timeout_none_waits_indefinitely() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(None) // No timeout
         .build();
@@ -162,7 +162,7 @@ async fn timeout_permit_available_just_in_time() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(100)))
         .build();
@@ -186,7 +186,7 @@ async fn timeout_with_fast_service() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(2)
         .max_wait_duration(Some(Duration::from_millis(100)))
         .build();
@@ -208,7 +208,7 @@ async fn timeout_under_load() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(5)
         .max_wait_duration(Some(Duration::from_millis(200)))
         .build();
@@ -251,7 +251,7 @@ async fn timeout_cleanup_no_permit_leak() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(2)
         .max_wait_duration(Some(Duration::from_millis(50)))
         .build();
@@ -288,7 +288,7 @@ async fn multiple_sequential_timeouts() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(50)))
         .build();

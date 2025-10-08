@@ -4,7 +4,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio::time::sleep;
-use tower::Service;
+use tower::{Layer, Service, ServiceExt};
 use tower_bulkhead::{BulkheadConfig, BulkheadError};
 
 /// Test 100 concurrent requests with limited permits
@@ -23,19 +23,18 @@ async fn hundred_concurrent_requests() {
         }
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(max_concurrent)
         .max_wait_duration(Some(Duration::from_secs(5)))
         .build();
 
-    let bulkhead = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let bulkhead = layer.layer(service);
 
     let mut handles = vec![];
     for _ in 0..100 {
-        let bh = Arc::clone(&bulkhead);
+        let mut bh = bulkhead.clone();
         handles.push(tokio::spawn(async move {
-            let mut guard = bh.lock().await;
-            guard.call(()).await
+            bh.ready().await.unwrap().call(()).await
         }));
     }
 
@@ -69,22 +68,21 @@ async fn thousand_concurrent_requests_stress_test() {
         }
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(max_concurrent)
         .max_wait_duration(Some(Duration::from_secs(10)))
         .build();
 
-    let bulkhead = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let bulkhead = layer.layer(service);
 
     let mut handles = vec![];
     for _ in 0..1000 {
-        let bh = Arc::clone(&bulkhead);
+        let mut bh = bulkhead.clone();
         let rej = Arc::clone(&r);
         handles.push(tokio::spawn(async move {
-            let mut guard = bh.lock().await;
-            match guard.call(()).await {
+            match bh.ready().await.unwrap().call(()).await {
                 Ok(_) => true,
-                Err(BulkheadError::Timeout) | Err(BulkheadError::BulkheadFull) => {
+                Err(BulkheadError::Timeout) | Err(BulkheadError::BulkheadFull { .. }) => {
                     rej.fetch_add(1, Ordering::Relaxed);
                     false
                 }
@@ -137,12 +135,12 @@ async fn concurrent_acquisition_when_full() {
         }
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(max_concurrent)
         .max_wait_duration(Some(Duration::from_secs(2)))
         .build();
 
-    let bulkhead = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let bulkhead = layer.layer(service);
 
     let mut handles = vec![];
     for _ in 0..20 {
@@ -175,12 +173,12 @@ async fn acquire_release_race_conditions() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(max_concurrent)
         .max_wait_duration(Some(Duration::from_millis(500)))
         .build();
 
-    let bulkhead = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let bulkhead = layer.layer(service);
 
     // Rapidly acquire and release permits
     let mut handles = vec![];
@@ -234,12 +232,12 @@ async fn semaphore_permit_count_under_load() {
         }
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(max_concurrent)
         .max_wait_duration(Some(Duration::from_secs(3)))
         .build();
 
-    let bulkhead = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let bulkhead = layer.layer(service);
 
     let mut handles = vec![];
     for _ in 0..200 {
@@ -279,12 +277,12 @@ async fn multi_threaded_acquire_release() {
         }
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(max_concurrent)
         .max_wait_duration(Some(Duration::from_secs(5)))
         .build();
 
-    let bulkhead = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let bulkhead = layer.layer(service);
 
     let mut handles = vec![];
     for _ in 0..100 {
@@ -315,12 +313,12 @@ async fn no_permit_leaks_under_contention() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(max_concurrent)
         .max_wait_duration(Some(Duration::from_millis(100)))
         .build();
 
-    let bulkhead = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let bulkhead = layer.layer(service);
 
     // Run multiple rounds to detect leaks
     for _ in 0..10 {

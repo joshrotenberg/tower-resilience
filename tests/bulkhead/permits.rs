@@ -4,7 +4,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio::time::sleep;
-use tower::Service;
+use tower::{Layer, Service};
 use tower_bulkhead::BulkheadConfig;
 
 /// Test permit released even if future is dropped
@@ -15,7 +15,7 @@ async fn permit_released_on_future_drop() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(100)))
         .build();
@@ -56,7 +56,7 @@ async fn permit_released_on_panic() {
         panic!("Service panic!");
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(500)))
         .build();
@@ -102,7 +102,7 @@ async fn permit_count_after_mixed_results() {
         }
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(3)
         .max_wait_duration(Some(Duration::from_secs(2)))
         .build();
@@ -137,7 +137,7 @@ async fn no_permit_leaks_over_time() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(5)
         .max_wait_duration(Some(Duration::from_millis(200)))
         .build();
@@ -181,7 +181,7 @@ async fn permit_released_on_cancellation() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(500)))
         .build();
@@ -228,7 +228,7 @@ async fn permits_available_after_completion() {
     });
 
     let max_concurrent = 10;
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(max_concurrent)
         .max_wait_duration(Some(Duration::from_secs(2)))
         .build();
@@ -280,7 +280,7 @@ async fn permit_lifecycle_with_errors() {
         Err::<(), _>("service error".to_string())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(3)
         .max_wait_duration(Some(Duration::from_secs(1)))
         .build();
@@ -321,7 +321,7 @@ async fn rapid_acquire_release_cycles() {
         Ok::<(), String>(())
     });
 
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(5)
         .max_wait_duration(Some(Duration::from_millis(100)))
         .build();
@@ -373,7 +373,7 @@ async fn concurrent_acquire_attempts() {
     });
 
     let max_concurrent = 7;
-    let layer = BulkheadConfig::<(), String>::builder()
+    let layer = BulkheadConfig::builder()
         .max_concurrent_calls(max_concurrent)
         .max_wait_duration(Some(Duration::from_secs(3)))
         .build();
