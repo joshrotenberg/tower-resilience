@@ -58,7 +58,7 @@ fn listener_that_panics_does_not_crash_emit() {
     listeners.emit(&event);
 
     // If we get here, the panic was successfully caught
-    assert!(true);
+    // Test passed - emit returned normally after panic
 }
 
 #[test]

@@ -95,7 +95,7 @@ async fn some_timeout_some_succeed_concurrently() {
         .layer();
 
     let svc = service_fn(|req: u32| async move {
-        if req % 2 == 0 {
+        if req.is_multiple_of(2) {
             // Even requests complete quickly
             sleep(Duration::from_millis(10)).await;
         } else {
@@ -180,7 +180,7 @@ async fn no_resource_leaks_under_load() {
     // Run multiple rounds to stress test
     for round in 0..10 {
         let svc = service_fn(move |req: u32| async move {
-            if req % 2 == 0 {
+            if req.is_multiple_of(2) {
                 sleep(Duration::from_millis(10)).await;
                 Ok::<_, TestError>(req)
             } else {
