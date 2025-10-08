@@ -35,6 +35,13 @@ pub enum CircuitBreakerEvent {
         timestamp: Instant,
         state: CircuitState,
     },
+    /// A slow call was detected.
+    SlowCallDetected {
+        pattern_name: String,
+        timestamp: Instant,
+        duration: std::time::Duration,
+        state: CircuitState,
+    },
 }
 
 impl ResilienceEvent for CircuitBreakerEvent {
@@ -45,6 +52,7 @@ impl ResilienceEvent for CircuitBreakerEvent {
             CircuitBreakerEvent::StateTransition { .. } => "state_transition",
             CircuitBreakerEvent::SuccessRecorded { .. } => "success_recorded",
             CircuitBreakerEvent::FailureRecorded { .. } => "failure_recorded",
+            CircuitBreakerEvent::SlowCallDetected { .. } => "slow_call_detected",
         }
     }
 
@@ -54,7 +62,8 @@ impl ResilienceEvent for CircuitBreakerEvent {
             | CircuitBreakerEvent::CallRejected { timestamp, .. }
             | CircuitBreakerEvent::StateTransition { timestamp, .. }
             | CircuitBreakerEvent::SuccessRecorded { timestamp, .. }
-            | CircuitBreakerEvent::FailureRecorded { timestamp, .. } => *timestamp,
+            | CircuitBreakerEvent::FailureRecorded { timestamp, .. }
+            | CircuitBreakerEvent::SlowCallDetected { timestamp, .. } => *timestamp,
         }
     }
 
@@ -64,7 +73,8 @@ impl ResilienceEvent for CircuitBreakerEvent {
             | CircuitBreakerEvent::CallRejected { pattern_name, .. }
             | CircuitBreakerEvent::StateTransition { pattern_name, .. }
             | CircuitBreakerEvent::SuccessRecorded { pattern_name, .. }
-            | CircuitBreakerEvent::FailureRecorded { pattern_name, .. } => pattern_name,
+            | CircuitBreakerEvent::FailureRecorded { pattern_name, .. }
+            | CircuitBreakerEvent::SlowCallDetected { pattern_name, .. } => pattern_name,
         }
     }
 }

@@ -12,6 +12,8 @@ pub struct CircuitBreakerConfig<Res, Err> {
     pub(crate) permitted_calls_in_half_open: usize,
     pub(crate) minimum_number_of_calls: usize,
     pub(crate) failure_classifier: SharedFailureClassifier<Res, Err>,
+    pub(crate) slow_call_duration_threshold: Option<Duration>,
+    pub(crate) slow_call_rate_threshold: f64,
     pub(crate) event_listeners: EventListeners<CircuitBreakerEvent>,
     pub(crate) name: String,
 }
@@ -31,6 +33,8 @@ pub struct CircuitBreakerConfigBuilder<Res, Err> {
     permitted_calls_in_half_open: usize,
     failure_classifier: SharedFailureClassifier<Res, Err>,
     minimum_number_of_calls: Option<usize>,
+    slow_call_duration_threshold: Option<Duration>,
+    slow_call_rate_threshold: f64,
     event_listeners: EventListeners<CircuitBreakerEvent>,
     name: String,
 }
@@ -45,6 +49,8 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
             permitted_calls_in_half_open: 1,
             failure_classifier: Arc::new(|res| res.is_err()),
             minimum_number_of_calls: None,
+            slow_call_duration_threshold: None,
+            slow_call_rate_threshold: 1.0,
             event_listeners: EventListeners::new(),
             name: String::from("<unnamed>"),
         }
@@ -98,6 +104,27 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     /// Default: same as sliding_window_size
     pub fn minimum_number_of_calls(mut self, n: usize) -> Self {
         self.minimum_number_of_calls = Some(n);
+        self
+    }
+
+    /// Sets the duration threshold for considering a call "slow".
+    ///
+    /// When set, calls exceeding this duration will be tracked and can trigger
+    /// circuit opening based on `slow_call_rate_threshold`.
+    ///
+    /// Default: None (slow call detection disabled)
+    pub fn slow_call_duration_threshold(mut self, duration: Duration) -> Self {
+        self.slow_call_duration_threshold = Some(duration);
+        self
+    }
+
+    /// Sets the slow call rate threshold at which the circuit will open.
+    ///
+    /// Only applies when `slow_call_duration_threshold` is set.
+    ///
+    /// Default: 1.0 (100%, effectively disabled)
+    pub fn slow_call_rate_threshold(mut self, rate: f64) -> Self {
+        self.slow_call_rate_threshold = rate;
         self
     }
 
@@ -193,6 +220,21 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
+    /// Register a callback for slow call detected events.
+    pub fn on_slow_call<F>(mut self, f: F) -> Self
+    where
+        F: Fn(Duration) + Send + Sync + 'static,
+    {
+        use tower_resilience_core::FnListener;
+        self.event_listeners
+            .add(FnListener::new(move |event: &CircuitBreakerEvent| {
+                if let CircuitBreakerEvent::SlowCallDetected { duration, .. } = event {
+                    f(*duration);
+                }
+            }));
+        self
+    }
+
     /// Builds the configuration and returns a CircuitBreakerLayer.
     pub fn build(self) -> crate::layer::CircuitBreakerLayer<Res, Err> {
         let config = CircuitBreakerConfig {
@@ -204,6 +246,8 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
             minimum_number_of_calls: self
                 .minimum_number_of_calls
                 .unwrap_or(self.sliding_window_size),
+            slow_call_duration_threshold: self.slow_call_duration_threshold,
+            slow_call_rate_threshold: self.slow_call_rate_threshold,
             event_listeners: self.event_listeners,
             name: self.name,
         };

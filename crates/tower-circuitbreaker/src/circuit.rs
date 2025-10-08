@@ -21,6 +21,7 @@ pub(crate) struct Circuit {
     failure_count: usize,
     success_count: usize,
     total_count: usize,
+    slow_call_count: usize,
 }
 
 impl Default for Circuit {
@@ -31,6 +32,7 @@ impl Default for Circuit {
             failure_count: 0,
             success_count: 0,
             total_count: 0,
+            slow_call_count: 0,
         }
     }
 }
@@ -44,9 +46,28 @@ impl Circuit {
         self.state
     }
 
-    pub fn record_success(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+    pub fn record_success(
+        &mut self,
+        config: &CircuitBreakerConfig<impl Sized, impl Sized>,
+        duration: std::time::Duration,
+    ) {
         self.success_count += 1;
         self.total_count += 1;
+
+        // Check if call was slow
+        if let Some(threshold) = config.slow_call_duration_threshold {
+            if duration >= threshold {
+                self.slow_call_count += 1;
+                config
+                    .event_listeners
+                    .emit(&CircuitBreakerEvent::SlowCallDetected {
+                        pattern_name: config.name.clone(),
+                        timestamp: Instant::now(),
+                        duration,
+                        state: self.state,
+                    });
+            }
+        }
 
         // Emit event
         config
@@ -74,9 +95,28 @@ impl Circuit {
         }
     }
 
-    pub fn record_failure(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+    pub fn record_failure(
+        &mut self,
+        config: &CircuitBreakerConfig<impl Sized, impl Sized>,
+        duration: std::time::Duration,
+    ) {
         self.failure_count += 1;
         self.total_count += 1;
+
+        // Check if call was slow (failures can also be slow)
+        if let Some(threshold) = config.slow_call_duration_threshold {
+            if duration >= threshold {
+                self.slow_call_count += 1;
+                config
+                    .event_listeners
+                    .emit(&CircuitBreakerEvent::SlowCallDetected {
+                        pattern_name: config.name.clone(),
+                        timestamp: Instant::now(),
+                        duration,
+                        state: self.state,
+                    });
+            }
+        }
 
         // Emit event
         config
@@ -225,6 +265,7 @@ impl Circuit {
         self.success_count = 0;
         self.failure_count = 0;
         self.total_count = 0;
+        self.slow_call_count = 0;
     }
 
     fn evaluate_window(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
@@ -233,7 +274,14 @@ impl Circuit {
         }
 
         let failure_rate = self.failure_count as f64 / self.total_count as f64;
-        if failure_rate >= config.failure_rate_threshold {
+        let slow_call_rate = self.slow_call_count as f64 / self.total_count as f64;
+
+        // Open if either failure rate or slow call rate exceeds threshold
+        let should_open = failure_rate >= config.failure_rate_threshold
+            || (config.slow_call_duration_threshold.is_some()
+                && slow_call_rate >= config.slow_call_rate_threshold);
+
+        if should_open {
             self.transition_to(CircuitState::Open, config);
         } else {
             self.transition_to(CircuitState::Closed, config);

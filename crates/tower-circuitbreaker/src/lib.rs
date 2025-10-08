@@ -251,13 +251,15 @@ where
                 return Err(CircuitBreakerError::OpenCircuit);
             }
 
+            let start = std::time::Instant::now();
             let result = inner.call(req).await;
+            let duration = start.elapsed();
 
             let mut circuit = circuit.lock().await;
             if (config.failure_classifier)(&result) {
-                circuit.record_failure(&config);
+                circuit.record_failure(&config, duration);
             } else {
-                circuit.record_success(&config);
+                circuit.record_success(&config, duration);
             }
 
             result.map_err(CircuitBreakerError::Inner)
@@ -279,6 +281,8 @@ mod tests {
             permitted_calls_in_half_open: 1,
             failure_classifier: Arc::new(|r| r.is_err()),
             minimum_number_of_calls: 10,
+            slow_call_duration_threshold: None,
+            slow_call_rate_threshold: 1.0,
             event_listeners: EventListeners::new(),
             name: "test".into(),
         }
@@ -290,10 +294,10 @@ mod tests {
         let config = dummy_config();
 
         for _ in 0..6 {
-            circuit.record_failure(&config);
+            circuit.record_failure(&config, Duration::from_millis(10));
         }
         for _ in 0..4 {
-            circuit.record_success(&config);
+            circuit.record_success(&config, Duration::from_millis(10));
         }
 
         assert_eq!(circuit.state(), CircuitState::Open);
@@ -305,10 +309,10 @@ mod tests {
         let config = dummy_config();
 
         for _ in 0..2 {
-            circuit.record_failure(&config);
+            circuit.record_failure(&config, Duration::from_millis(10));
         }
         for _ in 0..8 {
-            circuit.record_success(&config);
+            circuit.record_success(&config, Duration::from_millis(10));
         }
 
         assert_eq!(circuit.state(), CircuitState::Closed);
@@ -361,6 +365,8 @@ mod tests {
             permitted_calls_in_half_open: 1,
             failure_classifier: Arc::new(|r| r.is_err()),
             minimum_number_of_calls: 10,
+            slow_call_duration_threshold: None,
+            slow_call_rate_threshold: 1.0,
             event_listeners: {
                 let mut listeners = EventListeners::new();
                 listeners.add(tower_resilience_core::FnListener::new(
@@ -380,6 +386,7 @@ mod tests {
                         CircuitBreakerEvent::FailureRecorded { .. } => {
                             f_clone.fetch_add(1, Ordering::SeqCst);
                         }
+                        CircuitBreakerEvent::SlowCallDetected { .. } => {}
                     },
                 ));
                 listeners
@@ -391,10 +398,10 @@ mod tests {
 
         // Record failures to trigger state transition
         for _ in 0..6 {
-            circuit.record_failure(&config);
+            circuit.record_failure(&config, Duration::from_millis(10));
         }
         for _ in 0..4 {
-            circuit.record_success(&config);
+            circuit.record_success(&config, Duration::from_millis(10));
         }
 
         // Should have transitioned to Open
@@ -407,5 +414,84 @@ mod tests {
         let permitted = circuit.try_acquire(&config);
         assert!(!permitted);
         assert_eq!(call_rejected.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn test_slow_call_detection() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tower_resilience_core::EventListeners;
+
+        let slow_calls = Arc::new(AtomicUsize::new(0));
+        let slow_clone = Arc::clone(&slow_calls);
+
+        let config: CircuitBreakerConfig<(), ()> = CircuitBreakerConfig {
+            failure_rate_threshold: 0.5,
+            sliding_window_size: 10,
+            wait_duration_in_open: Duration::from_secs(1),
+            permitted_calls_in_half_open: 1,
+            failure_classifier: Arc::new(|r| r.is_err()),
+            minimum_number_of_calls: 10,
+            slow_call_duration_threshold: Some(Duration::from_millis(100)),
+            slow_call_rate_threshold: 0.5,
+            event_listeners: {
+                let mut listeners = EventListeners::new();
+                listeners.add(tower_resilience_core::FnListener::new(move |event| {
+                    if matches!(event, CircuitBreakerEvent::SlowCallDetected { .. }) {
+                        slow_clone.fetch_add(1, Ordering::SeqCst);
+                    }
+                }));
+                listeners
+            },
+            name: "test".into(),
+        };
+
+        let mut circuit = Circuit::new();
+
+        // Record 6 slow calls (>100ms)
+        for _ in 0..6 {
+            circuit.record_success(&config, Duration::from_millis(150));
+        }
+        // Record 4 fast calls
+        for _ in 0..4 {
+            circuit.record_success(&config, Duration::from_millis(50));
+        }
+
+        // Should have detected 6 slow calls
+        assert_eq!(slow_calls.load(Ordering::SeqCst), 6);
+
+        // Should have transitioned to Open due to slow call rate (60%)
+        assert_eq!(circuit.state(), CircuitState::Open);
+    }
+
+    #[test]
+    fn test_slow_call_with_failures() {
+        use tower_resilience_core::EventListeners;
+
+        let config: CircuitBreakerConfig<(), ()> = CircuitBreakerConfig {
+            failure_rate_threshold: 1.0, // Don't open on failures
+            sliding_window_size: 10,
+            wait_duration_in_open: Duration::from_secs(1),
+            permitted_calls_in_half_open: 1,
+            failure_classifier: Arc::new(|r| r.is_err()),
+            minimum_number_of_calls: 10,
+            slow_call_duration_threshold: Some(Duration::from_millis(100)),
+            slow_call_rate_threshold: 0.5,
+            event_listeners: EventListeners::new(),
+            name: "test".into(),
+        };
+
+        let mut circuit = Circuit::new();
+
+        // Record 6 slow failures (failures can also be slow)
+        for _ in 0..6 {
+            circuit.record_failure(&config, Duration::from_millis(150));
+        }
+        // Record 4 fast successes
+        for _ in 0..4 {
+            circuit.record_success(&config, Duration::from_millis(50));
+        }
+
+        // Should open due to slow call rate, not failure rate
+        assert_eq!(circuit.state(), CircuitState::Open);
     }
 }
