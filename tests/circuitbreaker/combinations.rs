@@ -113,7 +113,9 @@ async fn custom_classifier_with_slow_calls() {
     let service = tower::service_fn(move |_req: ()| {
         let count = c.fetch_add(1, Ordering::Relaxed);
         async move {
-            sleep(Duration::from_millis(if count < 5 { 150 } else { 50 })).await;
+            // Use more generous timings for Windows - 200ms slow vs 30ms fast
+            // This gives Windows timers more margin to correctly classify
+            sleep(Duration::from_millis(if count < 5 { 200 } else { 30 })).await;
 
             if count < 3 {
                 Err::<(), _>("retryable_error")
@@ -129,7 +131,7 @@ async fn custom_classifier_with_slow_calls() {
     let layer = CircuitBreakerConfig::<(), &str>::builder()
         .sliding_window_size(10)
         .failure_rate_threshold(0.5)
-        .slow_call_duration_threshold(Duration::from_millis(100))
+        .slow_call_duration_threshold(Duration::from_millis(80)) // Lower threshold with more margin
         .slow_call_rate_threshold(0.6)
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(100))
