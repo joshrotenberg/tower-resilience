@@ -61,7 +61,7 @@ use tower::Service;
 use tracing::debug;
 
 pub use circuit::CircuitState;
-pub use config::{CircuitBreakerConfig, CircuitBreakerConfigBuilder};
+pub use config::{CircuitBreakerConfig, CircuitBreakerConfigBuilder, SlidingWindowType};
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
 pub use layer::CircuitBreakerLayer;
@@ -289,7 +289,9 @@ mod tests {
         use tower_resilience_core::EventListeners;
         CircuitBreakerConfig {
             failure_rate_threshold: 0.5,
+            sliding_window_type: crate::config::SlidingWindowType::CountBased,
             sliding_window_size: 10,
+            sliding_window_duration: None,
             wait_duration_in_open: Duration::from_secs(1),
             permitted_calls_in_half_open: 1,
             failure_classifier: Arc::new(|r| r.is_err()),
@@ -373,7 +375,9 @@ mod tests {
 
         let config: CircuitBreakerConfig<(), ()> = CircuitBreakerConfig {
             failure_rate_threshold: 0.5,
+            sliding_window_type: crate::config::SlidingWindowType::CountBased,
             sliding_window_size: 10,
+            sliding_window_duration: None,
             wait_duration_in_open: Duration::from_secs(1),
             permitted_calls_in_half_open: 1,
             failure_classifier: Arc::new(|r| r.is_err()),
@@ -439,7 +443,9 @@ mod tests {
 
         let config: CircuitBreakerConfig<(), ()> = CircuitBreakerConfig {
             failure_rate_threshold: 0.5,
+            sliding_window_type: crate::config::SlidingWindowType::CountBased,
             sliding_window_size: 10,
+            sliding_window_duration: None,
             wait_duration_in_open: Duration::from_secs(1),
             permitted_calls_in_half_open: 1,
             failure_classifier: Arc::new(|r| r.is_err()),
@@ -482,7 +488,9 @@ mod tests {
 
         let config: CircuitBreakerConfig<(), ()> = CircuitBreakerConfig {
             failure_rate_threshold: 1.0, // Don't open on failures
+            sliding_window_type: crate::config::SlidingWindowType::CountBased,
             sliding_window_size: 10,
+            sliding_window_duration: None,
             wait_duration_in_open: Duration::from_secs(1),
             permitted_calls_in_half_open: 1,
             failure_classifier: Arc::new(|r| r.is_err()),

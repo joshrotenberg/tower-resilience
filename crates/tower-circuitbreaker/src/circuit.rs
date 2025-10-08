@@ -1,9 +1,10 @@
-use crate::config::CircuitBreakerConfig;
+use crate::config::{CircuitBreakerConfig, SlidingWindowType};
 use crate::events::CircuitBreakerEvent;
 #[cfg(feature = "metrics")]
 use metrics::{counter, gauge};
+use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU8, Ordering};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 /// Represents the state of the circuit breaker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,14 +29,25 @@ impl CircuitState {
     }
 }
 
+/// Represents a call record in the time-based sliding window.
+#[derive(Debug, Clone)]
+struct CallRecord {
+    timestamp: Instant,
+    is_failure: bool,
+    is_slow: bool,
+}
+
 pub(crate) struct Circuit {
     state: CircuitState,
     state_atomic: std::sync::Arc<AtomicU8>,
     last_state_change: std::time::Instant,
+    // Count-based window tracking
     failure_count: usize,
     success_count: usize,
     total_count: usize,
     slow_call_count: usize,
+    // Time-based window tracking
+    call_records: VecDeque<CallRecord>,
 }
 
 impl Default for Circuit {
@@ -61,6 +73,7 @@ impl Circuit {
             success_count: 0,
             total_count: 0,
             slow_call_count: 0,
+            call_records: VecDeque::new(),
         }
     }
 
@@ -68,30 +81,84 @@ impl Circuit {
         self.state
     }
 
+    /// Clean up old records from the time-based window.
+    fn cleanup_old_records(&mut self, window_duration: Duration) {
+        let now = Instant::now();
+        while let Some(record) = self.call_records.front() {
+            if now.duration_since(record.timestamp) > window_duration {
+                self.call_records.pop_front();
+            } else {
+                break;
+            }
+        }
+    }
+
+    /// Calculate statistics from time-based window.
+    fn time_based_stats(&self) -> (usize, usize, usize, usize) {
+        let mut total = 0;
+        let mut failures = 0;
+        let mut successes = 0;
+        let mut slow = 0;
+
+        for record in &self.call_records {
+            total += 1;
+            if record.is_failure {
+                failures += 1;
+            } else {
+                successes += 1;
+            }
+            if record.is_slow {
+                slow += 1;
+            }
+        }
+
+        (total, failures, successes, slow)
+    }
+
     pub fn record_success(
         &mut self,
         config: &CircuitBreakerConfig<impl Sized, impl Sized>,
         duration: std::time::Duration,
     ) {
-        self.success_count += 1;
-        self.total_count += 1;
+        let is_slow = config
+            .slow_call_duration_threshold
+            .map(|threshold| duration >= threshold)
+            .unwrap_or(false);
 
-        // Check if call was slow
-        if let Some(threshold) = config.slow_call_duration_threshold {
-            if duration >= threshold {
-                self.slow_call_count += 1;
-                config
-                    .event_listeners
-                    .emit(&CircuitBreakerEvent::SlowCallDetected {
-                        pattern_name: config.name.clone(),
+        // Update statistics based on window type
+        match config.sliding_window_type {
+            SlidingWindowType::CountBased => {
+                self.success_count += 1;
+                self.total_count += 1;
+                if is_slow {
+                    self.slow_call_count += 1;
+                }
+            }
+            SlidingWindowType::TimeBased => {
+                if let Some(window_duration) = config.sliding_window_duration {
+                    self.cleanup_old_records(window_duration);
+                    self.call_records.push_back(CallRecord {
                         timestamp: Instant::now(),
-                        duration,
-                        state: self.state,
+                        is_failure: false,
+                        is_slow,
                     });
+                }
             }
         }
 
-        // Emit event
+        // Emit slow call event if needed
+        if is_slow {
+            config
+                .event_listeners
+                .emit(&CircuitBreakerEvent::SlowCallDetected {
+                    pattern_name: config.name.clone(),
+                    timestamp: Instant::now(),
+                    duration,
+                    state: self.state,
+                });
+        }
+
+        // Emit success event
         config
             .event_listeners
             .emit(&CircuitBreakerEvent::SuccessRecorded {
@@ -105,14 +172,16 @@ impl Circuit {
 
         match self.state {
             CircuitState::HalfOpen => {
-                if self.success_count >= config.permitted_calls_in_half_open {
+                let success_count = match config.sliding_window_type {
+                    SlidingWindowType::CountBased => self.success_count,
+                    SlidingWindowType::TimeBased => self.time_based_stats().2,
+                };
+                if success_count >= config.permitted_calls_in_half_open {
                     self.transition_to(CircuitState::Closed, config);
                 }
             }
             _ => {
-                if self.total_count >= config.sliding_window_size {
-                    self.evaluate_window(config);
-                }
+                self.evaluate_window(config);
             }
         }
     }
@@ -122,25 +191,45 @@ impl Circuit {
         config: &CircuitBreakerConfig<impl Sized, impl Sized>,
         duration: std::time::Duration,
     ) {
-        self.failure_count += 1;
-        self.total_count += 1;
+        let is_slow = config
+            .slow_call_duration_threshold
+            .map(|threshold| duration >= threshold)
+            .unwrap_or(false);
 
-        // Check if call was slow (failures can also be slow)
-        if let Some(threshold) = config.slow_call_duration_threshold {
-            if duration >= threshold {
-                self.slow_call_count += 1;
-                config
-                    .event_listeners
-                    .emit(&CircuitBreakerEvent::SlowCallDetected {
-                        pattern_name: config.name.clone(),
+        // Update statistics based on window type
+        match config.sliding_window_type {
+            SlidingWindowType::CountBased => {
+                self.failure_count += 1;
+                self.total_count += 1;
+                if is_slow {
+                    self.slow_call_count += 1;
+                }
+            }
+            SlidingWindowType::TimeBased => {
+                if let Some(window_duration) = config.sliding_window_duration {
+                    self.cleanup_old_records(window_duration);
+                    self.call_records.push_back(CallRecord {
                         timestamp: Instant::now(),
-                        duration,
-                        state: self.state,
+                        is_failure: true,
+                        is_slow,
                     });
+                }
             }
         }
 
-        // Emit event
+        // Emit slow call event if needed
+        if is_slow {
+            config
+                .event_listeners
+                .emit(&CircuitBreakerEvent::SlowCallDetected {
+                    pattern_name: config.name.clone(),
+                    timestamp: Instant::now(),
+                    duration,
+                    state: self.state,
+                });
+        }
+
+        // Emit failure event
         config
             .event_listeners
             .emit(&CircuitBreakerEvent::FailureRecorded {
@@ -157,9 +246,7 @@ impl Circuit {
                 self.transition_to(CircuitState::Open, config);
             }
             _ => {
-                if self.total_count >= config.sliding_window_size {
-                    self.evaluate_window(config);
-                }
+                self.evaluate_window(config);
             }
         }
     }
@@ -289,15 +376,40 @@ impl Circuit {
         self.failure_count = 0;
         self.total_count = 0;
         self.slow_call_count = 0;
+        self.call_records.clear();
     }
 
     fn evaluate_window(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
-        if self.total_count < config.minimum_number_of_calls {
+        let (total_count, failure_count, _success_count, slow_call_count) =
+            match config.sliding_window_type {
+                SlidingWindowType::CountBased => (
+                    self.total_count,
+                    self.failure_count,
+                    self.success_count,
+                    self.slow_call_count,
+                ),
+                SlidingWindowType::TimeBased => {
+                    if let Some(window_duration) = config.sliding_window_duration {
+                        self.cleanup_old_records(window_duration);
+                    }
+                    self.time_based_stats()
+                }
+            };
+
+        // Don't evaluate until minimum calls threshold is met
+        if total_count < config.minimum_number_of_calls {
             return;
         }
 
-        let failure_rate = self.failure_count as f64 / self.total_count as f64;
-        let slow_call_rate = self.slow_call_count as f64 / self.total_count as f64;
+        // For count-based window, also check if window is full
+        if config.sliding_window_type == SlidingWindowType::CountBased
+            && total_count < config.sliding_window_size
+        {
+            return;
+        }
+
+        let failure_rate = failure_count as f64 / total_count as f64;
+        let slow_call_rate = slow_call_count as f64 / total_count as f64;
 
         // Open if either failure rate or slow call rate exceeds threshold
         let should_open = failure_rate >= config.failure_rate_threshold
@@ -306,8 +418,7 @@ impl Circuit {
 
         if should_open {
             self.transition_to(CircuitState::Open, config);
-        } else {
-            self.transition_to(CircuitState::Closed, config);
         }
+        // Don't transition to closed if we're in HalfOpen - that happens via record_success
     }
 }
