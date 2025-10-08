@@ -51,9 +51,16 @@ impl<E: ResilienceEvent> EventListeners<E> {
     }
 
     /// Emits an event to all registered listeners.
+    ///
+    /// If a listener panics, the panic is caught and the remaining listeners
+    /// will still be called. This ensures one misbehaving listener doesn't
+    /// prevent others from receiving events.
     pub fn emit(&self, event: &E) {
         for listener in &self.listeners {
-            listener.on_event(event);
+            // Catch panics to ensure one listener doesn't prevent others from being called
+            let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                listener.on_event(event);
+            }));
         }
     }
 

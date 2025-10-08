@@ -178,7 +178,12 @@ async fn timeout_just_before_completion() {
 
     assert!(result.is_err());
     assert!(result.unwrap_err().is_timeout());
-    assert!(elapsed.as_millis() < 45);
+    // Windows has less precise timers, allow more margin
+    assert!(
+        elapsed.as_millis() < 60,
+        "Expected timeout ~30ms, got {}ms",
+        elapsed.as_millis()
+    );
 }
 
 #[tokio::test]
