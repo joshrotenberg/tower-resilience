@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.1.0...tower-resilience-cache-v0.1.1) - 2025-10-08
+
+### Fixed
+
+- add README.md to all published crates ([#68](https://github.com/joshrotenberg/tower-resilience/pull/68))
+
+### Other
+
+- release ([#58](https://github.com/joshrotenberg/tower-resilience/pull/58))
+- update MSRV to 1.64.0 to match Tower ([#65](https://github.com/joshrotenberg/tower-resilience/pull/65))
+
 ## [0.1.0](https://github.com/joshrotenberg/tower-resilience/releases/tag/tower-resilience-cache-v0.1.0) - 2025-10-08
 
 ### Other
