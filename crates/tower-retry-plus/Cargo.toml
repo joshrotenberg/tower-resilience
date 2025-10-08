@@ -14,7 +14,7 @@ tower = { workspace = true }
 futures = { workspace = true }
 tokio = { workspace = true }
 thiserror = { workspace = true }
-rand = "0.8"
+rand = "0.9"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

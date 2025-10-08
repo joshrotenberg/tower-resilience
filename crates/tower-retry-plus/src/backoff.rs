@@ -114,11 +114,11 @@ impl ExponentialRandomBackoff {
 
     fn randomize(&self, duration: Duration) -> Duration {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let delta = duration.as_secs_f64() * self.randomization_factor;
         let min = duration.as_secs_f64() - delta;
         let max = duration.as_secs_f64() + delta;
-        let randomized = rng.gen_range(min..=max);
+        let randomized = rng.random_range(min..=max);
         Duration::from_secs_f64(randomized.max(0.0))
     }
 }
