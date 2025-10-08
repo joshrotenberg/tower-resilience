@@ -65,7 +65,7 @@ impl TimeLimiterConfigBuilder {
 
     /// Sets the name of this time limiter instance for observability.
     ///
-    /// Default: "<unnamed>"
+    /// Default: `"<unnamed>"`
     pub fn name(mut self, name: impl Into<String>) -> Self {
         self.name = name.into();
         self
