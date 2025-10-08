@@ -2,21 +2,35 @@ use crate::config::CircuitBreakerConfig;
 use crate::events::CircuitBreakerEvent;
 #[cfg(feature = "metrics")]
 use metrics::{counter, gauge};
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::Instant;
 
 /// Represents the state of the circuit breaker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
 pub enum CircuitState {
     /// The circuit is closed and calls are allowed.
-    Closed,
+    Closed = 0,
     /// The circuit is open and calls are rejected.
-    Open,
+    Open = 1,
     /// The circuit is half-open and a limited number of calls are allowed.
-    HalfOpen,
+    HalfOpen = 2,
+}
+
+impl CircuitState {
+    pub(crate) fn from_u8(value: u8) -> Self {
+        match value {
+            0 => CircuitState::Closed,
+            1 => CircuitState::Open,
+            2 => CircuitState::HalfOpen,
+            _ => CircuitState::Closed, // Default to Closed for safety
+        }
+    }
 }
 
 pub(crate) struct Circuit {
     state: CircuitState,
+    state_atomic: std::sync::Arc<AtomicU8>,
     last_state_change: std::time::Instant,
     failure_count: usize,
     success_count: usize,
@@ -26,20 +40,28 @@ pub(crate) struct Circuit {
 
 impl Default for Circuit {
     fn default() -> Self {
+        Self::new_with_atomic(std::sync::Arc::new(AtomicU8::new(
+            CircuitState::Closed as u8,
+        )))
+    }
+}
+
+impl Circuit {
+    #[cfg(test)]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub(crate) fn new_with_atomic(state_atomic: std::sync::Arc<AtomicU8>) -> Self {
         Self {
             state: CircuitState::Closed,
+            state_atomic,
             last_state_change: std::time::Instant::now(),
             failure_count: 0,
             success_count: 0,
             total_count: 0,
             slow_call_count: 0,
         }
-    }
-}
-
-impl Circuit {
-    pub fn new() -> Self {
-        Self::default()
     }
 
     pub fn state(&self) -> CircuitState {
@@ -261,6 +283,7 @@ impl Circuit {
         }
 
         self.state = state;
+        self.state_atomic.store(state as u8, Ordering::Release);
         self.last_state_change = std::time::Instant::now();
         self.success_count = 0;
         self.failure_count = 0;

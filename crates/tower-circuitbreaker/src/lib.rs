@@ -113,6 +113,7 @@ pub fn circuit_breaker_builder<Res, Err>() -> CircuitBreakerConfigBuilder<Res, E
 pub struct CircuitBreaker<S, Req, Res, Err> {
     inner: S,
     circuit: Arc<Mutex<Circuit>>,
+    state_atomic: Arc<std::sync::atomic::AtomicU8>,
     config: Arc<CircuitBreakerConfig<Res, Err>>,
     fallback: Option<SharedFallback<Req, Res, Err>>,
     _phantom: std::marker::PhantomData<Req>,
@@ -121,9 +122,13 @@ pub struct CircuitBreaker<S, Req, Res, Err> {
 impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     /// Creates a new `CircuitBreaker` wrapping the given service and configuration.
     pub(crate) fn new(inner: S, config: Arc<CircuitBreakerConfig<Res, Err>>) -> Self {
+        let state_atomic = Arc::new(std::sync::atomic::AtomicU8::new(CircuitState::Closed as u8));
         Self {
             inner,
-            circuit: Arc::new(Mutex::new(Circuit::new())),
+            circuit: Arc::new(Mutex::new(Circuit::new_with_atomic(Arc::clone(
+                &state_atomic,
+            )))),
+            state_atomic,
             config,
             fallback: None,
             _phantom: std::marker::PhantomData,
@@ -161,6 +166,14 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     pub async fn state(&self) -> CircuitState {
         let circuit = self.circuit.lock().await;
         circuit.state()
+    }
+
+    /// Returns the current state of the circuit without requiring async context.
+    ///
+    /// This is safe to call from sync code (e.g., metrics collection, health checks).
+    /// Reads from an AtomicU8 that's kept synchronized with the actual state.
+    pub fn state_sync(&self) -> CircuitState {
+        CircuitState::from_u8(self.state_atomic.load(std::sync::atomic::Ordering::Acquire))
     }
 }
 
@@ -493,5 +506,20 @@ mod tests {
 
         // Should open due to slow call rate, not failure rate
         assert_eq!(circuit.state(), CircuitState::Open);
+    }
+
+    #[tokio::test]
+    async fn test_circuit_breaker_sync_state() {
+        let config = Arc::new(dummy_config());
+        let breaker: CircuitBreaker<(), (), (), ()> = CircuitBreaker::new((), config.clone());
+
+        // Can access state synchronously without .await
+        let sync_state = breaker.state_sync();
+        assert_eq!(sync_state, CircuitState::Closed);
+
+        // Force open and verify sync state matches
+        breaker.force_open().await;
+        assert_eq!(breaker.state_sync(), CircuitState::Open);
+        assert_eq!(breaker.state().await, CircuitState::Open);
     }
 }
