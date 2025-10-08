@@ -159,6 +159,32 @@ let server = ServiceBuilder::new()
     .service(handler);
 ```
 
+## Performance
+
+Benchmarks measure the overhead of each pattern in the happy path (no failures, circuit closed, permits available):
+
+| Pattern | Overhead (ns) | vs Baseline |
+|---------|--------------|-------------|
+| Baseline (no middleware) | ~10 ns | 1.0x |
+| Retry (no retries) | ~80-100 ns | ~8-10x |
+| Time Limiter | ~107 ns | ~10x |
+| Rate Limiter | ~124 ns | ~12x |
+| Bulkhead | ~162 ns | ~16x |
+| Cache (hit) | ~250 ns | ~25x |
+| Circuit Breaker (closed) | ~298 ns | ~29x |
+| Circuit Breaker + Bulkhead | ~413 ns | ~40x |
+
+**Key Takeaways:**
+- All patterns add < 300ns overhead individually
+- Overhead is additive when composing patterns
+- Even the heaviest pattern (circuit breaker) is negligible for most use cases
+- Retry and time limiter are the lightest weight options
+
+Run benchmarks yourself:
+```bash
+cargo bench --bench happy_path_overhead
+```
+
 ## Documentation
 
 - [API Documentation](https://docs.rs/tower-resilience)

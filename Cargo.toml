@@ -23,6 +23,11 @@ futures = { workspace = true }
 [dev-dependencies]
 metrics = { workspace = true }
 metrics-util = { version = "0.20", default-features = false, features = ["debugging"] }
+criterion = { workspace = true }
+
+[[bench]]
+name = "happy_path_overhead"
+harness = false
 
 [workspace]
 resolver = "2"
@@ -54,6 +59,7 @@ futures = "0.3"
 thiserror = "2.0"
 tracing = "0.1"
 metrics = "0.24"
+criterion = { version = "0.5", features = ["async_tokio"] }
 
 tower-resilience-core = { version = "0.2.0", path = "crates/tower-resilience-core" }
 
