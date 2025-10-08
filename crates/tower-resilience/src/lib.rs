@@ -81,6 +81,7 @@
 //! # #[cfg(feature = "circuitbreaker")]
 //! # {
 //! use tower_resilience::circuitbreaker::CircuitBreakerConfig;
+//! use tower::Layer;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
@@ -92,7 +93,7 @@
 //!     .wait_duration_in_open(Duration::from_secs(30))  // Stay open 30s
 //!     .build();
 //!
-//! let service = circuit_breaker.layer(database_client);
+//! let service = circuit_breaker.layer::<_, ()>(database_client);
 //! # }
 //! # }
 //! ```
@@ -219,6 +220,7 @@
 //! # #[cfg(feature = "timelimiter")]
 //! # {
 //! use tower_resilience::timelimiter::TimeLimiterConfig;
+//! use tower::Layer;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
@@ -290,16 +292,17 @@
 //! # #[cfg(feature = "retry")]
 //! # {
 //! use tower_resilience::retry::RetryConfig;
+//! use tower::Layer;
 //! use std::time::Duration;
 //!
-//! # #[derive(Debug)]
+//! # #[derive(Debug, Clone)]
 //! # struct MyError;
 //! # async fn example() {
 //! # let http_client = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
 //! let retry = RetryConfig::<MyError>::builder()
 //!     .max_attempts(3)
 //!     .exponential_backoff(Duration::from_millis(100))
-//!     .retry_predicate(|err: &MyError| {
+//!     .retry_on(|err: &MyError| {
 //!         // Only retry transient errors
 //!         true  // Check if error is retryable
 //!     })
@@ -361,6 +364,7 @@
 //! # #[cfg(feature = "ratelimiter")]
 //! # {
 //! use tower_resilience::ratelimiter::RateLimiterConfig;
+//! use tower::Layer;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
@@ -430,6 +434,7 @@
 //! # #[cfg(feature = "cache")]
 //! # {
 //! use tower_resilience::cache::CacheConfig;
+//! use tower::Layer;
 //! use std::time::Duration;
 //!
 //! # #[derive(Clone)]
