@@ -11,6 +11,7 @@ metrics = []
 tower-resilience-core = { path = "crates/tower-resilience-core" }
 tower-circuitbreaker = { path = "crates/tower-circuitbreaker", features = ["metrics", "tracing"] }
 tower-bulkhead = { path = "crates/tower-bulkhead" }
+tower-cache = { path = "crates/tower-cache" }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
