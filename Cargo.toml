@@ -8,7 +8,7 @@ publish = false
 metrics = []
 
 [dependencies]
-tower-resilience-core = { path = "crates/tower-resilience-core" }
+tower-resilience-core = { version = "0.2.0", path = "crates/tower-resilience-core" }
 tower-circuitbreaker = { path = "crates/tower-circuitbreaker", features = ["metrics", "tracing"] }
 tower-bulkhead = { path = "crates/tower-bulkhead" }
 tower-cache = { path = "crates/tower-cache" }
@@ -55,7 +55,7 @@ thiserror = "2.0"
 tracing = "0.1"
 metrics = "0.24"
 
-tower-resilience-core = { path = "crates/tower-resilience-core" }
+tower-resilience-core = { version = "0.2.0", path = "crates/tower-resilience-core" }
 
 [workspace.metadata.docs.rs]
 all-features = true
