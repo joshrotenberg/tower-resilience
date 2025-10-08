@@ -4,10 +4,21 @@ use std::sync::Arc;
 use std::time::Duration;
 use tower_resilience_core::EventListeners;
 
+/// Type of sliding window used for tracking calls.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SlidingWindowType {
+    /// Count-based window tracks the last N calls.
+    CountBased,
+    /// Time-based window tracks calls within a time duration.
+    TimeBased,
+}
+
 /// Configuration for the circuit breaker pattern.
 pub struct CircuitBreakerConfig<Res, Err> {
     pub(crate) failure_rate_threshold: f64,
+    pub(crate) sliding_window_type: SlidingWindowType,
     pub(crate) sliding_window_size: usize,
+    pub(crate) sliding_window_duration: Option<Duration>,
     pub(crate) wait_duration_in_open: Duration,
     pub(crate) permitted_calls_in_half_open: usize,
     pub(crate) minimum_number_of_calls: usize,
@@ -28,7 +39,9 @@ impl<Res, Err> CircuitBreakerConfig<Res, Err> {
 /// Builder for configuring and constructing a circuit breaker.
 pub struct CircuitBreakerConfigBuilder<Res, Err> {
     failure_rate_threshold: f64,
+    sliding_window_type: SlidingWindowType,
     sliding_window_size: usize,
+    sliding_window_duration: Option<Duration>,
     wait_duration_in_open: Duration,
     permitted_calls_in_half_open: usize,
     failure_classifier: SharedFailureClassifier<Res, Err>,
@@ -44,7 +57,9 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     pub fn new() -> Self {
         Self {
             failure_rate_threshold: 0.5,
+            sliding_window_type: SlidingWindowType::CountBased,
             sliding_window_size: 100,
+            sliding_window_duration: None,
             wait_duration_in_open: Duration::from_secs(30),
             permitted_calls_in_half_open: 1,
             failure_classifier: Arc::new(|res| res.is_err()),
@@ -64,11 +79,33 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
-    /// Sets the size of the sliding window for failure rate calculation.
+    /// Sets the type of sliding window to use.
+    ///
+    /// Default: CountBased
+    pub fn sliding_window_type(mut self, window_type: SlidingWindowType) -> Self {
+        self.sliding_window_type = window_type;
+        self
+    }
+
+    /// Sets the size of the sliding window for failure rate calculation (count-based).
+    ///
+    /// For count-based windows, this is the number of calls to track.
+    /// For time-based windows, this is used as the minimum calls threshold if not set explicitly.
     ///
     /// Default: 100
     pub fn sliding_window_size(mut self, size: usize) -> Self {
         self.sliding_window_size = size;
+        self
+    }
+
+    /// Sets the duration of the sliding window (time-based only).
+    ///
+    /// Only used when `sliding_window_type` is `TimeBased`.
+    /// Calls older than this duration are excluded from failure rate calculation.
+    ///
+    /// Default: None (must be set for time-based windows)
+    pub fn sliding_window_duration(mut self, duration: Duration) -> Self {
+        self.sliding_window_duration = Some(duration);
         self
     }
 
@@ -237,9 +274,18 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
 
     /// Builds the configuration and returns a CircuitBreakerLayer.
     pub fn build(self) -> crate::layer::CircuitBreakerLayer<Res, Err> {
+        // Validate time-based window configuration
+        if self.sliding_window_type == SlidingWindowType::TimeBased
+            && self.sliding_window_duration.is_none()
+        {
+            panic!("sliding_window_duration must be set when using TimeBased sliding window");
+        }
+
         let config = CircuitBreakerConfig {
             failure_rate_threshold: self.failure_rate_threshold,
+            sliding_window_type: self.sliding_window_type,
             sliding_window_size: self.sliding_window_size,
+            sliding_window_duration: self.sliding_window_duration,
             wait_duration_in_open: self.wait_duration_in_open,
             permitted_calls_in_half_open: self.permitted_calls_in_half_open,
             failure_classifier: self.failure_classifier,
