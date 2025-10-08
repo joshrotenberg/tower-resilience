@@ -26,6 +26,7 @@ members = [
     "crates/tower-resilience-core",
     "crates/tower-circuitbreaker",
     "crates/tower-bulkhead",
+    "crates/tower-timelimiter",
     "crates/tower-resilience",
 ]
 
