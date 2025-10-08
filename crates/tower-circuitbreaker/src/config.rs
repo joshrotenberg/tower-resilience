@@ -1,6 +1,8 @@
 use crate::SharedFailureClassifier;
+use crate::events::CircuitBreakerEvent;
 use std::sync::Arc;
 use std::time::Duration;
+use tower_resilience_core::EventListeners;
 
 /// Configuration for the circuit breaker pattern.
 pub struct CircuitBreakerConfig<Res, Err> {
@@ -10,8 +12,8 @@ pub struct CircuitBreakerConfig<Res, Err> {
     pub(crate) permitted_calls_in_half_open: usize,
     pub(crate) minimum_number_of_calls: usize,
     pub(crate) failure_classifier: SharedFailureClassifier<Res, Err>,
-    #[cfg(feature = "tracing")]
-    pub(crate) name: Option<String>,
+    pub(crate) event_listeners: EventListeners<CircuitBreakerEvent>,
+    pub(crate) name: String,
 }
 
 impl<Res, Err> CircuitBreakerConfig<Res, Err> {
@@ -29,7 +31,8 @@ pub struct CircuitBreakerConfigBuilder<Res, Err> {
     permitted_calls_in_half_open: usize,
     failure_classifier: SharedFailureClassifier<Res, Err>,
     minimum_number_of_calls: Option<usize>,
-    name: Option<String>,
+    event_listeners: EventListeners<CircuitBreakerEvent>,
+    name: String,
 }
 
 impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
@@ -42,7 +45,8 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
             permitted_calls_in_half_open: 1,
             failure_classifier: Arc::new(|res| res.is_err()),
             minimum_number_of_calls: None,
-            name: None,
+            event_listeners: EventListeners::new(),
+            name: String::from("<unnamed>"),
         }
     }
 
@@ -97,11 +101,95 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
-    /// Give this breaker a human-readable name for logs/spans.
+    /// Give this breaker a human-readable name for observability.
     ///
-    /// Default: None
+    /// Default: `<unnamed>`
     pub fn name<N: Into<String>>(mut self, n: N) -> Self {
-        self.name = Some(n.into());
+        self.name = n.into();
+        self
+    }
+
+    /// Register a callback for state transition events.
+    pub fn on_state_transition<F>(mut self, f: F) -> Self
+    where
+        F: Fn(crate::CircuitState, crate::CircuitState) + Send + Sync + 'static,
+    {
+        use tower_resilience_core::FnListener;
+        self.event_listeners
+            .add(FnListener::new(move |event: &CircuitBreakerEvent| {
+                if let CircuitBreakerEvent::StateTransition {
+                    from_state,
+                    to_state,
+                    ..
+                } = event
+                {
+                    f(*from_state, *to_state);
+                }
+            }));
+        self
+    }
+
+    /// Register a callback for call permitted events.
+    pub fn on_call_permitted<F>(mut self, f: F) -> Self
+    where
+        F: Fn(crate::CircuitState) + Send + Sync + 'static,
+    {
+        self.event_listeners
+            .add(tower_resilience_core::FnListener::new(
+                move |event: &CircuitBreakerEvent| {
+                    if let CircuitBreakerEvent::CallPermitted { state, .. } = event {
+                        f(*state);
+                    }
+                },
+            ));
+        self
+    }
+
+    /// Register a callback for call rejected events.
+    pub fn on_call_rejected<F>(mut self, f: F) -> Self
+    where
+        F: Fn() + Send + Sync + 'static,
+    {
+        self.event_listeners
+            .add(tower_resilience_core::FnListener::new(
+                move |event: &CircuitBreakerEvent| {
+                    if matches!(event, CircuitBreakerEvent::CallRejected { .. }) {
+                        f();
+                    }
+                },
+            ));
+        self
+    }
+
+    /// Register a callback for success recorded events.
+    pub fn on_success<F>(mut self, f: F) -> Self
+    where
+        F: Fn(crate::CircuitState) + Send + Sync + 'static,
+    {
+        self.event_listeners
+            .add(tower_resilience_core::FnListener::new(
+                move |event: &CircuitBreakerEvent| {
+                    if let CircuitBreakerEvent::SuccessRecorded { state, .. } = event {
+                        f(*state);
+                    }
+                },
+            ));
+        self
+    }
+
+    /// Register a callback for failure recorded events.
+    pub fn on_failure<F>(mut self, f: F) -> Self
+    where
+        F: Fn(crate::CircuitState) + Send + Sync + 'static,
+    {
+        self.event_listeners
+            .add(tower_resilience_core::FnListener::new(
+                move |event: &CircuitBreakerEvent| {
+                    if let CircuitBreakerEvent::FailureRecorded { state, .. } = event {
+                        f(*state);
+                    }
+                },
+            ));
         self
     }
 
@@ -116,7 +204,7 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
             minimum_number_of_calls: self
                 .minimum_number_of_calls
                 .unwrap_or(self.sliding_window_size),
-            #[cfg(feature = "tracing")]
+            event_listeners: self.event_listeners,
             name: self.name,
         };
 

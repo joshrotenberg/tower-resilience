@@ -8,4 +8,4 @@
 
 pub mod events;
 
-pub use events::{EventListener, ResilienceEvent};
+pub use events::{EventListener, EventListeners, FnListener, ResilienceEvent};

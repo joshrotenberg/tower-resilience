@@ -1,0 +1,35 @@
+[package]
+name = "tower-resilience"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+authors = ["Josh Rotenberg <joshrotenberg@gmail.com>"]
+description = "Composable resilience and fault-tolerance middleware for Tower services"
+repository = "https://github.com/joshrotenberg/tower-resilience"
+keywords = ["tower", "resilience", "circuit-breaker", "bulkhead", "middleware"]
+categories = ["asynchronous", "network-programming"]
+
+[dependencies]
+# Core is always included
+tower-resilience-core = { version = "0.1.0", path = "../tower-resilience-core" }
+
+# Optional pattern dependencies
+tower-circuitbreaker = { version = "0.1.0", path = "../tower-circuitbreaker", optional = true }
+tower-bulkhead = { version = "0.1.0", path = "../tower-bulkhead", optional = true }
+
+[features]
+default = []
+# Individual patterns
+circuitbreaker = ["dep:tower-circuitbreaker"]
+bulkhead = ["dep:tower-bulkhead"]
+# Enable all patterns
+full = ["circuitbreaker", "bulkhead"]
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+tower = { version = "0.5", features = ["util"] }
+
+[[example]]
+name = "combined"
+required-features = ["circuitbreaker", "bulkhead"]
