@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.2.0...tower-resilience-circuitbreaker-v0.2.1) - 2025-10-08
+
+### Fixed
+
+- add README.md to all published crates ([#68](https://github.com/joshrotenberg/tower-resilience/pull/68))
+
+### Other
+
+- update MSRV to 1.64.0 to match Tower ([#65](https://github.com/joshrotenberg/tower-resilience/pull/65))
+
 ## [0.2.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-circuitbreaker-v0.1.0...tower-circuitbreaker-v0.2.0) - 2025-10-08
 
 ### Added
