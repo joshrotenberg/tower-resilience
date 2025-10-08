@@ -1,7 +1,7 @@
 //! Tower layer for time limiter.
 
-use crate::TimeLimiter;
 use crate::config::TimeLimiterConfig;
+use crate::TimeLimiter;
 use std::sync::Arc;
 use tower::layer::Layer;
 

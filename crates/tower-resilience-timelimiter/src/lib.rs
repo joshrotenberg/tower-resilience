@@ -146,7 +146,7 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::Duration;
     use tokio::time::sleep;
-    use tower::{Layer, ServiceExt, service_fn};
+    use tower::{service_fn, Layer, ServiceExt};
 
     #[tokio::test]
     async fn test_success_within_timeout() {

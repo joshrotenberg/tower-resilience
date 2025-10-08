@@ -175,9 +175,9 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::Duration;
+    use tower::service_fn;
     use tower::Layer;
     use tower::ServiceExt;
-    use tower::service_fn;
 
     #[tokio::test]
     async fn cache_hit_returns_cached_response() {
