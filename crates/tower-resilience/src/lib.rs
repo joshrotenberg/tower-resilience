@@ -276,7 +276,7 @@
 //! ✅ Only retry GET, HEAD, PUT, DELETE; use idempotency keys for POST
 //!
 //! ❌ **No jitter**: All clients retry at same time (thundering herd)
-//! ✅ Use `exponential_random_backoff` for jitter
+//! ✅ Use `exponential_backoff` with randomization
 //!
 //! ❌ **Infinite retries**: Never give up
 //! ✅ Set reasonable `max_attempts` (3-5)
@@ -298,10 +298,7 @@
 //! # let http_client = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
 //! let retry = RetryConfig::<MyError>::builder()
 //!     .max_attempts(3)
-//!     .exponential_random_backoff(
-//!         Duration::from_millis(100),
-//!         Duration::from_secs(10)
-//!     )
+//!     .exponential_backoff(Duration::from_millis(100))
 //!     .retry_predicate(|err: &MyError| {
 //!         // Only retry transient errors
 //!         true  // Check if error is retryable
