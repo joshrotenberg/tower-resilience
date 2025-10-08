@@ -3,17 +3,17 @@ name: Benchmark
 on:
   pull_request:
     paths:
-      - 'crates/**'
-      - 'benches/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
+      - "crates/**"
+      - "benches/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
   push:
     branches:
       - main
   workflow_dispatch:
   schedule:
     # Run weekly on Monday at 00:00 UTC
-    - cron: '0 0 * * 1'
+    - cron: "0 0 * * 1"
 
 permissions:
   contents: write
@@ -25,8 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -45,17 +43,40 @@ jobs:
       - name: Run benchmarks
         run: cargo bench --bench happy_path_overhead -- --output-format bencher | tee output.txt
 
+      - name: Download previous benchmark data
+        if: github.event_name != 'pull_request'
+        uses: actions/cache@v4
+        with:
+          path: ./cache
+          key: benchmark-data
+
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
+        if: github.event_name != 'pull_request'
         with:
-          tool: 'cargo'
+          tool: "cargo"
           output-file-path: output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: ${{ github.event_name != 'pull_request' }}
+          auto-push: false
+          save-data-file:
           comment-on-alert: true
-          alert-threshold: '150%'
+          alert-threshold: "150%"
           fail-on-alert: false
-          alert-comment-cc-users: '@joshrotenberg'
+          alert-comment-cc-users: "@joshrotenberg"
+
+      - name: Store benchmark result (PR)
+        uses: benchmark-action/github-action-benchmark@v1
+        if: github.event_name == 'pull_request'
+        with:
+          tool: "cargo"
+          output-file-path: output.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          comment-on-alert: true
+          alert-threshold: "150%"
+          fail-on-alert: false
+          save-data-file: false
+          external-data-json-path: "./cache/benchmark-data.json
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
