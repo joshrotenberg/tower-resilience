@@ -13,7 +13,7 @@ use tower_resilience_timelimiter::TimeLimiterConfig;
 struct TestRequest(u64);
 
 #[derive(Clone, Debug)]
-struct TestResponse(u64);
+struct TestResponse(#[allow(dead_code)] u64);
 
 #[derive(Clone, Debug)]
 struct TestError;
