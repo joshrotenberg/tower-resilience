@@ -138,7 +138,7 @@ async fn multiple_sequential_calls() {
         .layer();
 
     let svc = service_fn(|req: u32| async move {
-        if req % 2 == 0 {
+        if req.is_multiple_of(2) {
             sleep(Duration::from_millis(10)).await;
             Ok::<_, TestError>(req * 2)
         } else {

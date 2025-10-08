@@ -210,7 +210,7 @@ fn event_with_different_data_types() {
     listeners.emit(&event);
 
     assert_eq!(value_clone.load(Ordering::SeqCst), 42);
-    assert_eq!(*received_flag.lock().unwrap(), true);
+    assert!(*received_flag.lock().unwrap());
     assert_eq!(*received_data.lock().unwrap(), vec![1, 2, 3, 4, 5]);
 }
 
