@@ -7,6 +7,7 @@ use tower_resilience_core::{EventListeners, FnListener};
 /// Configuration for the time limiter pattern.
 pub struct TimeLimiterConfig {
     pub(crate) timeout_duration: Duration,
+    #[allow(dead_code)]
     pub(crate) cancel_running_future: bool,
     pub(crate) event_listeners: EventListeners<TimeLimiterEvent>,
     pub(crate) name: String,
