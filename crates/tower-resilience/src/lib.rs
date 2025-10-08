@@ -9,6 +9,9 @@
 //! - **Circuit Breaker** (`circuitbreaker` feature): Prevents cascading failures by
 //!   temporarily blocking calls to failing services
 //! - **Bulkhead** (`bulkhead` feature): Isolates resources by limiting concurrent calls
+//! - **Time Limiter** (`timelimiter` feature): Advanced timeout handling with event system
+//! - **Cache** (`cache` feature): Response memoization with LRU eviction and TTL
+//! - **Retry** (`retry` feature): Enhanced retry with flexible backoff strategies
 //!
 //! # Usage
 //!
@@ -62,6 +65,9 @@
 //!
 //! - `tower-circuitbreaker`
 //! - `tower-bulkhead`
+//! - `tower-timelimiter`
+//! - `tower-cache`
+//! - `tower-retry-plus`
 //! - `tower-resilience-core` (shared infrastructure)
 
 // Re-export core (always available)
@@ -73,3 +79,12 @@ pub use tower_circuitbreaker as circuitbreaker;
 
 #[cfg(feature = "bulkhead")]
 pub use tower_bulkhead as bulkhead;
+
+#[cfg(feature = "timelimiter")]
+pub use tower_timelimiter as timelimiter;
+
+#[cfg(feature = "cache")]
+pub use tower_cache as cache;
+
+#[cfg(feature = "retry")]
+pub use tower_retry_plus as retry;
