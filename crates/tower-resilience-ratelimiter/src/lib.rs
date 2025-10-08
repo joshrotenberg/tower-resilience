@@ -157,8 +157,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
     use std::time::Duration;
     use tower::service_fn;
     use tower::{Layer, ServiceExt};
@@ -215,24 +215,20 @@ mod tests {
         let mut service = layer.layer(service);
 
         // First 2 should succeed
-        assert!(
-            service
-                .ready()
-                .await
-                .unwrap()
-                .call("1".to_string())
-                .await
-                .is_ok()
-        );
-        assert!(
-            service
-                .ready()
-                .await
-                .unwrap()
-                .call("2".to_string())
-                .await
-                .is_ok()
-        );
+        assert!(service
+            .ready()
+            .await
+            .unwrap()
+            .call("1".to_string())
+            .await
+            .is_ok());
+        assert!(service
+            .ready()
+            .await
+            .unwrap()
+            .call("2".to_string())
+            .await
+            .is_ok());
 
         // Third should be rate limited
         let result = service.ready().await.unwrap().call("3".to_string()).await;
@@ -266,38 +262,32 @@ mod tests {
         let mut service = layer.layer(service);
 
         // Use up permits
-        assert!(
-            service
-                .ready()
-                .await
-                .unwrap()
-                .call("1".to_string())
-                .await
-                .is_ok()
-        );
-        assert!(
-            service
-                .ready()
-                .await
-                .unwrap()
-                .call("2".to_string())
-                .await
-                .is_ok()
-        );
+        assert!(service
+            .ready()
+            .await
+            .unwrap()
+            .call("1".to_string())
+            .await
+            .is_ok());
+        assert!(service
+            .ready()
+            .await
+            .unwrap()
+            .call("2".to_string())
+            .await
+            .is_ok());
 
         // Wait for refresh
         tokio::time::sleep(Duration::from_millis(150)).await;
 
         // Should be able to make requests again
-        assert!(
-            service
-                .ready()
-                .await
-                .unwrap()
-                .call("3".to_string())
-                .await
-                .is_ok()
-        );
+        assert!(service
+            .ready()
+            .await
+            .unwrap()
+            .call("3".to_string())
+            .await
+            .is_ok());
         assert_eq!(call_count.load(Ordering::SeqCst), 3);
     }
 
@@ -351,15 +341,13 @@ mod tests {
         let mut service = layer.layer(service);
 
         // First request succeeds
-        assert!(
-            service
-                .ready()
-                .await
-                .unwrap()
-                .call("1".to_string())
-                .await
-                .is_ok()
-        );
+        assert!(service
+            .ready()
+            .await
+            .unwrap()
+            .call("1".to_string())
+            .await
+            .is_ok());
 
         // Second request should wait for refresh and succeed
         let start = std::time::Instant::now();

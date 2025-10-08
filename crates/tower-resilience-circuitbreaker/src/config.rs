@@ -1,5 +1,5 @@
-use crate::SharedFailureClassifier;
 use crate::events::CircuitBreakerEvent;
+use crate::SharedFailureClassifier;
 use std::sync::Arc;
 use std::time::Duration;
 use tower_resilience_core::EventListeners;

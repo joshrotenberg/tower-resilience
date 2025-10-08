@@ -376,7 +376,7 @@ where
 
             #[cfg(feature = "tracing")]
             let circuit_check_span = {
-                use tracing::{Level, span};
+                use tracing::{span, Level};
                 let state = {
                     // To avoid holding the lock too long, just get the state for span field.
                     let circuit = circuit.lock().await;

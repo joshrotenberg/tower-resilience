@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/tower-resilience.svg)](https://crates.io/crates/tower-resilience)
 [![Documentation](https://docs.rs/tower-resilience/badge.svg)](https://docs.rs/tower-resilience)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
-[![Rust Version](https://img.shields.io/badge/rust-1.85%2B-blue.svg)](https://www.rust-lang.org)
+[![Rust Version](https://img.shields.io/badge/rust-1.64.0%2B-blue.svg)](https://www.rust-lang.org)
 
 A comprehensive resilience and fault-tolerance toolkit for [Tower](https://github.com/tower-rs/tower) services, inspired by [Resilience4j](https://resilience4j.readme.io/).
 
@@ -215,6 +215,15 @@ Tower provides some built-in resilience (timeout, retry, rate limiting), but tow
 - **Unified events** - Consistent observability across all patterns
 - **Builder APIs** - Ergonomic configuration with sensible defaults
 - **Production-ready** - Patterns inspired by battle-tested Resilience4j
+
+## Minimum Supported Rust Version (MSRV)
+
+This crate's MSRV is **1.64.0**, matching [Tower's MSRV policy](https://github.com/tower-rs/tower).
+
+We follow Tower's approach:
+- MSRV bumps are not considered breaking changes
+- When increasing MSRV, the new version must have been released at least 6 months ago
+- MSRV is tested in CI to prevent unintentional increases
 
 ## License
 

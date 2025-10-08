@@ -1,5 +1,5 @@
-use crate::CircuitBreaker;
 use crate::config::CircuitBreakerConfig;
+use crate::CircuitBreaker;
 use std::sync::Arc;
 
 /// A Tower Layer that applies circuit breaker behavior to an inner service.

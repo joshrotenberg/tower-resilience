@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt};
 use tower_resilience_retry::{ExponentialBackoff, RetryConfig};

@@ -4,7 +4,7 @@
 
 use std::time::Duration;
 use tokio::time::sleep;
-use tower::{Service, service_fn};
+use tower::{service_fn, Service};
 use tower_resilience_circuitbreaker::CircuitBreakerConfig;
 
 #[tokio::main]
