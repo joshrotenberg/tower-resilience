@@ -8,7 +8,8 @@ use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
 use tower_timelimiter::TimeLimiterConfig;
 
-const TOLERANCE_MS: u64 = 10;
+// Windows has less precise timers, so use larger tolerance
+const TOLERANCE_MS: u64 = 30;
 
 #[tokio::test]
 async fn timeout_fires_at_correct_time() {
