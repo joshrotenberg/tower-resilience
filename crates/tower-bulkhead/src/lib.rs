@@ -53,7 +53,7 @@ mod tests {
 
     #[test]
     fn test_config_builder_defaults() {
-        let config = BulkheadConfig::builder().build();
+        let _config = BulkheadConfig::builder().build();
         // Layer is built, so we can't inspect config directly
         // This test just ensures the builder works
     }

@@ -1,6 +1,8 @@
 use crate::config::CircuitBreakerConfig;
+use crate::events::CircuitBreakerEvent;
 #[cfg(feature = "metrics")]
 use metrics::{counter, gauge};
+use std::time::Instant;
 
 /// Represents the state of the circuit breaker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -19,6 +21,7 @@ pub(crate) struct Circuit {
     failure_count: usize,
     success_count: usize,
     total_count: usize,
+    slow_call_count: usize,
 }
 
 impl Default for Circuit {
@@ -29,6 +32,7 @@ impl Default for Circuit {
             failure_count: 0,
             success_count: 0,
             total_count: 0,
+            slow_call_count: 0,
         }
     }
 }
@@ -42,9 +46,37 @@ impl Circuit {
         self.state
     }
 
-    pub fn record_success(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+    pub fn record_success(
+        &mut self,
+        config: &CircuitBreakerConfig<impl Sized, impl Sized>,
+        duration: std::time::Duration,
+    ) {
         self.success_count += 1;
         self.total_count += 1;
+
+        // Check if call was slow
+        if let Some(threshold) = config.slow_call_duration_threshold {
+            if duration >= threshold {
+                self.slow_call_count += 1;
+                config
+                    .event_listeners
+                    .emit(&CircuitBreakerEvent::SlowCallDetected {
+                        pattern_name: config.name.clone(),
+                        timestamp: Instant::now(),
+                        duration,
+                        state: self.state,
+                    });
+            }
+        }
+
+        // Emit event
+        config
+            .event_listeners
+            .emit(&CircuitBreakerEvent::SuccessRecorded {
+                pattern_name: config.name.clone(),
+                timestamp: Instant::now(),
+                state: self.state,
+            });
 
         #[cfg(feature = "metrics")]
         counter!("circuitbreaker_calls_total", "outcome" => "success").increment(1);
@@ -52,7 +84,7 @@ impl Circuit {
         match self.state {
             CircuitState::HalfOpen => {
                 if self.success_count >= config.permitted_calls_in_half_open {
-                    self.transition_to(CircuitState::Closed);
+                    self.transition_to(CircuitState::Closed, config);
                 }
             }
             _ => {
@@ -63,16 +95,44 @@ impl Circuit {
         }
     }
 
-    pub fn record_failure(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+    pub fn record_failure(
+        &mut self,
+        config: &CircuitBreakerConfig<impl Sized, impl Sized>,
+        duration: std::time::Duration,
+    ) {
         self.failure_count += 1;
         self.total_count += 1;
+
+        // Check if call was slow (failures can also be slow)
+        if let Some(threshold) = config.slow_call_duration_threshold {
+            if duration >= threshold {
+                self.slow_call_count += 1;
+                config
+                    .event_listeners
+                    .emit(&CircuitBreakerEvent::SlowCallDetected {
+                        pattern_name: config.name.clone(),
+                        timestamp: Instant::now(),
+                        duration,
+                        state: self.state,
+                    });
+            }
+        }
+
+        // Emit event
+        config
+            .event_listeners
+            .emit(&CircuitBreakerEvent::FailureRecorded {
+                pattern_name: config.name.clone(),
+                timestamp: Instant::now(),
+                state: self.state,
+            });
 
         #[cfg(feature = "metrics")]
         counter!("circuitbreaker_calls_total", "outcome" => "failure").increment(1);
 
         match self.state {
             CircuitState::HalfOpen => {
-                self.transition_to(CircuitState::Open);
+                self.transition_to(CircuitState::Open, config);
             }
             _ => {
                 if self.total_count >= config.sliding_window_size {
@@ -84,44 +144,102 @@ impl Circuit {
 
     pub fn try_acquire(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) -> bool {
         match self.state {
-            CircuitState::Closed => true,
+            CircuitState::Closed => {
+                config
+                    .event_listeners
+                    .emit(&CircuitBreakerEvent::CallPermitted {
+                        pattern_name: config.name.clone(),
+                        timestamp: Instant::now(),
+                        state: self.state,
+                    });
+                true
+            }
             CircuitState::Open => {
                 if self.last_state_change.elapsed() >= config.wait_duration_in_open {
-                    self.transition_to(CircuitState::HalfOpen);
+                    self.transition_to(CircuitState::HalfOpen, config);
+                    config
+                        .event_listeners
+                        .emit(&CircuitBreakerEvent::CallPermitted {
+                            pattern_name: config.name.clone(),
+                            timestamp: Instant::now(),
+                            state: self.state,
+                        });
                     true
                 } else {
+                    config
+                        .event_listeners
+                        .emit(&CircuitBreakerEvent::CallRejected {
+                            pattern_name: config.name.clone(),
+                            timestamp: Instant::now(),
+                        });
                     false
                 }
             }
             CircuitState::HalfOpen => {
-                self.success_count + self.failure_count < config.permitted_calls_in_half_open
+                let permitted =
+                    self.success_count + self.failure_count < config.permitted_calls_in_half_open;
+                if permitted {
+                    config
+                        .event_listeners
+                        .emit(&CircuitBreakerEvent::CallPermitted {
+                            pattern_name: config.name.clone(),
+                            timestamp: Instant::now(),
+                            state: self.state,
+                        });
+                } else {
+                    config
+                        .event_listeners
+                        .emit(&CircuitBreakerEvent::CallRejected {
+                            pattern_name: config.name.clone(),
+                            timestamp: Instant::now(),
+                        });
+                }
+                permitted
             }
         }
     }
 
-    pub fn force_open(&mut self) {
-        self.transition_to(CircuitState::Open);
+    pub fn force_open(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+        self.transition_to(CircuitState::Open, config);
     }
 
-    pub fn force_closed(&mut self) {
-        self.transition_to(CircuitState::Closed);
+    pub fn force_closed(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+        self.transition_to(CircuitState::Closed, config);
     }
 
-    pub fn reset(&mut self) {
-        self.transition_to(CircuitState::Closed);
+    pub fn reset(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+        self.transition_to(CircuitState::Closed, config);
     }
 
-    fn transition_to(&mut self, state: CircuitState) {
-        #[cfg(feature = "tracing")]
-        if self.state != state {
-            tracing::info!(from = ?self.state, to = ?state, "Circuit state transition");
+    fn transition_to(
+        &mut self,
+        state: CircuitState,
+        config: &CircuitBreakerConfig<impl Sized, impl Sized>,
+    ) {
+        if self.state == state {
+            return;
         }
+
+        let from_state = self.state;
+
+        // Emit event
+        config
+            .event_listeners
+            .emit(&CircuitBreakerEvent::StateTransition {
+                pattern_name: config.name.clone(),
+                timestamp: Instant::now(),
+                from_state,
+                to_state: state,
+            });
+
+        #[cfg(feature = "tracing")]
+        tracing::info!(from = ?from_state, to = ?state, "Circuit state transition");
 
         #[cfg(feature = "metrics")]
         {
             counter!(
                 "circuitbreaker_transitions_total",
-                "from" => match self.state {
+                "from" => match from_state {
                     CircuitState::Closed => "Closed",
                     CircuitState::Open => "Open",
                     CircuitState::HalfOpen => "HalfOpen",
@@ -147,6 +265,7 @@ impl Circuit {
         self.success_count = 0;
         self.failure_count = 0;
         self.total_count = 0;
+        self.slow_call_count = 0;
     }
 
     fn evaluate_window(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
@@ -155,10 +274,17 @@ impl Circuit {
         }
 
         let failure_rate = self.failure_count as f64 / self.total_count as f64;
-        if failure_rate >= config.failure_rate_threshold {
-            self.transition_to(CircuitState::Open);
+        let slow_call_rate = self.slow_call_count as f64 / self.total_count as f64;
+
+        // Open if either failure rate or slow call rate exceeds threshold
+        let should_open = failure_rate >= config.failure_rate_threshold
+            || (config.slow_call_duration_threshold.is_some()
+                && slow_call_rate >= config.slow_call_rate_threshold);
+
+        if should_open {
+            self.transition_to(CircuitState::Open, config);
         } else {
-            self.transition_to(CircuitState::Closed);
+            self.transition_to(CircuitState::Closed, config);
         }
     }
 }
