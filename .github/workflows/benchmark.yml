@@ -76,7 +76,7 @@ jobs:
           alert-threshold: "150%"
           fail-on-alert: false
           save-data-file: false
-          external-data-json-path: "./cache/benchmark-data.json
+          external-data-json-path: "./cache/benchmark-data.json"
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
