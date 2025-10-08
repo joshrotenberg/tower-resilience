@@ -1,0 +1,65 @@
+name: Benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'benches/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    # Run weekly on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  benchmark:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run benchmarks
+        run: cargo bench --bench happy_path_overhead -- --output-format bencher | tee output.txt
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'cargo'
+          output-file-path: output.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name != 'pull_request' }}
+          comment-on-alert: true
+          alert-threshold: '150%'
+          fail-on-alert: false
+          alert-comment-cc-users: '@joshrotenberg'
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: output.txt
+          retention-days: 90
