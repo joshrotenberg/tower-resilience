@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::task::JoinSet;
 use tower::{Layer, Service, ServiceExt};
-use tower_cache::CacheConfig;
+use tower_resilience_cache::CacheConfig;
 
 #[tokio::test]
 async fn concurrent_reads_from_same_cached_item() {

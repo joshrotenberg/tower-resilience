@@ -8,7 +8,7 @@ use std::sync::{
 use std::task::{Context, Poll};
 use std::time::Duration;
 use tower::{Service, service_fn};
-use tower_circuitbreaker::{CircuitBreakerConfig, CircuitBreakerError, CircuitState};
+use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitBreakerError, CircuitState};
 
 #[derive(Clone)]
 struct FlakyService {

@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service};
-use tower_bulkhead::{BulkheadConfig, BulkheadError};
+use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
 
 #[derive(Debug)]
 enum ExampleError {

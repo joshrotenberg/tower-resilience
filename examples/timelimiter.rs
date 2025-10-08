@@ -6,7 +6,7 @@
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterConfig;
 
 #[derive(Debug)]
 struct TimeoutError;

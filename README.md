@@ -59,7 +59,7 @@ let service = ServiceBuilder::new()
 Prevent cascading failures by opening the circuit when error rate exceeds threshold:
 
 ```rust
-use tower_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 
 let layer = CircuitBreakerLayer::builder()
     .failure_rate_threshold(0.5)  // Open at 50% failure rate
@@ -74,7 +74,7 @@ See [examples/circuitbreaker.rs](examples/circuitbreaker.rs) for a complete exam
 Limit concurrent requests to prevent resource exhaustion:
 
 ```rust
-use tower_bulkhead::BulkheadLayer;
+use tower_resilience_bulkhead::BulkheadLayer;
 
 let layer = BulkheadLayer::builder()
     .max_concurrent_calls(10)
@@ -89,7 +89,7 @@ See [examples/bulkhead.rs](examples/bulkhead.rs) for a complete example.
 Enforce timeouts on operations:
 
 ```rust
-use tower_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterConfig;
 
 let config = TimeLimiterConfig::builder()
     .timeout_duration(Duration::from_secs(30))
@@ -102,7 +102,7 @@ let config = TimeLimiterConfig::builder()
 Retry failed requests with exponential backoff:
 
 ```rust
-use tower_retry_plus::{RetryConfig, ExponentialBackoff};
+use tower_resilience_retry::{RetryConfig, ExponentialBackoff};
 
 let config: RetryConfig<MyError> = RetryConfig::builder()
     .max_attempts(5)
@@ -115,7 +115,7 @@ let config: RetryConfig<MyError> = RetryConfig::builder()
 Control request rate to protect downstream services:
 
 ```rust
-use tower_ratelimiter_plus::RateLimiterConfig;
+use tower_resilience_ratelimiter::RateLimiterConfig;
 
 let config = RateLimiterConfig::builder()
     .max_permits(100)
@@ -128,7 +128,7 @@ let config = RateLimiterConfig::builder()
 Cache responses to reduce load on expensive operations:
 
 ```rust
-use tower_cache::CacheConfig;
+use tower_resilience_cache::CacheConfig;
 
 let config = CacheConfig::builder()
     .max_capacity(1000)

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_cache::CacheConfig;
+use tower_resilience_cache::CacheConfig;
 
 #[tokio::main]
 async fn main() {

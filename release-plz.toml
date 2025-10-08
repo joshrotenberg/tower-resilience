@@ -12,9 +12,9 @@ name = "tower-resilience-core"
 changelog_path = "crates/tower-resilience-core/CHANGELOG.md"
 
 [[package]]
-name = "tower-circuitbreaker"
-changelog_path = "crates/tower-circuitbreaker/CHANGELOG.md"
+name = "tower-resilience-circuitbreaker"
+changelog_path = "crates/tower-resilience-circuitbreaker/CHANGELOG.md"
 
 [[package]]
-name = "tower-bulkhead"
-changelog_path = "crates/tower-bulkhead/CHANGELOG.md"
+name = "tower-resilience-bulkhead"
+changelog_path = "crates/tower-resilience-bulkhead/CHANGELOG.md"

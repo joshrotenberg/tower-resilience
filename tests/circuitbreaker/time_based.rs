@@ -5,7 +5,7 @@ use std::sync::{
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::Service;
-use tower_circuitbreaker::{CircuitBreakerConfig, CircuitState, SlidingWindowType};
+use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState, SlidingWindowType};
 
 /// Test that time-based window fills and evaluates correctly
 #[tokio::test]

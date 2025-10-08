@@ -13,7 +13,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt};
-use tower_cache::CacheConfig;
+use tower_resilience_cache::CacheConfig;
 
 #[tokio::test]
 async fn empty_cache_behavior() {

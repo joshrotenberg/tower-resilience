@@ -23,8 +23,8 @@ impl std::fmt::Display for ServiceError {
 
 impl std::error::Error for ServiceError {}
 
-impl From<tower_bulkhead::BulkheadError> for ServiceError {
-    fn from(_: tower_bulkhead::BulkheadError) -> Self {
+impl From<tower_resilience_bulkhead::BulkheadError> for ServiceError {
+    fn from(_: tower_resilience_bulkhead::BulkheadError) -> Self {
         ServiceError
     }
 }

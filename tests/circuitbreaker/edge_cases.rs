@@ -5,7 +5,7 @@ use std::sync::{
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::Service;
-use tower_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
 
 /// Test multiple event listeners on same event type
 #[tokio::test]

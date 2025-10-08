@@ -4,7 +4,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tower::Service;
-use tower_circuitbreaker::{CircuitBreakerConfig, SlidingWindowType};
+use tower_resilience_circuitbreaker::{CircuitBreakerConfig, SlidingWindowType};
 
 /// Test that configuration builder accepts valid values
 #[test]
@@ -42,7 +42,10 @@ async fn failure_rate_threshold_zero() {
     }
 
     // With 0.0 threshold, even 100% failure rate should trip it
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Open);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Open
+    );
 }
 
 /// Test edge case: failure rate threshold = 1.0 (only open at 100%)
@@ -80,7 +83,10 @@ async fn failure_rate_threshold_one() {
     // 9 failures out of 10 = 90% failure rate
     // With threshold of 1.0, only 100% failure would trip it
     // 0.9 < 1.0, so should stay closed
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Closed);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Closed
+    );
 }
 
 /// Test edge case: slow call rate threshold = 0.0
@@ -107,7 +113,10 @@ async fn slow_call_rate_threshold_zero() {
     }
 
     // All calls are slow, with 0.0 threshold it should trip
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Open);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Open
+    );
 }
 
 /// Test edge case: slow call rate threshold = 1.0
@@ -134,7 +143,10 @@ async fn slow_call_rate_threshold_one() {
     }
 
     // All slow but threshold is 1.0, should stay closed until 100%
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Open);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Open
+    );
 }
 
 /// Test edge case: sliding window size = 1 (minimum)
@@ -154,7 +166,10 @@ async fn sliding_window_size_one() {
 
     // Single failure should trip it
     let _ = cb.call(()).await;
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Open);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Open
+    );
 }
 
 /// Test edge case: minimum calls = 0 (always evaluate)
@@ -210,8 +225,8 @@ async fn minimum_calls_greater_than_window() {
     let state = cb.state().await;
     // If implementation allows evaluation despite minimum > window, it would open
     assert!(
-        state == tower_circuitbreaker::CircuitState::Open
-            || state == tower_circuitbreaker::CircuitState::Closed,
+        state == tower_resilience_circuitbreaker::CircuitState::Open
+            || state == tower_resilience_circuitbreaker::CircuitState::Closed,
         "State can be either Open or Closed depending on implementation"
     );
 }
@@ -236,7 +251,10 @@ async fn minimum_calls_equals_window() {
         let _ = cb.call(()).await;
     }
 
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Open);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Open
+    );
 }
 
 /// Test edge case: zero wait duration in open state
@@ -259,11 +277,17 @@ async fn zero_wait_duration() {
     for _ in 0..5 {
         let _ = cb.call(()).await;
     }
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Open);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Open
+    );
 
     // Should immediately transition to half-open
     let _ = cb.call(()).await;
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Open); // Fails and reopens
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Open
+    ); // Fails and reopens
 }
 
 /// Test edge case: permitted calls in half-open = 0
@@ -286,7 +310,10 @@ async fn zero_permitted_calls_half_open() {
     for _ in 0..5 {
         let _ = cb.call(()).await;
     }
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Open);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Open
+    );
 
     // Wait for half-open
     tokio::time::sleep(Duration::from_millis(100)).await;
@@ -331,7 +358,10 @@ async fn count_based_with_duration() {
         let _ = cb.call(()).await;
     }
 
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Open);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Open
+    );
 }
 
 /// Test very large window size
@@ -355,5 +385,8 @@ async fn very_large_window_size() {
     }
 
     // Should stay closed (all successes)
-    assert_eq!(cb.state().await, tower_circuitbreaker::CircuitState::Closed);
+    assert_eq!(
+        cb.state().await,
+        tower_resilience_circuitbreaker::CircuitState::Closed
+    );
 }

@@ -12,7 +12,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tower::{Layer, Service, ServiceBuilder, ServiceExt};
-use tower_cache::CacheConfig;
+use tower_resilience_cache::CacheConfig;
 
 #[tokio::test]
 async fn layer_composition_with_service_builder() {

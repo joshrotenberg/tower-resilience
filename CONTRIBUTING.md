@@ -29,18 +29,18 @@ cargo run --example bulkhead
 cargo run --example retry
 
 # Run module-specific examples
-cargo run --example circuitbreaker_example -p tower-circuitbreaker
+cargo run --example circuitbreaker_example -p tower-resilience-circuitbreaker
 ```
 
 ## Project Structure
 
 - `crates/tower-resilience-core` - Shared infrastructure (events, metrics)
-- `crates/tower-circuitbreaker` - Circuit breaker pattern
-- `crates/tower-bulkhead` - Bulkhead pattern
-- `crates/tower-timelimiter` - Timeout handling
-- `crates/tower-retry-plus` - Retry with advanced backoff
-- `crates/tower-cache` - Response caching
-- `crates/tower-ratelimiter-plus` - Rate limiting
+- `crates/tower-resilience-circuitbreaker` - Circuit breaker pattern
+- `crates/tower-resilience-bulkhead` - Bulkhead pattern
+- `crates/tower-resilience-timelimiter` - Timeout handling
+- `crates/tower-resilience-retry` - Retry with advanced backoff
+- `crates/tower-resilience-cache` - Response caching
+- `crates/tower-resilience-ratelimiter` - Rate limiting
 - `crates/tower-resilience` - Meta-crate re-exporting all patterns
 
 ## Development Guidelines
