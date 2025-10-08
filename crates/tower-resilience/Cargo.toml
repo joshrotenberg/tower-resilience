@@ -12,14 +12,14 @@ categories = ["asynchronous", "network-programming"]
 
 [dependencies]
 # Core is always included
-tower-resilience-core = { version = "0.1.0", path = "../tower-resilience-core" }
+tower-resilience-core = { version = "0.2.0", path = "../tower-resilience-core" }
 
 # Optional pattern dependencies
-tower-circuitbreaker = { version = "0.1.0", path = "../tower-circuitbreaker", optional = true }
-tower-bulkhead = { version = "0.1.0", path = "../tower-bulkhead", optional = true }
+tower-circuitbreaker = { version = "0.2.0", path = "../tower-circuitbreaker", optional = true }
+tower-bulkhead = { version = "0.2.0", path = "../tower-bulkhead", optional = true }
 tower-timelimiter = { version = "0.1.0", path = "../tower-timelimiter", optional = true }
 tower-cache = { version = "0.1.0", path = "../tower-cache", optional = true }
-tower-retry-plus = { version = "0.1.0", path = "../tower-retry-plus", optional = true }
+tower-retry-plus = { version = "0.2.0", path = "../tower-retry-plus", optional = true }
 
 [features]
 default = []
