@@ -36,19 +36,22 @@
 //!
 //! # async fn example() {
 //! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+//! // Build bulkhead layer (implements Tower Layer trait)
+//! let bulkhead_layer = BulkheadConfig::builder()
+//!     .max_concurrent_calls(10)
+//!     .build();
+//!
 //! let service = ServiceBuilder::new()
-//!     .layer(
-//!         CircuitBreakerConfig::builder()
-//!             .failure_rate_threshold(0.5)
-//!             .sliding_window_size(100)
-//!             .build()
-//!     )
-//!     .layer(
-//!         BulkheadConfig::builder()
-//!             .max_concurrent_calls(10)
-//!             .build()
-//!     )
+//!     .layer(bulkhead_layer)
 //!     .service(my_service);
+//!
+//! // Wrap with circuit breaker (uses manual .layer() method)
+//! let cb_layer = CircuitBreakerConfig::<(), std::io::Error>::builder()
+//!     .failure_rate_threshold(0.5)
+//!     .sliding_window_size(100)
+//!     .build();
+//!
+//! let _service = cb_layer.layer::<_, ()>(service);
 //! # }
 //! # }
 //! ```
