@@ -20,6 +20,7 @@ tower-resilience-bulkhead = { version = "0.2.0", path = "../tower-resilience-bul
 tower-resilience-timelimiter = { version = "0.1.0", path = "../tower-resilience-timelimiter", optional = true }
 tower-resilience-cache = { version = "0.1.0", path = "../tower-resilience-cache", optional = true }
 tower-resilience-retry = { version = "0.2.0", path = "../tower-resilience-retry", optional = true }
+tower-resilience-ratelimiter = { version = "0.2.0", path = "../tower-resilience-ratelimiter", optional = true }
 
 [features]
 default = []
@@ -29,8 +30,9 @@ bulkhead = ["dep:tower-resilience-bulkhead"]
 timelimiter = ["dep:tower-resilience-timelimiter"]
 cache = ["dep:tower-resilience-cache"]
 retry = ["dep:tower-resilience-retry"]
+ratelimiter = ["dep:tower-resilience-ratelimiter"]
 # Enable all patterns
-full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry"]
+full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry", "ratelimiter"]
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
