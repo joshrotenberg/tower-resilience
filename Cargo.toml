@@ -18,7 +18,7 @@ futures = { workspace = true }
 
 [dev-dependencies]
 metrics = { workspace = true }
-metrics-util = { version = "0.18", default-features = false, features = ["debugging"] }
+metrics-util = { version = "0.20", default-features = false, features = ["debugging"] }
 
 [workspace]
 resolver = "2"

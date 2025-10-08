@@ -20,7 +20,7 @@ tower-resilience-core.workspace = true
 
 tracing = { workspace = true, optional = true }
 metrics = { workspace = true, optional = true }
-metrics-util = { version = "0.19", optional = true }
+metrics-util = { version = "0.20", optional = true }
 
 [features]
 default = []
