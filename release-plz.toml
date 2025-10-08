@@ -1,0 +1,18 @@
+[workspace]
+# Changelog configuration
+changelog_update = true
+git_release_enable = true
+git_tag_enable = true
+
+# Generate separate changelogs for each crate
+[[package]]
+name = "tower-resilience-core"
+changelog_path = "crates/tower-resilience-core/CHANGELOG.md"
+
+[[package]]
+name = "tower-circuitbreaker"
+changelog_path = "crates/tower-circuitbreaker/CHANGELOG.md"
+
+[[package]]
+name = "tower-bulkhead"
+changelog_path = "crates/tower-bulkhead/CHANGELOG.md"

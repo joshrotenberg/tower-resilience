@@ -1,0 +1,34 @@
+[package]
+name = "tower-circuitbreaker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "A circuit breaker middleware for Tower services"
+keywords = ["tower", "middleware", "resilience", "circuit-breaker"]
+categories = ["asynchronous", "web-programming"]
+readme = "README.md"
+
+[dependencies]
+futures.workspace = true
+tokio.workspace = true
+tower.workspace = true
+thiserror.workspace = true
+tower-resilience-core.workspace = true
+
+tracing = { workspace = true, optional = true }
+metrics = { workspace = true, optional = true }
+metrics-util = { version = "0.19", optional = true }
+
+[features]
+default = []
+metrics = ["dep:metrics", "dep:metrics-util"]
+tracing = ["dep:tracing"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tower = { workspace = true, features = ["util"] }
+
+tracing-subscriber = "0.3"

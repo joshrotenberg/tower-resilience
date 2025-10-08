@@ -1,0 +1,58 @@
+[package]
+name = "tower-resilience-tests"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[features]
+metrics = []
+
+[dependencies]
+tower-resilience-core = { path = "crates/tower-resilience-core" }
+tower-circuitbreaker = { path = "crates/tower-circuitbreaker", features = ["metrics", "tracing"] }
+tower-bulkhead = { path = "crates/tower-bulkhead" }
+tower = { workspace = true }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+tracing-subscriber = "0.3"
+futures = { workspace = true }
+
+[dev-dependencies]
+metrics = { workspace = true }
+metrics-util = { version = "0.18", default-features = false, features = ["debugging"] }
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/tower-resilience-core",
+    "crates/tower-circuitbreaker",
+    "crates/tower-bulkhead",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/joshrotenberg/tower-resilience"
+authors = ["Josh Rotenberg <joshrotenberg@gmail.com>"]
+rust-version = "1.85"
+
+[workspace.dependencies]
+tower = { version = "0.5", features = ["util"] }
+tower-layer = "0.3"
+tower-service = "0.3"
+tokio = { version = "1", features = ["time", "sync"] }
+futures = "0.3"
+thiserror = "2.0"
+tracing = "0.1"
+metrics = "0.24"
+
+tower-resilience-core = { path = "crates/tower-resilience-core" }
+
+[workspace.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

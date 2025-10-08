@@ -1,0 +1,6 @@
+/target
+**/*.rs.bk
+*.pdb
+Cargo.lock
+.DS_Store
+CLAUDE.md

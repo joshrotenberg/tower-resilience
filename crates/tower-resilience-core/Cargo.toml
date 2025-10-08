@@ -1,0 +1,25 @@
+[package]
+name = "tower-resilience-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Core infrastructure for tower-resilience: events, metrics, and shared utilities"
+keywords = ["tower", "resilience", "middleware", "async"]
+categories = ["asynchronous", "web-programming"]
+
+[dependencies]
+thiserror.workspace = true
+tokio = { workspace = true, features = ["sync"] }
+tracing = { workspace = true, optional = true }
+metrics = { workspace = true, optional = true }
+
+[features]
+default = []
+tracing = ["dep:tracing"]
+metrics = ["dep:metrics"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
