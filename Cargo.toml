@@ -29,6 +29,7 @@ members = [
     "crates/tower-retry-plus",
     "crates/tower-timelimiter",
     "crates/tower-cache",
+    "crates/tower-ratelimiter-plus",
     "crates/tower-resilience",
 ]
 
