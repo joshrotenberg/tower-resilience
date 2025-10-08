@@ -4,7 +4,59 @@
 //! This implementation uses semaphore-based concurrency limiting to control
 //! the maximum number of concurrent calls to a service.
 //!
-//! # Example
+//! # Basic Example
+//!
+//! ```rust
+//! use tower::ServiceBuilder;
+//! use tower_bulkhead::BulkheadConfig;
+//! use std::time::Duration;
+//!
+//! # async fn example() {
+//! // Create a bulkhead that allows max 10 concurrent calls
+//! let layer = BulkheadConfig::builder()
+//!     .max_concurrent_calls(10)
+//!     .name("my-bulkhead")
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service_fn(|req: String| async move {
+//!         // Your service logic here
+//!         Ok::<_, ()>(req)
+//!     });
+//! # }
+//! ```
+//!
+//! # Example with Timeout
+//!
+//! Configure a maximum wait duration for requests when the bulkhead is at capacity:
+//!
+//! ```rust
+//! use tower::ServiceBuilder;
+//! use tower_bulkhead::{BulkheadConfig, BulkheadError};
+//! use std::time::Duration;
+//!
+//! # async fn example() {
+//! let layer = BulkheadConfig::builder()
+//!     .max_concurrent_calls(5)
+//!     .max_wait_duration(Some(Duration::from_secs(2)))
+//!     .name("timeout-bulkhead")
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service_fn(|req: String| async move {
+//!         Ok::<_, ()>(req)
+//!     });
+//!
+//! // Requests will timeout if they wait more than 2 seconds
+//! // for bulkhead capacity
+//! # }
+//! ```
+//!
+//! # Example with Event Listeners
+//!
+//! Monitor bulkhead behavior using event listeners:
 //!
 //! ```rust
 //! use tower::ServiceBuilder;
@@ -14,21 +66,56 @@
 //! # async fn example() {
 //! let layer = BulkheadConfig::builder()
 //!     .max_concurrent_calls(10)
-//!     .max_wait_duration(Some(Duration::from_secs(1)))
-//!     .name("my-bulkhead")
+//!     .name("monitored-bulkhead")
 //!     .on_call_permitted(|concurrent| {
-//!         println!("Call permitted, {} concurrent calls", concurrent);
+//!         println!("Call permitted ({} concurrent)", concurrent);
 //!     })
 //!     .on_call_rejected(|max| {
-//!         println!("Call rejected, max {} calls", max);
+//!         println!("Call rejected (max {} concurrent)", max);
+//!     })
+//!     .on_call_finished(|duration| {
+//!         println!("Call finished in {:?}", duration);
 //!     })
 //!     .build();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
 //!     .service_fn(|req: String| async move {
-//!         Ok::<_, std::io::Error>(req)
+//!         Ok::<_, ()>(req)
 //!     });
+//! # }
+//! ```
+//!
+//! # Error Handling
+//!
+//! The bulkhead passes through the inner service's errors directly.
+//! Use event listeners to track bulkhead rejections:
+//!
+//! ```rust
+//! use tower_bulkhead::BulkheadConfig;
+//! use tower::ServiceBuilder;
+//! use std::sync::atomic::{AtomicUsize, Ordering};
+//! use std::sync::Arc;
+//!
+//! # async fn example() {
+//! let rejections = Arc::new(AtomicUsize::new(0));
+//! let r = rejections.clone();
+//!
+//! let layer = BulkheadConfig::builder()
+//!     .max_concurrent_calls(5)
+//!     .on_call_rejected(move |_| {
+//!         r.fetch_add(1, Ordering::SeqCst);
+//!     })
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service_fn(|req: String| async move {
+//!         Ok::<_, ()>(req)
+//!     });
+//!
+//! // Check rejections counter to monitor bulkhead behavior
+//! println!("Rejections: {}", rejections.load(Ordering::SeqCst));
 //! # }
 //! ```
 
