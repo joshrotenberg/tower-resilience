@@ -73,7 +73,7 @@ impl BulkheadConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_bulkhead::BulkheadConfig;
+    /// use tower_resilience_bulkhead::BulkheadLayer;
     ///
     /// let config = BulkheadLayer::builder()
     ///     .max_concurrent_calls(10)
@@ -112,7 +112,7 @@ impl BulkheadConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_bulkhead::BulkheadConfig;
+    /// use tower_resilience_bulkhead::BulkheadLayer;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
     ///
@@ -156,7 +156,7 @@ impl BulkheadConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_bulkhead::BulkheadConfig;
+    /// use tower_resilience_bulkhead::BulkheadLayer;
     /// use std::time::Duration;
     ///
     /// let config = BulkheadLayer::builder()
@@ -193,7 +193,7 @@ impl BulkheadConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_bulkhead::BulkheadConfig;
+    /// use tower_resilience_bulkhead::BulkheadLayer;
     /// use std::time::Duration;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;

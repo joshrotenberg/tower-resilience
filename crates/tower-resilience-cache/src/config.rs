@@ -87,7 +87,7 @@ where
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_cache::CacheConfig;
+    /// use tower_resilience_cache::CacheLayer;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
     ///
@@ -129,7 +129,7 @@ where
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_cache::CacheConfig;
+    /// use tower_resilience_cache::CacheLayer;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
     ///
@@ -172,7 +172,7 @@ where
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_cache::CacheConfig;
+    /// use tower_resilience_cache::CacheLayer;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
     /// use std::time::Duration;

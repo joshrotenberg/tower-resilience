@@ -12,7 +12,7 @@ use tower::Layer;
 /// # Examples
 ///
 /// ```
-/// use tower_resilience_cache::CacheConfig;
+/// use tower_resilience_cache::CacheLayer;
 /// use tower::ServiceBuilder;
 /// use std::time::Duration;
 ///
