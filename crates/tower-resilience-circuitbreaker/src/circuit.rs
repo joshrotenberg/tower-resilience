@@ -1,7 +1,7 @@
 use crate::config::{CircuitBreakerConfig, SlidingWindowType};
 use crate::events::CircuitBreakerEvent;
 #[cfg(feature = "metrics")]
-use metrics::{counter, gauge};
+use metrics::{counter, gauge, histogram};
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::{Duration, Instant};
@@ -156,6 +156,10 @@ impl Circuit {
                     duration,
                     state: self.state,
                 });
+
+            #[cfg(feature = "metrics")]
+            counter!("circuitbreaker_slow_calls_total", "circuitbreaker" => config.name.clone())
+                .increment(1);
         }
 
         // Emit success event
@@ -168,7 +172,11 @@ impl Circuit {
             });
 
         #[cfg(feature = "metrics")]
-        counter!("circuitbreaker_calls_total", "outcome" => "success").increment(1);
+        {
+            counter!("circuitbreaker_calls_total", "circuitbreaker" => config.name.clone(), "outcome" => "success").increment(1);
+            histogram!("circuitbreaker_call_duration_seconds", "circuitbreaker" => config.name.clone())
+                .record(duration.as_secs_f64());
+        }
 
         match self.state {
             CircuitState::HalfOpen => {
@@ -227,6 +235,10 @@ impl Circuit {
                     duration,
                     state: self.state,
                 });
+
+            #[cfg(feature = "metrics")]
+            counter!("circuitbreaker_slow_calls_total", "circuitbreaker" => config.name.clone())
+                .increment(1);
         }
 
         // Emit failure event
@@ -239,7 +251,11 @@ impl Circuit {
             });
 
         #[cfg(feature = "metrics")]
-        counter!("circuitbreaker_calls_total", "outcome" => "failure").increment(1);
+        {
+            counter!("circuitbreaker_calls_total", "circuitbreaker" => config.name.clone(), "outcome" => "failure").increment(1);
+            histogram!("circuitbreaker_call_duration_seconds", "circuitbreaker" => config.name.clone())
+                .record(duration.as_secs_f64());
+        }
 
         match self.state {
             CircuitState::HalfOpen => {
@@ -348,6 +364,7 @@ impl Circuit {
         {
             counter!(
                 "circuitbreaker_transitions_total",
+                "circuitbreaker" => config.name.clone(),
                 "from" => match from_state {
                     CircuitState::Closed => "Closed",
                     CircuitState::Open => "Open",
@@ -361,7 +378,7 @@ impl Circuit {
             )
             .increment(1);
 
-            gauge!("circuitbreaker_state", "state" => match state {
+            gauge!("circuitbreaker_state", "circuitbreaker" => config.name.clone(), "state" => match state {
                 CircuitState::Closed => "Closed",
                 CircuitState::Open => "Open",
                 CircuitState::HalfOpen => "HalfOpen",
