@@ -1,6 +1,6 @@
 [package]
 name = "tower-resilience"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 rust-version.workspace = true
 readme = "../../README.md"
@@ -16,12 +16,12 @@ categories = ["asynchronous", "network-programming"]
 tower-resilience-core = { workspace = true }
 
 # Optional pattern dependencies
-tower-resilience-circuitbreaker = { version = "0.3.0", path = "../tower-resilience-circuitbreaker", optional = true }
-tower-resilience-bulkhead = { version = "0.3.0", path = "../tower-resilience-bulkhead", optional = true }
-tower-resilience-timelimiter = { version = "0.2.0", path = "../tower-resilience-timelimiter", optional = true }
-tower-resilience-cache = { version = "0.2.0", path = "../tower-resilience-cache", optional = true }
-tower-resilience-retry = { version = "0.3.0", path = "../tower-resilience-retry", optional = true }
-tower-resilience-ratelimiter = { version = "0.3.0", path = "../tower-resilience-ratelimiter", optional = true }
+tower-resilience-circuitbreaker = { version = "0.4.0", path = "../tower-resilience-circuitbreaker", optional = true }
+tower-resilience-bulkhead = { version = "0.4.0", path = "../tower-resilience-bulkhead", optional = true }
+tower-resilience-timelimiter = { version = "0.3.0", path = "../tower-resilience-timelimiter", optional = true }
+tower-resilience-cache = { version = "0.3.0", path = "../tower-resilience-cache", optional = true }
+tower-resilience-retry = { version = "0.4.0", path = "../tower-resilience-retry", optional = true }
+tower-resilience-ratelimiter = { version = "0.4.0", path = "../tower-resilience-ratelimiter", optional = true }
 
 [features]
 default = []

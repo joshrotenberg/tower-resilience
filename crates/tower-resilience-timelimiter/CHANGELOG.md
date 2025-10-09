@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-timelimiter-v0.2.0...tower-resilience-timelimiter-v0.3.0) - 2025-10-09
+
+### Other
+
+- [**breaking**] remove Config::builder(), standardize on Layer::builder() API ([#86](https://github.com/joshrotenberg/tower-resilience/pull/86))
+
 ## [0.2.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-timelimiter-v0.1.1...tower-resilience-timelimiter-v0.2.0) - 2025-10-09
 
 ### Added
