@@ -771,7 +771,7 @@
 //! When composing multiple resilience layers, all layers must agree on error types.
 //! Tower-resilience provides three approaches, from simplest to most flexible:
 //!
-//! ### 1. ResilienceError<E> (Recommended - Zero Boilerplate)
+//! ### 1. `ResilienceError<E>` (Recommended - Zero Boilerplate)
 //!
 //! Use the provided [`ResilienceError<E>`](tower_resilience_core::ResilienceError) type
 //! to eliminate manual `From` implementations:
