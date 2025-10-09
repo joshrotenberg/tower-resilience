@@ -91,7 +91,7 @@ Enforce timeouts on operations:
 ```rust
 use tower_resilience_timelimiter::TimeLimiterConfig;
 
-let config = TimeLimiterConfig::builder()
+let layer = TimeLimiterConfig::builder()
     .timeout_duration(Duration::from_secs(30))
     .cancel_running_future(true)
     .build();
@@ -102,9 +102,9 @@ let config = TimeLimiterConfig::builder()
 Retry failed requests with exponential backoff:
 
 ```rust
-use tower_resilience_retry::{RetryConfig, ExponentialBackoff};
+use tower_resilience_retry::RetryConfig;
 
-let config: RetryConfig<MyError> = RetryConfig::builder()
+let layer = RetryConfig::<MyError>::builder()
     .max_attempts(5)
     .exponential_backoff(Duration::from_millis(100))
     .build();
@@ -117,7 +117,7 @@ Control request rate to protect downstream services:
 ```rust
 use tower_resilience_ratelimiter::RateLimiterConfig;
 
-let config = RateLimiterConfig::builder()
+let layer = RateLimiterConfig::builder()
     .max_permits(100)
     .refresh_period(Duration::from_secs(1))
     .build();
@@ -130,8 +130,8 @@ Cache responses to reduce load on expensive operations:
 ```rust
 use tower_resilience_cache::CacheConfig;
 
-let config = CacheConfig::builder()
-    .max_capacity(1000)
+let layer = CacheConfig::builder()
+    .max_size(1000)
     .ttl(Duration::from_secs(300))
     .key_extractor(|req: &Request| req.id.clone())
     .build();
