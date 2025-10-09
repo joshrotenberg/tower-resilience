@@ -346,3 +346,76 @@ async fn concurrent_service_clones() {
     assert_eq!(successes, 50, "All concurrent calls should succeed");
     assert_eq!(call_count.load(Ordering::Relaxed), 50);
 }
+
+/// Test concurrent access to state_sync() and metrics() during circuit operation
+#[tokio::test]
+async fn concurrent_metrics_inspection() {
+    let service = tower::service_fn(|_req: usize| async move {
+        tokio::time::sleep(Duration::from_millis(10)).await;
+        Ok::<_, String>("success")
+    });
+
+    let layer = CircuitBreakerLayer::<&str, String>::builder()
+        .failure_rate_threshold(0.5)
+        .sliding_window_size(100)
+        .minimum_number_of_calls(10)
+        .wait_duration_in_open(Duration::from_millis(200))
+        .name("metrics-test")
+        .build();
+
+    let cb = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+
+    // Spawn tasks that call the service
+    let mut call_handles = vec![];
+    for i in 0..50 {
+        let cb_clone = Arc::clone(&cb);
+        let handle = tokio::spawn(async move {
+            let mut breaker = cb_clone.lock().await;
+            breaker.call(i).await
+        });
+        call_handles.push(handle);
+    }
+
+    // Spawn tasks that inspect state concurrently
+    let mut inspection_handles = vec![];
+    for _ in 0..50 {
+        let cb_clone = Arc::clone(&cb);
+        let handle = tokio::spawn(async move {
+            let breaker = cb_clone.lock().await;
+
+            // Test sync state inspection (no lock needed once we have the breaker)
+            let state = breaker.state_sync();
+            let is_open = breaker.is_open();
+
+            // Test metrics inspection
+            let metrics = breaker.metrics().await;
+
+            // Verify consistency
+            assert_eq!(state, metrics.state);
+            assert_eq!(is_open, state == CircuitState::Open);
+
+            (state, metrics)
+        });
+        inspection_handles.push(handle);
+    }
+
+    // Wait for all to complete
+    for handle in call_handles {
+        let _ = handle.await;
+    }
+
+    for handle in inspection_handles {
+        assert!(handle.await.is_ok(), "Metrics inspection should not panic");
+    }
+
+    // Final verification - metrics should be consistent
+    let breaker = cb.lock().await;
+    let final_metrics = breaker.metrics().await;
+    let final_state = breaker.state_sync();
+
+    assert_eq!(final_state, final_metrics.state);
+    assert_eq!(
+        final_metrics.total_calls,
+        final_metrics.success_count + final_metrics.failure_count
+    );
+}

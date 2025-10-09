@@ -194,6 +194,46 @@
 //! # }
 //! ```
 //!
+//! ## State Inspection and Observability
+//!
+//! The circuit breaker provides both synchronous and asynchronous methods for
+//! inspecting state and metrics, useful for health checks and monitoring:
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState, CircuitBreaker};
+//! use tower::service_fn;
+//!
+//! # async fn example() {
+//! let layer = CircuitBreakerLayer::<String, ()>::builder().build();
+//! let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
+//! let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+//!
+//! // Sync state inspection (no await needed, lock-free)
+//! match breaker.state_sync() {
+//!     CircuitState::Closed => println!("Healthy"),
+//!     CircuitState::Open => println!("Circuit open - return 503"),
+//!     CircuitState::HalfOpen => println!("Recovering"),
+//! }
+//!
+//! // Convenience method
+//! if breaker.is_open() {
+//!     // Return error response
+//! }
+//!
+//! // Detailed metrics (async, requires lock)
+//! let metrics = breaker.metrics().await;
+//! println!("Failure rate: {:.1}%", metrics.failure_rate * 100.0);
+//! println!("Total calls: {}", metrics.total_calls);
+//! # }
+//! ```
+//!
+//! ## Examples
+//!
+//! See the `examples/` directory for complete working examples:
+//! - `circuitbreaker_example.rs` - Basic usage with state transitions
+//! - `circuitbreaker_fallback.rs` - Fallback strategies for graceful degradation
+//! - `circuitbreaker_health_check.rs` - Health check endpoints and monitoring
+//!
 //! ## Features
 //! - Count-based and time-based sliding windows
 //! - Configurable failure rate threshold
@@ -202,7 +242,7 @@
 //! - Event system for observability
 //! - Optional fallback handling
 //! - Manual state control (force_open, force_closed, reset)
-//! - Sync state inspection with `state_sync()`
+//! - Sync state inspection with `state_sync()`, `is_open()`, and `metrics()`
 //! - Metrics integration via `metrics` feature
 //! - Tracing support via `tracing` feature
 //!
@@ -223,7 +263,7 @@ use tower::Service;
 #[cfg(feature = "tracing")]
 use tracing::debug;
 
-pub use circuit::CircuitState;
+pub use circuit::{CircuitMetrics, CircuitState};
 pub use config::{CircuitBreakerConfig, CircuitBreakerConfigBuilder, SlidingWindowType};
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
@@ -325,6 +365,61 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     pub async fn force_closed(&self) {
         let mut circuit = self.circuit.lock().await;
         circuit.force_closed(&self.config);
+    }
+
+    /// Returns whether the circuit is currently open.
+    ///
+    /// This is a convenience method equivalent to `self.state_sync() == CircuitState::Open`.
+    /// It's useful for quick checks without pattern matching in synchronous contexts
+    /// like health checks or metrics collection.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
+    /// use tower::service_fn;
+    ///
+    /// # async fn example() {
+    /// let layer = CircuitBreakerLayer::<String, ()>::builder().build();
+    /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
+    /// let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+    ///
+    /// if breaker.is_open() {
+    ///     // Return 503 Service Unavailable
+    ///     println!("Service is unavailable");
+    /// }
+    /// # }
+    /// ```
+    pub fn is_open(&self) -> bool {
+        self.state_sync() == CircuitState::Open
+    }
+
+    /// Returns a snapshot of the current circuit breaker metrics.
+    ///
+    /// This method takes a lock to read the internal state and return a consistent
+    /// snapshot of all metrics. For lock-free state checks, use [`state()`](Self::state) instead.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
+    /// use tower::service_fn;
+    ///
+    /// # async fn example() {
+    /// let layer = CircuitBreakerLayer::<String, ()>::builder().build();
+    /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
+    /// let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+    ///
+    /// // Get detailed metrics
+    /// let metrics = breaker.metrics().await;
+    /// println!("Failure rate: {:.2}%", metrics.failure_rate * 100.0);
+    /// println!("Total calls: {}", metrics.total_calls);
+    /// println!("Failed calls: {}", metrics.failure_count);
+    /// # }
+    /// ```
+    pub async fn metrics(&self) -> crate::circuit::CircuitMetrics {
+        let circuit = self.circuit.lock().await;
+        circuit.metrics(&self.config)
     }
 
     /// Resets the circuit to the closed state and clears counts.
@@ -699,5 +794,97 @@ mod tests {
         breaker.force_open().await;
         assert_eq!(breaker.state_sync(), CircuitState::Open);
         assert_eq!(breaker.state().await, CircuitState::Open);
+    }
+
+    #[tokio::test]
+    async fn test_is_open_convenience_method() {
+        let config = Arc::new(dummy_config());
+        let breaker: CircuitBreaker<(), (), (), ()> = CircuitBreaker::new((), config);
+
+        // Initially closed
+        assert!(!breaker.is_open());
+        assert_eq!(breaker.state_sync(), CircuitState::Closed);
+
+        // Force open
+        breaker.force_open().await;
+        assert!(breaker.is_open());
+        assert_eq!(breaker.state_sync(), CircuitState::Open);
+
+        // Force closed
+        breaker.force_closed().await;
+        assert!(!breaker.is_open());
+        assert_eq!(breaker.state_sync(), CircuitState::Closed);
+
+        // Reset puts circuit back to closed
+        breaker.force_open().await;
+        assert!(breaker.is_open());
+        breaker.reset().await;
+        assert!(!breaker.is_open());
+        assert_eq!(breaker.state_sync(), CircuitState::Closed);
+    }
+
+    #[tokio::test]
+    async fn test_metrics_snapshot() {
+        let config = Arc::new(dummy_config());
+        let breaker: CircuitBreaker<(), (), (), ()> = CircuitBreaker::new((), config);
+
+        // Get initial metrics
+        let metrics = breaker.metrics().await;
+        assert_eq!(metrics.state, CircuitState::Closed);
+        assert_eq!(metrics.total_calls, 0);
+        assert_eq!(metrics.failure_count, 0);
+        assert_eq!(metrics.success_count, 0);
+        assert_eq!(metrics.failure_rate, 0.0);
+        assert_eq!(metrics.slow_call_rate, 0.0);
+
+        // Record some calls
+        {
+            let mut circuit = breaker.circuit.lock().await;
+            circuit.record_success(&breaker.config, Duration::from_millis(10));
+            circuit.record_success(&breaker.config, Duration::from_millis(10));
+            circuit.record_failure(&breaker.config, Duration::from_millis(10));
+        }
+
+        // Get updated metrics
+        let metrics = breaker.metrics().await;
+        assert_eq!(metrics.total_calls, 3);
+        assert_eq!(metrics.success_count, 2);
+        assert_eq!(metrics.failure_count, 1);
+        assert!((metrics.failure_rate - 0.333).abs() < 0.01);
+    }
+
+    #[tokio::test]
+    async fn test_metrics_with_slow_calls() {
+        use crate::config::SlidingWindowType;
+
+        let config = Arc::new(CircuitBreakerConfig {
+            failure_rate_threshold: 0.5,
+            sliding_window_type: SlidingWindowType::CountBased,
+            sliding_window_size: 10,
+            sliding_window_duration: None,
+            wait_duration_in_open: Duration::from_secs(1),
+            permitted_calls_in_half_open: 1,
+            failure_classifier: Arc::new(|r: &Result<(), ()>| r.is_err()),
+            minimum_number_of_calls: 5,
+            slow_call_duration_threshold: Some(Duration::from_millis(50)),
+            slow_call_rate_threshold: 0.5,
+            event_listeners: tower_resilience_core::EventListeners::new(),
+            name: "test-slow".into(),
+        });
+
+        let breaker: CircuitBreaker<(), (), (), ()> = CircuitBreaker::new((), config);
+
+        // Record fast and slow calls
+        {
+            let mut circuit = breaker.circuit.lock().await;
+            circuit.record_success(&breaker.config, Duration::from_millis(10)); // fast
+            circuit.record_success(&breaker.config, Duration::from_millis(100)); // slow
+            circuit.record_success(&breaker.config, Duration::from_millis(10)); // fast
+        }
+
+        let metrics = breaker.metrics().await;
+        assert_eq!(metrics.total_calls, 3);
+        assert_eq!(metrics.slow_call_count, 1);
+        assert!((metrics.slow_call_rate - 0.333).abs() < 0.01);
     }
 }
