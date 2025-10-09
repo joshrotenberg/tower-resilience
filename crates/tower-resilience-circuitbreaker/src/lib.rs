@@ -209,6 +209,12 @@
 //! ## Feature Flags
 //! - `metrics`: enables metrics collection using the `metrics` crate
 //! - `tracing`: enables logging and tracing using the `tracing` crate
+//!
+//! ## Examples
+//!
+//! See the `examples/` directory for complete working examples:
+//! - `circuitbreaker_example.rs` - Basic usage with state transitions
+//! - `circuitbreaker_fallback.rs` - Fallback strategies for graceful degradation
 
 use crate::circuit::Circuit;
 use futures::future::BoxFuture;
