@@ -55,6 +55,8 @@ where
         let config = Arc::clone(&self.config);
         let mut inner = self.inner.clone();
         let start_time = Instant::now();
+
+        #[cfg(feature = "metrics")]
         let acquire_start = Instant::now();
 
         Box::pin(async move {
