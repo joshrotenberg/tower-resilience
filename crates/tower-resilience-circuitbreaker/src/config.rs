@@ -29,13 +29,6 @@ pub struct CircuitBreakerConfig<Res, Err> {
     pub(crate) name: String,
 }
 
-impl<Res, Err> CircuitBreakerConfig<Res, Err> {
-    /// Creates a new configuration builder.
-    pub fn builder() -> CircuitBreakerConfigBuilder<Res, Err> {
-        CircuitBreakerConfigBuilder::new()
-    }
-}
-
 /// Builder for configuring and constructing a circuit breaker.
 pub struct CircuitBreakerConfigBuilder<Res, Err> {
     failure_rate_threshold: f64,

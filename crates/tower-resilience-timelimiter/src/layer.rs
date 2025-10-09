@@ -21,8 +21,6 @@ impl TimeLimiterLayer {
 
     /// Creates a new builder for configuring a time limiter layer.
     ///
-    /// This is a convenience method that delegates to [`TimeLimiterLayer::builder()`](crate::TimeLimiterLayer::builder).
-    ///
     /// # Examples
     ///
     /// ```
@@ -35,7 +33,7 @@ impl TimeLimiterLayer {
     ///     .build();
     /// ```
     pub fn builder() -> crate::TimeLimiterConfigBuilder {
-        TimeLimiterConfig::builder()
+        crate::TimeLimiterConfigBuilder::new()
     }
 }
 

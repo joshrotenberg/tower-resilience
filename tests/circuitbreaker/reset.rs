@@ -4,14 +4,15 @@ use std::sync::{
 };
 use std::time::Duration;
 use tower::Service;
-use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState, SlidingWindowType};
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_circuitbreaker::{CircuitState, SlidingWindowType};
 
 /// Test reset from open state
 #[tokio::test]
 async fn reset_from_open() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -38,7 +39,7 @@ async fn reset_from_open() {
 async fn reset_from_half_open() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -71,7 +72,7 @@ async fn reset_from_half_open() {
 async fn reset_from_closed() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = CircuitBreakerConfig::<(), String>::builder()
+    let layer = CircuitBreakerLayer::<(), String>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -106,7 +107,7 @@ async fn reset_clears_counters_count_based() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::CountBased)
         .sliding_window_size(10)
         .failure_rate_threshold(0.5)
@@ -153,7 +154,7 @@ async fn reset_clears_time_based_records() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_secs(10))
         .failure_rate_threshold(0.5)
@@ -203,7 +204,7 @@ async fn reset_during_concurrent_operations() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -253,7 +254,7 @@ async fn reset_during_concurrent_operations() {
 async fn multiple_resets() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -295,7 +296,7 @@ async fn reset_with_slow_call_detection() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.5)
@@ -344,7 +345,7 @@ async fn reset_preserves_configuration() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)

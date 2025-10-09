@@ -5,7 +5,7 @@
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{service_fn, Service};
-use tower_resilience_circuitbreaker::CircuitBreakerConfig;
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 
 #[tokio::main]
 async fn main() {
@@ -25,7 +25,7 @@ async fn main() {
     // Wrap it in a circuit breaker: opens if ≥50% of last 2 calls failed,
     // stays open 1s, then allows 1 trial in half-open.
     // If the trial succeeds, goes back to closed.
-    let breaker_layer = CircuitBreakerConfig::<String, ()>::builder()
+    let breaker_layer = CircuitBreakerLayer::<String, ()>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(2) // of the past two calls fail
         .wait_duration_in_open(Duration::from_secs(1)) // open for 1 second

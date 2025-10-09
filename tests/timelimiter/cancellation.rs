@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 /// A guard that sets a flag when dropped, allowing us to detect future cancellation.
 struct DropGuard {
@@ -23,7 +23,7 @@ impl Drop for DropGuard {
 
 #[tokio::test]
 async fn cancel_running_future_flag_true() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .cancel_running_future(true)
         .build();
@@ -42,7 +42,7 @@ async fn cancel_running_future_flag_true() {
 
 #[tokio::test]
 async fn cancel_running_future_flag_false() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .cancel_running_future(false)
         .build();
@@ -64,7 +64,7 @@ async fn future_dropped_on_timeout() {
     let dropped = Arc::new(AtomicBool::new(false));
     let dropped_clone = Arc::clone(&dropped);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
@@ -102,7 +102,7 @@ async fn service_resources_cleaned_up() {
     let rc_clone = Arc::clone(&resource_created);
     let rclean_clone = Arc::clone(&resource_cleaned);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
@@ -137,7 +137,7 @@ async fn verify_tokio_timeout_drop_behavior() {
     let dropped = Arc::new(AtomicBool::new(false));
     let dropped_clone = Arc::clone(&dropped);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(30))
         .build();
 
@@ -172,7 +172,7 @@ async fn future_state_after_timeout() {
     let ws_clone = Arc::clone(&work_started);
     let wc_clone = Arc::clone(&work_completed);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
@@ -211,7 +211,7 @@ async fn no_resource_leaks() {
     let alloc_clone = Arc::clone(&allocations);
     let dealloc_clone = Arc::clone(&deallocations);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 

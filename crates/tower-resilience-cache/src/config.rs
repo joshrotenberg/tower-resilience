@@ -18,16 +18,6 @@ pub struct CacheConfig<Req, K> {
     pub(crate) name: String,
 }
 
-impl<Req, K> CacheConfig<Req, K>
-where
-    K: Hash + Eq + Clone + Send + 'static,
-{
-    /// Creates a new configuration builder.
-    pub fn builder() -> CacheConfigBuilder<Req, K> {
-        CacheConfigBuilder::new()
-    }
-}
-
 /// Builder for configuring and constructing a cache.
 pub struct CacheConfigBuilder<Req, K> {
     max_size: usize,
@@ -109,7 +99,7 @@ where
     /// let hit_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&hit_count);
     ///
-    /// let config = CacheConfig::<Request, String>::builder()
+    /// let config = CacheLayer::<Request, String>::builder()
     ///     .key_extractor(|req| req.id.clone())
     ///     .on_hit(move || {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
@@ -151,7 +141,7 @@ where
     /// let miss_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&miss_count);
     ///
-    /// let config = CacheConfig::<Request, String>::builder()
+    /// let config = CacheLayer::<Request, String>::builder()
     ///     .key_extractor(|req| req.id.clone())
     ///     .on_miss(move || {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
@@ -195,7 +185,7 @@ where
     /// let eviction_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&eviction_count);
     ///
-    /// let config = CacheConfig::<Request, String>::builder()
+    /// let config = CacheLayer::<Request, String>::builder()
     ///     .key_extractor(|req| req.id.clone())
     ///     .max_size(100)
     ///     .ttl(Duration::from_secs(300))
@@ -251,6 +241,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::CacheLayer;
 
     #[derive(Clone, Hash, Eq, PartialEq)]
     struct TestRequest {
@@ -259,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_builder_defaults() {
-        let _layer = CacheConfig::<TestRequest, String>::builder()
+        let _layer = CacheLayer::<TestRequest, String>::builder()
             .key_extractor(|req| req.id.clone())
             .build();
         // If this compiles and doesn't panic, the builder works
@@ -267,7 +258,7 @@ mod tests {
 
     #[test]
     fn test_builder_custom_values() {
-        let _layer = CacheConfig::<TestRequest, String>::builder()
+        let _layer = CacheLayer::<TestRequest, String>::builder()
             .max_size(500)
             .ttl(Duration::from_secs(60))
             .key_extractor(|req| req.id.clone())
@@ -278,7 +269,7 @@ mod tests {
 
     #[test]
     fn test_event_listeners() {
-        let _layer = CacheConfig::<TestRequest, String>::builder()
+        let _layer = CacheLayer::<TestRequest, String>::builder()
             .key_extractor(|req| req.id.clone())
             .on_hit(|| {})
             .on_miss(|| {})
@@ -290,6 +281,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "key_extractor must be set")]
     fn test_builder_panics_without_key_extractor() {
-        let _config = CacheConfig::<TestRequest, String>::builder().build();
+        let _config = CacheLayer::<TestRequest, String>::builder().build();
     }
 }

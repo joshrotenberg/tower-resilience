@@ -20,8 +20,6 @@ impl<Res, Err> CircuitBreakerLayer<Res, Err> {
 
     /// Creates a new builder for configuring a circuit breaker layer.
     ///
-    /// This is a convenience method that delegates to [`CircuitBreakerConfig::builder()`](crate::CircuitBreakerConfig::builder).
-    ///
     /// # Examples
     ///
     /// ```
@@ -35,7 +33,7 @@ impl<Res, Err> CircuitBreakerLayer<Res, Err> {
     ///     .build();
     /// ```
     pub fn builder() -> crate::CircuitBreakerConfigBuilder<Res, Err> {
-        CircuitBreakerConfig::builder()
+        crate::CircuitBreakerConfigBuilder::new()
     }
 
     /// Wraps the given service with the circuit breaker middleware.

@@ -11,13 +11,6 @@ pub struct RateLimiterConfig {
     pub(crate) name: String,
 }
 
-impl RateLimiterConfig {
-    /// Creates a new builder for rate limiter configuration.
-    pub fn builder() -> RateLimiterConfigBuilder {
-        RateLimiterConfigBuilder::new()
-    }
-}
-
 /// Builder for [`RateLimiterConfig`].
 pub struct RateLimiterConfigBuilder {
     limit_for_period: usize,

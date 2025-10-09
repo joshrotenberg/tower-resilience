@@ -12,13 +12,6 @@ pub struct RetryConfig<E> {
     pub(crate) name: String,
 }
 
-impl<E> RetryConfig<E> {
-    /// Creates a new builder for retry configuration.
-    pub fn builder() -> RetryConfigBuilder<E> {
-        RetryConfigBuilder::new()
-    }
-}
-
 /// Builder for [`RetryConfig`].
 pub struct RetryConfigBuilder<E> {
     max_attempts: usize,
@@ -298,7 +291,7 @@ mod tests {
 
     #[test]
     fn test_event_listeners() {
-        let _layer = RetryConfig::<std::io::Error>::builder()
+        let _layer = RetryLayer::<std::io::Error>::builder()
             .on_retry(|_, _| {})
             .on_success(|_| {})
             .build();

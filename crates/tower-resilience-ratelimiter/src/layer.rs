@@ -44,8 +44,6 @@ impl RateLimiterLayer {
 
     /// Creates a new builder for configuring a rate limiter layer.
     ///
-    /// This is a convenience method that delegates to [`RateLimiterLayer::builder()`].
-    ///
     /// # Examples
     ///
     /// ```
@@ -58,7 +56,7 @@ impl RateLimiterLayer {
     ///     .build();
     /// ```
     pub fn builder() -> crate::RateLimiterConfigBuilder {
-        RateLimiterConfig::builder()
+        crate::RateLimiterConfigBuilder::new()
     }
 }
 

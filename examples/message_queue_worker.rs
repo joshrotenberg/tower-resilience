@@ -13,9 +13,9 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceBuilder, ServiceExt, service_fn};
-use tower_resilience_bulkhead::BulkheadConfig;
-use tower_resilience_circuitbreaker::CircuitBreakerConfig;
-use tower_resilience_retry::RetryConfig;
+use tower_resilience_bulkhead::BulkheadLayer;
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_retry::RetryLayer;
 
 /// Message from the queue
 #[derive(Debug, Clone)]
@@ -175,7 +175,7 @@ async fn scenario_retry_transient() {
     });
 
     // Configure retry with exponential backoff
-    let retry_layer = RetryConfig::<ProcessingError>::builder()
+    let retry_layer = RetryLayer::<ProcessingError>::builder()
         .max_attempts(5)
         .exponential_backoff(Duration::from_millis(100))
         .retry_on(|err| {
@@ -226,7 +226,7 @@ async fn scenario_bulkhead() {
     });
 
     // Configure bulkhead: process max 2 messages concurrently
-    let bulkhead = BulkheadConfig::builder()
+    let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(2)
         .max_wait_duration(Some(Duration::from_millis(500)))
         .name("message-processor")
@@ -280,7 +280,7 @@ async fn scenario_circuit_breaker() {
     });
 
     // Configure circuit breaker
-    let circuit_breaker = CircuitBreakerConfig::<ProcessingResult, ProcessingError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<ProcessingResult, ProcessingError>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(4)
         .minimum_number_of_calls(2)
@@ -326,7 +326,7 @@ async fn scenario_full_worker_stack() {
     let service = ServiceBuilder::new()
         // 1. Bulkhead (outermost) - limit concurrent workers
         .layer(
-            BulkheadConfig::builder()
+            BulkheadLayer::builder()
                 .max_concurrent_calls(3)
                 .max_wait_duration(Some(Duration::from_secs(1)))
                 .name("worker-pool")
@@ -337,7 +337,7 @@ async fn scenario_full_worker_stack() {
         )
         // 2. Retry - handle transient failures
         .layer(
-            RetryConfig::<ProcessingError>::builder()
+            RetryLayer::<ProcessingError>::builder()
                 .max_attempts(3)
                 .exponential_backoff(Duration::from_millis(100))
                 .retry_on(|err| {

@@ -1,13 +1,13 @@
 use std::time::Duration;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
 
 #[tokio::main]
 async fn main() {
     println!("Simple Bulkhead Example\n");
 
     // Create a bulkhead that allows max 5 concurrent calls
-    let config = BulkheadConfig::builder()
+    let config = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("api-bulkhead")
         .build();

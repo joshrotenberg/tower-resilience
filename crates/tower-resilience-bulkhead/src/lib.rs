@@ -8,12 +8,12 @@
 //!
 //! ```rust
 //! use tower::ServiceBuilder;
-//! use tower_resilience_bulkhead::BulkheadConfig;
+//! use tower_resilience_bulkhead::BulkheadLayer;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
 //! // Create a bulkhead that allows max 10 concurrent calls
-//! let layer = BulkheadConfig::builder()
+//! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(10)
 //!     .name("my-bulkhead")
 //!     .build();
@@ -37,7 +37,7 @@
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = BulkheadConfig::builder()
+//! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(5)
 //!     .max_wait_duration(Some(Duration::from_secs(2)))
 //!     .name("timeout-bulkhead")
@@ -60,11 +60,11 @@
 //!
 //! ```rust
 //! use tower::ServiceBuilder;
-//! use tower_resilience_bulkhead::BulkheadConfig;
+//! use tower_resilience_bulkhead::BulkheadLayer;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = BulkheadConfig::builder()
+//! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(10)
 //!     .name("monitored-bulkhead")
 //!     .on_call_permitted(|concurrent| {
@@ -92,7 +92,7 @@
 //! Use event listeners to track bulkhead rejections:
 //!
 //! ```rust
-//! use tower_resilience_bulkhead::BulkheadConfig;
+//! use tower_resilience_bulkhead::BulkheadLayer;
 //! use tower::ServiceBuilder;
 //! use std::sync::atomic::{AtomicUsize, Ordering};
 //! use std::sync::Arc;
@@ -101,7 +101,7 @@
 //! let rejections = Arc::new(AtomicUsize::new(0));
 //! let r = rejections.clone();
 //!
-//! let layer = BulkheadConfig::builder()
+//! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(5)
 //!     .on_call_rejected(move |_| {
 //!         r.fetch_add(1, Ordering::SeqCst);
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn test_config_builder_defaults() {
-        let _config = BulkheadConfig::builder().build();
+        let _config = BulkheadLayer::builder().build();
         // Layer is built, so we can't inspect config directly
         // This test just ensures the builder works
     }
@@ -150,7 +150,7 @@ mod tests {
         let counter = Arc::new(AtomicUsize::new(0));
         let c = Arc::clone(&counter);
 
-        let _layer = BulkheadConfig::builder()
+        let _layer = BulkheadLayer::builder()
             .max_concurrent_calls(5)
             .max_wait_duration(Some(Duration::from_millis(100)))
             .name("test-bulkhead")

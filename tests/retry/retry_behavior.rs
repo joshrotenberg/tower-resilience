@@ -10,7 +10,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_retry::RetryConfig;
+use tower_resilience_retry::RetryLayer;
 
 #[derive(Debug, Clone)]
 struct TestError {
@@ -38,7 +38,7 @@ async fn success_on_first_attempt_no_retry() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -75,7 +75,7 @@ async fn success_after_one_retry() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -112,7 +112,7 @@ async fn success_after_multiple_retries() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(6)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -145,7 +145,7 @@ async fn exhaust_all_attempts() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(4)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -178,7 +178,7 @@ async fn single_attempt_no_retries() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(1)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -219,7 +219,7 @@ async fn request_cloning_works_correctly() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(4)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -260,7 +260,7 @@ async fn different_requests_independently_retried() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -312,7 +312,7 @@ async fn stop_on_non_retryable_error() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, Error::Retryable))
@@ -351,7 +351,7 @@ async fn max_attempts_two_allows_one_retry() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(2)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -387,7 +387,7 @@ async fn max_attempts_hundred() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(100)
         .fixed_backoff(std::time::Duration::from_millis(1))
         .build();
@@ -423,7 +423,7 @@ async fn service_cloning_preserves_retry_behavior() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -470,7 +470,7 @@ async fn concurrent_requests_independently_retried() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -520,7 +520,7 @@ async fn empty_response_type() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(4)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();

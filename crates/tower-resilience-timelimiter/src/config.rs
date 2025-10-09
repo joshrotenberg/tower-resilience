@@ -13,13 +13,6 @@ pub struct TimeLimiterConfig {
     pub(crate) name: String,
 }
 
-impl TimeLimiterConfig {
-    /// Creates a new configuration builder.
-    pub fn builder() -> TimeLimiterConfigBuilder {
-        TimeLimiterConfigBuilder::new()
-    }
-}
-
 /// Builder for configuring and constructing a time limiter.
 pub struct TimeLimiterConfigBuilder {
     timeout_duration: Duration,

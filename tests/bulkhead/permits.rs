@@ -3,7 +3,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
+use tower_resilience_bulkhead::BulkheadError;
+use tower_resilience_bulkhead::BulkheadLayer;
 
 #[derive(Debug)]
 enum TestError {
@@ -22,7 +23,7 @@ async fn test_permits_released_after_success() {
     let permitted = Arc::new(AtomicUsize::new(0));
     let p = permitted.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(2)
         .name("permit-success-bulkhead")
         .on_call_permitted(move |_| {
@@ -67,7 +68,7 @@ async fn test_permits_released_after_error() {
     let p = permitted.clone();
     let f = failed.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("permit-error-bulkhead")
         .on_call_permitted(move |_| {
@@ -111,7 +112,7 @@ async fn test_permits_released_after_error() {
 
 #[tokio::test]
 async fn test_permits_released_after_panic() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("permit-panic-bulkhead")
         .build();
@@ -155,7 +156,7 @@ async fn test_permit_reuse() {
     let permitted = Arc::new(AtomicUsize::new(0));
     let p = permitted.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("permit-reuse-bulkhead")
         .on_call_permitted(move |_| {
@@ -193,7 +194,7 @@ async fn test_permits_not_leaked_on_timeout() {
     let p = permitted.clone();
     let r = rejected.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(50)))
         .name("no-leak-timeout-bulkhead")
@@ -244,7 +245,7 @@ async fn test_rapid_permit_acquisition_release() {
     let permitted = Arc::new(AtomicUsize::new(0));
     let p = permitted.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("rapid-permits-bulkhead")
         .on_call_permitted(move |_| {
@@ -279,7 +280,7 @@ async fn test_permit_fifo_fairness() {
     let order = Arc::new(tokio::sync::Mutex::new(Vec::new()));
     let o = order.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("fifo-bulkhead")
         .on_call_permitted(move |_| {
@@ -338,7 +339,7 @@ async fn test_concurrent_permit_requests() {
     let p = permitted.clone();
     let f = finished.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("concurrent-permits-bulkhead")
         .on_call_permitted(move |_| {
@@ -389,7 +390,7 @@ async fn test_permits_with_mixed_outcomes() {
     let fin = finished.clone();
     let fail = failed.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(3)
         .name("mixed-outcomes-bulkhead")
         .on_call_permitted(move |_| {
@@ -439,7 +440,7 @@ async fn test_permits_with_mixed_outcomes() {
 
 #[tokio::test]
 async fn test_starvation_prevention() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(2)
         .name("starvation-prevention-bulkhead")
         .build();

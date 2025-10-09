@@ -13,8 +13,8 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_circuitbreaker::CircuitBreakerConfig;
-use tower_resilience_retry::RetryConfig;
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_retry::RetryLayer;
 
 /// Simulated database error types
 #[derive(Debug, Clone)]
@@ -122,7 +122,7 @@ async fn scenario_retry_transient_errors() {
     });
 
     // Configure retry: retry transient errors with exponential backoff
-    let retry_layer = RetryConfig::<DbError>::builder()
+    let retry_layer = RetryLayer::<DbError>::builder()
         .max_attempts(5)
         .exponential_backoff(Duration::from_millis(100))
         .retry_on(|err: &DbError| {
@@ -166,7 +166,7 @@ async fn scenario_circuit_breaker() {
     });
 
     // Configure circuit breaker: open after 50% failure rate over 4 calls
-    let circuit_breaker = CircuitBreakerConfig::<Vec<String>, DbError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<Vec<String>, DbError>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(4)
         .minimum_number_of_calls(2)
@@ -224,13 +224,13 @@ async fn scenario_full_stack() {
 
     // Combine circuit breaker with retry
     // Apply retry first (innermost layer), then circuit breaker
-    let retry_layer = RetryConfig::<DbError>::builder()
+    let retry_layer = RetryLayer::<DbError>::builder()
         .max_attempts(3)
         .exponential_backoff(Duration::from_millis(50))
         .retry_on(|err| matches!(err, DbError::Transient(_)))
         .build();
 
-    let circuit_breaker = CircuitBreakerConfig::<Vec<String>, DbError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<Vec<String>, DbError>::builder()
         .failure_rate_threshold(0.6)
         .sliding_window_size(10)
         .minimum_number_of_calls(3)

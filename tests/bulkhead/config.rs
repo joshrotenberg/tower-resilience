@@ -3,7 +3,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
+use tower_resilience_bulkhead::BulkheadError;
+use tower_resilience_bulkhead::BulkheadLayer;
 
 #[derive(Debug)]
 enum TestError {
@@ -18,7 +19,7 @@ impl From<BulkheadError> for TestError {
 
 #[tokio::test]
 async fn test_max_concurrent_calls_one() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("single-call-bulkhead")
         .build();
@@ -68,7 +69,7 @@ async fn test_max_concurrent_calls_one() {
 #[tokio::test]
 async fn test_max_concurrent_calls_large_value() {
     let large_limit = 1000;
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(large_limit)
         .name("large-bulkhead")
         .build();
@@ -104,7 +105,7 @@ async fn test_max_concurrent_calls_large_value() {
 #[tokio::test]
 async fn test_max_concurrent_calls_zero() {
     // Zero concurrent calls means all calls should be rejected immediately
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(0)
         .max_wait_duration(Some(Duration::from_millis(10)))
         .name("zero-capacity-bulkhead")
@@ -130,7 +131,7 @@ async fn test_max_concurrent_calls_zero() {
 #[tokio::test]
 async fn test_default_config() {
     // Test that default config works
-    let layer = BulkheadConfig::builder().build();
+    let layer = BulkheadLayer::builder().build();
 
     let mut service = ServiceBuilder::new()
         .layer(layer)
@@ -153,7 +154,7 @@ async fn test_config_with_event_listeners() {
     let p = permitted_count.clone();
     let f = finished_count.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("event-listener-bulkhead")
         .on_call_permitted(move |_| {
@@ -195,7 +196,7 @@ async fn test_config_with_multiple_event_listeners() {
     let c1 = counter1.clone();
     let c2 = counter2.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("multi-listener-bulkhead")
         .on_call_permitted(move |_| {
@@ -225,14 +226,14 @@ async fn test_config_with_multiple_event_listeners() {
 #[tokio::test]
 async fn test_config_timeout_some_vs_none() {
     // Config with Some timeout
-    let layer_some = BulkheadConfig::builder()
+    let layer_some = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(50)))
         .name("timeout-some")
         .build();
 
     // Config with None timeout
-    let layer_none = BulkheadConfig::builder()
+    let layer_none = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(None)
         .name("timeout-none")
@@ -285,7 +286,7 @@ async fn test_builder_pattern_chaining() {
     let c = counter.clone();
 
     // Test that all builder methods can be chained
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(10)
         .max_wait_duration(Some(Duration::from_secs(1)))
         .name("chained-bulkhead")
@@ -314,12 +315,12 @@ async fn test_builder_pattern_chaining() {
 #[tokio::test]
 async fn test_config_independent_instances() {
     // Create two independent bulkhead configs
-    let layer1 = BulkheadConfig::builder()
+    let layer1 = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("bulkhead-1")
         .build();
 
-    let layer2 = BulkheadConfig::builder()
+    let layer2 = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("bulkhead-2")
         .build();
@@ -366,7 +367,7 @@ async fn test_config_independent_instances() {
 
 #[tokio::test]
 async fn test_config_name_normal() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("my-service-bulkhead")
         .build();
@@ -386,7 +387,7 @@ async fn test_config_name_normal() {
 
 #[tokio::test]
 async fn test_config_name_empty() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("")
         .build();
@@ -407,7 +408,7 @@ async fn test_config_name_empty() {
 #[tokio::test]
 async fn test_config_name_very_long() {
     let long_name = "a".repeat(1000);
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name(long_name)
         .build();
@@ -437,7 +438,7 @@ async fn test_config_with_all_options() {
     let fin = finished.clone();
     let fail = failed.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(2)
         .max_wait_duration(Some(Duration::from_millis(50)))
         .name("comprehensive-bulkhead")
@@ -501,7 +502,7 @@ async fn test_config_different_timeouts() {
     ];
 
     for (idx, timeout) in timeouts.iter().enumerate() {
-        let layer = BulkheadConfig::builder()
+        let layer = BulkheadLayer::builder()
             .max_concurrent_calls(5)
             .max_wait_duration(Some(*timeout))
             .name(format!("bulkhead-{}", idx))

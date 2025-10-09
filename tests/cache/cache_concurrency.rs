@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::task::JoinSet;
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_cache::CacheConfig;
+use tower_resilience_cache::CacheLayer;
 
 #[tokio::test]
 async fn concurrent_reads_from_same_cached_item() {
@@ -28,7 +28,7 @@ async fn concurrent_reads_from_same_cached_item() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -84,7 +84,7 @@ async fn concurrent_writes_with_different_keys() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(100)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -135,7 +135,7 @@ async fn concurrent_read_write_mix() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(50)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -200,7 +200,7 @@ async fn cache_service_cloning_preserves_shared_state() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -257,7 +257,7 @@ async fn thread_safety_of_arc_mutex_cache_store() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(100)
         .key_extractor(|req: &u32| *req)
         .build();
@@ -301,7 +301,7 @@ async fn multiple_clones_accessing_simultaneously() {
         Ok::<_, std::io::Error>(format!("Response: {}", req))
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(20)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -349,7 +349,7 @@ async fn no_data_corruption_under_concurrent_load() {
         Ok::<_, std::io::Error>(req.to_string())
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(100)
         .key_extractor(|req: &u64| *req)
         .build();
@@ -400,7 +400,7 @@ async fn concurrent_cache_hits_maintain_correctness() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();

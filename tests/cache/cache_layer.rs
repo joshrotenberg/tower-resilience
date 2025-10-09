@@ -12,7 +12,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tower::{Layer, Service, ServiceBuilder, ServiceExt};
-use tower_resilience_cache::CacheConfig;
+use tower_resilience_cache::CacheLayer;
 
 #[tokio::test]
 async fn layer_composition_with_service_builder() {
@@ -28,7 +28,7 @@ async fn layer_composition_with_service_builder() {
     });
 
     // Build cache layer
-    let cache_layer = CacheConfig::builder()
+    let cache_layer = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -74,14 +74,14 @@ async fn multiple_cache_layers_in_same_stack() {
 
     // Create two cache layers
     // Outer cache: larger capacity
-    let outer_cache = CacheConfig::builder()
+    let outer_cache = CacheLayer::builder()
         .max_size(10)
         .name("outer-cache")
         .key_extractor(|req: &u32| *req)
         .build();
 
     // Inner cache: smaller capacity
-    let inner_cache = CacheConfig::builder()
+    let inner_cache = CacheLayer::builder()
         .max_size(5)
         .name("inner-cache")
         .key_extractor(|req: &u32| *req)
@@ -153,7 +153,7 @@ async fn cache_with_map_response_layer() {
         }
     });
 
-    let cache_layer = CacheConfig::builder()
+    let cache_layer = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -203,7 +203,7 @@ async fn cache_with_map_request_layer() {
         }
     });
 
-    let cache_layer = CacheConfig::builder()
+    let cache_layer = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -263,7 +263,7 @@ async fn service_cloning_through_layer() {
         }
     });
 
-    let cache_layer = CacheConfig::builder()
+    let cache_layer = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -321,7 +321,7 @@ async fn layer_returns_correct_service_type() {
         Ok::<_, std::io::Error>(format!("Response: {}", req))
     });
 
-    let cache_config = CacheConfig::builder()
+    let cache_config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();

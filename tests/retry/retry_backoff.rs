@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tower::{Layer, Service, ServiceExt};
 use tower_resilience_retry::{
-    ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval, RetryConfig,
+    ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval, RetryLayer,
 };
 
 #[derive(Debug, Clone)]
@@ -39,7 +39,7 @@ async fn fixed_interval_consistent_delays() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .backoff(FixedInterval::new(Duration::from_millis(50)))
         .build();
@@ -90,7 +90,7 @@ async fn exponential_backoff_doubles_delay() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .backoff(ExponentialBackoff::new(Duration::from_millis(50)))
         .build();
@@ -154,7 +154,7 @@ async fn exponential_backoff_custom_multiplier() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(4)
         .backoff(ExponentialBackoff::new(Duration::from_millis(50)).multiplier(3.0))
         .build();
@@ -210,7 +210,7 @@ async fn exponential_backoff_respects_max_interval() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(6)
         .backoff(
             ExponentialBackoff::new(Duration::from_millis(50))
@@ -289,7 +289,7 @@ async fn exponential_random_backoff_has_variance() {
             }
         });
 
-        let config = RetryConfig::builder()
+        let config = RetryLayer::builder()
             .max_attempts(4)
             .backoff(ExponentialRandomBackoff::new(
                 Duration::from_millis(100),
@@ -359,7 +359,7 @@ async fn exponential_random_backoff_respects_max() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .backoff(
             ExponentialRandomBackoff::new(Duration::from_millis(50), 0.3)
@@ -411,7 +411,7 @@ async fn custom_function_interval_linear_growth() {
     });
 
     // Linear backoff: 50ms, 100ms, 150ms, ...
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .backoff(FnInterval::new(|attempt| {
             Duration::from_millis(50 * (attempt as u64 + 1))
@@ -478,7 +478,7 @@ async fn custom_function_interval_fibonacci() {
     });
 
     // Fibonacci backoff: 10, 10, 20, 30, 50, ...
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(6)
         .backoff(FnInterval::new(|attempt| {
             let fib = match attempt {
@@ -534,7 +534,7 @@ async fn custom_function_interval_constant() {
     });
 
     // Constant 100ms regardless of attempt
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(4)
         .backoff(FnInterval::new(|_| Duration::from_millis(100)))
         .build();
@@ -574,7 +574,7 @@ async fn zero_backoff_retries_immediately() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(4)
         .backoff(FixedInterval::new(Duration::from_millis(0)))
         .build();

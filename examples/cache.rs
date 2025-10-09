@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_cache::CacheConfig;
+use tower_resilience_cache::CacheLayer;
 
 #[tokio::main]
 async fn main() {
@@ -29,7 +29,7 @@ async fn main() {
     });
 
     // Configure cache with 2 second TTL
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(100)
         .ttl(Duration::from_secs(2))
         .key_extractor(|req: &String| req.clone())

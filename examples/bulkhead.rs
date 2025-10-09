@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service};
-use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
 
 #[derive(Debug)]
 enum ExampleError {
@@ -45,7 +45,7 @@ async fn main() {
     });
 
     // Wrap with bulkhead that limits to 3 concurrent calls
-    let bulkhead = BulkheadConfig::builder()
+    let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(3)
         .max_wait_duration(Some(Duration::from_secs(1)))
         .name("example-bulkhead")

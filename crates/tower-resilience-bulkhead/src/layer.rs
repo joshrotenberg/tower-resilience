@@ -18,8 +18,6 @@ impl BulkheadLayer {
 
     /// Creates a new builder for configuring a bulkhead layer.
     ///
-    /// This is a convenience method that delegates to [`BulkheadConfig::builder()`](crate::BulkheadConfig::builder).
-    ///
     /// # Examples
     ///
     /// ```
@@ -32,7 +30,7 @@ impl BulkheadLayer {
     ///     .build();
     /// ```
     pub fn builder() -> crate::BulkheadConfigBuilder {
-        BulkheadConfig::builder()
+        crate::BulkheadConfigBuilder::new()
     }
 }
 

@@ -45,8 +45,6 @@ impl<E> RetryLayer<E> {
 
     /// Creates a new builder for configuring a retry layer.
     ///
-    /// This is a convenience method that delegates to [`RetryLayer::builder()`].
-    ///
     /// # Examples
     ///
     /// ```
@@ -61,7 +59,7 @@ impl<E> RetryLayer<E> {
     ///     .build();
     /// ```
     pub fn builder() -> crate::RetryConfigBuilder<E> {
-        RetryConfig::builder()
+        crate::RetryConfigBuilder::new()
     }
 }
 

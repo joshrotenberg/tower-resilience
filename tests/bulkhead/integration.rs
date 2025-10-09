@@ -5,7 +5,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
+use tower_resilience_bulkhead::BulkheadError;
+use tower_resilience_bulkhead::BulkheadLayer;
 
 #[derive(Debug)]
 enum TestError {
@@ -35,7 +36,7 @@ async fn test_bulkhead_limits_concurrency() {
     let max_clone = Arc::clone(&max_concurrent);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadConfig::builder().max_concurrent_calls(5).build())
+        .layer(BulkheadLayer::builder().max_concurrent_calls(5).build())
         .service_fn(move |_req: ()| {
             let counter = Arc::clone(&counter_clone);
             let max = Arc::clone(&max_clone);
@@ -69,7 +70,7 @@ async fn test_bulkhead_limits_concurrency() {
 async fn test_bulkhead_rejects_when_full_with_timeout() {
     let service = ServiceBuilder::new()
         .layer(
-            BulkheadConfig::builder()
+            BulkheadLayer::builder()
                 .max_concurrent_calls(2)
                 .max_wait_duration(Some(Duration::from_millis(10)))
                 .build(),
@@ -111,7 +112,7 @@ async fn test_bulkhead_event_listeners() {
 
     let service = ServiceBuilder::new()
         .layer(
-            BulkheadConfig::builder()
+            BulkheadLayer::builder()
                 .max_concurrent_calls(5)
                 .on_call_permitted(move |_| {
                     p_clone.fetch_add(1, Ordering::SeqCst);
@@ -145,7 +146,7 @@ async fn test_bulkhead_releases_on_error() {
     let counter_clone = Arc::clone(&concurrent_counter);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadConfig::builder().max_concurrent_calls(2).build())
+        .layer(BulkheadLayer::builder().max_concurrent_calls(2).build())
         .service_fn(move |_req: ()| {
             let counter = Arc::clone(&counter_clone);
             async move {
@@ -181,7 +182,7 @@ async fn test_bulkhead_releases_on_error() {
 async fn test_bulkhead_without_timeout_waits() {
     let service = ServiceBuilder::new()
         .layer(
-            BulkheadConfig::builder()
+            BulkheadLayer::builder()
                 .max_concurrent_calls(1)
                 .max_wait_duration(None) // Wait indefinitely
                 .build(),

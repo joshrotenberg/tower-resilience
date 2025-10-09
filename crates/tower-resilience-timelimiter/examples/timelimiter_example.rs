@@ -4,7 +4,7 @@
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 #[tokio::main]
 async fn main() {
@@ -22,7 +22,7 @@ async fn main() {
     });
 
     // Wrap with time limiter - build the layer once
-    let timelimiter_layer = TimeLimiterConfig::builder()
+    let timelimiter_layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(100))
         .cancel_running_future(true)
         .name("example-timelimiter")

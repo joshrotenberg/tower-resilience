@@ -17,7 +17,7 @@ use tower::Layer;
 /// use std::time::Duration;
 ///
 /// # async fn example() {
-/// let cache_layer = CacheConfig::builder()
+/// let cache_layer = CacheLayer::builder()
 ///     .max_size(100)
 ///     .ttl(Duration::from_secs(60))
 ///     .key_extractor(|req: &String| req.clone())
@@ -49,8 +49,6 @@ where
 
     /// Creates a new builder for configuring a cache layer.
     ///
-    /// This is a convenience method that delegates to [`CacheConfig::builder()`].
-    ///
     /// # Examples
     ///
     /// ```
@@ -64,7 +62,7 @@ where
     ///     .build();
     /// ```
     pub fn builder() -> crate::CacheConfigBuilder<Req, K> {
-        CacheConfig::builder()
+        crate::CacheConfigBuilder::new()
     }
 }
 

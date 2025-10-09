@@ -192,7 +192,7 @@ mod tests {
             }
         });
 
-        let layer = CacheConfig::builder()
+        let layer = CacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
             .build();
@@ -228,7 +228,7 @@ mod tests {
             Ok::<_, std::io::Error>(format!("Response: {}", req))
         });
 
-        let layer = CacheConfig::builder()
+        let layer = CacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
             .build();
@@ -258,7 +258,7 @@ mod tests {
             }
         });
 
-        let layer = CacheConfig::builder()
+        let layer = CacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
             .build();
@@ -296,7 +296,7 @@ mod tests {
             }
         });
 
-        let layer = CacheConfig::builder()
+        let layer = CacheLayer::builder()
             .max_size(10)
             .ttl(Duration::from_millis(50))
             .key_extractor(|req: &String| req.clone())
@@ -332,7 +332,7 @@ mod tests {
             Ok::<_, std::io::Error>(format!("Response: {}", req))
         });
 
-        let layer = CacheConfig::builder()
+        let layer = CacheLayer::builder()
             .max_size(2)
             .key_extractor(|req: &String| req.clone())
             .build();
@@ -403,7 +403,7 @@ mod tests {
             Ok::<_, std::io::Error>(format!("Response: {}", req))
         });
 
-        let layer = CacheConfig::builder()
+        let layer = CacheLayer::builder()
             .max_size(1)
             .key_extractor(|req: &String| req.clone())
             .on_hit(move || {
@@ -465,7 +465,7 @@ mod tests {
             }
         });
 
-        let layer = CacheConfig::builder()
+        let layer = CacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
             .build();

@@ -16,10 +16,10 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceBuilder, ServiceExt, service_fn};
-use tower_resilience_cache::CacheConfig;
-use tower_resilience_circuitbreaker::CircuitBreakerConfig;
-use tower_resilience_retry::RetryConfig;
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_cache::CacheLayer;
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_retry::RetryLayer;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 /// HTTP request (simplified)
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
@@ -167,7 +167,7 @@ async fn scenario_retry_timeout() {
     // Compose: Timeout -> Retry
     let client = ServiceBuilder::new()
         .layer(
-            TimeLimiterConfig::builder()
+            TimeLimiterLayer::builder()
                 .timeout_duration(Duration::from_secs(2))
                 .on_timeout(|| {
                     println!("[Timeout] Request exceeded 2s timeout");
@@ -175,7 +175,7 @@ async fn scenario_retry_timeout() {
                 .build(),
         )
         .layer(
-            RetryConfig::<ClientError>::builder()
+            RetryLayer::<ClientError>::builder()
                 .max_attempts(5)
                 .exponential_backoff(Duration::from_millis(100))
                 .retry_on(|err| {
@@ -217,7 +217,7 @@ async fn scenario_circuit_breaker() {
     });
 
     // Circuit breaker to fail fast
-    let circuit_breaker = CircuitBreakerConfig::<Response, ClientError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<Response, ClientError>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(4)
         .minimum_number_of_calls(2)
@@ -263,7 +263,7 @@ async fn scenario_cache() {
     });
 
     // Add cache layer
-    let cache_layer = CacheConfig::builder()
+    let cache_layer = CacheLayer::builder()
         .max_size(100)
         .ttl(Duration::from_secs(60))
         .key_extractor(|req: &Request| {
@@ -317,7 +317,7 @@ async fn scenario_full_stack() {
     let client = ServiceBuilder::new()
         // 1. Cache (outermost) - Skip everything if cached
         .layer(
-            CacheConfig::builder()
+            CacheLayer::builder()
                 .max_size(100)
                 .ttl(Duration::from_secs(60))
                 .key_extractor(|req: &Request| {
@@ -337,7 +337,7 @@ async fn scenario_full_stack() {
         )
         // 2. Retry - Handle transient failures
         .layer(
-            RetryConfig::<ClientError>::builder()
+            RetryLayer::<ClientError>::builder()
                 .max_attempts(3)
                 .exponential_backoff(Duration::from_millis(100))
                 .retry_on(|err| matches!(err, ClientError::Network(_)))

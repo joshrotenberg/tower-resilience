@@ -15,7 +15,7 @@ async fn main() {
 
     // Create a rate limiter that allows 5 requests per second
     // with a 100ms timeout for waiting for permits
-    let layer = tower_resilience_ratelimiter::RateLimiterConfig::builder()
+    let layer = tower_resilience_ratelimiter::RateLimiterLayer::builder()
         .limit_for_period(5)
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_millis(100))
