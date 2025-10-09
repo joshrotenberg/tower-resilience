@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.4.0...tower-resilience-circuitbreaker-v0.4.1) - 2025-10-09
+
+### Added
+
+- *(circuitbreaker)* enhance metrics with instance names and slow call tracking ([#96](https://github.com/joshrotenberg/tower-resilience/pull/96))
+
 ## [0.4.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.3.0...tower-resilience-circuitbreaker-v0.4.0) - 2025-10-09
 
 ### Fixed

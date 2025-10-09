@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.3.0...tower-resilience-cache-v0.3.1) - 2025-10-09
+
+### Added
+
+- *(cache)* add comprehensive metrics and tracing support ([#91](https://github.com/joshrotenberg/tower-resilience/pull/91))
+
 ## [0.3.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.2.0...tower-resilience-cache-v0.3.0) - 2025-10-09
 
 ### Fixed
