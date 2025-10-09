@@ -58,11 +58,13 @@ jobs:
           output-file-path: output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
-          save-data-file:
+          save-data-file: true
           comment-on-alert: true
           alert-threshold: "150%"
           fail-on-alert: false
           alert-comment-cc-users: "@joshrotenberg"
+          gh-pages-branch: main
+          benchmark-data-dir-path: ./cache
 
       - name: Store benchmark result (PR)
         uses: benchmark-action/github-action-benchmark@v1
