@@ -38,7 +38,7 @@ async fn main() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(svc);
 
     // First call - cache miss

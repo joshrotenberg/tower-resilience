@@ -26,8 +26,7 @@ async fn cancel_running_future_flag_true() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
         .cancel_running_future(true)
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(200)).await;
@@ -46,8 +45,7 @@ async fn cancel_running_future_flag_false() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
         .cancel_running_future(false)
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(200)).await;
@@ -68,8 +66,7 @@ async fn future_dropped_on_timeout() {
 
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(move |_req: ()| {
         let dropped = Arc::clone(&dropped_clone);
@@ -107,8 +104,7 @@ async fn service_resources_cleaned_up() {
 
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(move |_req: ()| {
         let rc = Arc::clone(&rc_clone);
@@ -143,8 +139,7 @@ async fn verify_tokio_timeout_drop_behavior() {
 
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(30))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(move |_req: ()| {
         let dropped = Arc::clone(&dropped_clone);
@@ -179,8 +174,7 @@ async fn future_state_after_timeout() {
 
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(move |_req: ()| {
         let ws = Arc::clone(&ws_clone);
@@ -219,8 +213,7 @@ async fn no_resource_leaks() {
 
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     // Run multiple timeout scenarios
     for _ in 0..10 {

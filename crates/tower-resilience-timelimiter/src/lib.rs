@@ -20,8 +20,7 @@
 //!     .on_timeout(|| {
 //!         eprintln!("Request timed out!");
 //!     })
-//!     .build()
-//!     .layer();
+//!     .build();
 //!
 //! let svc = service_fn(|req: String| async move {
 //!     Ok::<String, ()>(req)
@@ -152,8 +151,7 @@ mod tests {
     async fn test_success_within_timeout() {
         let layer = TimeLimiterConfig::builder()
             .timeout_duration(Duration::from_millis(100))
-            .build()
-            .layer();
+            .build();
 
         let svc = service_fn(|_req: ()| async {
             sleep(Duration::from_millis(10)).await;
@@ -171,8 +169,7 @@ mod tests {
     async fn test_timeout_occurs() {
         let layer = TimeLimiterConfig::builder()
             .timeout_duration(Duration::from_millis(10))
-            .build()
-            .layer();
+            .build();
 
         let svc = service_fn(|_req: ()| async {
             sleep(Duration::from_millis(100)).await;
@@ -190,8 +187,7 @@ mod tests {
     async fn test_inner_error_propagates() {
         let layer = TimeLimiterConfig::builder()
             .timeout_duration(Duration::from_millis(100))
-            .build()
-            .layer();
+            .build();
 
         let svc = service_fn(|_req: ()| async { Err::<(), _>("inner error") });
 
@@ -220,8 +216,7 @@ mod tests {
             .on_timeout(move || {
                 tc.fetch_add(1, Ordering::SeqCst);
             })
-            .build()
-            .layer();
+            .build();
 
         // Test success
         let svc = service_fn(|_req: ()| async {
@@ -242,16 +237,5 @@ mod tests {
         assert_eq!(timeout_count.load(Ordering::SeqCst), 1);
     }
 
-    #[tokio::test]
-    async fn test_cancel_running_future_flag() {
-        // Note: The cancel_running_future flag is currently stored but not used
-        // because tokio::time::timeout always drops the future on timeout.
-        // This test just verifies the config accepts the flag.
-        let layer = TimeLimiterConfig::builder()
-            .timeout_duration(Duration::from_millis(10))
-            .cancel_running_future(true)
-            .build();
-
-        assert!(layer.cancel_running_future);
-    }
+    // Note: The cancel_running_future flag is tested in tests/timelimiter/cancellation.rs
 }

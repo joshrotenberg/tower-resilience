@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let retry_config: RetryConfig<TemporaryError> = RetryConfig::builder()
+    let retry_layer = RetryConfig::<TemporaryError>::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(100))
         .on_retry(|attempt, delay| {
@@ -52,7 +52,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .build();
 
-    let retry_layer = retry_config.layer();
     let mut service = retry_layer.layer(service);
 
     let result = service.ready().await?.call("test".to_string()).await?;
@@ -76,7 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let retry_config: RetryConfig<TemporaryError> = RetryConfig::builder()
+    let retry_layer = RetryConfig::<TemporaryError>::builder()
         .max_attempts(5)
         .backoff(
             ExponentialBackoff::new(Duration::from_millis(50))
@@ -91,7 +90,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .build();
 
-    let retry_layer = retry_config.layer();
     let mut service = retry_layer.layer(service);
 
     let result = service.ready().await?.call("test".to_string()).await?;
@@ -117,7 +115,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err::<String, _>(PermanentError)
     });
 
-    let retry_config: RetryConfig<PermanentError> = RetryConfig::builder()
+    let retry_layer = RetryConfig::<PermanentError>::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(50))
         .retry_on(|_: &PermanentError| false) // Never retry permanent errors
@@ -126,7 +124,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .build();
 
-    let retry_layer = retry_config.layer();
     let mut service = retry_layer.layer(service);
 
     let result = service.ready().await?.call("test".to_string()).await;
@@ -146,7 +143,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let retry_config: RetryConfig<TemporaryError> = RetryConfig::builder()
+    let retry_layer = RetryConfig::<TemporaryError>::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_millis(50))
         .on_retry(|attempt, _| {
@@ -157,7 +154,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .build();
 
-    let retry_layer = retry_config.layer();
     let mut service = retry_layer.layer(service);
 
     let result = service.ready().await?.call("test".to_string()).await;

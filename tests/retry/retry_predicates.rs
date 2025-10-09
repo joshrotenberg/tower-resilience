@@ -38,12 +38,12 @@ async fn retry_all_errors_by_default() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -75,13 +75,13 @@ async fn retry_only_retryable_errors() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Retryable(_)))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -108,13 +108,13 @@ async fn dont_retry_non_retryable_errors() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Retryable(_)))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -147,7 +147,7 @@ async fn predicate_based_on_error_content() {
     });
 
     // Only retry timeout errors
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| match e {
@@ -156,7 +156,7 @@ async fn predicate_based_on_error_content() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -184,13 +184,13 @@ async fn predicate_never_retries() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|_| false) // Never retry
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -221,13 +221,13 @@ async fn predicate_always_retries() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|_| true) // Always retry
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -259,13 +259,13 @@ async fn predicate_with_multiple_error_types() {
     });
 
     // Retry both Transient and Retryable variants
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Transient | TestError::Retryable(_)))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -300,13 +300,13 @@ async fn predicate_with_external_state() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(move |_| ar.load(Ordering::SeqCst))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First request with retries enabled
@@ -353,7 +353,7 @@ async fn predicate_complex_logic() {
     });
 
     // Retry only 5xx and 429 errors, not 404
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| match e {
@@ -364,7 +364,7 @@ async fn predicate_complex_logic() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -404,21 +404,21 @@ async fn different_predicates_different_services() {
     });
 
     // Service 1: retry transient errors
-    let config1: RetryConfig<TestError> = RetryConfig::builder()
+    let layer1 = RetryConfig::<TestError>::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Transient))
         .build();
 
     // Service 2: don't retry transient errors
-    let config2: RetryConfig<TestError> = RetryConfig::builder()
+    let layer2 = RetryConfig::<TestError>::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Permanent))
         .build();
 
-    let mut svc1 = config1.layer().layer(service1);
-    let mut svc2 = config2.layer().layer(service2);
+    let mut svc1 = layer1.layer(service1);
+    let mut svc2 = layer2.layer(service2);
 
     let _ = svc1.ready().await.unwrap().call("test".to_string()).await;
     let _ = svc2.ready().await.unwrap().call("test".to_string()).await;

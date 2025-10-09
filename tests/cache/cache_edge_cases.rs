@@ -33,7 +33,7 @@ async fn empty_cache_behavior() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First call to empty cache should miss and call inner service
@@ -85,7 +85,7 @@ async fn single_item_cache_lru_works() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // Insert first item
@@ -142,7 +142,7 @@ async fn large_cache_stress_test() {
         .key_extractor(|req: &u32| *req)
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // Insert 1500 unique items
@@ -183,7 +183,7 @@ async fn zero_ttl_instant_expiration() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First call
@@ -229,7 +229,7 @@ async fn very_long_ttl() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First call
@@ -276,7 +276,7 @@ async fn multiple_items_same_value_different_keys() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // Insert 5 different keys, all with same value
@@ -334,7 +334,7 @@ async fn rapid_insert_evict_cycles() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // Rapidly insert 100 items into a size-5 cache
@@ -376,7 +376,7 @@ async fn cache_full_behavior() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // Fill cache to capacity
@@ -420,7 +420,7 @@ async fn ttl_expiration_during_service_call() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First call - cache miss, takes 100ms
@@ -470,7 +470,7 @@ async fn clone_overhead_with_large_responses() {
         .key_extractor(|req: &u32| *req)
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First call - computes large response

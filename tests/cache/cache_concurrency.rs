@@ -33,7 +33,7 @@ async fn concurrent_reads_from_same_cached_item() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First call to populate cache
@@ -89,7 +89,7 @@ async fn concurrent_writes_with_different_keys() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let service = layer.layer(service);
 
     // Spawn 20 concurrent writes with different keys
@@ -140,7 +140,7 @@ async fn concurrent_read_write_mix() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let service = layer.layer(service);
 
     // Spawn mixed workload: some write new keys, some read existing keys
@@ -205,7 +205,7 @@ async fn cache_service_cloning_preserves_shared_state() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service1 = layer.layer(service);
 
     // Clone the service (Tower requirement)
@@ -262,7 +262,7 @@ async fn thread_safety_of_arc_mutex_cache_store() {
         .key_extractor(|req: &u32| *req)
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let service = layer.layer(service);
 
     // Spawn 50 tasks accessing cache concurrently
@@ -306,7 +306,7 @@ async fn multiple_clones_accessing_simultaneously() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let service = layer.layer(service);
 
     // Create 5 clones
@@ -354,7 +354,7 @@ async fn no_data_corruption_under_concurrent_load() {
         .key_extractor(|req: &u64| *req)
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let service = layer.layer(service);
 
     // High concurrency: 100 tasks, each making multiple calls
@@ -405,7 +405,7 @@ async fn concurrent_cache_hits_maintain_correctness() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // Pre-populate cache with 5 items

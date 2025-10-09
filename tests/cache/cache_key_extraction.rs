@@ -52,7 +52,7 @@ async fn complex_key_extraction_from_struct() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First request
@@ -112,7 +112,7 @@ async fn key_collision_handling() {
         .key_extractor(|req: &String| req.chars().next().unwrap_or('?').to_string())
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First request with key "a"
@@ -175,7 +175,7 @@ async fn different_request_types_same_key_extracted() {
         .key_extractor(|req: &RequestV1| req.id)
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First request with id=1
@@ -238,7 +238,7 @@ async fn key_extractor_with_hash_of_struct_fields() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First query
@@ -302,7 +302,7 @@ async fn key_extractor_with_simple_types() {
         .key_extractor(|req: &u64| *req)
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // Test multiple calls with same key
@@ -329,7 +329,7 @@ async fn key_extractor_with_simple_types() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let string_layer = string_config.layer();
+    let string_layer = string_config;
     let mut string_service = string_layer.layer(string_service);
 
     let result = string_service
@@ -367,7 +367,7 @@ async fn key_extraction_consistency() {
         .key_extractor(|req: &Request| (req.a, req.b))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // Multiple calls with same (a, b) values

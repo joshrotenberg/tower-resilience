@@ -12,7 +12,7 @@ use tower::Layer;
 /// # Examples
 ///
 /// ```
-/// use tower_resilience_cache::{CacheConfig, CacheLayer};
+/// use tower_resilience_cache::CacheConfig;
 /// use tower::ServiceBuilder;
 /// use std::time::Duration;
 ///
@@ -21,8 +21,7 @@ use tower::Layer;
 ///     .max_size(100)
 ///     .ttl(Duration::from_secs(60))
 ///     .key_extractor(|req: &String| req.clone())
-///     .build()
-///     .layer();
+///     .build();
 ///
 /// let service = ServiceBuilder::new()
 ///     .layer(cache_layer)

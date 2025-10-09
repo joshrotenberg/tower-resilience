@@ -15,7 +15,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio::time::sleep;
-use tower::{Layer, Service, ServiceBuilder};
+use tower::{Layer, Service};
 use tower_resilience::{
     bulkhead::BulkheadConfig,
     cache::CacheConfig,
@@ -79,16 +79,16 @@ async fn demo_circuit_breaker_and_bulkhead() {
         }
     });
 
-    let bulkhead = BulkheadConfig::builder().max_concurrent_calls(5).build();
+    let bulkhead_layer = BulkheadConfig::builder().max_concurrent_calls(5).build();
 
-    let service = ServiceBuilder::new().layer(bulkhead).service(service);
+    let service = bulkhead_layer.layer(service);
 
-    let cb_config = CircuitBreakerConfig::builder()
+    let cb_layer = CircuitBreakerConfig::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .build();
 
-    let mut service = cb_config.layer(service);
+    let mut service = cb_layer.layer(service);
 
     for i in 1..=15 {
         match tower::ServiceExt::ready(&mut service)
@@ -127,7 +127,7 @@ async fn demo_retry() {
         }
     });
 
-    let retry_config: RetryConfig<ServiceError> = RetryConfig::builder()
+    let retry_layer = RetryConfig::builder()
         .max_attempts(5)
         .backoff(ExponentialBackoff::new(Duration::from_millis(50)))
         .on_retry(|attempt, delay| {
@@ -135,7 +135,6 @@ async fn demo_retry() {
         })
         .build();
 
-    let retry_layer = retry_config.layer();
     let mut service = retry_layer.layer(service);
 
     match tower::ServiceExt::ready(&mut service)
@@ -158,13 +157,12 @@ async fn demo_timeout() {
         Ok::<_, ServiceError>("Completed")
     });
 
-    let timeout_config = TimeLimiterConfig::builder()
+    let timeout_layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(100))
         .on_timeout(|| println!("  [Timeout] Request timed out!"))
         .on_success(|duration| println!("  [Success] Completed in {:?}", duration))
         .build();
 
-    let timeout_layer = timeout_config.layer();
     let mut service = timeout_layer.layer(service);
 
     // Fast request
@@ -202,7 +200,7 @@ async fn demo_cache() {
         }
     });
 
-    let cache_config: CacheConfig<String, String> = CacheConfig::builder()
+    let cache_layer = CacheConfig::builder()
         .max_size(10)
         .ttl(Duration::from_secs(5))
         .key_extractor(|req: &String| req.clone())
@@ -210,7 +208,6 @@ async fn demo_cache() {
         .on_miss(|| println!("  [Cache] Miss"))
         .build();
 
-    let cache_layer = cache_config.layer();
     let mut service = cache_layer.layer(service);
 
     // First request - cache miss

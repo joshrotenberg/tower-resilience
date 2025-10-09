@@ -39,12 +39,12 @@ async fn fixed_interval_consistent_delays() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .backoff(FixedInterval::new(Duration::from_millis(50)))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -90,12 +90,12 @@ async fn exponential_backoff_doubles_delay() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .backoff(ExponentialBackoff::new(Duration::from_millis(50)))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -154,12 +154,12 @@ async fn exponential_backoff_custom_multiplier() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .backoff(ExponentialBackoff::new(Duration::from_millis(50)).multiplier(3.0))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -210,7 +210,7 @@ async fn exponential_backoff_respects_max_interval() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(6)
         .backoff(
             ExponentialBackoff::new(Duration::from_millis(50))
@@ -218,7 +218,7 @@ async fn exponential_backoff_respects_max_interval() {
         )
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -289,7 +289,7 @@ async fn exponential_random_backoff_has_variance() {
             }
         });
 
-        let config: RetryConfig<TestError> = RetryConfig::builder()
+        let config = RetryConfig::builder()
             .max_attempts(4)
             .backoff(ExponentialRandomBackoff::new(
                 Duration::from_millis(100),
@@ -297,7 +297,7 @@ async fn exponential_random_backoff_has_variance() {
             ))
             .build();
 
-        let layer = config.layer();
+        let layer = config;
         let mut service = layer.layer(service);
 
         let _ = service
@@ -359,7 +359,7 @@ async fn exponential_random_backoff_respects_max() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .backoff(
             ExponentialRandomBackoff::new(Duration::from_millis(50), 0.3)
@@ -367,7 +367,7 @@ async fn exponential_random_backoff_respects_max() {
         )
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -411,14 +411,14 @@ async fn custom_function_interval_linear_growth() {
     });
 
     // Linear backoff: 50ms, 100ms, 150ms, ...
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .backoff(FnInterval::new(|attempt| {
             Duration::from_millis(50 * (attempt as u64 + 1))
         }))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -478,7 +478,7 @@ async fn custom_function_interval_fibonacci() {
     });
 
     // Fibonacci backoff: 10, 10, 20, 30, 50, ...
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(6)
         .backoff(FnInterval::new(|attempt| {
             let fib = match attempt {
@@ -499,7 +499,7 @@ async fn custom_function_interval_fibonacci() {
         }))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -534,12 +534,12 @@ async fn custom_function_interval_constant() {
     });
 
     // Constant 100ms regardless of attempt
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .backoff(FnInterval::new(|_| Duration::from_millis(100)))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -574,12 +574,12 @@ async fn zero_backoff_retries_immediately() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .backoff(FixedInterval::new(Duration::from_millis(0)))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let start = Instant::now();

@@ -20,8 +20,7 @@ use tower::Layer;
 /// let retry_layer: tower_resilience_retry::RetryLayer<MyError> = RetryConfig::builder()
 ///     .max_attempts(5)
 ///     .exponential_backoff(Duration::from_millis(100))
-///     .build()
-///     .layer();
+///     .build();
 ///
 /// let service = ServiceBuilder::new()
 ///     .layer(retry_layer)

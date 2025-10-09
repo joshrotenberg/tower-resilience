@@ -38,12 +38,12 @@ async fn success_on_first_attempt_no_retry() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -75,12 +75,12 @@ async fn success_after_one_retry() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -112,12 +112,12 @@ async fn success_after_multiple_retries() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(6)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -145,12 +145,12 @@ async fn exhaust_all_attempts() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -178,12 +178,12 @@ async fn single_attempt_no_retries() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(1)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -219,12 +219,12 @@ async fn request_cloning_works_correctly() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -260,12 +260,12 @@ async fn different_requests_independently_retried() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     // First request: fails once, then succeeds
@@ -312,13 +312,13 @@ async fn stop_on_non_retryable_error() {
         }
     });
 
-    let config: RetryConfig<Error> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, Error::Retryable))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result: Result<String, Error> = service
@@ -351,12 +351,12 @@ async fn max_attempts_two_allows_one_retry() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(2)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -387,12 +387,12 @@ async fn max_attempts_hundred() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(100)
         .fixed_backoff(std::time::Duration::from_millis(1))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -423,12 +423,12 @@ async fn service_cloning_preserves_retry_behavior() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service1 = layer.layer(service);
     let mut service2 = service1.clone();
 
@@ -470,12 +470,12 @@ async fn concurrent_requests_independently_retried() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let service = layer.layer(service);
 
     // Launch multiple concurrent requests
@@ -520,12 +520,12 @@ async fn empty_response_type() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
