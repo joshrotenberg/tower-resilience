@@ -16,10 +16,14 @@ futures = { workspace = true }
 tokio = { workspace = true }
 thiserror = { workspace = true }
 
+# Optional dependencies
+metrics = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 
 [features]
 default = []
-metrics = ["tower-resilience-core/metrics"]
-tracing = ["tower-resilience-core/tracing"]
+metrics = ["dep:metrics", "tower-resilience-core/metrics"]
+tracing = ["dep:tracing", "tower-resilience-core/tracing"]

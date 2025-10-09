@@ -59,6 +59,12 @@ use std::task::{Context, Poll};
 use std::time::Instant;
 use tower::Service;
 
+#[cfg(feature = "metrics")]
+use metrics::{counter, describe_counter, describe_histogram, histogram};
+
+#[cfg(feature = "tracing")]
+use tracing::{debug, warn};
+
 /// A Tower [`Service`] that applies rate limiting.
 ///
 /// This service wraps an inner service and limits the rate at which
@@ -72,6 +78,18 @@ pub struct RateLimiter<S> {
 impl<S> RateLimiter<S> {
     /// Creates a new `RateLimiter` wrapping the given service.
     pub fn new(inner: S, config: Arc<RateLimiterConfig>) -> Self {
+        #[cfg(feature = "metrics")]
+        {
+            describe_counter!(
+                "ratelimiter_calls_total",
+                "Total number of rate limiter calls (permitted or rejected)"
+            );
+            describe_histogram!(
+                "ratelimiter_wait_duration_seconds",
+                "Time spent waiting for a permit"
+            );
+        }
+
         let limiter = SharedRateLimiter::new(
             config.limit_for_period,
             config.refresh_period,
@@ -132,6 +150,26 @@ where
                     };
                     config.event_listeners.emit(&event);
 
+                    #[cfg(feature = "metrics")]
+                    {
+                        counter!("ratelimiter_calls_total", "ratelimiter" => config.name.clone(), "result" => "permitted").increment(1);
+                        histogram!("ratelimiter_wait_duration_seconds", "ratelimiter" => config.name.clone())
+                            .record(wait_duration.as_secs_f64());
+                    }
+
+                    #[cfg(feature = "tracing")]
+                    {
+                        if wait_duration.as_millis() > 0 {
+                            debug!(
+                                ratelimiter = %config.name,
+                                wait_ms = wait_duration.as_millis(),
+                                "Permit acquired after waiting"
+                            );
+                        } else {
+                            debug!(ratelimiter = %config.name, "Permit acquired immediately");
+                        }
+                    }
+
                     // Process the request
                     inner
                         .call(req)
@@ -146,6 +184,18 @@ where
                         timeout_duration: config.timeout_duration,
                     };
                     config.event_listeners.emit(&event);
+
+                    #[cfg(feature = "metrics")]
+                    {
+                        counter!("ratelimiter_calls_total", "ratelimiter" => config.name.clone(), "result" => "rejected").increment(1);
+                    }
+
+                    #[cfg(feature = "tracing")]
+                    warn!(
+                        ratelimiter = %config.name,
+                        timeout_ms = config.timeout_duration.as_millis(),
+                        "Rate limit exceeded - permit rejected"
+                    );
 
                     Err(RateLimiterError::RateLimitExceeded)
                 }
