@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-bulkhead-v0.2.1...tower-resilience-bulkhead-v0.3.0) - 2025-10-09
+
+### Added
+
+- add ResilienceError for zero-boilerplate error handling ([#80](https://github.com/joshrotenberg/tower-resilience/pull/80))
+
+### Other
+
+- add comprehensive event listener callback documentation ([#79](https://github.com/joshrotenberg/tower-resilience/pull/79))
+- add comprehensive layer composition guide and update builder API examples ([#78](https://github.com/joshrotenberg/tower-resilience/pull/78))
+
 ## [0.2.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-bulkhead-v0.2.0...tower-resilience-bulkhead-v0.2.1) - 2025-10-08
 
 ### Fixed
