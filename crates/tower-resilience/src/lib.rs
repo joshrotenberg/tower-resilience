@@ -768,13 +768,76 @@
 //!
 //! ## Error Type Integration
 //!
-//! Layers must agree on error types. Use one of these approaches:
+//! When composing multiple resilience layers, all layers must agree on error types.
+//! Tower-resilience provides three approaches, from simplest to most flexible:
 //!
-//! ### 1. Common Error Type
+//! ### 1. `ResilienceError<E>` (Recommended - Zero Boilerplate)
+//!
+//! Use the provided [`ResilienceError<E>`](tower_resilience_core::ResilienceError) type
+//! to eliminate manual `From` implementations:
+//!
+//! ```rust,no_run
+//! # #[cfg(all(feature = "bulkhead", feature = "ratelimiter"))]
+//! # {
+//! use tower::ServiceBuilder;
+//! use tower_resilience_core::ResilienceError;
+//! use tower_resilience::bulkhead::BulkheadConfig;
+//! use tower_resilience::ratelimiter::RateLimiterConfig;
+//! use std::time::Duration;
+//!
+//! // Your application error
+//! #[derive(Debug, Clone)]
+//! enum AppError {
+//!     DatabaseDown,
+//!     InvalidRequest,
+//! }
+//!
+//! impl std::fmt::Display for AppError {
+//!     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//!         match self {
+//!             AppError::DatabaseDown => write!(f, "Database down"),
+//!             AppError::InvalidRequest => write!(f, "Invalid"),
+//!         }
+//!     }
+//! }
+//!
+//! impl std::error::Error for AppError {}
+//!
+//! // That's it! Zero From implementations needed
+//! type ServiceError = ResilienceError<AppError>;
+//!
+//! // All resilience layer errors automatically convert to ResilienceError
+//! // let service = ServiceBuilder::new()
+//! //     .layer(bulkhead)
+//! //     .layer(rate_limiter)
+//! //     .service(my_service);
+//! # }
+//! ```
+//!
+//! **Benefits:**
+//! - Zero boilerplate - no manual `From` implementations
+//! - Works with any number of layers
+//! - Rich error context (layer names, counts, durations)
+//! - Convenient helpers: `is_timeout()`, `is_rate_limited()`, etc.
+//! - Application errors wrapped in `Application` variant
+//!
+//! **Use when:**
+//! - Building new services
+//! - You want to move fast with minimal code
+//! - Standard error categorization is sufficient
+//!
+//! ### 2. Custom Error Type with Manual From
+//!
+//! Define your own error type and implement `From` for each layer:
 //!
 //! ```rust,no_run
 //! # use std::time::Duration;
-//! # #[derive(Debug, Clone)]
+//! # #[cfg(all(feature = "retry", feature = "circuitbreaker"))]
+//! # {
+//! use tower_resilience::retry::RetryConfig;
+//! use tower_resilience::circuitbreaker::CircuitBreakerConfig;
+//!
+//! #[derive(Debug, Clone)]
 //! enum ServiceError {
 //!     Network(String),
 //!     Timeout,
@@ -782,11 +845,9 @@
 //!     RateLimit,
 //! }
 //!
-//! // All layers use ServiceError
-//! # #[cfg(all(feature = "retry", feature = "circuitbreaker"))]
-//! # {
-//! use tower_resilience::retry::RetryConfig;
-//! use tower_resilience::circuitbreaker::CircuitBreakerConfig;
+//! // Manual From implementations give you full control
+//! // impl From<BulkheadError> for ServiceError { /* ... */ }
+//! // impl From<CircuitBreakerError> for ServiceError { /* ... */ }
 //!
 //! let retry = RetryConfig::<ServiceError>::builder()
 //!     .max_attempts(3)
@@ -795,7 +856,13 @@
 //! # }
 //! ```
 //!
-//! ### 2. Error Mapping Layer
+//! **Use when:**
+//! - You need very specific error semantics
+//! - Different recovery strategies per layer
+//! - Integrating with legacy error types
+//! - Custom error logging requirements
+//!
+//! ### 3. Error Mapping Layer
 //!
 //! Use `tower::util::MapErr` to convert between error types:
 //!

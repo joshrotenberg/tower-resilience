@@ -1,4 +1,5 @@
 use thiserror::Error;
+use tower_resilience_core::ResilienceError;
 
 /// Errors returned by the `CircuitBreaker` service.
 #[derive(Debug, Error)]
@@ -30,5 +31,15 @@ impl<E> CircuitBreakerError<E> {
 impl<E> From<E> for CircuitBreakerError<E> {
     fn from(err: E) -> Self {
         CircuitBreakerError::Inner(err)
+    }
+}
+
+// Conversion to ResilienceError for zero-boilerplate error handling
+impl<E> From<CircuitBreakerError<E>> for ResilienceError<E> {
+    fn from(err: CircuitBreakerError<E>) -> Self {
+        match err {
+            CircuitBreakerError::OpenCircuit => ResilienceError::CircuitOpen { name: None },
+            CircuitBreakerError::Inner(e) => ResilienceError::Application(e),
+        }
     }
 }

@@ -137,6 +137,44 @@ let layer = CacheConfig::builder()
     .build();
 ```
 
+## Error Handling
+
+### Zero-Boilerplate with ResilienceError
+
+When composing multiple resilience layers, use `ResilienceError<E>` to eliminate manual error conversion code:
+
+```rust
+use tower_resilience_core::ResilienceError;
+
+// Your application error
+#[derive(Debug)]
+enum AppError {
+    DatabaseDown,
+    InvalidRequest,
+}
+
+// That's it! No From implementations needed
+type ServiceError = ResilienceError<AppError>;
+
+// All resilience layer errors automatically convert
+let service = ServiceBuilder::new()
+    .layer(timeout_layer)
+    .layer(circuit_breaker)
+    .layer(bulkhead)
+    .service(my_service);
+```
+
+**Benefits:**
+- Zero boilerplate - no `From` trait implementations
+- Rich error context (layer names, counts, durations)
+- Convenient helpers: `is_timeout()`, `is_rate_limited()`, etc.
+
+See the [Layer Composition Guide](https://docs.rs/tower-resilience) for details.
+
+### Manual Error Handling
+
+For specific use cases, you can still implement custom error types with manual `From` conversions. See examples for both approaches.
+
 ## Pattern Composition
 
 Stack multiple patterns for comprehensive resilience:
