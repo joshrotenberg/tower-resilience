@@ -11,12 +11,12 @@
 //! ## Basic Example
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitBreaker};
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
 //! use tower::service_fn;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerConfig::<String, ()>::builder()
+//! let layer = CircuitBreakerLayer::<String, ()>::builder()
 //!     .failure_rate_threshold(0.5)  // Open at 50% failure rate
 //!     .sliding_window_size(100)     // Track last 100 calls
 //!     .wait_duration_in_open(Duration::from_secs(30))
@@ -34,12 +34,12 @@
 //! Use time-based windows instead of count-based:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitBreaker, SlidingWindowType};
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker, SlidingWindowType};
 //! use tower::service_fn;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerConfig::<String, ()>::builder()
+//! let layer = CircuitBreakerLayer::<String, ()>::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_type(SlidingWindowType::TimeBased)
 //!     .sliding_window_duration(Duration::from_secs(60))  // Last 60 seconds
@@ -58,13 +58,13 @@
 //! Provide fallback responses when circuit is open:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::CircuitBreakerConfig;
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 //! use tower::service_fn;
 //! use std::time::Duration;
 //! use futures::future::BoxFuture;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerConfig::<String, ()>::builder()
+//! let layer = CircuitBreakerLayer::<String, ()>::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_size(100)
 //!     .build();
@@ -87,12 +87,12 @@
 //! Control what counts as a failure:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitBreaker};
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
 //! use tower::service_fn;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerConfig::<String, std::io::Error>::builder()
+//! let layer = CircuitBreakerLayer::<String, std::io::Error>::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_size(100)
 //!     .failure_classifier(|result: &Result<String, std::io::Error>| {
@@ -117,12 +117,12 @@
 //! Open circuit based on slow calls:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitBreaker};
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
 //! use tower::service_fn;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerConfig::<String, ()>::builder()
+//! let layer = CircuitBreakerLayer::<String, ()>::builder()
 //!     .failure_rate_threshold(1.0)  // Don't open on failures
 //!     .slow_call_duration_threshold(Duration::from_secs(2))
 //!     .slow_call_rate_threshold(0.5)  // Open at 50% slow calls
@@ -141,12 +141,12 @@
 //! Monitor circuit breaker behavior:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitBreaker};
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
 //! use tower::service_fn;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerConfig::<String, ()>::builder()
+//! let layer = CircuitBreakerLayer::<String, ()>::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_size(100)
 //!     .on_state_transition(|from, to| {
@@ -173,11 +173,11 @@
 //! ## Error Handling
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitBreakerError};
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreakerError};
 //! use tower::{Service, service_fn};
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerConfig::<String, ()>::builder().build();
+//! let layer = CircuitBreakerLayer::<String, ()>::builder().build();
 //! let mut service = layer.layer(service_fn(|req: String| async move {
 //!     Ok::<_, ()>(req)
 //! }));
@@ -248,7 +248,7 @@ static METRICS_INIT: Once = Once::new();
 /// Returns a new builder for a `CircuitBreakerLayer`.
 ///
 /// This is a convenience function that returns a builder. You can also use
-/// `CircuitBreakerConfig::builder()` directly.
+/// `CircuitBreakerLayer::builder()` directly.
 pub fn circuit_breaker_builder<Res, Err>() -> CircuitBreakerConfigBuilder<Res, Err> {
     #[cfg(feature = "metrics")]
     {

@@ -179,9 +179,9 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
     ///
-    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    /// let config = CircuitBreakerLayer::<(), ()>::builder()
     ///     .on_state_transition(|from, to| {
     ///         println!("Circuit breaker: {:?} -> {:?}", from, to);
     ///         match to {
@@ -223,14 +223,14 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
     ///
     /// let call_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&call_count);
     ///
-    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    /// let config = CircuitBreakerLayer::<(), ()>::builder()
     ///     .on_call_permitted(move |state| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Call #{} permitted in state: {:?}", count + 1, state);
@@ -264,14 +264,14 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_circuitbreaker::CircuitBreakerConfig;
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
     ///
     /// let rejection_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&rejection_count);
     ///
-    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    /// let config = CircuitBreakerLayer::<(), ()>::builder()
     ///     .on_call_rejected(move || {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Call rejected - circuit is open (total: {})", count + 1);
@@ -304,9 +304,9 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
     ///
-    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    /// let config = CircuitBreakerLayer::<(), ()>::builder()
     ///     .on_success(|state| {
     ///         match state {
     ///             CircuitState::HalfOpen => println!("Success in half-open - may recover soon"),
@@ -342,14 +342,14 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
     ///
     /// let failure_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&failure_count);
     ///
-    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    /// let config = CircuitBreakerLayer::<(), ()>::builder()
     ///     .on_failure(move |state| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Failure #{} recorded in state: {:?}", count + 1, state);
@@ -388,10 +388,10 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_circuitbreaker::CircuitBreakerConfig;
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
     /// use std::time::Duration;
     ///
-    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    /// let config = CircuitBreakerLayer::<(), ()>::builder()
     ///     .slow_call_duration_threshold(Duration::from_secs(2))
     ///     .slow_call_rate_threshold(0.5) // Open if >50% of calls are slow
     ///     .on_slow_call(|duration| {

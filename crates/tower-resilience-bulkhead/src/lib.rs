@@ -33,7 +33,7 @@
 //!
 //! ```rust
 //! use tower::ServiceBuilder;
-//! use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
+//! use tower_resilience_bulkhead::{BulkheadLayer, BulkheadError};
 //! use std::time::Duration;
 //!
 //! # async fn example() {

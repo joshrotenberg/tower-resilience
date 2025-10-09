@@ -29,8 +29,17 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Run tests
-        run: cargo test --workspace --all-features
+      - name: Run library tests
+        run: cargo test --lib --workspace --all-features
+
+      - name: Run integration tests
+        run: cargo test --test '*' --workspace --all-features
+
+      - name: Run doctests
+        run: cargo test --doc --workspace --all-features
+
+      - name: Build all examples
+        run: cargo build --examples --workspace --all-features
 
   fmt:
     name: Format

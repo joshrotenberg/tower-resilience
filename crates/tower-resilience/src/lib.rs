@@ -80,7 +80,7 @@
 //! ```rust,no_run
 //! # #[cfg(feature = "circuitbreaker")]
 //! # {
-//! use tower_resilience::circuitbreaker::CircuitBreakerConfig;
+//! use tower_resilience::circuitbreaker::CircuitBreakerLayer;
 //! use tower::Layer;
 //! use std::time::Duration;
 //!
@@ -219,7 +219,7 @@
 //! ```rust,no_run
 //! # #[cfg(feature = "timelimiter")]
 //! # {
-//! use tower_resilience::timelimiter::TimeLimiterConfig;
+//! use tower_resilience::timelimiter::TimeLimiterLayer;
 //! use tower::Layer;
 //! use std::time::Duration;
 //!
@@ -293,7 +293,7 @@
 //! ```rust,no_run
 //! # #[cfg(feature = "retry")]
 //! # {
-//! use tower_resilience::retry::RetryConfig;
+//! use tower_resilience::retry::RetryLayer;
 //! use tower::Layer;
 //! use std::time::Duration;
 //!
@@ -367,7 +367,7 @@
 //! ```rust,no_run
 //! # #[cfg(feature = "ratelimiter")]
 //! # {
-//! use tower_resilience::ratelimiter::RateLimiterConfig;
+//! use tower_resilience::ratelimiter::RateLimiterLayer;
 //! use tower::Layer;
 //! use std::time::Duration;
 //!
@@ -570,8 +570,8 @@
 //! # #[cfg(all(feature = "retry", feature = "timelimiter"))]
 //! # {
 //! use tower::ServiceBuilder;
-//! use tower_resilience::retry::RetryConfig;
-//! use tower_resilience::timelimiter::TimeLimiterConfig;
+//! use tower_resilience::retry::RetryLayer;
+//! use tower_resilience::timelimiter::TimeLimiterLayer;
 //! use std::time::Duration;
 //!
 //! # #[derive(Debug, Clone)]
@@ -624,8 +624,8 @@
 //! # #[cfg(all(feature = "retry", feature = "circuitbreaker", feature = "cache"))]
 //! # {
 //! use tower::Layer;
-//! use tower_resilience::retry::RetryConfig;
-//! use tower_resilience::circuitbreaker::CircuitBreakerConfig;
+//! use tower_resilience::retry::RetryLayer;
+//! use tower_resilience::circuitbreaker::CircuitBreakerLayer;
 //! use tower_resilience_cache::CacheLayer;
 //! use std::time::Duration;
 //!
@@ -664,8 +664,8 @@
 //! # #[cfg(all(feature = "retry", feature = "timelimiter", feature = "cache"))]
 //! # {
 //! use tower::{ServiceBuilder, Layer};
-//! use tower_resilience::retry::RetryConfig;
-//! use tower_resilience::timelimiter::TimeLimiterConfig;
+//! use tower_resilience::retry::RetryLayer;
+//! use tower_resilience::timelimiter::TimeLimiterLayer;
 //! use tower_resilience_cache::CacheLayer;
 //! use std::time::Duration;
 //!
@@ -704,8 +704,8 @@
 //! # #[cfg(all(feature = "retry", feature = "timelimiter"))]
 //! # {
 //! use tower::{ServiceBuilder, Layer};
-//! use tower_resilience::retry::RetryConfig;
-//! use tower_resilience::timelimiter::TimeLimiterConfig;
+//! use tower_resilience::retry::RetryLayer;
+//! use tower_resilience::timelimiter::TimeLimiterLayer;
 //! use std::time::Duration;
 //!
 //! # #[derive(Debug, Clone)]
@@ -782,7 +782,7 @@
 //! use tower::ServiceBuilder;
 //! use tower_resilience_core::ResilienceError;
 //! use tower_resilience_bulkhead::BulkheadLayer;
-//! use tower_resilience::ratelimiter::RateLimiterConfig;
+//! use tower_resilience::ratelimiter::RateLimiterLayer;
 //! use std::time::Duration;
 //!
 //! // Your application error
@@ -834,8 +834,8 @@
 //! # use std::time::Duration;
 //! # #[cfg(all(feature = "retry", feature = "circuitbreaker"))]
 //! # {
-//! use tower_resilience::retry::RetryConfig;
-//! use tower_resilience::circuitbreaker::CircuitBreakerConfig;
+//! use tower_resilience::retry::RetryLayer;
+//! use tower_resilience::circuitbreaker::CircuitBreakerLayer;
 //!
 //! #[derive(Debug, Clone)]
 //! enum ServiceError {
@@ -870,7 +870,7 @@
 //! # #[cfg(feature = "retry")]
 //! # {
 //! use tower::{ServiceBuilder, ServiceExt};
-//! use tower_resilience::retry::RetryConfig;
+//! use tower_resilience::retry::RetryLayer;
 //! use std::time::Duration;
 //!
 //! # #[derive(Debug)]
