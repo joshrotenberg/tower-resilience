@@ -490,6 +490,46 @@ CircuitBreakerConfig::builder()
 
 **Best Practice**: Check the builder method docs or tests for exact signatures. The type system will catch mistakes, but it's faster to reference examples.
 
+## Error Handling
+
+### ResilienceError<E> (Recommended)
+
+Tower-resilience provides `ResilienceError<E>` for zero-boilerplate error handling when composing multiple layers:
+
+```rust
+use tower_resilience_core::ResilienceError;
+
+// Your app error
+#[derive(Debug)]
+enum AppError {
+    DatabaseDown,
+    InvalidRequest,
+}
+
+// That's it! Zero From implementations needed
+type ServiceError = ResilienceError<AppError>;
+```
+
+**When to use:**
+- New services with multiple resilience layers
+- You want zero boilerplate
+- Standard error categorization is sufficient
+
+**When to use manual From:**
+- Very specific error semantics needed
+- Different recovery strategies per layer
+- Legacy error type integration
+
+### Automatic Conversions
+
+Each resilience crate provides `From<LayerError> for ResilienceError<E>`:
+- `BulkheadError` → `ResilienceError::BulkheadFull` or `Timeout`
+- `CircuitBreakerError` → `ResilienceError::CircuitOpen`
+- `RateLimiterError` → `ResilienceError::RateLimited`
+- `TimeLimiterError` → `ResilienceError::Timeout`
+
+Application errors are wrapped in `ResilienceError::Application(E)`.
+
 ## Common Pitfalls
 
 1. **Service Cloning**: Tower services get cloned - use `Arc` for shared state

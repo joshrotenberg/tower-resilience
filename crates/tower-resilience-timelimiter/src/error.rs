@@ -1,6 +1,7 @@
 //! Error types for time limiter.
 
 use std::fmt;
+use tower_resilience_core::ResilienceError;
 
 /// Errors that can occur in the time limiter.
 #[derive(Debug)]
@@ -40,6 +41,18 @@ impl<E> TimeLimiterError<E> {
         match self {
             TimeLimiterError::Timeout => None,
             TimeLimiterError::Inner(e) => Some(e),
+        }
+    }
+}
+
+// Conversion to ResilienceError for zero-boilerplate error handling
+impl<E> From<TimeLimiterError<E>> for ResilienceError<E> {
+    fn from(err: TimeLimiterError<E>) -> Self {
+        match err {
+            TimeLimiterError::Timeout => ResilienceError::Timeout {
+                layer: "time_limiter",
+            },
+            TimeLimiterError::Inner(e) => ResilienceError::Application(e),
         }
     }
 }

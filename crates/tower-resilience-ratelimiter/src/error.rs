@@ -1,4 +1,5 @@
 use std::fmt;
+use tower_resilience_core::ResilienceError;
 
 /// Errors that can occur when using the rate limiter.
 #[derive(Debug, Clone)]
@@ -16,6 +17,13 @@ impl fmt::Display for RateLimiterError {
 }
 
 impl std::error::Error for RateLimiterError {}
+
+// Conversion to ResilienceError for zero-boilerplate error handling
+impl<E> From<RateLimiterError> for ResilienceError<E> {
+    fn from(_err: RateLimiterError) -> Self {
+        ResilienceError::RateLimited { retry_after: None }
+    }
+}
 
 #[cfg(test)]
 mod tests {
