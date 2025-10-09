@@ -173,7 +173,32 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
-    /// Register a callback for state transition events.
+    /// Registers a callback when the circuit breaker transitions between states.
+    ///
+    /// The circuit breaker has three states: Closed (normal operation), Open (failing),
+    /// and HalfOpen (testing recovery). This callback is invoked whenever the circuit
+    /// transitions from one state to another.
+    ///
+    /// # Callback Signature
+    /// `Fn(CircuitState, CircuitState)` - Called with two parameters:
+    /// - First parameter: The state the circuit is transitioning **from**
+    /// - Second parameter: The state the circuit is transitioning **to**
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+    ///
+    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    ///     .on_state_transition(|from, to| {
+    ///         println!("Circuit breaker: {:?} -> {:?}", from, to);
+    ///         match to {
+    ///             CircuitState::Open => println!("WARNING: Circuit opened - service degraded"),
+    ///             CircuitState::HalfOpen => println!("Testing recovery..."),
+    ///             CircuitState::Closed => println!("Circuit recovered - normal operation"),
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_state_transition<F>(mut self, f: F) -> Self
     where
         F: Fn(crate::CircuitState, crate::CircuitState) + Send + Sync + 'static,
@@ -193,7 +218,32 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
-    /// Register a callback for call permitted events.
+    /// Registers a callback when a call is permitted through the circuit breaker.
+    ///
+    /// This callback is invoked when the circuit breaker allows a request to proceed to
+    /// the underlying service. Calls are permitted in the Closed and HalfOpen states,
+    /// but rejected in the Open state.
+    ///
+    /// # Callback Signature
+    /// `Fn(CircuitState)` - Called with the current state of the circuit when the call was permitted.
+    /// Will typically be `CircuitState::Closed` or `CircuitState::HalfOpen`.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// let call_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&call_count);
+    ///
+    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    ///     .on_call_permitted(move |state| {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Call #{} permitted in state: {:?}", count + 1, state);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_call_permitted<F>(mut self, f: F) -> Self
     where
         F: Fn(crate::CircuitState) + Send + Sync + 'static,
@@ -209,7 +259,32 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
-    /// Register a callback for call rejected events.
+    /// Registers a callback when a call is rejected by the circuit breaker.
+    ///
+    /// This callback is invoked when the circuit breaker rejects a request without
+    /// allowing it to reach the underlying service. Calls are rejected when the circuit
+    /// is in the Open state, indicating that the service is currently failing and the
+    /// circuit is protecting it from additional load.
+    ///
+    /// # Callback Signature
+    /// `Fn()` - Called with no parameters when a call is rejected.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_circuitbreaker::CircuitBreakerConfig;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// let rejection_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&rejection_count);
+    ///
+    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    ///     .on_call_rejected(move || {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Call rejected - circuit is open (total: {})", count + 1);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_call_rejected<F>(mut self, f: F) -> Self
     where
         F: Fn() + Send + Sync + 'static,
@@ -225,7 +300,29 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
-    /// Register a callback for success recorded events.
+    /// Registers a callback when a successful call is recorded.
+    ///
+    /// This callback is invoked when a call completes successfully (as determined by the
+    /// failure classifier). Successful calls contribute to closing the circuit or keeping
+    /// it closed, demonstrating that the underlying service is healthy.
+    ///
+    /// # Callback Signature
+    /// `Fn(CircuitState)` - Called with the current state of the circuit when the success was recorded.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+    ///
+    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    ///     .on_success(|state| {
+    ///         match state {
+    ///             CircuitState::HalfOpen => println!("Success in half-open - may recover soon"),
+    ///             CircuitState::Closed => println!("Success - circuit healthy"),
+    ///             _ => {}
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_success<F>(mut self, f: F) -> Self
     where
         F: Fn(crate::CircuitState) + Send + Sync + 'static,
@@ -241,7 +338,34 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
-    /// Register a callback for failure recorded events.
+    /// Registers a callback when a failed call is recorded.
+    ///
+    /// This callback is invoked when a call fails (as determined by the failure classifier).
+    /// Failed calls contribute to opening the circuit when the failure rate exceeds the
+    /// configured threshold, protecting the underlying service from additional load.
+    ///
+    /// # Callback Signature
+    /// `Fn(CircuitState)` - Called with the current state of the circuit when the failure was recorded.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// let failure_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&failure_count);
+    ///
+    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    ///     .on_failure(move |state| {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Failure #{} recorded in state: {:?}", count + 1, state);
+    ///         if matches!(state, CircuitState::HalfOpen) {
+    ///             println!("Warning: failure during recovery attempt");
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_failure<F>(mut self, f: F) -> Self
     where
         F: Fn(crate::CircuitState) + Send + Sync + 'static,
@@ -257,7 +381,34 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
-    /// Register a callback for slow call detected events.
+    /// Registers a callback when a slow call is detected.
+    ///
+    /// This callback is invoked when a call takes longer than the configured
+    /// `slow_call_duration_threshold`. Slow calls are tracked separately from failures,
+    /// and if the slow call rate exceeds `slow_call_rate_threshold`, the circuit will open
+    /// even if the failure rate is acceptable. This protects against performance degradation.
+    ///
+    /// Note: This callback is only invoked when `slow_call_duration_threshold` is configured.
+    ///
+    /// # Callback Signature
+    /// `Fn(Duration)` - Called with the actual duration the slow call took to complete.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_circuitbreaker::CircuitBreakerConfig;
+    /// use std::time::Duration;
+    ///
+    /// let config = CircuitBreakerConfig::<(), ()>::builder()
+    ///     .slow_call_duration_threshold(Duration::from_secs(2))
+    ///     .slow_call_rate_threshold(0.5) // Open if >50% of calls are slow
+    ///     .on_slow_call(|duration| {
+    ///         println!("Slow call detected: {:?}", duration);
+    ///         if duration > Duration::from_secs(10) {
+    ///             println!("WARNING: Extremely slow call!");
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_slow_call<F>(mut self, f: F) -> Self
     where
         F: Fn(Duration) + Send + Sync + 'static,
