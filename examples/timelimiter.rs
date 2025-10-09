@@ -6,7 +6,7 @@
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 #[derive(Debug)]
 struct TimeoutError;
@@ -16,7 +16,7 @@ async fn main() {
     println!("=== Time Limiter Example ===\n");
 
     // Configure time limiter with 1 second timeout
-    let config = TimeLimiterConfig::builder()
+    let config = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(1))
         .cancel_running_future(true)
         .on_timeout(|| {

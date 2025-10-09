@@ -2,12 +2,12 @@ use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use futures::future::BoxFuture;
 use std::time::Duration;
 use tower::{Layer, Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
-use tower_resilience_cache::CacheConfig;
-use tower_resilience_circuitbreaker::CircuitBreakerConfig;
-use tower_resilience_ratelimiter::RateLimiterConfig;
-use tower_resilience_retry::RetryConfig;
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
+use tower_resilience_cache::CacheLayer;
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_ratelimiter::RateLimiterLayer;
+use tower_resilience_retry::RetryLayer;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 #[derive(Clone, Debug)]
 struct TestRequest(u64);
@@ -67,7 +67,7 @@ fn bench_circuit_breaker(c: &mut Criterion) {
 
     c.bench_function("circuitbreaker_closed", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = CircuitBreakerConfig::<TestResponse, TestError>::builder()
+            let layer = CircuitBreakerLayer::<TestResponse, TestError>::builder()
                 .failure_rate_threshold(0.5)
                 .sliding_window_size(100)
                 .build();
@@ -89,7 +89,7 @@ fn bench_bulkhead(c: &mut Criterion) {
 
     c.bench_function("bulkhead_permits_available", |b| {
         b.to_async(&runtime).iter(|| async {
-            let config = BulkheadConfig::builder().max_concurrent_calls(100).build();
+            let config = BulkheadLayer::builder().max_concurrent_calls(100).build();
             let mut service = ServiceBuilder::new().layer(config).service(BaselineService);
 
             let response = service
@@ -108,7 +108,7 @@ fn bench_retry(c: &mut Criterion) {
 
     c.bench_function("retry_no_retries_needed", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = RetryConfig::<TestError>::builder()
+            let layer = RetryLayer::<TestError>::builder()
                 .max_attempts(3)
                 .fixed_backoff(Duration::from_millis(100))
                 .build();
@@ -130,7 +130,7 @@ fn bench_rate_limiter(c: &mut Criterion) {
 
     c.bench_function("ratelimiter_permits_available", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = RateLimiterConfig::builder()
+            let layer = RateLimiterLayer::builder()
                 .limit_for_period(1000)
                 .refresh_period(Duration::from_secs(1))
                 .build();
@@ -152,7 +152,7 @@ fn bench_cache(c: &mut Criterion) {
 
     c.bench_function("cache_hit", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = CacheConfig::builder()
+            let layer = CacheLayer::builder()
                 .max_size(100)
                 .ttl(Duration::from_secs(60))
                 .key_extractor(|req: &TestRequest| req.0)
@@ -179,7 +179,7 @@ fn bench_time_limiter(c: &mut Criterion) {
 
     c.bench_function("timelimiter_completes_quickly", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = TimeLimiterConfig::builder()
+            let layer = TimeLimiterLayer::builder()
                 .timeout_duration(Duration::from_secs(30))
                 .build();
             let mut service = layer.layer(BaselineService);
@@ -200,10 +200,10 @@ fn bench_composition_simple(c: &mut Criterion) {
 
     c.bench_function("composition_circuit_breaker_and_bulkhead", |b| {
         b.to_async(&runtime).iter(|| async {
-            let cb_layer = CircuitBreakerConfig::<TestResponse, TestError>::builder()
+            let cb_layer = CircuitBreakerLayer::<TestResponse, TestError>::builder()
                 .failure_rate_threshold(0.5)
                 .build();
-            let bh_config = BulkheadConfig::builder().max_concurrent_calls(100).build();
+            let bh_config = BulkheadLayer::builder().max_concurrent_calls(100).build();
 
             let mut service = cb_layer.layer(
                 ServiceBuilder::new()

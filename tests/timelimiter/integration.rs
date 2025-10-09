@@ -9,11 +9,11 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 #[tokio::test]
 async fn success_within_timeout() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(100))
         .build();
 
@@ -31,7 +31,7 @@ async fn success_within_timeout() {
 
 #[tokio::test]
 async fn timeout_occurs() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(10))
         .build();
 
@@ -49,7 +49,7 @@ async fn timeout_occurs() {
 
 #[tokio::test]
 async fn inner_error_propagates() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(100))
         .build();
 
@@ -72,7 +72,7 @@ async fn event_listeners_called() {
     let sc = Arc::clone(&success_count);
     let tc = Arc::clone(&timeout_count);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .on_success(move |_| {
             sc.fetch_add(1, Ordering::SeqCst);
@@ -106,7 +106,7 @@ async fn error_event_listener_called() {
     let error_count = Arc::new(AtomicUsize::new(0));
     let ec = Arc::clone(&error_count);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(100))
         .on_error(move |_| {
             ec.fetch_add(1, Ordering::SeqCst);
@@ -127,7 +127,7 @@ async fn error_event_listener_called() {
 
 #[tokio::test]
 async fn multiple_sequential_calls() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
@@ -161,7 +161,7 @@ async fn multiple_sequential_calls() {
 
 #[tokio::test]
 async fn service_cloning_preserves_config() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
@@ -183,7 +183,7 @@ async fn service_cloning_preserves_config() {
 
 #[tokio::test]
 async fn named_timelimiter() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .name("test-limiter")
         .build();
@@ -201,7 +201,7 @@ async fn named_timelimiter() {
 
 #[tokio::test]
 async fn instant_success() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(100))
         .build();
 
@@ -216,7 +216,7 @@ async fn instant_success() {
 
 #[tokio::test]
 async fn instant_error() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(100))
         .build();
 

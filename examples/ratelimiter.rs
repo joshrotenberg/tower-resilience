@@ -5,14 +5,14 @@
 
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_ratelimiter::RateLimiterConfig;
+use tower_resilience_ratelimiter::RateLimiterLayer;
 
 #[tokio::main]
 async fn main() {
     println!("=== Rate Limiter Example ===\n");
 
     // Configure rate limiter: 3 requests per second
-    let config = RateLimiterConfig::builder()
+    let config = RateLimiterLayer::builder()
         .limit_for_period(3)
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_millis(500))

@@ -4,12 +4,13 @@ use std::sync::{
 };
 use std::time::Duration;
 use tower::Service;
-use tower_resilience_circuitbreaker::{CircuitBreakerConfig, SlidingWindowType};
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_circuitbreaker::SlidingWindowType;
 
 /// Test that configuration builder accepts valid values
 #[test]
 fn valid_config_values() {
-    let _config = CircuitBreakerConfig::<(), String>::builder()
+    let _config = CircuitBreakerLayer::<(), String>::builder()
         .failure_rate_threshold(0.5)
         .slow_call_rate_threshold(0.6)
         .sliding_window_size(100)
@@ -26,7 +27,7 @@ fn valid_config_values() {
 async fn failure_rate_threshold_zero() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.0)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -66,7 +67,7 @@ async fn failure_rate_threshold_one() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(1.0)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -97,7 +98,7 @@ async fn slow_call_rate_threshold_zero() {
         Ok::<_, String>("success")
     });
 
-    let layer = CircuitBreakerConfig::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::<&str, String>::builder()
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.0)
         .sliding_window_size(5)
@@ -127,7 +128,7 @@ async fn slow_call_rate_threshold_one() {
         Ok::<_, String>("success")
     });
 
-    let layer = CircuitBreakerConfig::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::<&str, String>::builder()
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(1.0)
         .sliding_window_size(5)
@@ -154,7 +155,7 @@ async fn slow_call_rate_threshold_one() {
 async fn sliding_window_size_one() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(1)
         .minimum_number_of_calls(1)
@@ -177,7 +178,7 @@ async fn sliding_window_size_one() {
 async fn minimum_calls_zero() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(0)
@@ -199,7 +200,7 @@ async fn minimum_calls_zero() {
 async fn minimum_calls_greater_than_window() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(10) // More than window size
@@ -236,7 +237,7 @@ async fn minimum_calls_greater_than_window() {
 async fn minimum_calls_equals_window() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(5)
@@ -262,7 +263,7 @@ async fn minimum_calls_equals_window() {
 async fn zero_wait_duration() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -295,7 +296,7 @@ async fn zero_wait_duration() {
 async fn zero_permitted_calls_half_open() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -326,7 +327,7 @@ async fn zero_permitted_calls_half_open() {
 #[test]
 #[should_panic(expected = "sliding_window_duration must be set")]
 fn time_based_without_duration() {
-    let _layer = CircuitBreakerConfig::<(), String>::builder()
+    let _layer = CircuitBreakerLayer::<(), String>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         // Not setting sliding_window_duration - should panic
         .failure_rate_threshold(0.5)
@@ -341,7 +342,7 @@ fn time_based_without_duration() {
 async fn count_based_with_duration() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::CountBased)
         .sliding_window_duration(Duration::from_secs(10)) // Should be ignored
         .sliding_window_size(5)
@@ -369,7 +370,7 @@ async fn count_based_with_duration() {
 async fn very_large_window_size() {
     let service = tower::service_fn(|_req: ()| async { Ok::<_, String>("success") });
 
-    let layer = CircuitBreakerConfig::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::<&str, String>::builder()
         .sliding_window_size(10000)
         .minimum_number_of_calls(100)
         .failure_rate_threshold(0.5)

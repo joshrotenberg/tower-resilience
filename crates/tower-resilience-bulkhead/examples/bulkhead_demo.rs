@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
 
 #[tokio::main]
 async fn main() {
@@ -25,7 +25,7 @@ async fn main() {
     println!("  - Event listeners enabled\n");
 
     // Create bulkhead configuration
-    let config = BulkheadConfig::builder()
+    let config = BulkheadLayer::builder()
         .max_concurrent_calls(3)
         .max_wait_duration(Some(Duration::from_millis(100)))
         .name("demo-bulkhead")

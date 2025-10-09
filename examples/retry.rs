@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_retry::RetryConfig;
+use tower_resilience_retry::RetryLayer;
 
 #[derive(Debug, Clone)]
 struct MyError;
@@ -36,7 +36,7 @@ async fn main() {
     });
 
     // Configure retry with exponential backoff
-    let layer = RetryConfig::builder()
+    let layer = RetryLayer::builder()
         .max_attempts(5)
         .exponential_backoff(Duration::from_millis(100))
         .on_retry(|attempt, delay| {

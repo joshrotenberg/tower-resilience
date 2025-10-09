@@ -10,7 +10,7 @@ use std::sync::{
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service};
-use tower_resilience::{bulkhead::BulkheadConfig, circuitbreaker::CircuitBreakerConfig};
+use tower_resilience::{bulkhead::BulkheadLayer, circuitbreaker::CircuitBreakerLayer};
 
 #[derive(Debug)]
 struct ServiceError;
@@ -72,7 +72,7 @@ async fn main() {
     let bulkhead_clone = Arc::clone(&bulkhead_count);
 
     // Apply bulkhead first
-    let bulkhead_layer = BulkheadConfig::builder()
+    let bulkhead_layer = BulkheadLayer::builder()
         .max_concurrent_calls(3)
         .max_wait_duration(Some(Duration::from_millis(100)))
         .on_call_rejected(move |_| {
@@ -83,7 +83,7 @@ async fn main() {
     let service = bulkhead_layer.layer(service);
 
     // Then wrap with circuit breaker
-    let cb_layer = CircuitBreakerConfig::builder()
+    let cb_layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .wait_duration_in_open(Duration::from_secs(2))

@@ -8,11 +8,11 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 #[tokio::test]
 async fn duration_zero_config() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::ZERO)
         .build();
 
@@ -31,7 +31,7 @@ async fn duration_zero_config() {
 #[tokio::test]
 async fn duration_max_config() {
     // Use a reasonable substitute for Duration::MAX (1 hour)
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(3600))
         .build();
 
@@ -49,7 +49,7 @@ async fn duration_max_config() {
 
 #[tokio::test]
 async fn default_builder_values() {
-    let config = TimeLimiterConfig::builder().build();
+    let config = TimeLimiterLayer::builder().build();
 
     // Verify defaults from the builder
     let layer = config;
@@ -75,7 +75,7 @@ async fn all_config_options_combined() {
     let ec = Arc::clone(&error_count);
     let tc = Arc::clone(&timeout_count);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .cancel_running_future(true)
         .name("test-limiter")
@@ -131,7 +131,7 @@ async fn event_listeners_work() {
     let ec = Arc::clone(&error_count);
     let tc = Arc::clone(&timeout_count);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .on_success(move |duration| {
             sc.fetch_add(1, Ordering::SeqCst);
@@ -176,7 +176,7 @@ async fn event_listeners_work() {
 
 #[tokio::test]
 async fn name_configuration() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .name("my-custom-limiter")
         .build();
@@ -202,7 +202,7 @@ async fn multiple_event_listeners() {
     let c2 = Arc::clone(&count2);
     let c3 = Arc::clone(&count3);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .on_success(move |_| {
             c1.fetch_add(1, Ordering::SeqCst);
@@ -231,7 +231,7 @@ async fn multiple_event_listeners() {
 
 #[tokio::test]
 async fn cancel_running_future_true_config() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .cancel_running_future(true)
         .build();
@@ -249,7 +249,7 @@ async fn cancel_running_future_true_config() {
 
 #[tokio::test]
 async fn cancel_running_future_false_config() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .cancel_running_future(false)
         .build();

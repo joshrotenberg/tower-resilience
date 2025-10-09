@@ -4,7 +4,8 @@ use std::sync::{
 };
 use std::time::Duration;
 use tower::Service;
-use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState};
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_circuitbreaker::CircuitState;
 
 /// Test 100 concurrent calls hitting closed circuit
 #[tokio::test]
@@ -17,7 +18,7 @@ async fn concurrent_calls_closed_circuit() {
         async { Ok::<_, String>("success") }
     });
 
-    let layer = CircuitBreakerConfig::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::<&str, String>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(200)
         .minimum_number_of_calls(50)
@@ -57,7 +58,7 @@ async fn concurrent_calls_closed_circuit() {
 async fn concurrent_calls_open_circuit() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -119,7 +120,7 @@ async fn state_transition_during_concurrent_calls() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -167,7 +168,7 @@ async fn state_transition_during_concurrent_calls() {
 async fn atomic_state_read_consistency() {
     let service = tower::service_fn(|_req: ()| async { Ok::<_, String>("success") });
 
-    let layer = CircuitBreakerConfig::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::<&str, String>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -221,7 +222,7 @@ async fn concurrent_success_failure_recording() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<&str, &str>::builder()
+    let layer = CircuitBreakerLayer::<&str, &str>::builder()
         .failure_rate_threshold(0.7)
         .sliding_window_size(100)
         .minimum_number_of_calls(50)
@@ -257,7 +258,7 @@ async fn concurrent_success_failure_recording() {
 async fn concurrent_half_open_calls() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -311,7 +312,7 @@ async fn concurrent_service_clones() {
         async { Ok::<_, String>("success") }
     });
 
-    let layer = CircuitBreakerConfig::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::<&str, String>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
         .minimum_number_of_calls(50)

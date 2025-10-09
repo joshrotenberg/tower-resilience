@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_cache::CacheConfig;
+use tower_resilience_cache::CacheLayer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Configure cache with event listeners
-    let cache_layer = CacheConfig::builder()
+    let cache_layer = CacheLayer::builder()
         .max_size(3)
         .ttl(Duration::from_secs(2))
         .name("example-cache")

@@ -17,13 +17,6 @@ pub struct BulkheadConfig {
     pub(crate) event_listeners: EventListeners<BulkheadEvent>,
 }
 
-impl BulkheadConfig {
-    /// Creates a new configuration builder.
-    pub fn builder() -> BulkheadConfigBuilder {
-        BulkheadConfigBuilder::new()
-    }
-}
-
 /// Builder for bulkhead configuration.
 pub struct BulkheadConfigBuilder {
     max_concurrent_calls: usize,
@@ -82,7 +75,7 @@ impl BulkheadConfigBuilder {
     /// ```rust,no_run
     /// use tower_resilience_bulkhead::BulkheadConfig;
     ///
-    /// let config = BulkheadConfig::builder()
+    /// let config = BulkheadLayer::builder()
     ///     .max_concurrent_calls(10)
     ///     .on_call_permitted(|concurrent| {
     ///         println!("Call permitted - now {} concurrent calls", concurrent);
@@ -126,7 +119,7 @@ impl BulkheadConfigBuilder {
     /// let rejection_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&rejection_count);
     ///
-    /// let config = BulkheadConfig::builder()
+    /// let config = BulkheadLayer::builder()
     ///     .max_concurrent_calls(25)
     ///     .on_call_rejected(move |max_capacity| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
@@ -166,7 +159,7 @@ impl BulkheadConfigBuilder {
     /// use tower_resilience_bulkhead::BulkheadConfig;
     /// use std::time::Duration;
     ///
-    /// let config = BulkheadConfig::builder()
+    /// let config = BulkheadLayer::builder()
     ///     .max_concurrent_calls(25)
     ///     .on_call_finished(|duration| {
     ///         println!("Call completed successfully in {:?}", duration);
@@ -208,7 +201,7 @@ impl BulkheadConfigBuilder {
     /// let error_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&error_count);
     ///
-    /// let config = BulkheadConfig::builder()
+    /// let config = BulkheadLayer::builder()
     ///     .max_concurrent_calls(25)
     ///     .on_call_failed(move |duration| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);

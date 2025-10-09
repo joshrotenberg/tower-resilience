@@ -17,7 +17,7 @@
 //! # Examples
 //!
 //! ```
-//! use tower_resilience_retry::RetryConfig;
+//! use tower_resilience_retry::RetryLayer;
 //! use tower::ServiceBuilder;
 //! use std::time::Duration;
 //!
@@ -25,7 +25,7 @@
 //! # struct MyError;
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create retry layer with exponential backoff
-//! let retry_layer = RetryConfig::<MyError>::builder()
+//! let retry_layer = RetryLayer::<MyError>::builder()
 //!     .max_attempts(5)
 //!     .exponential_backoff(Duration::from_millis(100))
 //!     .on_retry(|attempt, delay| {
@@ -204,7 +204,7 @@ mod tests {
             }
         });
 
-        let layer = RetryConfig::<TestError>::builder()
+        let layer = RetryLayer::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
@@ -240,7 +240,7 @@ mod tests {
             }
         });
 
-        let layer = RetryConfig::<TestError>::builder()
+        let layer = RetryLayer::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
@@ -272,7 +272,7 @@ mod tests {
             }
         });
 
-        let layer = RetryConfig::<TestError>::builder()
+        let layer = RetryLayer::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
@@ -303,7 +303,7 @@ mod tests {
             }
         });
 
-        let layer = RetryConfig::<TestError>::builder()
+        let layer = RetryLayer::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .retry_on(|_: &TestError| false) // Never retry
@@ -345,7 +345,7 @@ mod tests {
             }
         });
 
-        let layer = RetryConfig::<TestError>::builder()
+        let layer = RetryLayer::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .on_retry(move |_, _| {

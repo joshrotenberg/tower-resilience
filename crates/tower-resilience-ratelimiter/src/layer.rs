@@ -10,12 +10,12 @@ use tower::Layer;
 /// # Examples
 ///
 /// ```
-/// use tower_resilience_ratelimiter::RateLimiterConfig;
+/// use tower_resilience_ratelimiter::RateLimiterLayer;
 /// use tower::ServiceBuilder;
 /// use std::time::Duration;
 ///
 /// # async fn example() {
-/// let rate_limiter = RateLimiterConfig::builder()
+/// let rate_limiter = RateLimiterLayer::builder()
 ///     .limit_for_period(100)
 ///     .refresh_period(Duration::from_secs(1))
 ///     .timeout_duration(Duration::from_millis(100))
@@ -40,6 +40,23 @@ impl RateLimiterLayer {
         Self {
             config: Arc::new(config),
         }
+    }
+
+    /// Creates a new builder for configuring a rate limiter layer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_ratelimiter::RateLimiterLayer;
+    /// use std::time::Duration;
+    ///
+    /// let layer = RateLimiterLayer::builder()
+    ///     .limit_for_period(100)
+    ///     .refresh_period(Duration::from_secs(1))
+    ///     .build();
+    /// ```
+    pub fn builder() -> crate::RateLimiterConfigBuilder {
+        crate::RateLimiterConfigBuilder::new()
     }
 }
 

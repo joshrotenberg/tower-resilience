@@ -17,11 +17,11 @@ use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service};
 use tower_resilience::{
-    bulkhead::BulkheadConfig,
-    cache::CacheConfig,
-    circuitbreaker::CircuitBreakerConfig,
-    retry::{ExponentialBackoff, RetryConfig},
-    timelimiter::TimeLimiterConfig,
+    bulkhead::BulkheadLayer,
+    cache::CacheLayer,
+    circuitbreaker::CircuitBreakerLayer,
+    retry::{ExponentialBackoff, RetryLayer},
+    timelimiter::TimeLimiterLayer,
 };
 
 #[derive(Debug, Clone)]
@@ -79,11 +79,11 @@ async fn demo_circuit_breaker_and_bulkhead() {
         }
     });
 
-    let bulkhead_layer = BulkheadConfig::builder().max_concurrent_calls(5).build();
+    let bulkhead_layer = BulkheadLayer::builder().max_concurrent_calls(5).build();
 
     let service = bulkhead_layer.layer(service);
 
-    let cb_layer = CircuitBreakerConfig::builder()
+    let cb_layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .build();
@@ -127,7 +127,7 @@ async fn demo_retry() {
         }
     });
 
-    let retry_layer = RetryConfig::builder()
+    let retry_layer = RetryLayer::builder()
         .max_attempts(5)
         .backoff(ExponentialBackoff::new(Duration::from_millis(50)))
         .on_retry(|attempt, delay| {
@@ -157,7 +157,7 @@ async fn demo_timeout() {
         Ok::<_, ServiceError>("Completed")
     });
 
-    let timeout_layer = TimeLimiterConfig::builder()
+    let timeout_layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(100))
         .on_timeout(|| println!("  [Timeout] Request timed out!"))
         .on_success(|duration| println!("  [Success] Completed in {:?}", duration))
@@ -200,7 +200,7 @@ async fn demo_cache() {
         }
     });
 
-    let cache_layer = CacheConfig::builder()
+    let cache_layer = CacheLayer::builder()
         .max_size(10)
         .ttl(Duration::from_secs(5))
         .key_extractor(|req: &String| req.clone())

@@ -89,9 +89,9 @@ See [examples/bulkhead.rs](examples/bulkhead.rs) for a complete example.
 Enforce timeouts on operations:
 
 ```rust
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
-let layer = TimeLimiterConfig::builder()
+let layer = TimeLimiterLayer::builder()
     .timeout_duration(Duration::from_secs(30))
     .cancel_running_future(true)
     .build();
@@ -102,9 +102,9 @@ let layer = TimeLimiterConfig::builder()
 Retry failed requests with exponential backoff:
 
 ```rust
-use tower_resilience_retry::RetryConfig;
+use tower_resilience_retry::RetryLayer;
 
-let layer = RetryConfig::<MyError>::builder()
+let layer = RetryLayer::<MyError>::builder()
     .max_attempts(5)
     .exponential_backoff(Duration::from_millis(100))
     .build();
@@ -115,9 +115,9 @@ let layer = RetryConfig::<MyError>::builder()
 Control request rate to protect downstream services:
 
 ```rust
-use tower_resilience_ratelimiter::RateLimiterConfig;
+use tower_resilience_ratelimiter::RateLimiterLayer;
 
-let layer = RateLimiterConfig::builder()
+let layer = RateLimiterLayer::builder()
     .max_permits(100)
     .refresh_period(Duration::from_secs(1))
     .build();
@@ -128,9 +128,9 @@ let layer = RateLimiterConfig::builder()
 Cache responses to reduce load on expensive operations:
 
 ```rust
-use tower_resilience_cache::CacheConfig;
+use tower_resilience_cache::CacheLayer;
 
-let layer = CacheConfig::builder()
+let layer = CacheLayer::builder()
     .max_size(1000)
     .ttl(Duration::from_secs(300))
     .key_extractor(|req: &Request| req.id.clone())

@@ -5,7 +5,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
+use tower_resilience_bulkhead::BulkheadError;
+use tower_resilience_bulkhead::BulkheadLayer;
 
 #[derive(Debug)]
 enum TestError {
@@ -29,7 +30,7 @@ async fn high_concurrency_stress_test() {
 
     let service = ServiceBuilder::new()
         .layer(
-            BulkheadConfig::builder()
+            BulkheadLayer::builder()
                 .max_concurrent_calls(max_allowed)
                 .build(),
         )
@@ -78,7 +79,7 @@ async fn concurrent_requests_respect_limit() {
 
     let service = ServiceBuilder::new()
         .layer(
-            BulkheadConfig::builder()
+            BulkheadLayer::builder()
                 .max_concurrent_calls(max_allowed)
                 .build(),
         )
@@ -119,7 +120,7 @@ async fn concurrent_requests_respect_limit() {
 async fn rejection_under_load_with_timeout() {
     let service = ServiceBuilder::new()
         .layer(
-            BulkheadConfig::builder()
+            BulkheadLayer::builder()
                 .max_concurrent_calls(2)
                 .max_wait_duration(Some(Duration::from_millis(10)))
                 .build(),
@@ -160,7 +161,7 @@ async fn single_permit_bulkhead_serializes_requests() {
     let max_clone = Arc::clone(&max_concurrent);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadConfig::builder().max_concurrent_calls(1).build())
+        .layer(BulkheadLayer::builder().max_concurrent_calls(1).build())
         .service_fn(move |_req: ()| {
             let counter = Arc::clone(&counter_clone);
             let max = Arc::clone(&max_clone);
@@ -198,7 +199,7 @@ async fn mixed_fast_and_slow_requests() {
     let slow_clone = Arc::clone(&slow_count);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadConfig::builder().max_concurrent_calls(5).build())
+        .layer(BulkheadLayer::builder().max_concurrent_calls(5).build())
         .service_fn(move |req: bool| {
             let fast = Arc::clone(&fast_clone);
             let slow = Arc::clone(&slow_clone);
@@ -249,7 +250,7 @@ async fn burst_traffic_pattern() {
     let conc_clone = Arc::clone(&concurrent);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadConfig::builder().max_concurrent_calls(5).build())
+        .layer(BulkheadLayer::builder().max_concurrent_calls(5).build())
         .service_fn(move |_req: ()| {
             let proc = Arc::clone(&proc_clone);
             let max = Arc::clone(&max_clone);
@@ -288,7 +289,7 @@ async fn burst_traffic_pattern() {
 #[tokio::test]
 async fn concurrent_with_varied_delays() {
     let service = ServiceBuilder::new()
-        .layer(BulkheadConfig::builder().max_concurrent_calls(10).build())
+        .layer(BulkheadLayer::builder().max_concurrent_calls(10).build())
         .service_fn(|delay_ms: u64| async move {
             sleep(Duration::from_millis(delay_ms)).await;
             Ok::<_, TestError>(delay_ms)
@@ -319,7 +320,7 @@ async fn concurrent_with_varied_delays() {
 async fn zero_concurrent_immediately_rejects() {
     let service = ServiceBuilder::new()
         .layer(
-            BulkheadConfig::builder()
+            BulkheadLayer::builder()
                 .max_concurrent_calls(0)
                 .max_wait_duration(Some(Duration::from_millis(10)))
                 .build(),

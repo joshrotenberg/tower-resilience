@@ -3,7 +3,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadConfig, BulkheadError};
+use tower_resilience_bulkhead::BulkheadError;
+use tower_resilience_bulkhead::BulkheadLayer;
 
 #[derive(Debug)]
 enum TestError {
@@ -18,7 +19,7 @@ impl From<BulkheadError> for TestError {
 
 #[tokio::test]
 async fn test_zero_timeout() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::ZERO))
         .name("zero-timeout-bulkhead")
@@ -68,7 +69,7 @@ async fn test_zero_timeout() {
 
 #[tokio::test]
 async fn test_very_short_timeout() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(1)))
         .name("short-timeout-bulkhead")
@@ -122,7 +123,7 @@ async fn test_very_short_timeout() {
 
 #[tokio::test]
 async fn test_long_timeout() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_secs(5)))
         .name("long-timeout-bulkhead")
@@ -172,7 +173,7 @@ async fn test_long_timeout() {
 
 #[tokio::test]
 async fn test_no_timeout_none() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(None) // No timeout
         .name("no-timeout-bulkhead")
@@ -219,7 +220,7 @@ async fn test_no_timeout_none() {
 #[tokio::test]
 async fn test_timeout_precision() {
     let timeout_duration = Duration::from_millis(100);
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(timeout_duration))
         .name("precision-timeout-bulkhead")
@@ -274,7 +275,7 @@ async fn test_multiple_timeouts() {
     let rejections = Arc::new(AtomicUsize::new(0));
     let r = rejections.clone();
 
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(50)))
         .name("multiple-timeout-bulkhead")
@@ -330,7 +331,7 @@ async fn test_multiple_timeouts() {
 
 #[tokio::test]
 async fn test_timeout_then_success() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(50)))
         .name("timeout-success-bulkhead")
@@ -391,7 +392,7 @@ async fn test_timeout_then_success() {
 
 #[tokio::test]
 async fn test_concurrent_timeouts() {
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(2)
         .max_wait_duration(Some(Duration::from_millis(50)))
         .name("concurrent-timeout-bulkhead")
@@ -444,7 +445,7 @@ async fn test_concurrent_timeouts() {
 #[tokio::test]
 async fn test_timeout_boundary_conditions() {
     // Test with max duration (approximately 2 minutes)
-    let layer = BulkheadConfig::builder()
+    let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_secs(120)))
         .name("boundary-timeout-bulkhead")
@@ -470,13 +471,13 @@ async fn test_timeout_boundary_conditions() {
 #[tokio::test]
 async fn test_changing_timeout_behavior() {
     // Create two bulkheads with different timeouts
-    let short_timeout = BulkheadConfig::builder()
+    let short_timeout = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(10)))
         .name("short-timeout")
         .build();
 
-    let long_timeout = BulkheadConfig::builder()
+    let long_timeout = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Some(Duration::from_millis(200)))
         .name("long-timeout")

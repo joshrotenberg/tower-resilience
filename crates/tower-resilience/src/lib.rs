@@ -86,7 +86,7 @@
 //!
 //! # async fn example() {
 //! # let database_client = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
-//! let circuit_breaker = CircuitBreakerConfig::<(), std::io::Error>::builder()
+//! let circuit_breaker = CircuitBreakerLayer::<(), std::io::Error>::builder()
 //!     .failure_rate_threshold(0.5)      // Open at 50% failures
 //!     .sliding_window_size(100)         // Over last 100 calls
 //!     .minimum_number_of_calls(10)      // Need at least 10 calls
@@ -149,12 +149,12 @@
 //! ```rust,no_run
 //! # #[cfg(feature = "bulkhead")]
 //! # {
-//! use tower_resilience::bulkhead::BulkheadConfig;
+//! use tower_resilience_bulkhead::BulkheadLayer;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
 //! # let expensive_operation = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
-//! let bulkhead = BulkheadConfig::builder()
+//! let bulkhead = BulkheadLayer::builder()
 //!     .max_concurrent_calls(10)
 //!     .max_wait_duration(Some(Duration::from_secs(5)))
 //!     .on_call_rejected(|max| {
@@ -225,7 +225,7 @@
 //!
 //! # async fn example() {
 //! # let database_query = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
-//! let time_limiter = TimeLimiterConfig::builder()
+//! let time_limiter = TimeLimiterLayer::builder()
 //!     .timeout_duration(Duration::from_secs(5))
 //!     .cancel_running_future(true)
 //!     .on_timeout(|| {
@@ -301,7 +301,7 @@
 //! # struct MyError;
 //! # async fn example() {
 //! # let http_client = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
-//! let retry = RetryConfig::<MyError>::builder()
+//! let retry = RetryLayer::<MyError>::builder()
 //!     .max_attempts(3)
 //!     .exponential_backoff(Duration::from_millis(100))
 //!     .retry_on(|err: &MyError| {
@@ -373,7 +373,7 @@
 //!
 //! # async fn example() {
 //! # let api_handler = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
-//! let rate_limiter = RateLimiterConfig::builder()
+//! let rate_limiter = RateLimiterLayer::builder()
 //!     .limit_for_period(100)                    // 100 requests
 //!     .refresh_period(Duration::from_secs(1))   // per second
 //!     .timeout_duration(Duration::from_millis(100))  // Wait up to 100ms
@@ -439,7 +439,7 @@
 //! ```rust,no_run
 //! # #[cfg(feature = "cache")]
 //! # {
-//! use tower_resilience::cache::CacheConfig;
+//! use tower_resilience_cache::CacheLayer;
 //! use tower::Layer;
 //! use std::time::Duration;
 //!
@@ -447,7 +447,7 @@
 //! # struct Request { id: u64 }
 //! # async fn example() {
 //! # let expensive_operation = tower::service_fn(|_req: Request| async { Ok::<_, std::io::Error>(()) });
-//! let cache = CacheConfig::builder()
+//! let cache = CacheLayer::builder()
 //!     .max_size(1000)
 //!     .ttl(Duration::from_secs(300))
 //!     .key_extractor(|req: &Request| req.id)
@@ -579,10 +579,10 @@
 //! # async fn example() {
 //! # let service = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
 //! let composed = ServiceBuilder::new()
-//!     .layer(TimeLimiterConfig::builder()
+//!     .layer(TimeLimiterLayer::builder()
 //!         .timeout_duration(Duration::from_secs(5))
 //!         .build())
-//!     .layer(RetryConfig::<MyError>::builder()
+//!     .layer(RetryLayer::<MyError>::builder()
 //!         .max_attempts(3)
 //!         .exponential_backoff(Duration::from_millis(100))
 //!         .build())
@@ -626,7 +626,7 @@
 //! use tower::Layer;
 //! use tower_resilience::retry::RetryConfig;
 //! use tower_resilience::circuitbreaker::CircuitBreakerConfig;
-//! use tower_resilience::cache::CacheConfig;
+//! use tower_resilience_cache::CacheLayer;
 //! use std::time::Duration;
 //!
 //! # #[derive(Debug, Clone)]
@@ -636,17 +636,17 @@
 //! # async fn example() {
 //! # let base_service = tower::service_fn(|req: Request| async { Ok::<_, MyError>(req) });
 //! // Build layers inside-out manually
-//! let with_retry = RetryConfig::<MyError>::builder()
+//! let with_retry = RetryLayer::<MyError>::builder()
 //!     .max_attempts(3)
 //!     .build()
 //!     .layer(base_service);
 //!
-//! let with_circuit_breaker = CircuitBreakerConfig::<Request, MyError>::builder()
+//! let with_circuit_breaker = CircuitBreakerLayer::<Request, MyError>::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .build()
 //!     .layer(with_retry);
 //!
-//! let service = CacheConfig::builder()
+//! let service = CacheLayer::builder()
 //!     .max_size(1000)
 //!     .ttl(Duration::from_secs(300))
 //!     .key_extractor(|req: &Request| req.id)
@@ -666,7 +666,7 @@
 //! use tower::{ServiceBuilder, Layer};
 //! use tower_resilience::retry::RetryConfig;
 //! use tower_resilience::timelimiter::TimeLimiterConfig;
-//! use tower_resilience::cache::CacheConfig;
+//! use tower_resilience_cache::CacheLayer;
 //! use std::time::Duration;
 //!
 //! # #[derive(Debug, Clone)]
@@ -677,16 +677,16 @@
 //! # let base_service = tower::service_fn(|req: Request| async { Ok::<_, MyError>(req) });
 //! // First 2 layers via ServiceBuilder
 //! let inner = ServiceBuilder::new()
-//!     .layer(TimeLimiterConfig::builder()
+//!     .layer(TimeLimiterLayer::builder()
 //!         .timeout_duration(Duration::from_secs(5))
 //!         .build())
-//!     .layer(RetryConfig::<MyError>::builder()
+//!     .layer(RetryLayer::<MyError>::builder()
 //!         .max_attempts(3)
 //!         .build())
 //!     .service(base_service);
 //!
 //! // Additional layers manually
-//! let service = CacheConfig::builder()
+//! let service = CacheLayer::builder()
 //!     .max_size(1000)
 //!     .ttl(Duration::from_secs(300))
 //!     .key_extractor(|req: &Request| req.id)
@@ -713,7 +713,7 @@
 //! # async fn example() {
 //! # let base_service = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
 //! // Build retry layer first
-//! let retry_layer = RetryConfig::<MyError>::builder()
+//! let retry_layer = RetryLayer::<MyError>::builder()
 //!     .max_attempts(3)
 //!     .build();
 //!
@@ -722,7 +722,7 @@
 //!
 //! // Then use ServiceBuilder for remaining layers
 //! let service = ServiceBuilder::new()
-//!     .layer(TimeLimiterConfig::builder()
+//!     .layer(TimeLimiterLayer::builder()
 //!         .timeout_duration(Duration::from_secs(5))
 //!         .build())
 //!     .service(with_retry);
@@ -781,7 +781,7 @@
 //! # {
 //! use tower::ServiceBuilder;
 //! use tower_resilience_core::ResilienceError;
-//! use tower_resilience::bulkhead::BulkheadConfig;
+//! use tower_resilience_bulkhead::BulkheadLayer;
 //! use tower_resilience::ratelimiter::RateLimiterConfig;
 //! use std::time::Duration;
 //!
@@ -849,7 +849,7 @@
 //! // impl From<BulkheadError> for ServiceError { /* ... */ }
 //! // impl From<CircuitBreakerError> for ServiceError { /* ... */ }
 //!
-//! let retry = RetryConfig::<ServiceError>::builder()
+//! let retry = RetryLayer::<ServiceError>::builder()
 //!     .max_attempts(3)
 //!     .retry_on(|err| matches!(err, ServiceError::Network(_)))
 //!     .build();
@@ -883,7 +883,7 @@
 //! # async fn example() {
 //! # let db_service = tower::service_fn(|_req: ()| async { Ok::<_, DatabaseError>(()) });
 //! let service = ServiceBuilder::new()
-//!     .layer(RetryConfig::<AppError>::builder()
+//!     .layer(RetryLayer::<AppError>::builder()
 //!         .max_attempts(3)
 //!         .build())
 //!     .map_err(|err: DatabaseError| AppError::from(err))

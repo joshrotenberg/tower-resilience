@@ -13,7 +13,7 @@ use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_cache::CacheConfig;
+use tower_resilience_cache::CacheLayer;
 
 #[derive(Clone, Debug)]
 struct ComplexRequest {
@@ -44,7 +44,7 @@ async fn complex_key_extraction_from_struct() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &ComplexRequest| ComplexKey {
             user_id: req.user_id,
@@ -107,7 +107,7 @@ async fn key_collision_handling() {
 
     // Key extractor that intentionally creates collisions
     // (extracts first character only)
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.chars().next().unwrap_or('?').to_string())
         .build();
@@ -170,7 +170,7 @@ async fn different_request_types_same_key_extracted() {
     });
 
     // Key extraction only uses the id field
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &RequestV1| req.id)
         .build();
@@ -229,7 +229,7 @@ async fn key_extractor_with_hash_of_struct_fields() {
     });
 
     // Key extractor uses hash of entire struct
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &SearchQuery| {
             let mut hasher = DefaultHasher::new();
@@ -297,7 +297,7 @@ async fn key_extractor_with_simple_types() {
     });
 
     // Key extractor just returns the request itself
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &u64| *req)
         .build();
@@ -324,7 +324,7 @@ async fn key_extractor_with_simple_types() {
             move |req: String| async move { Ok::<_, std::io::Error>(req.to_uppercase()) },
         );
 
-    let string_config = CacheConfig::builder()
+    let string_config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -362,7 +362,7 @@ async fn key_extraction_consistency() {
     });
 
     // Key extractor that combines fields
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &Request| (req.a, req.b))
         .build();

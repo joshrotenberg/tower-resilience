@@ -13,7 +13,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_cache::CacheConfig;
+use tower_resilience_cache::CacheLayer;
 
 #[tokio::test]
 async fn empty_cache_behavior() {
@@ -28,7 +28,7 @@ async fn empty_cache_behavior() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -77,7 +77,7 @@ async fn single_item_cache_lru_works() {
     let eviction_count = Arc::new(AtomicUsize::new(0));
     let ec = Arc::clone(&eviction_count);
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(1) // Single item cache
         .key_extractor(|req: &String| req.clone())
         .on_eviction(move || {
@@ -137,7 +137,7 @@ async fn large_cache_stress_test() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(2000) // Large cache
         .key_extractor(|req: &u32| *req)
         .build();
@@ -177,7 +177,7 @@ async fn zero_ttl_instant_expiration() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .ttl(Duration::from_nanos(1)) // Effectively instant expiration
         .key_extractor(|req: &String| req.clone())
@@ -223,7 +223,7 @@ async fn very_long_ttl() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .ttl(Duration::from_secs(365 * 24 * 60 * 60)) // 1 year
         .key_extractor(|req: &String| req.clone())
@@ -271,7 +271,7 @@ async fn multiple_items_same_value_different_keys() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
         .build();
@@ -326,7 +326,7 @@ async fn rapid_insert_evict_cycles() {
     let eviction_count = Arc::new(AtomicUsize::new(0));
     let ec = Arc::clone(&eviction_count);
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(5) // Small cache
         .key_extractor(|req: &u32| *req)
         .on_eviction(move || {
@@ -368,7 +368,7 @@ async fn cache_full_behavior() {
     let eviction_count = Arc::new(AtomicUsize::new(0));
     let ec = Arc::clone(&eviction_count);
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(3)
         .key_extractor(|req: &u32| *req)
         .on_eviction(move || {
@@ -414,7 +414,7 @@ async fn ttl_expiration_during_service_call() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .ttl(Duration::from_millis(80))
         .key_extractor(|req: &String| req.clone())
@@ -465,7 +465,7 @@ async fn clone_overhead_with_large_responses() {
         }
     });
 
-    let config = CacheConfig::builder()
+    let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &u32| *req)
         .build();

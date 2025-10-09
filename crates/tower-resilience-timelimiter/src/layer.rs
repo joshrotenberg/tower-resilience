@@ -18,6 +18,23 @@ impl TimeLimiterLayer {
             config: config.into(),
         }
     }
+
+    /// Creates a new builder for configuring a time limiter layer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_timelimiter::TimeLimiterLayer;
+    /// use std::time::Duration;
+    ///
+    /// let layer = TimeLimiterLayer::builder()
+    ///     .timeout_duration(Duration::from_secs(30))
+    ///     .cancel_running_future(true)
+    ///     .build();
+    /// ```
+    pub fn builder() -> crate::TimeLimiterConfigBuilder {
+        crate::TimeLimiterConfigBuilder::new()
+    }
 }
 
 impl From<TimeLimiterConfig> for TimeLimiterLayer {

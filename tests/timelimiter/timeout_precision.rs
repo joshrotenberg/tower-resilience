@@ -6,7 +6,7 @@ use super::TestError;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 // Windows has less precise timers, so use larger tolerance
 const TOLERANCE_MS: u64 = 30;
@@ -14,7 +14,7 @@ const TOLERANCE_MS: u64 = 30;
 #[tokio::test]
 async fn timeout_fires_at_correct_time() {
     let timeout_duration = Duration::from_millis(50);
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(timeout_duration)
         .build();
 
@@ -44,7 +44,7 @@ async fn timeout_fires_at_correct_time() {
 
 #[tokio::test]
 async fn duration_zero_immediate_timeout() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::ZERO)
         .build();
 
@@ -64,7 +64,7 @@ async fn duration_zero_immediate_timeout() {
 
 #[tokio::test]
 async fn very_short_timeout_1ms() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(1))
         .build();
 
@@ -85,7 +85,7 @@ async fn very_short_timeout_1ms() {
 
 #[tokio::test]
 async fn very_short_timeout_10ms() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(10))
         .build();
 
@@ -106,7 +106,7 @@ async fn very_short_timeout_10ms() {
 
 #[tokio::test]
 async fn very_long_timeout() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(60))
         .build();
 
@@ -128,7 +128,7 @@ async fn very_long_timeout() {
 async fn timeout_exactly_at_service_completion() {
     // This test verifies behavior when timeout and service complete at approximately the same time
     let timeout_duration = Duration::from_millis(50);
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(timeout_duration)
         .build();
 
@@ -155,7 +155,7 @@ async fn timeout_exactly_at_service_completion() {
 
 #[tokio::test]
 async fn timeout_just_before_completion() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(30))
         .build();
 
@@ -181,7 +181,7 @@ async fn timeout_just_before_completion() {
 
 #[tokio::test]
 async fn timeout_just_after_completion() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(70))
         .build();
 
@@ -209,7 +209,7 @@ async fn multiple_different_timeout_durations() {
     ];
 
     for timeout in timeouts {
-        let layer = TimeLimiterConfig::builder()
+        let layer = TimeLimiterLayer::builder()
             .timeout_duration(timeout)
             .build();
 

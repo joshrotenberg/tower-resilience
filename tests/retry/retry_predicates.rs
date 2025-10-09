@@ -10,7 +10,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_retry::RetryConfig;
+use tower_resilience_retry::RetryLayer;
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -38,7 +38,7 @@ async fn retry_all_errors_by_default() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .build();
@@ -75,7 +75,7 @@ async fn retry_only_retryable_errors() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Retryable(_)))
@@ -108,7 +108,7 @@ async fn dont_retry_non_retryable_errors() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Retryable(_)))
@@ -147,7 +147,7 @@ async fn predicate_based_on_error_content() {
     });
 
     // Only retry timeout errors
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| match e {
@@ -184,7 +184,7 @@ async fn predicate_never_retries() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|_| false) // Never retry
@@ -221,7 +221,7 @@ async fn predicate_always_retries() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(4)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|_| true) // Always retry
@@ -259,7 +259,7 @@ async fn predicate_with_multiple_error_types() {
     });
 
     // Retry both Transient and Retryable variants
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Transient | TestError::Retryable(_)))
@@ -300,7 +300,7 @@ async fn predicate_with_external_state() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(move |_| ar.load(Ordering::SeqCst))
@@ -353,7 +353,7 @@ async fn predicate_complex_logic() {
     });
 
     // Retry only 5xx and 429 errors, not 404
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| match e {
@@ -404,14 +404,14 @@ async fn different_predicates_different_services() {
     });
 
     // Service 1: retry transient errors
-    let layer1 = RetryConfig::<TestError>::builder()
+    let layer1 = RetryLayer::<TestError>::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Transient))
         .build();
 
     // Service 2: don't retry transient errors
-    let layer2 = RetryConfig::<TestError>::builder()
+    let layer2 = RetryLayer::<TestError>::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Permanent))

@@ -18,6 +18,24 @@ impl<Res, Err> CircuitBreakerLayer<Res, Err> {
         }
     }
 
+    /// Creates a new builder for configuring a circuit breaker layer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// # type MyResponse = String;
+    /// # type MyError = std::io::Error;
+    /// let layer: CircuitBreakerLayer<MyResponse, MyError> = CircuitBreakerLayer::builder()
+    ///     .failure_rate_threshold(0.5)
+    ///     .sliding_window_size(100)
+    ///     .build();
+    /// ```
+    pub fn builder() -> crate::CircuitBreakerConfigBuilder<Res, Err> {
+        crate::CircuitBreakerConfigBuilder::new()
+    }
+
     /// Wraps the given service with the circuit breaker middleware.
     pub fn layer<S, Req>(&self, service: S) -> CircuitBreaker<S, Req, Res, Err> {
         CircuitBreaker::new(service, self.config.clone())

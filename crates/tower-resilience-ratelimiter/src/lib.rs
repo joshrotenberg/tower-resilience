@@ -13,13 +13,13 @@
 //! # Examples
 //!
 //! ```
-//! use tower_resilience_ratelimiter::RateLimiterConfig;
+//! use tower_resilience_ratelimiter::RateLimiterLayer;
 //! use tower::ServiceBuilder;
 //! use std::time::Duration;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Allow 100 requests per second, wait up to 500ms for a permit
-//! let rate_limiter = RateLimiterConfig::builder()
+//! let rate_limiter = RateLimiterLayer::builder()
 //!     .limit_for_period(100)
 //!     .refresh_period(Duration::from_secs(1))
 //!     .timeout_duration(Duration::from_millis(500))
@@ -176,7 +176,7 @@ mod tests {
             }
         });
 
-        let layer = RateLimiterConfig::builder()
+        let layer = RateLimiterLayer::builder()
             .limit_for_period(10)
             .refresh_period(Duration::from_secs(1))
             .timeout_duration(Duration::from_millis(100))
@@ -204,7 +204,7 @@ mod tests {
             Ok::<_, std::io::Error>(format!("Response: {}", req))
         });
 
-        let layer = RateLimiterConfig::builder()
+        let layer = RateLimiterLayer::builder()
             .limit_for_period(2)
             .refresh_period(Duration::from_secs(10))
             .timeout_duration(Duration::from_millis(10))
@@ -250,7 +250,7 @@ mod tests {
             }
         });
 
-        let layer = RateLimiterConfig::builder()
+        let layer = RateLimiterLayer::builder()
             .limit_for_period(2)
             .refresh_period(Duration::from_millis(100))
             .timeout_duration(Duration::from_millis(200))
@@ -299,7 +299,7 @@ mod tests {
         let service =
             service_fn(|_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) });
 
-        let layer = RateLimiterConfig::builder()
+        let layer = RateLimiterLayer::builder()
             .limit_for_period(1)
             .refresh_period(Duration::from_secs(10))
             .timeout_duration(Duration::from_millis(10))
@@ -327,7 +327,7 @@ mod tests {
         let service =
             service_fn(|_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) });
 
-        let layer = RateLimiterConfig::builder()
+        let layer = RateLimiterLayer::builder()
             .limit_for_period(1)
             .refresh_period(Duration::from_millis(50))
             .timeout_duration(Duration::from_millis(100)) // Can wait through one refresh

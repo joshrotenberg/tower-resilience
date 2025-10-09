@@ -13,9 +13,9 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceBuilder, ServiceExt, service_fn};
-use tower_resilience_bulkhead::BulkheadConfig;
-use tower_resilience_ratelimiter::RateLimiterConfig;
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_bulkhead::BulkheadLayer;
+use tower_resilience_ratelimiter::RateLimiterLayer;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 /// HTTP request (simplified)
 #[derive(Debug, Clone)]
@@ -126,7 +126,7 @@ async fn scenario_rate_limiting() {
     let base_service = service_fn(|req: Request| async move { api_handler(req).await });
 
     // Configure rate limiter: 3 requests per second
-    let rate_limiter = RateLimiterConfig::builder()
+    let rate_limiter = RateLimiterLayer::builder()
         .limit_for_period(3) // Allow 3 requests
         .refresh_period(Duration::from_secs(1)) // Per second
         .timeout_duration(Duration::from_millis(100)) // Wait up to 100ms for permit
@@ -180,7 +180,7 @@ async fn scenario_bulkhead() {
     });
 
     // Configure bulkhead: max 2 concurrent requests to expensive endpoint
-    let bulkhead = BulkheadConfig::builder()
+    let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(2)
         .max_wait_duration(Some(Duration::from_millis(200)))
         .name("report-endpoint")
@@ -239,14 +239,14 @@ async fn scenario_full_server_stack() {
     let service = ServiceBuilder::new()
         // 1. Timeout - prevent runaway handlers
         .layer(
-            TimeLimiterConfig::builder()
+            TimeLimiterLayer::builder()
                 .timeout_duration(Duration::from_secs(2))
                 .cancel_running_future(true)
                 .build(),
         )
         // 2. Bulkhead - isolate expensive operations
         .layer(
-            BulkheadConfig::builder()
+            BulkheadLayer::builder()
                 .max_concurrent_calls(3)
                 .max_wait_duration(Some(Duration::from_millis(500)))
                 .name("api-server")

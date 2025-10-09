@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tower::{Layer, Service, ServiceExt};
 use tower_resilience_retry::{
-    ExponentialBackoff, ExponentialRandomBackoff, FnInterval, RetryConfig,
+    ExponentialBackoff, ExponentialRandomBackoff, FnInterval, RetryLayer,
 };
 
 #[derive(Debug, Clone)]
@@ -32,7 +32,7 @@ async fn default_configuration() {
     });
 
     // Use default configuration
-    let config = RetryConfig::builder().build();
+    let config = RetryLayer::builder().build();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -61,7 +61,7 @@ async fn custom_max_attempts_one() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(1)
         .fixed_backoff(Duration::from_millis(10))
         .build();
@@ -92,7 +92,7 @@ async fn custom_max_attempts_two() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(2)
         .fixed_backoff(Duration::from_millis(10))
         .build();
@@ -127,7 +127,7 @@ async fn custom_max_attempts_hundred() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(100)
         .fixed_backoff(Duration::from_millis(1))
         .build();
@@ -163,7 +163,7 @@ async fn fixed_backoff_configuration() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(20))
         .build();
@@ -206,7 +206,7 @@ async fn exponential_backoff_configuration() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .exponential_backoff(Duration::from_millis(50))
         .build();
@@ -242,7 +242,7 @@ async fn custom_exponential_backoff_configuration() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .backoff(
             ExponentialBackoff::new(Duration::from_millis(10))
@@ -282,7 +282,7 @@ async fn exponential_random_backoff_configuration() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .backoff(ExponentialRandomBackoff::new(
             Duration::from_millis(50),
@@ -321,7 +321,7 @@ async fn function_interval_configuration() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .backoff(FnInterval::new(|attempt| {
             Duration::from_millis(10 * (attempt as u64 + 1))
@@ -367,7 +367,7 @@ async fn multiple_event_listeners() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .on_retry(move |_, _| {
@@ -412,7 +412,7 @@ async fn name_configuration() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(2)
         .fixed_backoff(Duration::from_millis(10))
         .name("test-retry")
@@ -462,7 +462,7 @@ async fn configuration_with_all_listeners() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .name("complete-config")
@@ -498,7 +498,7 @@ async fn configuration_with_all_listeners() {
 
 #[tokio::test]
 async fn builder_pattern_chaining() {
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(10)
         .fixed_backoff(Duration::from_millis(50))
         .name("chained-config")
@@ -551,12 +551,12 @@ async fn different_configs_different_services() {
         }
     });
 
-    let layer1 = RetryConfig::<TestError>::builder()
+    let layer1 = RetryLayer::<TestError>::builder()
         .max_attempts(2)
         .fixed_backoff(Duration::from_millis(10))
         .build();
 
-    let layer2 = RetryConfig::<TestError>::builder()
+    let layer2 = RetryLayer::<TestError>::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .build();
@@ -591,7 +591,7 @@ async fn config_with_retry_predicate() {
         }
     });
 
-    let config = RetryConfig::builder()
+    let config = RetryLayer::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .retry_on(|e| matches!(e, Error::Retryable))

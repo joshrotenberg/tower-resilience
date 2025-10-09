@@ -8,11 +8,11 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
-use tower_resilience_timelimiter::TimeLimiterConfig;
+use tower_resilience_timelimiter::TimeLimiterLayer;
 
 #[tokio::test]
 async fn concurrent_calls_with_same_timeout() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
@@ -56,7 +56,7 @@ async fn concurrent_calls_with_different_timeouts() {
 
     for (i, timeout) in timeouts.iter().enumerate() {
         for j in 0..25 {
-            let layer = TimeLimiterConfig::builder()
+            let layer = TimeLimiterLayer::builder()
                 .timeout_duration(*timeout)
                 .build();
 
@@ -87,7 +87,7 @@ async fn concurrent_calls_with_different_timeouts() {
 
 #[tokio::test]
 async fn some_timeout_some_succeed_concurrently() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
@@ -135,7 +135,7 @@ async fn all_timeout_simultaneously() {
     let timeout_count = Arc::new(AtomicUsize::new(0));
     let tc_clone = Arc::clone(&timeout_count);
 
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .on_timeout(move || {
             tc_clone.fetch_add(1, Ordering::SeqCst);
@@ -168,7 +168,7 @@ async fn all_timeout_simultaneously() {
 
 #[tokio::test]
 async fn no_resource_leaks_under_load() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
@@ -210,7 +210,7 @@ async fn no_resource_leaks_under_load() {
 
 #[tokio::test]
 async fn independent_timeout_timers() {
-    let layer = TimeLimiterConfig::builder()
+    let layer = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 

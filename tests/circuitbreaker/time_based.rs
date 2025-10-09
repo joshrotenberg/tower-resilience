@@ -5,7 +5,8 @@ use std::sync::{
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::Service;
-use tower_resilience_circuitbreaker::{CircuitBreakerConfig, CircuitState, SlidingWindowType};
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_circuitbreaker::{CircuitState, SlidingWindowType};
 
 /// Test that time-based window fills and evaluates correctly
 #[tokio::test]
@@ -18,7 +19,7 @@ async fn time_window_fills_and_evaluates() {
         async { Err::<(), _>("error") }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_millis(500))
         .failure_rate_threshold(0.5)
@@ -44,7 +45,7 @@ async fn time_window_fills_and_evaluates() {
 async fn old_records_cleaned_up() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_millis(200))
         .failure_rate_threshold(0.5)
@@ -68,7 +69,7 @@ async fn old_records_cleaned_up() {
 
     // Create new success service
     let success_service = tower::service_fn(|_req: ()| async { Ok::<_, String>("success") });
-    let layer2 = CircuitBreakerConfig::<&str, String>::builder()
+    let layer2 = CircuitBreakerLayer::<&str, String>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_millis(200))
         .failure_rate_threshold(0.5)
@@ -97,7 +98,7 @@ async fn time_based_window_with_slow_calls() {
         Ok::<_, String>("success")
     });
 
-    let layer = CircuitBreakerConfig::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::<&str, String>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_millis(500))
         .slow_call_duration_threshold(Duration::from_millis(100))
@@ -136,7 +137,7 @@ async fn time_based_window_with_failure_rate() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_millis(500))
         .failure_rate_threshold(0.6)
@@ -164,7 +165,7 @@ async fn calls_at_duration_boundary() {
 
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(window_duration)
         .failure_rate_threshold(0.5)
@@ -194,7 +195,7 @@ async fn calls_at_duration_boundary() {
 async fn fast_calls_slow_duration() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_secs(10)) // Long window
         .failure_rate_threshold(0.5)
@@ -232,7 +233,7 @@ async fn time_based_mixed_results() {
         }
     });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_millis(500))
         .failure_rate_threshold(0.7)
@@ -257,7 +258,7 @@ async fn time_based_mixed_results() {
 async fn time_based_memory_bounds() {
     let service = tower::service_fn(|_req: ()| async { Ok::<_, String>("success") });
 
-    let layer = CircuitBreakerConfig::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::<&str, String>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_millis(100))
         .failure_rate_threshold(0.5)
@@ -290,7 +291,7 @@ async fn time_based_memory_bounds() {
 async fn time_based_respects_minimum_calls() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerConfig::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::<(), &str>::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_millis(500))
         .failure_rate_threshold(0.5)
