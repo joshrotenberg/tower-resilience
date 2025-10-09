@@ -10,11 +10,11 @@ metrics = []
 [dependencies]
 tower-resilience-core = { version = "0.4.0", path = "crates/tower-resilience-core" }
 tower-resilience-circuitbreaker = { path = "crates/tower-resilience-circuitbreaker", features = ["metrics", "tracing"] }
-tower-resilience-bulkhead = { path = "crates/tower-resilience-bulkhead" }
-tower-resilience-cache = { path = "crates/tower-resilience-cache" }
-tower-resilience-retry = { path = "crates/tower-resilience-retry" }
-tower-resilience-timelimiter = { path = "crates/tower-resilience-timelimiter" }
-tower-resilience-ratelimiter = { path = "crates/tower-resilience-ratelimiter" }
+tower-resilience-bulkhead = { path = "crates/tower-resilience-bulkhead", features = ["metrics"] }
+tower-resilience-cache = { path = "crates/tower-resilience-cache", features = ["metrics"] }
+tower-resilience-retry = { path = "crates/tower-resilience-retry", features = ["metrics"] }
+tower-resilience-timelimiter = { path = "crates/tower-resilience-timelimiter", features = ["metrics"] }
+tower-resilience-ratelimiter = { path = "crates/tower-resilience-ratelimiter", features = ["metrics"] }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
