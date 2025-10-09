@@ -57,6 +57,12 @@ use std::time::Instant;
 use store::CacheStore;
 use tower::Service;
 
+#[cfg(feature = "metrics")]
+use metrics::{counter, describe_counter, describe_gauge, gauge};
+
+#[cfg(feature = "tracing")]
+use tracing::{debug, info};
+
 /// A Tower [`Service`] that caches responses.
 ///
 /// This service wraps an inner service and caches successful responses.
@@ -78,6 +84,16 @@ where
 {
     /// Creates a new `Cache` wrapping the given service.
     pub fn new(inner: S, config: Arc<CacheConfig<Req, K>>) -> Self {
+        #[cfg(feature = "metrics")]
+        {
+            describe_counter!(
+                "cache_requests_total",
+                "Total number of cache requests (hits and misses)"
+            );
+            describe_counter!("cache_evictions_total", "Total number of cache evictions");
+            describe_gauge!("cache_size", "Current number of entries in the cache");
+        }
+
         let store = Arc::new(Mutex::new(CacheStore::new(config.max_size, config.ttl)));
         Self {
             inner,
@@ -118,6 +134,7 @@ where
 
     fn call(&mut self, req: Req) -> Self::Future {
         let key = (self.config.key_extractor)(&req);
+        let cache_name = self.config.name.clone();
 
         // Check cache first
         let cached = {
@@ -127,8 +144,17 @@ where
 
         if let Some(response) = cached {
             // Cache hit
+            #[cfg(feature = "metrics")]
+            {
+                counter!("cache_requests_total", "cache" => cache_name.clone(), "result" => "hit")
+                    .increment(1);
+            }
+
+            #[cfg(feature = "tracing")]
+            debug!(cache = %cache_name, "Cache hit");
+
             let event = CacheEvent::Hit {
-                pattern_name: self.config.name.clone(),
+                pattern_name: cache_name,
                 timestamp: Instant::now(),
             };
             self.config.event_listeners.emit(&event);
@@ -136,8 +162,17 @@ where
         }
 
         // Cache miss
+        #[cfg(feature = "metrics")]
+        {
+            counter!("cache_requests_total", "cache" => cache_name.clone(), "result" => "miss")
+                .increment(1);
+        }
+
+        #[cfg(feature = "tracing")]
+        debug!(cache = %cache_name, "Cache miss");
+
         let miss_event = CacheEvent::Miss {
-            pattern_name: self.config.name.clone(),
+            pattern_name: cache_name.clone(),
             timestamp: Instant::now(),
         };
         self.config.event_listeners.emit(&miss_event);
@@ -150,19 +185,34 @@ where
             let response = future.await.map_err(CacheError::Inner)?;
 
             // Store successful response in cache
-            let was_evicted = {
+            let (was_evicted, new_size) = {
                 let mut store = store.lock().unwrap();
                 let was_full = store.len() >= config.max_size;
                 store.insert(key, response.clone());
-                was_full
+                let new_size = store.len();
+                (was_full, new_size)
             };
 
             if was_evicted {
+                #[cfg(feature = "metrics")]
+                {
+                    counter!("cache_evictions_total", "cache" => config.name.clone()).increment(1);
+                }
+
+                #[cfg(feature = "tracing")]
+                info!(cache = %config.name, "Cache eviction occurred");
+
                 let event = CacheEvent::Eviction {
                     pattern_name: config.name.clone(),
                     timestamp: Instant::now(),
                 };
                 config.event_listeners.emit(&event);
+            }
+
+            // Update cache size gauge
+            #[cfg(feature = "metrics")]
+            {
+                gauge!("cache_size", "cache" => config.name.clone()).set(new_size as f64);
             }
 
             Ok(response)

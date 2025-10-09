@@ -19,11 +19,15 @@ tokio = { version = "1", features = ["sync", "time"] }
 lru = "0.16"
 thiserror = "2.0"
 
+# Optional dependencies
+metrics = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 tower = { version = "0.5", features = ["util"] }
 
 [features]
 default = []
-metrics = ["tower-resilience-core/metrics"]
-tracing = ["tower-resilience-core/tracing"]
+metrics = ["dep:metrics", "tower-resilience-core/metrics"]
+tracing = ["dep:tracing", "tower-resilience-core/tracing"]
