@@ -213,7 +213,7 @@
 use crate::circuit::Circuit;
 use futures::future::BoxFuture;
 #[cfg(feature = "metrics")]
-use metrics::{counter, describe_counter, describe_gauge};
+use metrics::{counter, describe_counter, describe_gauge, describe_histogram};
 use std::sync::Arc;
 #[cfg(feature = "metrics")]
 use std::sync::Once;
@@ -261,9 +261,17 @@ pub fn circuit_breaker_builder<Res, Err>() -> CircuitBreakerConfigBuilder<Res, E
                 "circuitbreaker_transitions_total",
                 "Total number of circuit breaker state transitions"
             );
+            describe_counter!(
+                "circuitbreaker_slow_calls_total",
+                "Total number of slow calls detected"
+            );
             describe_gauge!(
                 "circuitbreaker_state",
                 "Current state of the circuit breaker"
+            );
+            describe_histogram!(
+                "circuitbreaker_call_duration_seconds",
+                "Duration of calls through the circuit breaker"
             );
         });
     }
@@ -409,8 +417,7 @@ where
             if !permitted {
                 #[cfg(feature = "metrics")]
                 {
-                    let counter = counter!("circuitbreaker_calls_total", "outcome" => "rejected");
-                    counter.increment(1);
+                    counter!("circuitbreaker_calls_total", "circuitbreaker" => config.name.clone(), "outcome" => "rejected").increment(1);
                 }
 
                 // If a fallback is configured, call it instead of returning an error
