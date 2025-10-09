@@ -86,7 +86,7 @@
 //!
 //! # async fn example() {
 //! # let database_client = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
-//! let circuit_breaker = CircuitBreakerConfig::<(), std::io::Error>::builder()
+//! let circuit_breaker = CircuitBreakerLayer::<(), std::io::Error>::builder()
 //!     .failure_rate_threshold(0.5)      // Open at 50% failures
 //!     .sliding_window_size(100)         // Over last 100 calls
 //!     .minimum_number_of_calls(10)      // Need at least 10 calls
@@ -225,7 +225,7 @@
 //!
 //! # async fn example() {
 //! # let database_query = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
-//! let time_limiter = TimeLimiterConfig::builder()
+//! let time_limiter = TimeLimiterLayer::builder()
 //!     .timeout_duration(Duration::from_secs(5))
 //!     .cancel_running_future(true)
 //!     .on_timeout(|| {
@@ -373,7 +373,7 @@
 //!
 //! # async fn example() {
 //! # let api_handler = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
-//! let rate_limiter = RateLimiterConfig::builder()
+//! let rate_limiter = RateLimiterLayer::builder()
 //!     .limit_for_period(100)                    // 100 requests
 //!     .refresh_period(Duration::from_secs(1))   // per second
 //!     .timeout_duration(Duration::from_millis(100))  // Wait up to 100ms
@@ -579,7 +579,7 @@
 //! # async fn example() {
 //! # let service = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
 //! let composed = ServiceBuilder::new()
-//!     .layer(TimeLimiterConfig::builder()
+//!     .layer(TimeLimiterLayer::builder()
 //!         .timeout_duration(Duration::from_secs(5))
 //!         .build())
 //!     .layer(RetryLayer::<MyError>::builder()
@@ -641,7 +641,7 @@
 //!     .build()
 //!     .layer(base_service);
 //!
-//! let with_circuit_breaker = CircuitBreakerConfig::<Request, MyError>::builder()
+//! let with_circuit_breaker = CircuitBreakerLayer::<Request, MyError>::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .build()
 //!     .layer(with_retry);
@@ -677,7 +677,7 @@
 //! # let base_service = tower::service_fn(|req: Request| async { Ok::<_, MyError>(req) });
 //! // First 2 layers via ServiceBuilder
 //! let inner = ServiceBuilder::new()
-//!     .layer(TimeLimiterConfig::builder()
+//!     .layer(TimeLimiterLayer::builder()
 //!         .timeout_duration(Duration::from_secs(5))
 //!         .build())
 //!     .layer(RetryLayer::<MyError>::builder()
@@ -722,7 +722,7 @@
 //!
 //! // Then use ServiceBuilder for remaining layers
 //! let service = ServiceBuilder::new()
-//!     .layer(TimeLimiterConfig::builder()
+//!     .layer(TimeLimiterLayer::builder()
 //!         .timeout_duration(Duration::from_secs(5))
 //!         .build())
 //!     .service(with_retry);
