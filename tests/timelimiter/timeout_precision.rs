@@ -196,7 +196,12 @@ async fn timeout_just_after_completion() {
     let elapsed = start.elapsed();
 
     assert!(result.is_ok());
-    assert!(elapsed.as_millis() < 70);
+    // Windows CI has less precise timers, use larger tolerance
+    assert!(
+        elapsed.as_millis() < 90,
+        "Expected completion ~50ms, got {}ms",
+        elapsed.as_millis()
+    );
 }
 
 #[tokio::test]
