@@ -59,6 +59,12 @@ use std::time::Instant;
 use tokio::time::timeout;
 use tower::Service;
 
+#[cfg(feature = "metrics")]
+use metrics::{counter, describe_counter, describe_histogram, histogram};
+
+#[cfg(feature = "tracing")]
+use tracing::{debug, warn};
+
 pub use config::{TimeLimiterConfig, TimeLimiterConfigBuilder};
 pub use error::TimeLimiterError;
 pub use events::TimeLimiterEvent;
@@ -79,6 +85,18 @@ pub struct TimeLimiter<S> {
 impl<S> TimeLimiter<S> {
     /// Creates a new time limiter wrapping the given service.
     pub(crate) fn new(inner: S, config: Arc<TimeLimiterConfig>) -> Self {
+        #[cfg(feature = "metrics")]
+        {
+            describe_counter!(
+                "timelimiter_calls_total",
+                "Total number of time limiter calls (success, error, or timeout)"
+            );
+            describe_histogram!(
+                "timelimiter_call_duration_seconds",
+                "Duration of calls (successful or failed)"
+            );
+        }
+
         Self { inner, config }
     }
 }
@@ -115,6 +133,21 @@ where
                         timestamp: Instant::now(),
                         duration,
                     });
+
+                    #[cfg(feature = "metrics")]
+                    {
+                        counter!("timelimiter_calls_total", "timelimiter" => config.name.clone(), "result" => "success").increment(1);
+                        histogram!("timelimiter_call_duration_seconds", "timelimiter" => config.name.clone())
+                            .record(duration.as_secs_f64());
+                    }
+
+                    #[cfg(feature = "tracing")]
+                    debug!(
+                        timelimiter = %config.name,
+                        duration_ms = duration.as_millis(),
+                        "Call succeeded within timeout"
+                    );
+
                     Ok(response)
                 }
                 Ok(Err(err)) => {
@@ -124,6 +157,21 @@ where
                         timestamp: Instant::now(),
                         duration,
                     });
+
+                    #[cfg(feature = "metrics")]
+                    {
+                        counter!("timelimiter_calls_total", "timelimiter" => config.name.clone(), "result" => "error").increment(1);
+                        histogram!("timelimiter_call_duration_seconds", "timelimiter" => config.name.clone())
+                            .record(duration.as_secs_f64());
+                    }
+
+                    #[cfg(feature = "tracing")]
+                    debug!(
+                        timelimiter = %config.name,
+                        duration_ms = duration.as_millis(),
+                        "Call failed within timeout"
+                    );
+
                     Err(TimeLimiterError::Inner(err))
                 }
                 Err(_elapsed) => {
@@ -132,6 +180,19 @@ where
                         timestamp: Instant::now(),
                         timeout_duration,
                     });
+
+                    #[cfg(feature = "metrics")]
+                    {
+                        counter!("timelimiter_calls_total", "timelimiter" => config.name.clone(), "result" => "timeout").increment(1);
+                    }
+
+                    #[cfg(feature = "tracing")]
+                    warn!(
+                        timelimiter = %config.name,
+                        timeout_ms = timeout_duration.as_millis(),
+                        "Call timed out"
+                    );
+
                     Err(TimeLimiterError::Timeout)
                 }
             }
