@@ -109,7 +109,7 @@ impl<E> RetryConfigBuilder<E> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_retry::RetryConfig;
+    /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
     /// let config = RetryConfig::<std::io::Error>::builder()
@@ -148,7 +148,7 @@ impl<E> RetryConfigBuilder<E> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_retry::RetryConfig;
+    /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
     /// let config = RetryConfig::<std::io::Error>::builder()
@@ -186,7 +186,7 @@ impl<E> RetryConfigBuilder<E> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_retry::RetryConfig;
+    /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
@@ -227,7 +227,7 @@ impl<E> RetryConfigBuilder<E> {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_retry::RetryConfig;
+    /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     /// use std::io::{Error, ErrorKind};
     ///
@@ -278,16 +278,17 @@ impl<E> RetryConfigBuilder<E> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::RetryLayer;
 
     #[test]
     fn test_builder_defaults() {
-        let _layer = RetryConfig::<std::io::Error>::builder().build();
+        let _layer = RetryLayer::<std::io::Error>::builder().build();
         // If this compiles and doesn't panic, the builder works
     }
 
     #[test]
     fn test_builder_custom_values() {
-        let _layer = RetryConfig::<std::io::Error>::builder()
+        let _layer = RetryLayer::<std::io::Error>::builder()
             .max_attempts(5)
             .fixed_backoff(Duration::from_secs(2))
             .name("test-retry")

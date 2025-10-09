@@ -17,7 +17,7 @@
 //! # Examples
 //!
 //! ```
-//! use tower_resilience_retry::RetryConfig;
+//! use tower_resilience_retry::RetryLayer;
 //! use tower::ServiceBuilder;
 //! use std::time::Duration;
 //!

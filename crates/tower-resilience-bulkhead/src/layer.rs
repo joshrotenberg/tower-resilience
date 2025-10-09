@@ -15,6 +15,25 @@ impl BulkheadLayer {
     pub fn new(config: BulkheadConfig) -> Self {
         Self { config }
     }
+
+    /// Creates a new builder for configuring a bulkhead layer.
+    ///
+    /// This is a convenience method that delegates to [`BulkheadConfig::builder()`](crate::BulkheadConfig::builder).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_bulkhead::BulkheadLayer;
+    /// use std::time::Duration;
+    ///
+    /// let layer = BulkheadLayer::builder()
+    ///     .max_concurrent_calls(10)
+    ///     .wait_timeout(Duration::from_secs(5))
+    ///     .build();
+    /// ```
+    pub fn builder() -> crate::BulkheadConfigBuilder {
+        BulkheadConfig::builder()
+    }
 }
 
 impl<S> Layer<S> for BulkheadLayer {

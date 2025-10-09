@@ -96,10 +96,10 @@ impl RateLimiterConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_ratelimiter::RateLimiterConfig;
+    /// use tower_resilience_ratelimiter::RateLimiterLayer;
     /// use std::time::Duration;
     ///
-    /// let config = RateLimiterConfig::builder()
+    /// let config = RateLimiterLayer::builder()
     ///     .limit_for_period(100)
     ///     .on_permit_acquired(|wait_time| {
     ///         if wait_time > Duration::from_millis(0) {
@@ -133,7 +133,7 @@ impl RateLimiterConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_ratelimiter::RateLimiterConfig;
+    /// use tower_resilience_ratelimiter::RateLimiterLayer;
     /// use std::time::Duration;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
@@ -141,7 +141,7 @@ impl RateLimiterConfigBuilder {
     /// let rejection_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&rejection_count);
     ///
-    /// let config = RateLimiterConfig::builder()
+    /// let config = RateLimiterLayer::builder()
     ///     .limit_for_period(10)
     ///     .timeout_duration(Duration::from_millis(100))
     ///     .on_permit_rejected(move |timeout| {
@@ -177,10 +177,10 @@ impl RateLimiterConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_ratelimiter::RateLimiterConfig;
+    /// use tower_resilience_ratelimiter::RateLimiterLayer;
     /// use std::time::Duration;
     ///
-    /// let config = RateLimiterConfig::builder()
+    /// let config = RateLimiterLayer::builder()
     ///     .limit_for_period(100)
     ///     .refresh_period(Duration::from_secs(1))
     ///     .on_permits_refreshed(|available| {
@@ -220,16 +220,17 @@ impl RateLimiterConfigBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::RateLimiterLayer;
 
     #[test]
     fn test_builder_defaults() {
-        let _layer = RateLimiterConfig::builder().build();
+        let _layer = RateLimiterLayer::builder().build();
         // If this compiles and doesn't panic, the builder works
     }
 
     #[test]
     fn test_builder_custom_values() {
-        let _layer = RateLimiterConfig::builder()
+        let _layer = RateLimiterLayer::builder()
             .limit_for_period(100)
             .refresh_period(Duration::from_secs(2))
             .timeout_duration(Duration::from_millis(500))
@@ -240,7 +241,7 @@ mod tests {
 
     #[test]
     fn test_event_listeners() {
-        let _layer = RateLimiterConfig::builder()
+        let _layer = RateLimiterLayer::builder()
             .on_permit_acquired(|_| {})
             .on_permit_rejected(|_| {})
             .build();

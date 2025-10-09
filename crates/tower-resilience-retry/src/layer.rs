@@ -10,14 +10,14 @@ use tower::Layer;
 /// # Examples
 ///
 /// ```
-/// use tower_resilience_retry::RetryConfig;
+/// use tower_resilience_retry::RetryLayer;
 /// use tower::ServiceBuilder;
 /// use std::time::Duration;
 ///
 /// # #[derive(Debug, Clone)]
 /// # struct MyError;
 /// # async fn example() {
-/// let retry_layer: tower_resilience_retry::RetryLayer<MyError> = RetryConfig::builder()
+/// let retry_layer: tower_resilience_retry::RetryLayer<MyError> = RetryLayer::builder()
 ///     .max_attempts(5)
 ///     .exponential_backoff(Duration::from_millis(100))
 ///     .build();
@@ -41,6 +41,27 @@ impl<E> RetryLayer<E> {
         Self {
             config: Arc::new(config),
         }
+    }
+
+    /// Creates a new builder for configuring a retry layer.
+    ///
+    /// This is a convenience method that delegates to [`RetryLayer::builder()`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_retry::RetryLayer;
+    /// use std::time::Duration;
+    ///
+    /// # #[derive(Debug, Clone)]
+    /// # struct MyError;
+    /// let layer: RetryLayer<MyError> = RetryLayer::builder()
+    ///     .max_attempts(5)
+    ///     .exponential_backoff(Duration::from_millis(100))
+    ///     .build();
+    /// ```
+    pub fn builder() -> crate::RetryConfigBuilder<E> {
+        RetryConfig::builder()
     }
 }
 

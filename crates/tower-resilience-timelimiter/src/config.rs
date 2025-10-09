@@ -78,10 +78,10 @@ impl TimeLimiterConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_timelimiter::TimeLimiterConfig;
+    /// use tower_resilience_timelimiter::TimeLimiterLayer;
     /// use std::time::Duration;
     ///
-    /// let config = TimeLimiterConfig::builder()
+    /// let config = TimeLimiterLayer::builder()
     ///     .timeout_duration(Duration::from_secs(5))
     ///     .on_success(|duration| {
     ///         println!("Call completed in {:?}", duration);
@@ -115,7 +115,7 @@ impl TimeLimiterConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_timelimiter::TimeLimiterConfig;
+    /// use tower_resilience_timelimiter::TimeLimiterLayer;
     /// use std::time::Duration;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
@@ -123,7 +123,7 @@ impl TimeLimiterConfigBuilder {
     /// let error_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&error_count);
     ///
-    /// let config = TimeLimiterConfig::builder()
+    /// let config = TimeLimiterLayer::builder()
     ///     .timeout_duration(Duration::from_secs(5))
     ///     .on_error(move |duration| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
@@ -155,7 +155,7 @@ impl TimeLimiterConfigBuilder {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use tower_resilience_timelimiter::TimeLimiterConfig;
+    /// use tower_resilience_timelimiter::TimeLimiterLayer;
     /// use std::time::Duration;
     /// use std::sync::atomic::{AtomicUsize, Ordering};
     /// use std::sync::Arc;
@@ -163,7 +163,7 @@ impl TimeLimiterConfigBuilder {
     /// let timeout_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&timeout_count);
     ///
-    /// let config = TimeLimiterConfig::builder()
+    /// let config = TimeLimiterLayer::builder()
     ///     .timeout_duration(Duration::from_secs(5))
     ///     .cancel_running_future(true)
     ///     .on_timeout(move || {
@@ -209,16 +209,17 @@ impl Default for TimeLimiterConfigBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::TimeLimiterLayer;
 
     #[test]
     fn test_builder_defaults() {
-        let _layer = TimeLimiterConfig::builder().build();
+        let _layer = TimeLimiterLayer::builder().build();
         // If this compiles and doesn't panic, the builder works
     }
 
     #[test]
     fn test_builder_custom_values() {
-        let _layer = TimeLimiterConfig::builder()
+        let _layer = TimeLimiterLayer::builder()
             .timeout_duration(Duration::from_millis(100))
             .cancel_running_future(true)
             .name("my-timelimiter")
@@ -228,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_event_listeners() {
-        let _layer = TimeLimiterConfig::builder()
+        let _layer = TimeLimiterLayer::builder()
             .on_success(|_| {})
             .on_error(|_| {})
             .on_timeout(|| {})

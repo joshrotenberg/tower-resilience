@@ -36,12 +36,35 @@ pub struct CacheLayer<Req, K> {
     config: Arc<CacheConfig<Req, K>>,
 }
 
-impl<Req, K> CacheLayer<Req, K> {
+impl<Req, K> CacheLayer<Req, K>
+where
+    K: Hash + Eq + Clone + Send + 'static,
+{
     /// Creates a new `CacheLayer` with the given configuration.
     pub fn new(config: CacheConfig<Req, K>) -> Self {
         Self {
             config: Arc::new(config),
         }
+    }
+
+    /// Creates a new builder for configuring a cache layer.
+    ///
+    /// This is a convenience method that delegates to [`CacheConfig::builder()`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_cache::CacheLayer;
+    /// use std::time::Duration;
+    ///
+    /// let layer = CacheLayer::builder()
+    ///     .max_size(100)
+    ///     .ttl(Duration::from_secs(60))
+    ///     .key_extractor(|req: &String| req.clone())
+    ///     .build();
+    /// ```
+    pub fn builder() -> crate::CacheConfigBuilder<Req, K> {
+        CacheConfig::builder()
     }
 }
 

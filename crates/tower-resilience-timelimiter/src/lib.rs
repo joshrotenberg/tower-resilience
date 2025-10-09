@@ -9,12 +9,12 @@
 //! ## Basic Example
 //!
 //! ```rust
-//! use tower_resilience_timelimiter::TimeLimiterConfig;
+//! use tower_resilience_timelimiter::TimeLimiterLayer;
 //! use tower::{Layer, service_fn};
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = TimeLimiterConfig::builder()
+//! let layer = TimeLimiterLayer::builder()
 //!     .timeout_duration(Duration::from_secs(5))
 //!     .cancel_running_future(true)
 //!     .on_timeout(|| {
@@ -33,11 +33,11 @@
 //! ## Event Listeners
 //!
 //! ```rust
-//! use tower_resilience_timelimiter::TimeLimiterConfig;
+//! use tower_resilience_timelimiter::TimeLimiterLayer;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = TimeLimiterConfig::builder()
+//! let layer = TimeLimiterLayer::builder()
 //!     .timeout_duration(Duration::from_secs(5))
 //!     .on_success(|duration| {
 //!         println!("Call succeeded in {:?}", duration);
@@ -149,7 +149,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_success_within_timeout() {
-        let layer = TimeLimiterConfig::builder()
+        let layer = TimeLimiterLayer::builder()
             .timeout_duration(Duration::from_millis(100))
             .build();
 
@@ -167,7 +167,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_timeout_occurs() {
-        let layer = TimeLimiterConfig::builder()
+        let layer = TimeLimiterLayer::builder()
             .timeout_duration(Duration::from_millis(10))
             .build();
 
@@ -185,7 +185,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_inner_error_propagates() {
-        let layer = TimeLimiterConfig::builder()
+        let layer = TimeLimiterLayer::builder()
             .timeout_duration(Duration::from_millis(100))
             .build();
 
@@ -208,7 +208,7 @@ mod tests {
         let sc = Arc::clone(&success_count);
         let tc = Arc::clone(&timeout_count);
 
-        let layer = TimeLimiterConfig::builder()
+        let layer = TimeLimiterLayer::builder()
             .timeout_duration(Duration::from_millis(50))
             .on_success(move |_| {
                 sc.fetch_add(1, Ordering::SeqCst);
