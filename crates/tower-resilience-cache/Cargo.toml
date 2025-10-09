@@ -13,17 +13,21 @@ categories = ["asynchronous", "network-programming", "caching"]
 
 [dependencies]
 tower-resilience-core = { workspace = true }
-tower = "0.5"
-futures = "0.3"
-tokio = { version = "1", features = ["sync", "time"] }
+tower = { workspace = true }
+futures = { workspace = true }
+tokio = { workspace = true, features = ["sync", "time"] }
 lru = "0.16"
-thiserror = "2.0"
+thiserror = { workspace = true }
+
+# Optional dependencies
+metrics = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["full"] }
-tower = { version = "0.5", features = ["util"] }
+tokio = { workspace = true, features = ["full"] }
+tower = { workspace = true, features = ["util"] }
 
 [features]
 default = []
-metrics = ["tower-resilience-core/metrics"]
-tracing = ["tower-resilience-core/tracing"]
+metrics = ["dep:metrics", "tower-resilience-core/metrics"]
+tracing = ["dep:tracing", "tower-resilience-core/tracing"]
