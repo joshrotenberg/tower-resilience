@@ -185,12 +185,19 @@ where
             let response = future.await.map_err(CacheError::Inner)?;
 
             // Store successful response in cache
-            let (was_evicted, new_size) = {
+            let was_evicted = {
                 let mut store = store.lock().unwrap();
                 let was_full = store.len() >= config.max_size;
                 store.insert(key, response.clone());
-                let new_size = store.len();
-                (was_full, new_size)
+
+                // Update cache size gauge
+                #[cfg(feature = "metrics")]
+                {
+                    let new_size = store.len();
+                    gauge!("cache_size", "cache" => config.name.clone()).set(new_size as f64);
+                }
+
+                was_full
             };
 
             if was_evicted {
@@ -207,12 +214,6 @@ where
                     timestamp: Instant::now(),
                 };
                 config.event_listeners.emit(&event);
-            }
-
-            // Update cache size gauge
-            #[cfg(feature = "metrics")]
-            {
-                gauge!("cache_size", "cache" => config.name.clone()).set(new_size as f64);
             }
 
             Ok(response)
