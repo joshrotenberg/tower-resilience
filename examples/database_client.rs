@@ -137,7 +137,7 @@ async fn scenario_retry_transient_errors() {
         })
         .build();
 
-    let mut service = retry_layer.layer().layer(base_service);
+    let mut service = retry_layer.layer(base_service);
 
     let query = DbQuery {
         sql: "SELECT * FROM users WHERE id = 1".to_string(),
@@ -239,7 +239,7 @@ async fn scenario_full_stack() {
         .build();
 
     // Compose: base -> retry -> circuit breaker
-    let service_with_retry = retry_layer.layer().layer(base_service);
+    let service_with_retry = retry_layer.layer(base_service);
     let mut service = circuit_breaker.layer(service_with_retry);
 
     // Execute several queries

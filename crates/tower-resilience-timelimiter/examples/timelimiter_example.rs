@@ -35,8 +35,7 @@ async fn main() {
         .on_error(|duration| {
             println!("✗ Request failed after {:?}", duration);
         })
-        .build()
-        .layer();
+        .build();
 
     println!("=== Testing fast service (should succeed) ===");
     let mut service = timelimiter_layer.layer(fast_service);

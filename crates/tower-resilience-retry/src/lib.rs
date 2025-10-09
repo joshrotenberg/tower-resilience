@@ -24,8 +24,8 @@
 //! # #[derive(Debug, Clone)]
 //! # struct MyError;
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! // Create retry configuration with exponential backoff
-//! let retry_config: RetryConfig<MyError> = RetryConfig::builder()
+//! // Create retry layer with exponential backoff
+//! let retry_layer = RetryConfig::<MyError>::builder()
 //!     .max_attempts(5)
 //!     .exponential_backoff(Duration::from_millis(100))
 //!     .on_retry(|attempt, delay| {
@@ -35,7 +35,7 @@
 //!
 //! // Apply to a service
 //! let service = ServiceBuilder::new()
-//!     .layer(retry_config.layer())
+//!     .layer(retry_layer)
 //!     .service(tower::service_fn(|req: String| async move {
 //!         Ok::<_, MyError>(format!("Response: {}", req))
 //!     }));
@@ -204,12 +204,11 @@ mod tests {
             }
         });
 
-        let config: RetryConfig<TestError> = RetryConfig::builder()
+        let layer = RetryConfig::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         let response = service
@@ -241,12 +240,11 @@ mod tests {
             }
         });
 
-        let config: RetryConfig<TestError> = RetryConfig::builder()
+        let layer = RetryConfig::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         let response = service
@@ -274,12 +272,11 @@ mod tests {
             }
         });
 
-        let config: RetryConfig<TestError> = RetryConfig::builder()
+        let layer = RetryConfig::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         let result = service
@@ -306,13 +303,12 @@ mod tests {
             }
         });
 
-        let config: RetryConfig<TestError> = RetryConfig::builder()
+        let layer = RetryConfig::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .retry_on(|_: &TestError| false) // Never retry
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         let result = service
@@ -349,7 +345,7 @@ mod tests {
             }
         });
 
-        let config: RetryConfig<TestError> = RetryConfig::builder()
+        let layer = RetryConfig::<TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .on_retry(move |_, _| {
@@ -360,7 +356,6 @@ mod tests {
             })
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         let _ = service
@@ -374,29 +369,5 @@ mod tests {
         assert_eq!(success_count.load(Ordering::SeqCst), 1); // 1 success
     }
 
-    #[tokio::test]
-    async fn exponential_backoff_increases_delay() {
-        let config: RetryConfig<TestError> = RetryConfig::builder()
-            .max_attempts(5)
-            .backoff(ExponentialBackoff::new(Duration::from_millis(100)))
-            .build();
-
-        assert_eq!(config.policy.next_backoff(0), Duration::from_millis(100));
-        assert_eq!(config.policy.next_backoff(1), Duration::from_millis(200));
-        assert_eq!(config.policy.next_backoff(2), Duration::from_millis(400));
-    }
-
-    #[tokio::test]
-    async fn custom_interval_function() {
-        let config: RetryConfig<TestError> = RetryConfig::builder()
-            .max_attempts(3)
-            .backoff(FnInterval::new(|attempt| {
-                Duration::from_secs((attempt + 1) as u64)
-            }))
-            .build();
-
-        assert_eq!(config.policy.next_backoff(0), Duration::from_secs(1));
-        assert_eq!(config.policy.next_backoff(1), Duration::from_secs(2));
-        assert_eq!(config.policy.next_backoff(2), Duration::from_secs(3));
-    }
+    // Note: Backoff behavior is tested in tests/retry/retry_backoff.rs
 }

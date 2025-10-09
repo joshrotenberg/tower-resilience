@@ -9,7 +9,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio::time::sleep;
-use tower::{Service, ServiceBuilder};
+use tower::{Layer, Service};
 use tower_resilience::{bulkhead::BulkheadConfig, circuitbreaker::CircuitBreakerConfig};
 
 #[derive(Debug)]
@@ -80,7 +80,7 @@ async fn main() {
         })
         .build();
 
-    let service = ServiceBuilder::new().layer(bulkhead_layer).service(service);
+    let service = bulkhead_layer.layer(service);
 
     // Then wrap with circuit breaker
     let cb_layer = CircuitBreakerConfig::builder()

@@ -111,8 +111,7 @@ fn bench_retry(c: &mut Criterion) {
             let layer = RetryConfig::<TestError>::builder()
                 .max_attempts(3)
                 .fixed_backoff(Duration::from_millis(100))
-                .build()
-                .layer();
+                .build();
             let mut service = layer.layer(BaselineService);
 
             let response = service
@@ -134,8 +133,7 @@ fn bench_rate_limiter(c: &mut Criterion) {
             let layer = RateLimiterConfig::builder()
                 .limit_for_period(1000)
                 .refresh_period(Duration::from_secs(1))
-                .build()
-                .layer();
+                .build();
             let mut service = layer.layer(BaselineService);
 
             let response = service
@@ -158,8 +156,7 @@ fn bench_cache(c: &mut Criterion) {
                 .max_size(100)
                 .ttl(Duration::from_secs(60))
                 .key_extractor(|req: &TestRequest| req.0)
-                .build()
-                .layer();
+                .build();
             let mut service = layer.layer(BaselineService);
 
             // Prime the cache
@@ -184,8 +181,7 @@ fn bench_time_limiter(c: &mut Criterion) {
         b.to_async(&runtime).iter(|| async {
             let layer = TimeLimiterConfig::builder()
                 .timeout_duration(Duration::from_secs(30))
-                .build()
-                .layer();
+                .build();
             let mut service = layer.layer(BaselineService);
 
             let response = service

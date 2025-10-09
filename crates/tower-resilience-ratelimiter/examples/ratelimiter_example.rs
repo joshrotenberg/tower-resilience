@@ -15,7 +15,7 @@ async fn main() {
 
     // Create a rate limiter that allows 5 requests per second
     // with a 100ms timeout for waiting for permits
-    let config = tower_resilience_ratelimiter::RateLimiterConfig::builder()
+    let layer = tower_resilience_ratelimiter::RateLimiterConfig::builder()
         .limit_for_period(5)
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_millis(100))
@@ -27,8 +27,6 @@ async fn main() {
             r.fetch_add(1, Ordering::SeqCst);
         })
         .build();
-
-    let layer = RateLimiterLayer::new(config);
 
     // Create a simple service that returns "Hello"
     let service =

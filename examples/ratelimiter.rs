@@ -24,7 +24,7 @@ async fn main() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
 
     // Simple echo service
     let svc = service_fn(|req: String| async move { Ok::<_, ()>(format!("Echo: {}", req)) });

@@ -141,7 +141,7 @@ async fn scenario_rate_limiting() {
         })
         .build();
 
-    let mut service = rate_limiter.layer().layer(base_service);
+    let mut service = rate_limiter.layer(base_service);
 
     let client_ip: SocketAddr = "127.0.0.1:12345".parse().unwrap();
 
@@ -242,8 +242,7 @@ async fn scenario_full_server_stack() {
             TimeLimiterConfig::builder()
                 .timeout_duration(Duration::from_secs(2))
                 .cancel_running_future(true)
-                .build()
-                .layer(),
+                .build(),
         )
         // 2. Bulkhead - isolate expensive operations
         .layer(

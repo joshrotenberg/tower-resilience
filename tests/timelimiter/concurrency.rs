@@ -14,8 +14,7 @@ use tower_resilience_timelimiter::TimeLimiterConfig;
 async fn concurrent_calls_with_same_timeout() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|req: u32| async move {
         sleep(Duration::from_millis(10)).await;
@@ -59,8 +58,7 @@ async fn concurrent_calls_with_different_timeouts() {
         for j in 0..25 {
             let layer = TimeLimiterConfig::builder()
                 .timeout_duration(*timeout)
-                .build()
-                .layer();
+                .build();
 
             let svc = service_fn(|req: u32| async move {
                 sleep(Duration::from_millis(10)).await;
@@ -91,8 +89,7 @@ async fn concurrent_calls_with_different_timeouts() {
 async fn some_timeout_some_succeed_concurrently() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|req: u32| async move {
         if req.is_multiple_of(2) {
@@ -143,8 +140,7 @@ async fn all_timeout_simultaneously() {
         .on_timeout(move || {
             tc_clone.fetch_add(1, Ordering::SeqCst);
         })
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: u32| async move {
         sleep(Duration::from_millis(200)).await;
@@ -174,8 +170,7 @@ async fn all_timeout_simultaneously() {
 async fn no_resource_leaks_under_load() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     // Run multiple rounds to stress test
     for round in 0..10 {
@@ -217,8 +212,7 @@ async fn no_resource_leaks_under_load() {
 async fn independent_timeout_timers() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     // Start services at different times to verify timers are independent
     let svc1 = service_fn(|_req: ()| async {

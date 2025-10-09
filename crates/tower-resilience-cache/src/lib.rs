@@ -19,8 +19,8 @@
 //! use std::time::Duration;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! // Create a cache configuration
-//! let cache_config = CacheConfig::builder()
+//! // Create a cache layer
+//! let cache_layer = CacheConfig::builder()
 //!     .max_size(100)
 //!     .ttl(Duration::from_secs(60))
 //!     .key_extractor(|req: &String| req.clone())
@@ -30,7 +30,7 @@
 //!
 //! // Apply to a service
 //! let service = ServiceBuilder::new()
-//!     .layer(cache_config.layer())
+//!     .layer(cache_layer)
 //!     .service(tower::service_fn(|req: String| async move {
 //!         Ok::<_, std::io::Error>(format!("Response: {}", req))
 //!     }));
@@ -192,12 +192,11 @@ mod tests {
             }
         });
 
-        let config = CacheConfig::builder()
+        let layer = CacheConfig::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         // First call - cache miss
@@ -229,12 +228,11 @@ mod tests {
             Ok::<_, std::io::Error>(format!("Response: {}", req))
         });
 
-        let config = CacheConfig::builder()
+        let layer = CacheConfig::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         let response = service
@@ -260,12 +258,11 @@ mod tests {
             }
         });
 
-        let config = CacheConfig::builder()
+        let layer = CacheConfig::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         service
@@ -299,13 +296,12 @@ mod tests {
             }
         });
 
-        let config = CacheConfig::builder()
+        let layer = CacheConfig::builder()
             .max_size(10)
             .ttl(Duration::from_millis(50))
             .key_extractor(|req: &String| req.clone())
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         service
@@ -336,12 +332,11 @@ mod tests {
             Ok::<_, std::io::Error>(format!("Response: {}", req))
         });
 
-        let config = CacheConfig::builder()
+        let layer = CacheConfig::builder()
             .max_size(2)
             .key_extractor(|req: &String| req.clone())
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         // Fill cache with 2 items
@@ -408,7 +403,7 @@ mod tests {
             Ok::<_, std::io::Error>(format!("Response: {}", req))
         });
 
-        let config = CacheConfig::builder()
+        let layer = CacheConfig::builder()
             .max_size(1)
             .key_extractor(|req: &String| req.clone())
             .on_hit(move || {
@@ -422,7 +417,6 @@ mod tests {
             })
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         // First call - miss
@@ -471,12 +465,11 @@ mod tests {
             }
         });
 
-        let config = CacheConfig::builder()
+        let layer = CacheConfig::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         // First call - error

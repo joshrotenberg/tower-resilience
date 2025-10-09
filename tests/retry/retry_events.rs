@@ -31,7 +31,7 @@ async fn success_event_on_first_try() {
     let service =
         tower::service_fn(|_req: String| async move { Ok::<_, TestError>("success".to_string()) });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_millis(10))
         .on_success(move |attempts| {
@@ -46,7 +46,7 @@ async fn success_event_on_first_try() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -83,7 +83,7 @@ async fn success_event_after_retries() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .on_success(move |attempts| {
@@ -95,7 +95,7 @@ async fn success_event_after_retries() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -129,7 +129,7 @@ async fn retry_events_with_correct_attempt_numbers() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .on_retry(move |attempt, _delay| {
@@ -137,7 +137,7 @@ async fn retry_events_with_correct_attempt_numbers() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -171,7 +171,7 @@ async fn retry_events_include_delay_information() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .fixed_backoff(Duration::from_millis(50))
         .on_retry(move |_attempt, delay| {
@@ -179,7 +179,7 @@ async fn retry_events_include_delay_information() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -215,7 +215,7 @@ async fn error_event_after_exhaustion() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_millis(10))
         .on_error(move |attempts| {
@@ -224,7 +224,7 @@ async fn error_event_after_exhaustion() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -252,7 +252,7 @@ async fn ignored_error_event_for_non_retryable() {
         Err::<String, _>(TestError { retryable: false })
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .retry_on(|e: &TestError| e.retryable)
@@ -264,7 +264,7 @@ async fn ignored_error_event_for_non_retryable() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let result = service
@@ -304,7 +304,7 @@ async fn multiple_listeners_all_receive_events() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .fixed_backoff(Duration::from_millis(10))
         .on_retry(move |_, _| {
@@ -318,7 +318,7 @@ async fn multiple_listeners_all_receive_events() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -361,7 +361,7 @@ async fn all_event_types_in_successful_scenario() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .on_success(move |_| {
@@ -378,7 +378,7 @@ async fn all_event_types_in_successful_scenario() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -412,7 +412,7 @@ async fn all_event_types_in_exhausted_scenario() {
             |_req: String| async move { Err::<String, _>(TestError { retryable: true }) },
         );
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_millis(10))
         .on_success(move |_| {
@@ -429,7 +429,7 @@ async fn all_event_types_in_exhausted_scenario() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -462,7 +462,7 @@ async fn all_event_types_in_ignored_scenario() {
         Err::<String, _>(TestError { retryable: false })
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .retry_on(|e: &TestError| e.retryable)
@@ -480,7 +480,7 @@ async fn all_event_types_in_ignored_scenario() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service
@@ -520,7 +520,7 @@ async fn event_listeners_with_shared_state() {
         }
     });
 
-    let config: RetryConfig<TestError> = RetryConfig::builder()
+    let config = RetryConfig::builder()
         .max_attempts(4)
         .fixed_backoff(Duration::from_millis(10))
         .on_retry(move |attempt, _| {
@@ -534,7 +534,7 @@ async fn event_listeners_with_shared_state() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
     let mut service = layer.layer(service);
 
     let _ = service

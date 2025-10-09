@@ -172,8 +172,7 @@ async fn scenario_retry_timeout() {
                 .on_timeout(|| {
                     println!("[Timeout] Request exceeded 2s timeout");
                 })
-                .build()
-                .layer(),
+                .build(),
         )
         .layer(
             RetryConfig::<ClientError>::builder()
@@ -189,8 +188,7 @@ async fn scenario_retry_timeout() {
                         attempt, delay
                     );
                 })
-                .build()
-                .layer(),
+                .build(),
         )
         .service(base_client);
 
@@ -284,7 +282,7 @@ async fn scenario_cache() {
         })
         .build();
 
-    let mut client = cache_layer.layer().layer(base_client);
+    let mut client = cache_layer.layer(base_client);
 
     // Make same request 3 times
     for i in 1..=3 {
@@ -335,8 +333,7 @@ async fn scenario_full_stack() {
                 .on_miss(|| {
                     println!("[Cache] Miss - calling API");
                 })
-                .build()
-                .layer(),
+                .build(),
         )
         // 2. Retry - Handle transient failures
         .layer(
@@ -347,8 +344,7 @@ async fn scenario_full_stack() {
                 .on_retry(|attempt, _| {
                     println!("[Retry] Retrying after attempt {}", attempt);
                 })
-                .build()
-                .layer(),
+                .build(),
         )
         .service_fn(move |req: Request| {
             let api = Arc::clone(&api);

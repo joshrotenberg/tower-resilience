@@ -14,8 +14,7 @@ use tower_resilience_timelimiter::TimeLimiterConfig;
 async fn duration_zero_config() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::ZERO)
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         // tokio::time::timeout with Duration::ZERO allows one poll
@@ -34,8 +33,7 @@ async fn duration_max_config() {
     // Use a reasonable substitute for Duration::MAX (1 hour)
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_secs(3600))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(10)).await;
@@ -54,7 +52,7 @@ async fn default_builder_values() {
     let config = TimeLimiterConfig::builder().build();
 
     // Verify defaults from the builder
-    let layer = config.layer();
+    let layer = config;
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(10)).await;
         Ok::<_, TestError>("ok")
@@ -90,8 +88,7 @@ async fn all_config_options_combined() {
         .on_timeout(move || {
             tc.fetch_add(1, Ordering::SeqCst);
         })
-        .build()
-        .layer();
+        .build();
 
     // Test success
     let svc = service_fn(|_req: ()| async {
@@ -147,8 +144,7 @@ async fn event_listeners_work() {
         .on_timeout(move || {
             tc.fetch_add(1, Ordering::SeqCst);
         })
-        .build()
-        .layer();
+        .build();
 
     // Test success event
     let svc = service_fn(|_req: ()| async {
@@ -183,8 +179,7 @@ async fn name_configuration() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
         .name("my-custom-limiter")
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(10)).await;
@@ -218,8 +213,7 @@ async fn multiple_event_listeners() {
         .on_success(move |_| {
             c3.fetch_add(1, Ordering::SeqCst);
         })
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(10)).await;
@@ -240,8 +234,7 @@ async fn cancel_running_future_true_config() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
         .cancel_running_future(true)
-        .build()
-        .layer();
+        .build();
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(100)).await;
         Ok::<_, TestError>("should timeout")
@@ -259,8 +252,7 @@ async fn cancel_running_future_false_config() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
         .cancel_running_future(false)
-        .build()
-        .layer();
+        .build();
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(100)).await;
         Ok::<_, TestError>("should timeout")

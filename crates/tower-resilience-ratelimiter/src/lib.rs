@@ -33,7 +33,7 @@
 //!
 //! // Apply to a service
 //! let service = ServiceBuilder::new()
-//!     .layer(rate_limiter.layer())
+//!     .layer(rate_limiter)
 //!     .service(tower::service_fn(|req: String| async move {
 //!         Ok::<_, std::io::Error>(format!("Response: {}", req))
 //!     }));
@@ -176,13 +176,12 @@ mod tests {
             }
         });
 
-        let config = RateLimiterConfig::builder()
+        let layer = RateLimiterConfig::builder()
             .limit_for_period(10)
             .refresh_period(Duration::from_secs(1))
             .timeout_duration(Duration::from_millis(100))
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         // Should be able to make 10 requests
@@ -205,13 +204,12 @@ mod tests {
             Ok::<_, std::io::Error>(format!("Response: {}", req))
         });
 
-        let config = RateLimiterConfig::builder()
+        let layer = RateLimiterConfig::builder()
             .limit_for_period(2)
             .refresh_period(Duration::from_secs(10))
             .timeout_duration(Duration::from_millis(10))
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         // First 2 should succeed
@@ -252,13 +250,12 @@ mod tests {
             }
         });
 
-        let config = RateLimiterConfig::builder()
+        let layer = RateLimiterConfig::builder()
             .limit_for_period(2)
             .refresh_period(Duration::from_millis(100))
             .timeout_duration(Duration::from_millis(200))
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         // Use up permits
@@ -302,7 +299,7 @@ mod tests {
         let service =
             service_fn(|_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) });
 
-        let config = RateLimiterConfig::builder()
+        let layer = RateLimiterConfig::builder()
             .limit_for_period(1)
             .refresh_period(Duration::from_secs(10))
             .timeout_duration(Duration::from_millis(10))
@@ -314,7 +311,6 @@ mod tests {
             })
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         // First request should succeed
@@ -331,13 +327,12 @@ mod tests {
         let service =
             service_fn(|_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) });
 
-        let config = RateLimiterConfig::builder()
+        let layer = RateLimiterConfig::builder()
             .limit_for_period(1)
             .refresh_period(Duration::from_millis(50))
             .timeout_duration(Duration::from_millis(100)) // Can wait through one refresh
             .build();
 
-        let layer = config.layer();
         let mut service = layer.layer(service);
 
         // First request succeeds

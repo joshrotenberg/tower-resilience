@@ -196,7 +196,7 @@ async fn scenario_retry_transient() {
         })
         .build();
 
-    let mut service = retry_layer.layer().layer(base_service);
+    let mut service = retry_layer.layer(base_service);
 
     let msg = Message {
         id: "msg-001".to_string(),
@@ -349,8 +349,7 @@ async fn scenario_full_worker_stack() {
                 .on_retry(|attempt, _| {
                     println!("[Retry] Retrying after attempt {}", attempt);
                 })
-                .build()
-                .layer(),
+                .build(),
         )
         .service_fn(move |msg: Message| {
             let downstream = Arc::clone(&downstream);

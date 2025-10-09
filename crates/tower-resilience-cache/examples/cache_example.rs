@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // Configure cache with event listeners
-    let cache_config = CacheConfig::builder()
+    let cache_layer = CacheConfig::builder()
         .max_size(3)
         .ttl(Duration::from_secs(2))
         .name("example-cache")
@@ -35,7 +35,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .on_eviction(|| println!("  [EVENT] Cache EVICTION"))
         .build();
 
-    let cache_layer = cache_config.layer();
     let mut service = cache_layer.layer(service);
 
     // Test 1: Cache miss

@@ -24,7 +24,7 @@ async fn main() {
         })
         .build();
 
-    let layer = config.layer();
+    let layer = config;
 
     // Test 1: Fast operation (completes in time)
     println!("Test 1: Fast operation (500ms)");

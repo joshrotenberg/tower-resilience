@@ -233,7 +233,9 @@
 //!     })
 //!     .build();
 //!
-//! let service = time_limiter.layer().layer(database_query);
+//! let service = tower::ServiceBuilder::new()
+//!     .layer(time_limiter)
+//!     .service(database_query);
 //! # }
 //! # }
 //! ```
@@ -308,7 +310,9 @@
 //!     })
 //!     .build();
 //!
-//! let service = retry.layer().layer(http_client);
+//! let service = tower::ServiceBuilder::new()
+//!     .layer(retry)
+//!     .service(http_client);
 //! # }
 //! # }
 //! ```
@@ -375,7 +379,9 @@
 //!     .timeout_duration(Duration::from_millis(100))  // Wait up to 100ms
 //!     .build();
 //!
-//! let service = rate_limiter.layer().layer(api_handler);
+//! let service = tower::ServiceBuilder::new()
+//!     .layer(rate_limiter)
+//!     .service(api_handler);
 //! # }
 //! # }
 //! ```
@@ -447,7 +453,9 @@
 //!     .key_extractor(|req: &Request| req.id)
 //!     .build();
 //!
-//! let service = cache.layer().layer(expensive_operation);
+//! let service = tower::ServiceBuilder::new()
+//!     .layer(cache)
+//!     .service(expensive_operation);
 //! # }
 //! # }
 //! ```

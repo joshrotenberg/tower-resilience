@@ -36,7 +36,7 @@ async fn main() {
     });
 
     // Configure retry with exponential backoff
-    let retry_config: RetryConfig<MyError> = RetryConfig::builder()
+    let layer = RetryConfig::builder()
         .max_attempts(5)
         .exponential_backoff(Duration::from_millis(100))
         .on_retry(|attempt, delay| {
@@ -51,7 +51,6 @@ async fn main() {
         })
         .build();
 
-    let layer = retry_config.layer();
     let mut service = layer.layer(svc);
 
     // Make a request - will retry automatically

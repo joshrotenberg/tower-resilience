@@ -31,8 +31,7 @@ async fn layer_composition_with_service_builder() {
     let cache_layer = CacheConfig::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build()
-        .layer();
+        .build();
 
     // Compose using ServiceBuilder
     let mut composed_service = ServiceBuilder::new().layer(cache_layer).service(service);
@@ -79,16 +78,14 @@ async fn multiple_cache_layers_in_same_stack() {
         .max_size(10)
         .name("outer-cache")
         .key_extractor(|req: &u32| *req)
-        .build()
-        .layer();
+        .build();
 
     // Inner cache: smaller capacity
     let inner_cache = CacheConfig::builder()
         .max_size(5)
         .name("inner-cache")
         .key_extractor(|req: &u32| *req)
-        .build()
-        .layer();
+        .build();
 
     // Stack them: request -> outer_cache -> inner_cache -> service
     let mut stacked_service = ServiceBuilder::new()
@@ -159,8 +156,7 @@ async fn cache_with_map_response_layer() {
     let cache_layer = CacheConfig::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build()
-        .layer();
+        .build();
 
     // Use map_response to transform cached responses
     let map_layer = tower::util::MapResponseLayer::new(|response: String| response.to_uppercase());
@@ -210,8 +206,7 @@ async fn cache_with_map_request_layer() {
     let cache_layer = CacheConfig::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build()
-        .layer();
+        .build();
 
     // Use map_request to transform incoming requests before caching
     let map_layer = tower::util::MapRequestLayer::new(|req: String| req.to_lowercase());
@@ -271,8 +266,7 @@ async fn service_cloning_through_layer() {
     let cache_layer = CacheConfig::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build()
-        .layer();
+        .build();
 
     let mut service1 = ServiceBuilder::new().layer(cache_layer).service(service);
 
@@ -332,7 +326,7 @@ async fn layer_returns_correct_service_type() {
         .key_extractor(|req: &String| req.clone())
         .build();
 
-    let cache_layer = cache_config.layer();
+    let cache_layer = cache_config;
 
     // Layer should correctly wrap the service
     let mut cached_service = cache_layer.layer(service);

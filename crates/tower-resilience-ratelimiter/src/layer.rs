@@ -19,8 +19,7 @@ use tower::Layer;
 ///     .limit_for_period(100)
 ///     .refresh_period(Duration::from_secs(1))
 ///     .timeout_duration(Duration::from_millis(100))
-///     .build()
-///     .layer();
+///     .build();
 ///
 /// let service = ServiceBuilder::new()
 ///     .layer(rate_limiter)

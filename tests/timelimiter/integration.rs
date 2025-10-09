@@ -15,8 +15,7 @@ use tower_resilience_timelimiter::TimeLimiterConfig;
 async fn success_within_timeout() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(100))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(10)).await;
@@ -34,8 +33,7 @@ async fn success_within_timeout() {
 async fn timeout_occurs() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(10))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(100)).await;
@@ -53,8 +51,7 @@ async fn timeout_occurs() {
 async fn inner_error_propagates() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(100))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async { Err::<(), _>(TestError("inner error".to_string())) });
 
@@ -83,8 +80,7 @@ async fn event_listeners_called() {
         .on_timeout(move || {
             tc.fetch_add(1, Ordering::SeqCst);
         })
-        .build()
-        .layer();
+        .build();
 
     // Test success
     let svc = service_fn(|_req: ()| async {
@@ -115,8 +111,7 @@ async fn error_event_listener_called() {
         .on_error(move |_| {
             ec.fetch_add(1, Ordering::SeqCst);
         })
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(10)).await;
@@ -134,8 +129,7 @@ async fn error_event_listener_called() {
 async fn multiple_sequential_calls() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|req: u32| async move {
         if req.is_multiple_of(2) {
@@ -169,8 +163,7 @@ async fn multiple_sequential_calls() {
 async fn service_cloning_preserves_config() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(10)).await;
@@ -193,8 +186,7 @@ async fn named_timelimiter() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(50))
         .name("test-limiter")
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(10)).await;
@@ -211,8 +203,7 @@ async fn named_timelimiter() {
 async fn instant_success() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(100))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async { Ok::<_, TestError>("instant") });
 
@@ -227,8 +218,7 @@ async fn instant_success() {
 async fn instant_error() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(100))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async { Err::<(), _>(TestError("instant error".to_string())) });
 

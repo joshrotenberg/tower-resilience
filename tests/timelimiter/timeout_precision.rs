@@ -16,8 +16,7 @@ async fn timeout_fires_at_correct_time() {
     let timeout_duration = Duration::from_millis(50);
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(timeout_duration)
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(200)).await;
@@ -47,8 +46,7 @@ async fn timeout_fires_at_correct_time() {
 async fn duration_zero_immediate_timeout() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::ZERO)
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         // tokio::time::timeout with Duration::ZERO allows one poll,
@@ -68,8 +66,7 @@ async fn duration_zero_immediate_timeout() {
 async fn very_short_timeout_1ms() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(1))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(50)).await;
@@ -90,8 +87,7 @@ async fn very_short_timeout_1ms() {
 async fn very_short_timeout_10ms() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(10))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(100)).await;
@@ -112,8 +108,7 @@ async fn very_short_timeout_10ms() {
 async fn very_long_timeout() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_secs(60))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(10)).await;
@@ -135,8 +130,7 @@ async fn timeout_exactly_at_service_completion() {
     let timeout_duration = Duration::from_millis(50);
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(timeout_duration)
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(50)).await;
@@ -163,8 +157,7 @@ async fn timeout_exactly_at_service_completion() {
 async fn timeout_just_before_completion() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(30))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(50)).await;
@@ -190,8 +183,7 @@ async fn timeout_just_before_completion() {
 async fn timeout_just_after_completion() {
     let layer = TimeLimiterConfig::builder()
         .timeout_duration(Duration::from_millis(70))
-        .build()
-        .layer();
+        .build();
 
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(50)).await;
@@ -219,8 +211,7 @@ async fn multiple_different_timeout_durations() {
     for timeout in timeouts {
         let layer = TimeLimiterConfig::builder()
             .timeout_duration(timeout)
-            .build()
-            .layer();
+            .build();
 
         // Service that takes 75ms
         let svc = service_fn(|_req: ()| async {
