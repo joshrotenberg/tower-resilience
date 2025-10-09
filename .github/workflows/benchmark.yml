@@ -16,7 +16,7 @@ on:
     - cron: "0 0 * * 1"
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -25,64 +25,72 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
+          cache-on-failure: true
 
-      - name: Run benchmarks
-        run: cargo bench --bench happy_path_overhead -- --output-format bencher | tee output.txt
-
-      - name: Download previous benchmark data
-        if: github.event_name != 'pull_request'
-        uses: actions/cache@v4
-        with:
-          path: ./cache
-          key: benchmark-data
-
-      - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
-        if: github.event_name != 'pull_request'
-        with:
-          tool: "cargo"
-          output-file-path: output.txt
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: false
-          save-data-file: true
-          comment-on-alert: true
-          alert-threshold: "150%"
-          fail-on-alert: false
-          alert-comment-cc-users: "@joshrotenberg"
-          gh-pages-branch: gh-pages
-          benchmark-data-dir-path: dev/bench
-
-      - name: Store benchmark result (PR)
-        uses: benchmark-action/github-action-benchmark@v1
+      - name: Run benchmarks on PR branch
         if: github.event_name == 'pull_request'
+        run: |
+          cargo bench --bench happy_path_overhead -- --save-baseline pr-branch --output-format bencher | tee pr-output.txt
+
+      - name: Checkout base branch
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git checkout origin/${{ github.base_ref }}
+
+      - name: Run benchmarks on base branch
+        if: github.event_name == 'pull_request'
+        run: |
+          cargo bench --bench happy_path_overhead -- --save-baseline base-branch --output-format bencher | tee base-output.txt
+
+      - name: Compare benchmarks
+        if: github.event_name == 'pull_request'
+        id: compare
+        run: |
+          echo "## Benchmark Results" > comment.md
+          echo "" >> comment.md
+          echo "Comparing PR branch against \`${{ github.base_ref }}\`" >> comment.md
+          echo "" >> comment.md
+          echo "### PR Branch Results" >> comment.md
+          echo "\`\`\`" >> comment.md
+          cat pr-output.txt >> comment.md
+          echo "\`\`\`" >> comment.md
+          echo "" >> comment.md
+          echo "### Base Branch Results" >> comment.md
+          echo "\`\`\`" >> comment.md
+          cat base-output.txt >> comment.md
+          echo "\`\`\`" >> comment.md
+          echo "" >> comment.md
+          echo "---" >> comment.md
+          echo "*Note: Benchmark results on CI can be noisy due to virtualization. Significant changes (>20%) are worth investigating.*" >> comment.md
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request'
+        uses: thollander/actions-comment-pull-request@v2
         with:
-          tool: "cargo"
-          output-file-path: output.txt
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: false
-          comment-on-alert: true
-          alert-threshold: "150%"
-          fail-on-alert: false
-          save-data-file: false
-          external-data-json-path: "./cache/dev/bench/data.json"
+          filePath: comment.md
+          comment_tag: benchmark-results
+
+      - name: Run benchmarks on main
+        if: github.event_name != 'pull_request'
+        run: |
+          cargo bench --bench happy_path_overhead -- --output-format bencher | tee output.txt
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results-${{ github.sha }}
-          path: output.txt
+          path: |
+            *-output.txt
+            output.txt
           retention-days: 90
+          if-no-files-found: ignore
