@@ -63,8 +63,8 @@ jobs:
           alert-threshold: "150%"
           fail-on-alert: false
           alert-comment-cc-users: "@joshrotenberg"
-          gh-pages-branch: main
-          benchmark-data-dir-path: ./cache
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
 
       - name: Store benchmark result (PR)
         uses: benchmark-action/github-action-benchmark@v1
@@ -78,7 +78,7 @@ jobs:
           alert-threshold: "150%"
           fail-on-alert: false
           save-data-file: false
-          external-data-json-path: "./cache/benchmark-data.json"
+          external-data-json-path: "./cache/dev/bench/data.json"
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
