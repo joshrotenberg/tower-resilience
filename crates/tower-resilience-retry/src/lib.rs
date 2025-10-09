@@ -63,6 +63,12 @@ use std::task::{Context, Poll};
 use std::time::Instant;
 use tower::Service;
 
+#[cfg(feature = "metrics")]
+use metrics::{counter, describe_counter, describe_histogram, histogram};
+
+#[cfg(feature = "tracing")]
+use tracing::{debug, info, warn};
+
 /// A Tower [`Service`] that retries failed requests.
 ///
 /// This service wraps an inner service and automatically retries requests
@@ -75,6 +81,19 @@ pub struct Retry<S, E> {
 impl<S, E> Retry<S, E> {
     /// Creates a new `Retry` service wrapping the given service.
     pub fn new(inner: S, config: Arc<RetryConfig<E>>) -> Self {
+        #[cfg(feature = "metrics")]
+        {
+            describe_counter!(
+                "retry_calls_total",
+                "Total number of retry operations (success or exhausted)"
+            );
+            describe_counter!(
+                "retry_attempts_total",
+                "Total number of retry attempts across all calls"
+            );
+            describe_histogram!("retry_attempts", "Number of attempts per successful call");
+        }
+
         Self { inner, config }
     }
 }
@@ -120,6 +139,22 @@ where
                 match result {
                     Ok(response) => {
                         // Success
+                        #[cfg(feature = "metrics")]
+                        {
+                            counter!("retry_calls_total", "retry" => config.name.clone(), "result" => "success").increment(1);
+                            histogram!("retry_attempts", "retry" => config.name.clone())
+                                .record((attempt + 1) as f64);
+                        }
+
+                        #[cfg(feature = "tracing")]
+                        {
+                            if attempt > 0 {
+                                info!(retry = %config.name, attempts = attempt + 1, "Request succeeded after retries");
+                            } else {
+                                debug!(retry = %config.name, "Request succeeded on first attempt");
+                            }
+                        }
+
                         let event = RetryEvent::Success {
                             pattern_name: config.name.clone(),
                             timestamp: Instant::now(),
@@ -131,6 +166,9 @@ where
                     Err(error) => {
                         // Check if we should retry this error
                         if !config.policy.should_retry(&error) {
+                            #[cfg(feature = "tracing")]
+                            debug!(retry = %config.name, "Error not retryable, failing immediately");
+
                             let event = RetryEvent::IgnoredError {
                                 pattern_name: config.name.clone(),
                                 timestamp: Instant::now(),
@@ -141,6 +179,14 @@ where
 
                         // Check if we've exhausted retries
                         if attempt + 1 >= config.policy.max_attempts {
+                            #[cfg(feature = "metrics")]
+                            {
+                                counter!("retry_calls_total", "retry" => config.name.clone(), "result" => "exhausted").increment(1);
+                            }
+
+                            #[cfg(feature = "tracing")]
+                            warn!(retry = %config.name, attempts = attempt + 1, max_attempts = config.policy.max_attempts, "Retry attempts exhausted");
+
                             let event = RetryEvent::Error {
                                 pattern_name: config.name.clone(),
                                 timestamp: Instant::now(),
@@ -152,6 +198,16 @@ where
 
                         // Calculate backoff and retry
                         let delay = config.policy.next_backoff(attempt);
+
+                        #[cfg(feature = "metrics")]
+                        {
+                            counter!("retry_attempts_total", "retry" => config.name.clone())
+                                .increment(1);
+                        }
+
+                        #[cfg(feature = "tracing")]
+                        debug!(retry = %config.name, attempt = attempt + 1, delay_ms = delay.as_millis(), "Retrying after delay");
+
                         let event = RetryEvent::Retry {
                             pattern_name: config.name.clone(),
                             timestamp: Instant::now(),
