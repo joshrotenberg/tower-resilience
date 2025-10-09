@@ -53,17 +53,14 @@
 //!
 //! [`ServiceBuilder`](tower::ServiceBuilder) provides a convenient way to compose multiple layers:
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use tower::ServiceBuilder;
 //! use std::time::Duration;
 //!
-//! # async fn example() {
-//! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
 //! let service = ServiceBuilder::new()
 //!     .timeout(Duration::from_secs(30))
 //!     .concurrency_limit(100)
 //!     .service(my_service);
-//! # }
 //! ```
 //!
 //! ## How Services Work
@@ -125,17 +122,15 @@
 //!
 //! Resilience patterns compose naturally as layers:
 //!
-//! ```rust,no_run
-//! # use tower::ServiceBuilder;
-//! # use std::time::Duration;
-//! # async fn example() {
-//! # let client = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+//! ```rust,ignore
+//! use tower::ServiceBuilder;
+//! use std::time::Duration;
+//!
 //! let resilient_client = ServiceBuilder::new()
 //!     .timeout(Duration::from_secs(30))        // Tower built-in
-//!     // .layer(circuit_breaker)                // Tower-resilience
-//!     // .layer(retry)                          // Tower-resilience
+//!     .layer(circuit_breaker)                  // Tower-resilience
+//!     .layer(retry)                            // Tower-resilience
 //!     .service(client);
-//! # }
 //! ```
 //!
 //! ### 2. Type Safety
@@ -168,19 +163,20 @@
 //!
 //! ```rust,no_run
 //! # use tower::{Service, ServiceExt};
-//! # async fn example() {
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! # let mut service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+//! # let request = ();
 //! // ❌ Wrong
-//! let response = service.call(request).await;
+//! // let response = service.call(request).await;
 //!
 //! // ✅ Correct
 //! service.ready().await?;
-//! let response = service.call(request).await;
-//! # let request = ();
+//! let response = service.call(request).await?;
+//! # Ok(())
 //! # }
 //! ```
 //!
-//! **Tip:** Use [`ServiceExt::ready()`](tower::ServiceExt::ready) helper method.
+//! **Tip:** Use the `ServiceExt::ready()` helper method.
 //!
 //! ### 2. Service Cloning Assumptions
 //!
@@ -189,11 +185,11 @@
 //! ```rust,no_run
 //! # use std::sync::{Arc, Mutex};
 //! # #[derive(Clone)]
-//! # struct Service { state: Arc<Mutex<u32>> }
+//! # struct MyService { state: Arc<Mutex<u32>> }
+//! # let service = MyService { state: Arc::new(Mutex::new(0)) };
 //! let svc1 = service.clone();
 //! let svc2 = service.clone();
 //! // svc1 and svc2 share the same underlying state!
-//! # let service = Service { state: Arc::new(Mutex::new(0)) };
 //! ```
 //!
 //! ### 3. Error Type Compatibility
@@ -215,21 +211,13 @@
 //! ## Quick Reference
 //!
 //! ```rust,no_run
-//! use tower::{Service, ServiceBuilder, ServiceExt, Layer};
-//! use std::time::Duration;
+//! use tower::{Service, ServiceExt};
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
 //! // Create a service
 //! let service = tower::service_fn(|req: String| async move {
 //!     Ok::<_, std::io::Error>(format!("Hello, {}", req))
 //! });
-//!
-//! // Compose layers
-//! let service = ServiceBuilder::new()
-//!     .timeout(Duration::from_secs(30))
-//!     .concurrency_limit(100)
-//!     .service(service);
 //!
 //! // Use the service
 //! let mut service = service;

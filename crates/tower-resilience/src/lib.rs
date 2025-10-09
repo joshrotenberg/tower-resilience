@@ -54,6 +54,12 @@
 //!
 //! # #[derive(Debug, Clone)]
 //! # struct MyError;
+//! # impl std::fmt::Display for MyError {
+//! #     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//! #         write!(f, "error")
+//! #     }
+//! # }
+//! # impl std::error::Error for MyError {}
 //! # async fn example() {
 //! # let http_client = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
 //! // Build a resilient HTTP client
@@ -71,7 +77,7 @@
 //!
 //! // Compose manually for reliability
 //! let resilient_client = retry.layer(http_client);
-//! let resilient_client = circuit_breaker.layer(resilient_client);
+//! let resilient_client = circuit_breaker.layer::<_, ()>(resilient_client);
 //! # }
 //! # }
 //! ```
