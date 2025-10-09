@@ -67,7 +67,30 @@ impl TimeLimiterConfigBuilder {
         self
     }
 
-    /// Registers a callback to be invoked when a call succeeds within the timeout.
+    /// Registers a callback when a call succeeds within the timeout.
+    ///
+    /// This callback is invoked when the underlying service call completes successfully
+    /// before the configured timeout duration expires. This is the normal, happy-path case.
+    ///
+    /// # Callback Signature
+    /// `Fn(Duration)` - Called with the actual duration the call took to complete.
+    /// This will always be less than the configured `timeout_duration`.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_timelimiter::TimeLimiterConfig;
+    /// use std::time::Duration;
+    ///
+    /// let config = TimeLimiterConfig::builder()
+    ///     .timeout_duration(Duration::from_secs(5))
+    ///     .on_success(|duration| {
+    ///         println!("Call completed in {:?}", duration);
+    ///         if duration > Duration::from_secs(4) {
+    ///             println!("Warning: call took >80% of timeout");
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_success<F>(mut self, f: F) -> Self
     where
         F: Fn(Duration) + Send + Sync + 'static,
@@ -80,7 +103,34 @@ impl TimeLimiterConfigBuilder {
         self
     }
 
-    /// Registers a callback to be invoked when a call fails with an error.
+    /// Registers a callback when a call fails with an error before the timeout.
+    ///
+    /// This callback is invoked when the underlying service call returns an error
+    /// before the timeout expires. The error is not related to the timeout itself,
+    /// but rather comes from the service or middleware in the chain.
+    ///
+    /// # Callback Signature
+    /// `Fn(Duration)` - Called with the duration from when the call started until the error occurred.
+    /// This will be less than the configured `timeout_duration`.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_timelimiter::TimeLimiterConfig;
+    /// use std::time::Duration;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// let error_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&error_count);
+    ///
+    /// let config = TimeLimiterConfig::builder()
+    ///     .timeout_duration(Duration::from_secs(5))
+    ///     .on_error(move |duration| {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Call failed after {:?} (total errors: {})", duration, count + 1);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_error<F>(mut self, f: F) -> Self
     where
         F: Fn(Duration) + Send + Sync + 'static,
@@ -93,7 +143,38 @@ impl TimeLimiterConfigBuilder {
         self
     }
 
-    /// Registers a callback to be invoked when a call times out.
+    /// Registers a callback when a call exceeds the timeout duration.
+    ///
+    /// This callback is invoked when the underlying service call does not complete
+    /// within the configured timeout duration. The call will be cancelled (if
+    /// `cancel_running_future` is true) or allowed to continue in the background,
+    /// and a timeout error will be returned to the caller.
+    ///
+    /// # Callback Signature
+    /// `Fn()` - Called with no parameters when a timeout occurs.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_timelimiter::TimeLimiterConfig;
+    /// use std::time::Duration;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// let timeout_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&timeout_count);
+    ///
+    /// let config = TimeLimiterConfig::builder()
+    ///     .timeout_duration(Duration::from_secs(5))
+    ///     .cancel_running_future(true)
+    ///     .on_timeout(move || {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Call timed out (total timeouts: {})", count + 1);
+    ///         if count > 10 {
+    ///             println!("WARNING: High timeout rate detected!");
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_timeout<F>(mut self, f: F) -> Self
     where
         F: Fn() + Send + Sync + 'static,

@@ -88,7 +88,35 @@ where
         self
     }
 
-    /// Registers a callback to be invoked when a cache hit occurs.
+    /// Registers a callback when a cache hit occurs.
+    ///
+    /// A cache hit occurs when a requested entry is found in the cache and has not expired.
+    ///
+    /// # Callback Signature
+    /// `Fn()` - Called with no parameters when a cache hit is detected.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_cache::CacheConfig;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// #[derive(Clone, Hash, Eq, PartialEq)]
+    /// struct Request {
+    ///     id: String,
+    /// }
+    ///
+    /// let hit_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&hit_count);
+    ///
+    /// let config = CacheConfig::<Request, String>::builder()
+    ///     .key_extractor(|req| req.id.clone())
+    ///     .on_hit(move || {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Cache hit #{}", count + 1);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_hit<F>(mut self, f: F) -> Self
     where
         F: Fn() + Send + Sync + 'static,
@@ -101,7 +129,36 @@ where
         self
     }
 
-    /// Registers a callback to be invoked when a cache miss occurs.
+    /// Registers a callback when a cache miss occurs.
+    ///
+    /// A cache miss occurs when a requested entry is not found in the cache or has expired.
+    /// The underlying service will be called to fetch the value, which will then be cached.
+    ///
+    /// # Callback Signature
+    /// `Fn()` - Called with no parameters when a cache miss is detected.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_cache::CacheConfig;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// #[derive(Clone, Hash, Eq, PartialEq)]
+    /// struct Request {
+    ///     id: String,
+    /// }
+    ///
+    /// let miss_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&miss_count);
+    ///
+    /// let config = CacheConfig::<Request, String>::builder()
+    ///     .key_extractor(|req| req.id.clone())
+    ///     .on_miss(move || {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Cache miss #{} - fetching from service", count + 1);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_miss<F>(mut self, f: F) -> Self
     where
         F: Fn() + Send + Sync + 'static,
@@ -114,7 +171,40 @@ where
         self
     }
 
-    /// Registers a callback to be invoked when an entry is evicted.
+    /// Registers a callback when an entry is evicted from the cache.
+    ///
+    /// Eviction occurs when:
+    /// - The cache reaches its maximum size and needs to make room for new entries
+    /// - An entry expires due to TTL (time-to-live) configuration
+    ///
+    /// # Callback Signature
+    /// `Fn()` - Called with no parameters when a cache eviction occurs.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_cache::CacheConfig;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    /// use std::time::Duration;
+    ///
+    /// #[derive(Clone, Hash, Eq, PartialEq)]
+    /// struct Request {
+    ///     id: String,
+    /// }
+    ///
+    /// let eviction_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&eviction_count);
+    ///
+    /// let config = CacheConfig::<Request, String>::builder()
+    ///     .key_extractor(|req| req.id.clone())
+    ///     .max_size(100)
+    ///     .ttl(Duration::from_secs(300))
+    ///     .on_eviction(move || {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Entry evicted (total: {})", count + 1);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_eviction<F>(mut self, f: F) -> Self
     where
         F: Fn() + Send + Sync + 'static,

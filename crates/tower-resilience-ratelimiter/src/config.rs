@@ -84,7 +84,32 @@ impl RateLimiterConfigBuilder {
         self
     }
 
-    /// Registers a callback for permit acquired events.
+    /// Registers a callback when a permit is acquired.
+    ///
+    /// This callback is invoked when a request successfully obtains a permit to proceed,
+    /// either immediately or after waiting for the next refresh period.
+    ///
+    /// # Callback Signature
+    /// `Fn(Duration)` - Called with the duration the request had to wait for the permit.
+    /// - If the permit was immediately available, the duration will be close to zero.
+    /// - If the request had to wait for the next refresh period, the duration will reflect that wait time.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_ratelimiter::RateLimiterConfig;
+    /// use std::time::Duration;
+    ///
+    /// let config = RateLimiterConfig::builder()
+    ///     .limit_for_period(100)
+    ///     .on_permit_acquired(|wait_time| {
+    ///         if wait_time > Duration::from_millis(0) {
+    ///             println!("Request waited {:?} for permit", wait_time);
+    ///         } else {
+    ///             println!("Permit immediately available");
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_permit_acquired<F>(mut self, f: F) -> Self
     where
         F: Fn(Duration) + Send + Sync + 'static,
@@ -97,7 +122,34 @@ impl RateLimiterConfigBuilder {
         self
     }
 
-    /// Registers a callback for permit rejected events.
+    /// Registers a callback when a permit request is rejected.
+    ///
+    /// This callback is invoked when a request is rejected because it cannot obtain a permit
+    /// within the configured timeout duration. This typically means the rate limiter is
+    /// experiencing high load and cannot serve the request within acceptable time bounds.
+    ///
+    /// # Callback Signature
+    /// `Fn(Duration)` - Called with the configured timeout duration that was exceeded.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_ratelimiter::RateLimiterConfig;
+    /// use std::time::Duration;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// let rejection_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&rejection_count);
+    ///
+    /// let config = RateLimiterConfig::builder()
+    ///     .limit_for_period(10)
+    ///     .timeout_duration(Duration::from_millis(100))
+    ///     .on_permit_rejected(move |timeout| {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Request rejected after {:?} timeout (total: {})", timeout, count + 1);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_permit_rejected<F>(mut self, f: F) -> Self
     where
         F: Fn(Duration) + Send + Sync + 'static,
@@ -113,7 +165,29 @@ impl RateLimiterConfigBuilder {
         self
     }
 
-    /// Registers a callback for permits refreshed events.
+    /// Registers a callback when permits are refreshed.
+    ///
+    /// This callback is invoked at the end of each refresh period when the available permits
+    /// are reset to the configured limit. This happens periodically according to the
+    /// `refresh_period` setting.
+    ///
+    /// # Callback Signature
+    /// `Fn(usize)` - Called with the number of permits now available after the refresh.
+    /// This value will typically equal the configured `limit_for_period`.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_ratelimiter::RateLimiterConfig;
+    /// use std::time::Duration;
+    ///
+    /// let config = RateLimiterConfig::builder()
+    ///     .limit_for_period(100)
+    ///     .refresh_period(Duration::from_secs(1))
+    ///     .on_permits_refreshed(|available| {
+    ///         println!("Rate limiter refreshed: {} permits now available", available);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_permits_refreshed<F>(mut self, f: F) -> Self
     where
         F: Fn(usize) + Send + Sync + 'static,

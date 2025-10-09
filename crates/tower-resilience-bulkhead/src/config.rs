@@ -68,7 +68,30 @@ impl BulkheadConfigBuilder {
         self
     }
 
-    /// Registers a callback for when a call is permitted.
+    /// Registers a callback when a call is permitted through the bulkhead.
+    ///
+    /// This callback is invoked when a request successfully acquires a permit from the bulkhead
+    /// and is allowed to proceed to the underlying service. The bulkhead permits calls as long
+    /// as the current number of concurrent calls is below the configured maximum.
+    ///
+    /// # Callback Signature
+    /// `Fn(usize)` - Called with the current number of concurrent calls after this call was permitted.
+    /// This value will be between 1 and `max_concurrent_calls` (inclusive).
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_bulkhead::BulkheadConfig;
+    ///
+    /// let config = BulkheadConfig::builder()
+    ///     .max_concurrent_calls(10)
+    ///     .on_call_permitted(|concurrent| {
+    ///         println!("Call permitted - now {} concurrent calls", concurrent);
+    ///         if concurrent >= 8 {
+    ///             println!("Warning: approaching capacity!");
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_call_permitted<F>(mut self, f: F) -> Self
     where
         F: Fn(usize) + Send + Sync + 'static,
@@ -84,7 +107,34 @@ impl BulkheadConfigBuilder {
         self
     }
 
-    /// Registers a callback for when a call is rejected.
+    /// Registers a callback when a call is rejected by the bulkhead.
+    ///
+    /// This callback is invoked when a request is rejected because the bulkhead is at full capacity
+    /// (the maximum number of concurrent calls has been reached) and the request either cannot wait
+    /// or has exceeded the `max_wait_duration`.
+    ///
+    /// # Callback Signature
+    /// `Fn(usize)` - Called with the configured maximum number of concurrent calls allowed.
+    /// This represents the bulkhead's capacity that has been exceeded.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_bulkhead::BulkheadConfig;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// let rejection_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&rejection_count);
+    ///
+    /// let config = BulkheadConfig::builder()
+    ///     .max_concurrent_calls(25)
+    ///     .on_call_rejected(move |max_capacity| {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Call rejected - bulkhead at capacity ({} max), total rejections: {}",
+    ///                  max_capacity, count + 1);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_call_rejected<F>(mut self, f: F) -> Self
     where
         F: Fn(usize) + Send + Sync + 'static,
@@ -101,7 +151,31 @@ impl BulkheadConfigBuilder {
         self
     }
 
-    /// Registers a callback for when a call finishes successfully.
+    /// Registers a callback when a call finishes successfully.
+    ///
+    /// This callback is invoked when a request that was permitted through the bulkhead
+    /// completes successfully and releases its permit. This happens regardless of the
+    /// response value, as long as no error occurred.
+    ///
+    /// # Callback Signature
+    /// `Fn(Duration)` - Called with the total duration the call took to complete,
+    /// from when it was permitted until it finished.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_bulkhead::BulkheadConfig;
+    /// use std::time::Duration;
+    ///
+    /// let config = BulkheadConfig::builder()
+    ///     .max_concurrent_calls(25)
+    ///     .on_call_finished(|duration| {
+    ///         println!("Call completed successfully in {:?}", duration);
+    ///         if duration > Duration::from_secs(5) {
+    ///             println!("Warning: slow call detected");
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_call_finished<F>(mut self, f: F) -> Self
     where
         F: Fn(Duration) + Send + Sync + 'static,
@@ -114,7 +188,34 @@ impl BulkheadConfigBuilder {
         self
     }
 
-    /// Registers a callback for when a call fails.
+    /// Registers a callback when a call fails with an error.
+    ///
+    /// This callback is invoked when a request that was permitted through the bulkhead
+    /// fails with an error and releases its permit. The error could be from the underlying
+    /// service or from middleware in the chain.
+    ///
+    /// # Callback Signature
+    /// `Fn(Duration)` - Called with the total duration the call took before failing,
+    /// from when it was permitted until the error occurred.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_bulkhead::BulkheadConfig;
+    /// use std::time::Duration;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// let error_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&error_count);
+    ///
+    /// let config = BulkheadConfig::builder()
+    ///     .max_concurrent_calls(25)
+    ///     .on_call_failed(move |duration| {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Call failed after {:?} (total failures: {})", duration, count + 1);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_call_failed<F>(mut self, f: F) -> Self
     where
         F: Fn(Duration) + Send + Sync + 'static,

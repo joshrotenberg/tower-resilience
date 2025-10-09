@@ -96,7 +96,33 @@ impl<E> RetryConfigBuilder<E> {
         self
     }
 
-    /// Registers a callback for retry events.
+    /// Registers a callback when a retry attempt is about to be made.
+    ///
+    /// This callback is invoked after a failed attempt and before the retry delay begins.
+    /// It provides visibility into the retry behavior and allows for custom logging,
+    /// metrics collection, or other side effects.
+    ///
+    /// # Callback Signature
+    /// `Fn(usize, Duration)` - Called with two parameters:
+    /// - First parameter: The retry attempt number (1-indexed, so 1 = first retry)
+    /// - Second parameter: The delay duration before the next attempt
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_retry::RetryConfig;
+    /// use std::time::Duration;
+    ///
+    /// let config = RetryConfig::<std::io::Error>::builder()
+    ///     .max_attempts(5)
+    ///     .exponential_backoff(Duration::from_millis(100))
+    ///     .on_retry(|attempt, delay| {
+    ///         println!("Retry attempt {} after {:?} delay", attempt, delay);
+    ///         if attempt >= 3 {
+    ///             println!("Warning: multiple retries required");
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_retry<F>(mut self, f: F) -> Self
     where
         F: Fn(usize, Duration) + Send + Sync + 'static,
@@ -109,7 +135,33 @@ impl<E> RetryConfigBuilder<E> {
         self
     }
 
-    /// Registers a callback for success events.
+    /// Registers a callback when an operation succeeds.
+    ///
+    /// This callback is invoked when the operation completes successfully, either on
+    /// the first attempt or after one or more retries. This is useful for tracking
+    /// how many attempts were needed to achieve success.
+    ///
+    /// # Callback Signature
+    /// `Fn(usize)` - Called with the total number of attempts made (including the initial attempt).
+    /// - Value of 1 means success on first try (no retries)
+    /// - Value > 1 means retries were needed
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_retry::RetryConfig;
+    /// use std::time::Duration;
+    ///
+    /// let config = RetryConfig::<std::io::Error>::builder()
+    ///     .max_attempts(3)
+    ///     .on_success(|attempts| {
+    ///         if attempts == 1 {
+    ///             println!("Success on first attempt");
+    ///         } else {
+    ///             println!("Success after {} attempts", attempts);
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_success<F>(mut self, f: F) -> Self
     where
         F: Fn(usize) + Send + Sync + 'static,
@@ -122,7 +174,35 @@ impl<E> RetryConfigBuilder<E> {
         self
     }
 
-    /// Registers a callback for error events (exhausted retries).
+    /// Registers a callback when all retry attempts are exhausted.
+    ///
+    /// This callback is invoked when the operation fails and the maximum number of
+    /// retry attempts has been reached. The operation will return the final error
+    /// to the caller after this callback is invoked.
+    ///
+    /// # Callback Signature
+    /// `Fn(usize)` - Called with the total number of attempts made (including the initial attempt).
+    /// This will typically equal `max_attempts` configured in the builder.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_retry::RetryConfig;
+    /// use std::time::Duration;
+    /// use std::sync::atomic::{AtomicUsize, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// let failure_count = Arc::new(AtomicUsize::new(0));
+    /// let counter = Arc::clone(&failure_count);
+    ///
+    /// let config = RetryConfig::<std::io::Error>::builder()
+    ///     .max_attempts(3)
+    ///     .on_error(move |attempts| {
+    ///         let count = counter.fetch_add(1, Ordering::SeqCst);
+    ///         println!("Operation failed after {} attempts (total failures: {})",
+    ///                  attempts, count + 1);
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_error<F>(mut self, f: F) -> Self
     where
         F: Fn(usize) + Send + Sync + 'static,
@@ -135,7 +215,33 @@ impl<E> RetryConfigBuilder<E> {
         self
     }
 
-    /// Registers a callback for ignored error events.
+    /// Registers a callback when an error is ignored and not retried.
+    ///
+    /// This callback is invoked when an error occurs but the retry predicate determines
+    /// that it should not be retried. The error is returned immediately to the caller
+    /// without any retry attempts. This is useful for distinguishing between retryable
+    /// and non-retryable errors.
+    ///
+    /// # Callback Signature
+    /// `Fn()` - Called with no parameters when an error is ignored.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_retry::RetryConfig;
+    /// use std::time::Duration;
+    /// use std::io::{Error, ErrorKind};
+    ///
+    /// let config = RetryConfig::<Error>::builder()
+    ///     .max_attempts(3)
+    ///     .retry_on(|err| {
+    ///         // Only retry transient errors
+    ///         matches!(err.kind(), ErrorKind::ConnectionRefused | ErrorKind::TimedOut)
+    ///     })
+    ///     .on_ignored_error(|| {
+    ///         println!("Error occurred but was not retried (non-retryable error type)");
+    ///     })
+    ///     .build();
+    /// ```
     pub fn on_ignored_error<F>(mut self, f: F) -> Self
     where
         F: Fn() + Send + Sync + 'static,
