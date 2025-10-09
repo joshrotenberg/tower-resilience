@@ -125,7 +125,6 @@ where
             };
 
             // Emit call permitted event
-            let wait_duration = acquire_start.elapsed();
             let concurrent_calls =
                 config.max_concurrent_calls - semaphore_for_check.available_permits();
             let event = BulkheadEvent::CallPermitted {
@@ -137,6 +136,7 @@ where
 
             #[cfg(feature = "metrics")]
             {
+                let wait_duration = acquire_start.elapsed();
                 counter!("bulkhead_calls_permitted_total", "bulkhead" => config.name.clone())
                     .increment(1);
                 gauge!("bulkhead_concurrent_calls", "bulkhead" => config.name.clone())
