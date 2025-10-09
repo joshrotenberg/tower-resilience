@@ -112,7 +112,7 @@ impl<E> RetryConfigBuilder<E> {
     /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
-    /// let config = RetryConfig::<std::io::Error>::builder()
+    /// let layer = RetryLayer::<std::io::Error>::builder()
     ///     .max_attempts(5)
     ///     .exponential_backoff(Duration::from_millis(100))
     ///     .on_retry(|attempt, delay| {
@@ -151,7 +151,7 @@ impl<E> RetryConfigBuilder<E> {
     /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
-    /// let config = RetryConfig::<std::io::Error>::builder()
+    /// let layer = RetryLayer::<std::io::Error>::builder()
     ///     .max_attempts(3)
     ///     .on_success(|attempts| {
     ///         if attempts == 1 {
@@ -194,7 +194,7 @@ impl<E> RetryConfigBuilder<E> {
     /// let failure_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&failure_count);
     ///
-    /// let config = RetryConfig::<std::io::Error>::builder()
+    /// let layer = RetryLayer::<std::io::Error>::builder()
     ///     .max_attempts(3)
     ///     .on_error(move |attempts| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
@@ -231,7 +231,7 @@ impl<E> RetryConfigBuilder<E> {
     /// use std::time::Duration;
     /// use std::io::{Error, ErrorKind};
     ///
-    /// let config = RetryConfig::<Error>::builder()
+    /// let layer = RetryLayer::<Error>::builder()
     ///     .max_attempts(3)
     ///     .retry_on(|err| {
     ///         // Only retry transient errors

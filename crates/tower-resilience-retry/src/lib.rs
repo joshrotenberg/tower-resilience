@@ -25,7 +25,7 @@
 //! # struct MyError;
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create retry layer with exponential backoff
-//! let retry_layer = RetryConfig::<MyError>::builder()
+//! let retry_layer = RetryLayer::<MyError>::builder()
 //!     .max_attempts(5)
 //!     .exponential_backoff(Duration::from_millis(100))
 //!     .on_retry(|attempt, delay| {
