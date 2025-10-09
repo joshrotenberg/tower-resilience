@@ -17,7 +17,7 @@
 //!
 //! ### The Service Trait
 //!
-//! At the heart of Tower is the [`Service`](tower::Service) trait:
+//! At the heart of Tower is the `Service` trait:
 //!
 //! ```rust,ignore
 //! pub trait Service<Request> {
@@ -37,7 +37,7 @@
 //!
 //! ### Layers
 //!
-//! A [`Layer`](tower::Layer) wraps a service to add behavior:
+//! A `Layer` wraps a service to add behavior:
 //!
 //! ```rust,ignore
 //! pub trait Layer<S> {
@@ -51,7 +51,7 @@
 //!
 //! ### ServiceBuilder
 //!
-//! [`ServiceBuilder`](tower::ServiceBuilder) provides a convenient way to compose multiple layers:
+//! `ServiceBuilder` provides a convenient way to compose multiple layers:
 //!
 //! ```rust,ignore
 //! use tower::ServiceBuilder;
