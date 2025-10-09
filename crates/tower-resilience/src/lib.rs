@@ -554,6 +554,291 @@
 //! └─────────────────┘
 //! ```
 //!
+//! # Layer Composition Guide
+//!
+//! ## Overview
+//!
+//! Tower-resilience patterns are designed to compose together using Tower's `ServiceBuilder`.
+//! However, composing 3+ layers can encounter Rust trait bound limitations. This guide
+//! explains successful patterns and workarounds.
+//!
+//! ## Basic Composition (2 Layers)
+//!
+//! Two-layer composition works reliably with `ServiceBuilder`:
+//!
+//! ```rust,no_run
+//! # #[cfg(all(feature = "retry", feature = "timelimiter"))]
+//! # {
+//! use tower::ServiceBuilder;
+//! use tower_resilience::retry::RetryConfig;
+//! use tower_resilience::timelimiter::TimeLimiterConfig;
+//! use std::time::Duration;
+//!
+//! # #[derive(Debug, Clone)]
+//! # struct MyError;
+//! # async fn example() {
+//! # let service = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
+//! let composed = ServiceBuilder::new()
+//!     .layer(TimeLimiterConfig::builder()
+//!         .timeout_duration(Duration::from_secs(5))
+//!         .build())
+//!     .layer(RetryConfig::<MyError>::builder()
+//!         .max_attempts(3)
+//!         .exponential_backoff(Duration::from_millis(100))
+//!         .build())
+//!     .service(service);
+//! # }
+//! # }
+//! ```
+//!
+//! ## Limitations with 3+ Layers
+//!
+//! **Problem**: Composing 3+ resilience layers using `ServiceBuilder` often hits Rust
+//! trait bound limitations. This is a known issue with complex Tower layer stacks.
+//!
+//! **Why it happens**:
+//! - Each layer wraps the service in a new type
+//! - Trait bounds become deeply nested
+//! - Rust's type inference struggles with complex layer stacks
+//! - Some combinations trigger "overflow evaluating the requirement" errors
+//!
+//! **Example that may fail**:
+//!
+//! ```rust,ignore
+//! // This may encounter trait bound errors
+//! ServiceBuilder::new()
+//!     .layer(cache_layer)
+//!     .layer(circuit_breaker)
+//!     .layer(retry_layer)
+//!     .layer(timeout_layer)
+//!     .service(base_service);  // Error: trait bounds not satisfied
+//! ```
+//!
+//! ## Workarounds
+//!
+//! ### 1. Manual Layer Composition
+//!
+//! Apply layers one at a time manually (most reliable):
+//!
+//! ```rust,no_run
+//! # #[cfg(all(feature = "retry", feature = "circuitbreaker", feature = "cache"))]
+//! # {
+//! use tower::Layer;
+//! use tower_resilience::retry::RetryConfig;
+//! use tower_resilience::circuitbreaker::CircuitBreakerConfig;
+//! use tower_resilience::cache::CacheConfig;
+//! use std::time::Duration;
+//!
+//! # #[derive(Debug, Clone)]
+//! # struct MyError;
+//! # #[derive(Clone)]
+//! # struct Request { id: u64 }
+//! # async fn example() {
+//! # let base_service = tower::service_fn(|req: Request| async { Ok::<_, MyError>(req) });
+//! // Build layers inside-out manually
+//! let with_retry = RetryConfig::<MyError>::builder()
+//!     .max_attempts(3)
+//!     .build()
+//!     .layer(base_service);
+//!
+//! let with_circuit_breaker = CircuitBreakerConfig::<Request, MyError>::builder()
+//!     .failure_rate_threshold(0.5)
+//!     .build()
+//!     .layer(with_retry);
+//!
+//! let service = CacheConfig::builder()
+//!     .max_size(1000)
+//!     .ttl(Duration::from_secs(300))
+//!     .key_extractor(|req: &Request| req.id)
+//!     .build()
+//!     .layer(with_circuit_breaker);
+//! # }
+//! # }
+//! ```
+//!
+//! ### 2. Limit ServiceBuilder Stack Depth
+//!
+//! Keep ServiceBuilder stacks to 2-3 layers max, compose manually beyond that:
+//!
+//! ```rust,no_run
+//! # #[cfg(all(feature = "retry", feature = "timelimiter", feature = "cache"))]
+//! # {
+//! use tower::{ServiceBuilder, Layer};
+//! use tower_resilience::retry::RetryConfig;
+//! use tower_resilience::timelimiter::TimeLimiterConfig;
+//! use tower_resilience::cache::CacheConfig;
+//! use std::time::Duration;
+//!
+//! # #[derive(Debug, Clone)]
+//! # struct MyError;
+//! # #[derive(Clone)]
+//! # struct Request { id: u64 }
+//! # async fn example() {
+//! # let base_service = tower::service_fn(|req: Request| async { Ok::<_, MyError>(req) });
+//! // First 2 layers via ServiceBuilder
+//! let inner = ServiceBuilder::new()
+//!     .layer(TimeLimiterConfig::builder()
+//!         .timeout_duration(Duration::from_secs(5))
+//!         .build())
+//!     .layer(RetryConfig::<MyError>::builder()
+//!         .max_attempts(3)
+//!         .build())
+//!     .service(base_service);
+//!
+//! // Additional layers manually
+//! let service = CacheConfig::builder()
+//!     .max_size(1000)
+//!     .ttl(Duration::from_secs(300))
+//!     .key_extractor(|req: &Request| req.id)
+//!     .build()
+//!     .layer(inner);
+//! # }
+//! # }
+//! ```
+//!
+//! ### 3. Split Complex Compositions
+//!
+//! For very complex stacks, split into logical groups and compose separately:
+//!
+//! ```rust,no_run
+//! # #[cfg(all(feature = "retry", feature = "timelimiter"))]
+//! # {
+//! use tower::{ServiceBuilder, Layer};
+//! use tower_resilience::retry::RetryConfig;
+//! use tower_resilience::timelimiter::TimeLimiterConfig;
+//! use std::time::Duration;
+//!
+//! # #[derive(Debug, Clone)]
+//! # struct MyError;
+//! # async fn example() {
+//! # let base_service = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
+//! // Build retry layer first
+//! let retry_layer = RetryConfig::<MyError>::builder()
+//!     .max_attempts(3)
+//!     .build();
+//!
+//! // Apply retry manually
+//! let with_retry = retry_layer.layer(base_service);
+//!
+//! // Then use ServiceBuilder for remaining layers
+//! let service = ServiceBuilder::new()
+//!     .layer(TimeLimiterConfig::builder()
+//!         .timeout_duration(Duration::from_secs(5))
+//!         .build())
+//!     .service(with_retry);
+//! # }
+//! # }
+//! ```
+//!
+//! ## Recommended Layer Ordering
+//!
+//! Order matters! Layers execute **outside-in** (first layer in builder executes last).
+//!
+//! ### Client-Side (Outbound)
+//!
+//! ```text
+//! ServiceBuilder::new()
+//!     .layer(cache)              // 1st: Check cache before anything
+//!     .layer(timeout)            // 2nd: Enforce overall deadline
+//!     .layer(circuit_breaker)    // 3rd: Fail fast if down
+//!     .layer(retry)              // 4th: Retry transient failures (innermost, closest to service)
+//!     .service(http_client);
+//! ```
+//!
+//! **Rationale**:
+//! - **Cache** outermost: Skip all other layers on cache hit
+//! - **Timeout** next: Enforce deadline across retries and circuit breaker
+//! - **Circuit breaker** before retry: Don't retry when circuit is open
+//! - **Retry** innermost: Retry individual failures before circuit breaker sees them
+//!
+//! ### Server-Side (Inbound)
+//!
+//! ```text
+//! ServiceBuilder::new()
+//!     .layer(rate_limiter)       // 1st: Reject abusive clients immediately
+//!     .layer(bulkhead)           // 2nd: Isolate resources per tenant
+//!     .layer(timeout)            // 3rd: Prevent runaway requests (innermost)
+//!     .service(handler);
+//! ```
+//!
+//! **Rationale**:
+//! - **Rate limiter** outermost: Reject over-limit requests before consuming resources
+//! - **Bulkhead** next: Isolate resources after rate limiting
+//! - **Timeout** innermost: Apply to actual handler execution
+//!
+//! ## Error Type Integration
+//!
+//! Layers must agree on error types. Use one of these approaches:
+//!
+//! ### 1. Common Error Type
+//!
+//! ```rust,no_run
+//! # use std::time::Duration;
+//! # #[derive(Debug, Clone)]
+//! enum ServiceError {
+//!     Network(String),
+//!     Timeout,
+//!     CircuitOpen,
+//!     RateLimit,
+//! }
+//!
+//! // All layers use ServiceError
+//! # #[cfg(all(feature = "retry", feature = "circuitbreaker"))]
+//! # {
+//! use tower_resilience::retry::RetryConfig;
+//! use tower_resilience::circuitbreaker::CircuitBreakerConfig;
+//!
+//! let retry = RetryConfig::<ServiceError>::builder()
+//!     .max_attempts(3)
+//!     .retry_on(|err| matches!(err, ServiceError::Network(_)))
+//!     .build();
+//! # }
+//! ```
+//!
+//! ### 2. Error Mapping Layer
+//!
+//! Use `tower::util::MapErr` to convert between error types:
+//!
+//! ```rust,no_run
+//! # #[cfg(feature = "retry")]
+//! # {
+//! use tower::{ServiceBuilder, ServiceExt};
+//! use tower_resilience::retry::RetryConfig;
+//! use std::time::Duration;
+//!
+//! # #[derive(Debug)]
+//! # struct DatabaseError;
+//! # #[derive(Debug, Clone)]
+//! # struct AppError;
+//! # impl From<DatabaseError> for AppError {
+//! #     fn from(_: DatabaseError) -> Self { AppError }
+//! # }
+//! # async fn example() {
+//! # let db_service = tower::service_fn(|_req: ()| async { Ok::<_, DatabaseError>(()) });
+//! let service = ServiceBuilder::new()
+//!     .layer(RetryConfig::<AppError>::builder()
+//!         .max_attempts(3)
+//!         .build())
+//!     .map_err(|err: DatabaseError| AppError::from(err))
+//!     .service(db_service);
+//! # }
+//! # }
+//! ```
+//!
+//! ## Working Examples
+//!
+//! See the repository examples for complete, working compositions:
+//!
+//! - [`examples/composition_outbound.rs`] - Client-side resilience stack
+//! - [`examples/server_api.rs`] - Server-side protection
+//! - [`examples/database_client.rs`] - Database client with retry + circuit breaker
+//! - [`examples/message_queue_worker.rs`] - Message processing with bulkhead + retry
+//!
+//! [`examples/composition_outbound.rs`]: https://github.com/joshrotenberg/tower-resilience/blob/main/examples/composition_outbound.rs
+//! [`examples/server_api.rs`]: https://github.com/joshrotenberg/tower-resilience/blob/main/examples/server_api.rs
+//! [`examples/database_client.rs`]: https://github.com/joshrotenberg/tower-resilience/blob/main/examples/database_client.rs
+//! [`examples/message_queue_worker.rs`]: https://github.com/joshrotenberg/tower-resilience/blob/main/examples/message_queue_worker.rs
+//!
 //! # Use Cases
 //!
 //! ## Database Clients
