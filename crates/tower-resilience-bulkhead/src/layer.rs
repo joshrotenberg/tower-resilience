@@ -4,6 +4,14 @@ use crate::config::BulkheadConfig;
 use crate::service::Bulkhead;
 use tower::Layer;
 
+#[cfg(feature = "metrics")]
+use metrics::{describe_counter, describe_gauge, describe_histogram};
+#[cfg(feature = "metrics")]
+use std::sync::Once;
+
+#[cfg(feature = "metrics")]
+static METRICS_INIT: Once = Once::new();
+
 /// Layer that applies bulkhead concurrency limiting.
 #[derive(Clone)]
 pub struct BulkheadLayer {
@@ -30,6 +38,39 @@ impl BulkheadLayer {
     ///     .build();
     /// ```
     pub fn builder() -> crate::BulkheadConfigBuilder {
+        #[cfg(feature = "metrics")]
+        {
+            METRICS_INIT.call_once(|| {
+                describe_counter!(
+                    "bulkhead_calls_permitted_total",
+                    "Total number of calls permitted through the bulkhead"
+                );
+                describe_counter!(
+                    "bulkhead_calls_rejected_total",
+                    "Total number of calls rejected by the bulkhead"
+                );
+                describe_counter!(
+                    "bulkhead_calls_finished_total",
+                    "Total number of calls that finished successfully"
+                );
+                describe_counter!(
+                    "bulkhead_calls_failed_total",
+                    "Total number of calls that failed"
+                );
+                describe_gauge!(
+                    "bulkhead_concurrent_calls",
+                    "Current number of concurrent calls"
+                );
+                describe_histogram!(
+                    "bulkhead_wait_duration_seconds",
+                    "Time spent waiting to acquire a permit"
+                );
+                describe_histogram!(
+                    "bulkhead_call_duration_seconds",
+                    "Duration of calls through the bulkhead"
+                );
+            });
+        }
         crate::BulkheadConfigBuilder::new()
     }
 }

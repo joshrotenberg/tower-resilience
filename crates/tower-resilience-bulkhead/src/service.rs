@@ -11,7 +11,7 @@ use tokio::sync::Semaphore;
 use tower::Service;
 
 #[cfg(feature = "metrics")]
-use metrics::{counter, gauge};
+use metrics::{counter, gauge, histogram};
 
 /// Bulkhead service that limits concurrent calls.
 #[derive(Clone)]
@@ -55,6 +55,7 @@ where
         let config = Arc::clone(&self.config);
         let mut inner = self.inner.clone();
         let start_time = Instant::now();
+        let acquire_start = Instant::now();
 
         Box::pin(async move {
             // Try to acquire a permit
@@ -124,6 +125,7 @@ where
             };
 
             // Emit call permitted event
+            let wait_duration = acquire_start.elapsed();
             let concurrent_calls =
                 config.max_concurrent_calls - semaphore_for_check.available_permits();
             let event = BulkheadEvent::CallPermitted {
@@ -139,6 +141,8 @@ where
                     .increment(1);
                 gauge!("bulkhead_concurrent_calls", "bulkhead" => config.name.clone())
                     .set(concurrent_calls as f64);
+                histogram!("bulkhead_wait_duration_seconds", "bulkhead" => config.name.clone())
+                    .record(wait_duration.as_secs_f64());
             }
 
             // Call the inner service
@@ -160,8 +164,12 @@ where
                     config.event_listeners.emit(&event);
 
                     #[cfg(feature = "metrics")]
-                    counter!("bulkhead_calls_finished_total", "bulkhead" => config.name.clone())
-                        .increment(1);
+                    {
+                        counter!("bulkhead_calls_finished_total", "bulkhead" => config.name.clone())
+                            .increment(1);
+                        histogram!("bulkhead_call_duration_seconds", "bulkhead" => config.name.clone())
+                            .record(duration.as_secs_f64());
+                    }
                 }
                 Err(_) => {
                     let event = BulkheadEvent::CallFailed {
@@ -172,8 +180,12 @@ where
                     config.event_listeners.emit(&event);
 
                     #[cfg(feature = "metrics")]
-                    counter!("bulkhead_calls_failed_total", "bulkhead" => config.name.clone())
-                        .increment(1);
+                    {
+                        counter!("bulkhead_calls_failed_total", "bulkhead" => config.name.clone())
+                            .increment(1);
+                        histogram!("bulkhead_call_duration_seconds", "bulkhead" => config.name.clone())
+                            .record(duration.as_secs_f64());
+                    }
                 }
             }
 
