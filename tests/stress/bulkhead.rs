@@ -10,6 +10,7 @@ use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
 use super::{ConcurrencyTracker, get_memory_usage_mb};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 enum TestError {
     Bulkhead(BulkheadError),
 }
@@ -369,7 +370,7 @@ async fn stress_mixed_operation_speeds() {
         let fast = Arc::clone(&fast_clone);
         let slow = Arc::clone(&slow_clone);
         async move {
-            if req % 10 == 0 {
+            if req.is_multiple_of(10) {
                 // 10% slow operations
                 sleep(Duration::from_millis(100)).await;
                 slow.fetch_add(1, Ordering::Relaxed);

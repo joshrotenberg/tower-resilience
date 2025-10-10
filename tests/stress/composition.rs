@@ -11,6 +11,7 @@ use tower_resilience_circuitbreaker::{CircuitBreakerError, CircuitBreakerLayer};
 use super::{ConcurrencyTracker, get_memory_usage_mb};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 enum TestError {
     Bulkhead(BulkheadError),
     Circuit(CircuitBreakerError<BulkheadError>),
@@ -39,7 +40,7 @@ async fn stress_circuit_breaker_plus_bulkhead() {
         let counter = Arc::clone(&counter);
         async move {
             counter.fetch_add(1, Ordering::Relaxed);
-            if req % 50 == 0 {
+            if req.is_multiple_of(50) {
                 Err(BulkheadError::BulkheadFull {
                     max_concurrent_calls: 20,
                 })
@@ -297,7 +298,7 @@ async fn stress_composed_stability() {
         async move {
             counter.fetch_add(1, Ordering::Relaxed);
             // 10% failure rate
-            if req % 10 == 0 {
+            if req.is_multiple_of(10) {
                 Err(TestError::Bulkhead(BulkheadError::BulkheadFull {
                     max_concurrent_calls: 20,
                 }))

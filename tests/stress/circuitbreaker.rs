@@ -312,7 +312,7 @@ async fn stress_memory_stability() {
         i += 1;
 
         // Sample memory every 1000 calls
-        if i % 1000 == 0 {
+        if i.is_multiple_of(1000) {
             let mem = get_memory_usage_mb();
             if mem > 0.0 {
                 mem_samples.push(mem);

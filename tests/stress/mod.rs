@@ -58,6 +58,7 @@ impl ConcurrencyTracker {
         self.peak.load(Ordering::SeqCst)
     }
 
+    #[allow(dead_code)]
     pub fn current(&self) -> usize {
         self.current.load(Ordering::SeqCst)
     }
@@ -87,6 +88,7 @@ pub fn get_memory_usage_mb() -> f64 {
 }
 
 /// Utility: Generate load pattern
+#[allow(dead_code)]
 pub enum LoadPattern {
     Constant(usize),
     Burst {
@@ -100,6 +102,7 @@ pub enum LoadPattern {
     },
 }
 
+#[allow(dead_code)]
 impl LoadPattern {
     pub fn total_requests(&self) -> usize {
         match self {
