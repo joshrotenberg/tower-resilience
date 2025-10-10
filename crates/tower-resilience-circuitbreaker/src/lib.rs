@@ -449,6 +449,22 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     }
 }
 
+impl<S, Req, Res, Err> Clone for CircuitBreaker<S, Req, Res, Err>
+where
+    S: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            circuit: Arc::clone(&self.circuit),
+            state_atomic: Arc::clone(&self.state_atomic),
+            config: Arc::clone(&self.config),
+            fallback: self.fallback.clone(),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+
 impl<S, Req, Res, Err> Service<Req> for CircuitBreaker<S, Req, Res, Err>
 where
     S: Service<Req, Response = Res, Error = Err> + Clone + Send + 'static,
