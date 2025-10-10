@@ -18,6 +18,31 @@ pub enum CircuitState {
     HalfOpen = 2,
 }
 
+/// Snapshot of circuit breaker metrics for observability.
+///
+/// This struct provides a point-in-time view of the circuit breaker's internal state
+/// without requiring async access. All fields represent a consistent snapshot taken
+/// when the metrics were retrieved.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CircuitMetrics {
+    /// Current state of the circuit breaker.
+    pub state: CircuitState,
+    /// Total number of recorded calls in the sliding window.
+    pub total_calls: usize,
+    /// Number of failed calls in the sliding window.
+    pub failure_count: usize,
+    /// Number of successful calls in the sliding window.
+    pub success_count: usize,
+    /// Number of slow calls in the sliding window.
+    pub slow_call_count: usize,
+    /// Current failure rate (0.0 to 1.0).
+    pub failure_rate: f64,
+    /// Current slow call rate (0.0 to 1.0).
+    pub slow_call_rate: f64,
+    /// Time since the last state transition.
+    pub time_since_state_change: std::time::Duration,
+}
+
 impl CircuitState {
     pub(crate) fn from_u8(value: u8) -> Self {
         match value {
@@ -79,6 +104,46 @@ impl Circuit {
 
     pub fn state(&self) -> CircuitState {
         self.state
+    }
+
+    /// Returns a snapshot of the current circuit breaker metrics.
+    ///
+    /// This method provides a consistent view of all metrics at a point in time.
+    /// For time-based windows, it includes all records within the current window.
+    pub fn metrics(&self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) -> CircuitMetrics {
+        let (total_calls, failure_count, success_count, slow_call_count) =
+            match config.sliding_window_type {
+                SlidingWindowType::CountBased => (
+                    self.total_count,
+                    self.failure_count,
+                    self.success_count,
+                    self.slow_call_count,
+                ),
+                SlidingWindowType::TimeBased => self.time_based_stats(),
+            };
+
+        let failure_rate = if total_calls > 0 {
+            failure_count as f64 / total_calls as f64
+        } else {
+            0.0
+        };
+
+        let slow_call_rate = if total_calls > 0 {
+            slow_call_count as f64 / total_calls as f64
+        } else {
+            0.0
+        };
+
+        CircuitMetrics {
+            state: self.state,
+            total_calls,
+            failure_count,
+            success_count,
+            slow_call_count,
+            failure_rate,
+            slow_call_rate,
+            time_since_state_change: self.last_state_change.elapsed(),
+        }
     }
 
     /// Clean up old records from the time-based window.
