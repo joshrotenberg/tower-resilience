@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.1...tower-resilience-v0.3.2) - 2025-10-10
+
+### Other
+
+- updated the following local packages: tower-resilience-core, tower-resilience-circuitbreaker, tower-resilience-bulkhead, tower-resilience-retry, tower-resilience-cache, tower-resilience-ratelimiter, tower-resilience-timelimiter
+
 ## [0.3.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.0...tower-resilience-v0.3.1) - 2025-10-09
 
 ### Other

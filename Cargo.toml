@@ -8,7 +8,7 @@ publish = false
 metrics = []
 
 [dependencies]
-tower-resilience-core = { version = "0.4.1", path = "crates/tower-resilience-core" }
+tower-resilience-core = { version = "0.4.2", path = "crates/tower-resilience-core" }
 tower-resilience-circuitbreaker = { path = "crates/tower-resilience-circuitbreaker", features = ["metrics", "tracing"] }
 tower-resilience-bulkhead = { path = "crates/tower-resilience-bulkhead", features = ["metrics"] }
 tower-resilience-cache = { path = "crates/tower-resilience-cache", features = ["metrics"] }
@@ -43,7 +43,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/joshrotenberg/tower-resilience"
@@ -61,7 +61,7 @@ tracing = "0.1"
 metrics = "0.24"
 criterion = { version = "0.5", features = ["async_tokio"] }
 
-tower-resilience-core = { version = "0.4.1", path = "crates/tower-resilience-core" }
+tower-resilience-core = { version = "0.4.2", path = "crates/tower-resilience-core" }
 
 [workspace.metadata.docs.rs]
 all-features = true

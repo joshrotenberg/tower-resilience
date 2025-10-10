@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.4.1...tower-resilience-circuitbreaker-v0.4.2) - 2025-10-10
+
+### Added
+
+- add sync state inspection API for circuit breaker ([#112](https://github.com/joshrotenberg/tower-resilience/pull/112))
+
+### Other
+
+- add comprehensive fallback examples and improve documentation ([#109](https://github.com/joshrotenberg/tower-resilience/pull/109))
+
 ## [0.4.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.4.0...tower-resilience-circuitbreaker-v0.4.1) - 2025-10-09
 
 ### Added
