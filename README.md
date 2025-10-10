@@ -297,6 +297,35 @@ cargo run --example retry
 # etc.
 ```
 
+## Stress Tests
+
+Stress tests validate pattern behavior under extreme conditions (high volume, high concurrency, memory stability). They are opt-in and marked with `#[ignore]`:
+
+```bash
+# Run all stress tests
+cargo test --test stress -- --ignored
+
+# Run specific pattern stress tests
+cargo test --test stress circuitbreaker -- --ignored
+cargo test --test stress bulkhead -- --ignored
+cargo test --test stress cache -- --ignored
+
+# Run with output to see performance metrics
+cargo test --test stress -- --ignored --nocapture
+```
+
+Example results:
+- **1M calls** through circuit breaker: ~2.8s (357k calls/sec)
+- **10k fast operations** through bulkhead: ~56ms (176k ops/sec)
+- **100k cache** entries: Fill + hit test validates performance
+
+Stress tests cover:
+- High volume (millions of operations)
+- High concurrency (thousands of concurrent requests)
+- Memory stability (leak detection, bounded growth)
+- State consistency (correctness under load)
+- Pattern composition (layered middleware)
+
 ## Why tower-resilience?
 
 Tower provides some built-in resilience (timeout, retry, rate limiting), but tower-resilience offers:
