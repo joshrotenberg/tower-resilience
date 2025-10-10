@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.3.1...tower-resilience-cache-v0.3.2) - 2025-10-10
+
+### Added
+
+- add LFU and FIFO cache eviction policies ([#113](https://github.com/joshrotenberg/tower-resilience/pull/113))
+
 ## [0.3.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.3.0...tower-resilience-cache-v0.3.1) - 2025-10-09
 
 ### Added
