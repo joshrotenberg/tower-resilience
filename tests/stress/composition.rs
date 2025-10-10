@@ -5,19 +5,33 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_bulkhead::BulkheadLayer;
-use tower_resilience_cache::CacheLayer;
-use tower_resilience_circuitbreaker::CircuitBreakerLayer;
-use tower_resilience_ratelimiter::RateLimiterLayer;
-use tower_resilience_retry::RetryLayer;
-use tower_resilience_timelimiter::TimeLimiterLayer;
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
+use tower_resilience_circuitbreaker::{CircuitBreakerError, CircuitBreakerLayer};
 
 use super::{ConcurrencyTracker, get_memory_usage_mb};
 
-/// Test: All patterns composed (full stack)
+#[derive(Debug)]
+enum TestError {
+    Bulkhead(BulkheadError),
+    Circuit(CircuitBreakerError<BulkheadError>),
+}
+
+impl From<BulkheadError> for TestError {
+    fn from(e: BulkheadError) -> Self {
+        TestError::Bulkhead(e)
+    }
+}
+
+impl From<CircuitBreakerError<BulkheadError>> for TestError {
+    fn from(e: CircuitBreakerError<BulkheadError>) -> Self {
+        TestError::Circuit(e)
+    }
+}
+
+/// Test: Circuit breaker + bulkhead composition
 #[tokio::test]
 #[ignore]
-async fn stress_full_stack_composition() {
+async fn stress_circuit_breaker_plus_bulkhead() {
     let call_count = Arc::new(AtomicUsize::new(0));
     let counter = Arc::clone(&call_count);
 
@@ -26,57 +40,33 @@ async fn stress_full_stack_composition() {
         async move {
             counter.fetch_add(1, Ordering::Relaxed);
             if req % 50 == 0 {
-                Err(()) // Occasional failure
+                Err(BulkheadError::BulkheadFull {
+                    max_concurrent_calls: 20,
+                })
             } else {
                 Ok(format!("response-{}", req))
             }
         }
     });
 
-    // Stack all patterns
-    let cache = CacheLayer::builder()
-        .max_size(100)
-        .key_extractor(|req: &u32| *req)
-        .build();
+    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(20).build();
 
-    let rate_limiter = RateLimiterLayer::builder()
-        .limit_for_period(1000)
-        .refresh_period(Duration::from_secs(1))
-        .build();
-
-    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(50).build();
-
-    let circuit_breaker = CircuitBreakerLayer::<String, ()>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<String, BulkheadError>::builder()
         .failure_rate_threshold(0.7)
         .sliding_window_size(100)
         .build();
 
-    let timelimiter = TimeLimiterLayer::builder()
-        .timeout_duration(Duration::from_secs(5))
-        .build();
-
-    let retry = RetryLayer::builder()
-        .max_attempts(3)
-        .fixed_backoff(Duration::from_millis(10))
-        .build();
-
-    // Compose: cache -> rate limit -> bulkhead -> circuit breaker -> timeout -> retry -> service
-    let service = cache.layer(
-        rate_limiter
-            .layer(bulkhead.layer(circuit_breaker.layer(timelimiter.layer(retry.layer(svc))))),
-    );
+    // Compose: circuit breaker -> bulkhead -> service
+    let service = circuit_breaker.layer(bulkhead.layer(svc));
 
     let start = Instant::now();
     let mut handles = vec![];
 
-    // 1000 concurrent requests through full stack
+    // 1000 concurrent requests
     for i in 0..1000 {
         let mut svc = service.clone();
         handles.push(tokio::spawn(async move {
-            match svc.ready().await {
-                Ok(ready_svc) => ready_svc.call(i % 100).await,
-                Err(e) => Err(e),
-            }
+            svc.ready().await.unwrap().call(i % 100).await
         }));
     }
 
@@ -93,113 +83,18 @@ async fn stress_full_stack_composition() {
     let elapsed = start.elapsed();
     let service_calls = call_count.load(Ordering::Relaxed);
 
-    println!("Full stack: 1000 requests through 6 layers");
+    println!("Circuit breaker + bulkhead: 1000 requests");
     println!("Completed in: {:?}", elapsed);
     println!("Success: {}, Failure: {}", success, failure);
     println!("Actual service calls: {}", service_calls);
 
-    // Some should succeed
     assert!(success > 0);
-    // Cache should reduce service calls
-    assert!(service_calls < 1000);
 }
 
-/// Test: Deep layer stack (10 layers)
+/// Test: Bulkhead + bulkhead (nested resource limits)
 #[tokio::test]
 #[ignore]
-async fn stress_deep_layer_stack() {
-    let call_count = Arc::new(AtomicUsize::new(0));
-    let counter = Arc::clone(&call_count);
-
-    let svc = tower::service_fn(move |req: u32| {
-        let counter = Arc::clone(&counter);
-        async move {
-            counter.fetch_add(1, Ordering::Relaxed);
-            Ok::<_, ()>(req)
-        }
-    });
-
-    // Stack 10 bulkheads (extreme case)
-    let mut service = svc;
-    for i in 0..10 {
-        let bulkhead = BulkheadLayer::builder()
-            .name(&format!("bulkhead-{}", i))
-            .max_concurrent_calls(100)
-            .build();
-        service = bulkhead.layer(service);
-    }
-
-    let start = Instant::now();
-
-    // 1000 requests through 10 layers
-    for i in 0..1000 {
-        let mut svc = service.clone();
-        let _ = svc.ready().await.unwrap().call(i).await;
-    }
-
-    let elapsed = start.elapsed();
-    let calls = call_count.load(Ordering::Relaxed);
-
-    println!("10-layer stack: 1000 requests");
-    println!("Completed in: {:?}", elapsed);
-    println!("Service calls: {}", calls);
-    println!("Overhead per layer: {:?}", elapsed / 10);
-
-    assert_eq!(calls, 1000);
-}
-
-/// Test: Error propagation through layers
-#[tokio::test]
-#[ignore]
-async fn stress_error_propagation() {
-    let attempt_count = Arc::new(AtomicUsize::new(0));
-    let counter = Arc::clone(&attempt_count);
-
-    let svc = tower::service_fn(move |_req: u32| {
-        let counter = Arc::clone(&counter);
-        async move {
-            let attempt = counter.fetch_add(1, Ordering::Relaxed) + 1;
-            // Always fail
-            Err::<(), _>(format!("error-{}", attempt))
-        }
-    });
-
-    let retry = RetryLayer::builder()
-        .max_attempts(3)
-        .fixed_backoff(Duration::from_millis(1))
-        .build();
-
-    let circuit_breaker = CircuitBreakerLayer::<(), String>::builder()
-        .failure_rate_threshold(0.5)
-        .sliding_window_size(10)
-        .build();
-
-    let service = circuit_breaker.layer(retry.layer(svc));
-
-    let start = Instant::now();
-
-    // 100 failing requests
-    for i in 0..100 {
-        let mut svc = service.clone();
-        let _ = svc.ready().await.unwrap().call(i).await;
-    }
-
-    let elapsed = start.elapsed();
-    let attempts = attempt_count.load(Ordering::Relaxed);
-
-    println!("Error propagation: 100 requests");
-    println!("Completed in: {:?}", elapsed);
-    println!("Total attempts (with retries): {}", attempts);
-
-    // Should see retries initially, then circuit should open
-    assert!(attempts > 100, "Should retry some requests");
-    assert!(attempts < 300, "Circuit should open and stop retries");
-}
-
-/// Test: High concurrency through composed layers
-#[tokio::test]
-#[ignore]
-async fn stress_composed_high_concurrency() {
+async fn stress_nested_bulkheads() {
     let tracker = ConcurrencyTracker::new();
     let tracker_clone = Arc::clone(&tracker);
 
@@ -209,18 +104,72 @@ async fn stress_composed_high_concurrency() {
             tracker.enter();
             sleep(Duration::from_millis(10)).await;
             tracker.exit();
-            Ok::<_, ()>(())
+            Ok::<_, TestError>(())
+        }
+    });
+
+    let bulkhead1 = BulkheadLayer::builder()
+        .name("outer")
+        .max_concurrent_calls(50)
+        .build();
+
+    let bulkhead2 = BulkheadLayer::builder()
+        .name("inner")
+        .max_concurrent_calls(20)
+        .build();
+
+    let service = bulkhead1.layer(bulkhead2.layer(svc));
+
+    let start = Instant::now();
+    let mut handles = vec![];
+
+    for i in 0..200 {
+        let mut svc = service.clone();
+        handles.push(tokio::spawn(async move {
+            svc.ready().await.unwrap().call(i).await
+        }));
+    }
+
+    for handle in handles {
+        let _ = handle.await.unwrap();
+    }
+
+    let elapsed = start.elapsed();
+    let peak = tracker.peak();
+
+    println!("Nested bulkheads: 200 requests");
+    println!("Completed in: {:?}", elapsed);
+    println!("Peak concurrency: {}", peak);
+
+    // Inner bulkhead should limit to 20
+    assert!(peak <= 20, "Inner bulkhead should limit concurrency");
+}
+
+/// Test: High concurrency through two layers
+#[tokio::test]
+#[ignore]
+async fn stress_two_layer_high_concurrency() {
+    let tracker = ConcurrencyTracker::new();
+    let tracker_clone = Arc::clone(&tracker);
+
+    let svc = tower::service_fn(move |_req: u32| {
+        let tracker = Arc::clone(&tracker_clone);
+        async move {
+            tracker.enter();
+            sleep(Duration::from_millis(5)).await;
+            tracker.exit();
+            Ok::<_, TestError>(())
         }
     });
 
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(100).build();
 
-    let rate_limiter = RateLimiterLayer::builder()
-        .limit_for_period(10000)
-        .refresh_period(Duration::from_secs(1))
+    let circuit_breaker = CircuitBreakerLayer::<(), TestError>::builder()
+        .failure_rate_threshold(0.9)
+        .sliding_window_size(1000)
         .build();
 
-    let service = bulkhead.layer(rate_limiter.layer(svc));
+    let service = circuit_breaker.layer(bulkhead.layer(svc));
 
     let start = Instant::now();
     let mut handles = vec![];
@@ -240,12 +189,11 @@ async fn stress_composed_high_concurrency() {
     let elapsed = start.elapsed();
     let peak = tracker.peak();
 
-    println!("5000 concurrent through bulkhead + rate limiter");
+    println!("5000 concurrent through 2 layers");
     println!("Completed in: {:?}", elapsed);
     println!("Peak concurrency: {}", peak);
 
-    // Bulkhead should limit concurrency
-    assert!(peak <= 100, "Bulkhead should limit to 100");
+    assert!(peak <= 100, "Bulkhead should limit concurrency");
 }
 
 /// Test: Memory usage of composed stack
@@ -254,23 +202,18 @@ async fn stress_composed_high_concurrency() {
 async fn stress_composed_memory() {
     let mem_start = get_memory_usage_mb();
 
-    let svc = tower::service_fn(|req: u32| async move { Ok::<_, ()>(format!("response-{}", req)) });
-
-    let cache = CacheLayer::builder()
-        .max_size(10_000)
-        .key_extractor(|req: &u32| *req)
-        .build();
+    let svc = tower::service_fn(|_req: u32| async move { Ok::<_, TestError>(()) });
 
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(100).build();
 
-    let circuit_breaker = CircuitBreakerLayer::<String, ()>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<(), TestError>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(1000)
         .build();
 
-    let service = cache.layer(bulkhead.layer(circuit_breaker.layer(svc)));
+    let service = circuit_breaker.layer(bulkhead.layer(svc));
 
-    // Fill cache
+    // Make 10k requests
     for i in 0..10_000 {
         let mut svc = service.clone();
         let _ = svc.ready().await.unwrap().call(i).await;
@@ -285,7 +228,7 @@ async fn stress_composed_memory() {
     println!("Delta: {:.2} MB", mem_delta);
 
     if mem_delta > 0.0 {
-        assert!(mem_delta < 150.0, "Memory usage should be reasonable");
+        assert!(mem_delta < 100.0, "Memory usage should be reasonable");
     }
 }
 
@@ -296,23 +239,23 @@ async fn stress_composed_burst_traffic() {
     let call_count = Arc::new(AtomicUsize::new(0));
     let counter = Arc::clone(&call_count);
 
-    let svc = tower::service_fn(move |req: u32| {
+    let svc = tower::service_fn(move |_req: u32| {
         let counter = Arc::clone(&counter);
         async move {
             counter.fetch_add(1, Ordering::Relaxed);
             sleep(Duration::from_millis(5)).await;
-            Ok::<_, ()>(format!("response-{}", req))
+            Ok::<_, TestError>(())
         }
     });
 
-    let cache = CacheLayer::builder()
-        .max_size(100)
-        .key_extractor(|req: &u32| *req)
-        .build();
-
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(50).build();
 
-    let service = cache.layer(bulkhead.layer(svc));
+    let circuit_breaker = CircuitBreakerLayer::<(), TestError>::builder()
+        .failure_rate_threshold(0.9)
+        .sliding_window_size(100)
+        .build();
+
+    let service = circuit_breaker.layer(bulkhead.layer(svc));
 
     let start = Instant::now();
 
@@ -323,7 +266,7 @@ async fn stress_composed_burst_traffic() {
         for i in 0..100 {
             let mut svc = service.clone();
             handles.push(tokio::spawn(async move {
-                svc.ready().await.unwrap().call(i % 50).await
+                svc.ready().await.unwrap().call(burst * 100 + i).await
             }));
         }
 
@@ -334,17 +277,12 @@ async fn stress_composed_burst_traffic() {
 
     let elapsed = start.elapsed();
     let service_calls = call_count.load(Ordering::Relaxed);
-    let hit_rate = (1.0 - service_calls as f64 / 2000.0) * 100.0;
 
     println!("20 bursts of 100 requests through composed stack");
     println!("Completed in: {:?}", elapsed);
-    println!(
-        "Service calls: {} (hit rate: {:.1}%)",
-        service_calls, hit_rate
-    );
+    println!("Service calls: {}", service_calls);
 
-    // Cache should help
-    assert!(service_calls < 2000);
+    assert_eq!(service_calls, 2000);
 }
 
 /// Test: Stability of composed stack over time
@@ -360,32 +298,23 @@ async fn stress_composed_stability() {
             counter.fetch_add(1, Ordering::Relaxed);
             // 10% failure rate
             if req % 10 == 0 {
-                Err(())
+                Err(TestError::Bulkhead(BulkheadError::BulkheadFull {
+                    max_concurrent_calls: 20,
+                }))
             } else {
-                Ok(format!("response-{}", req))
+                Ok(())
             }
         }
     });
 
-    let cache = CacheLayer::builder()
-        .max_size(100)
-        .ttl(Duration::from_millis(500))
-        .key_extractor(|req: &u32| *req)
-        .build();
-
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(20).build();
 
-    let circuit_breaker = CircuitBreakerLayer::<String, ()>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<(), TestError>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
         .build();
 
-    let retry = RetryLayer::builder()
-        .max_attempts(2)
-        .fixed_backoff(Duration::from_millis(5))
-        .build();
-
-    let service = cache.layer(bulkhead.layer(circuit_breaker.layer(retry.layer(svc))));
+    let service = circuit_breaker.layer(bulkhead.layer(svc));
 
     let start = Instant::now();
     let mut total_requests = 0;

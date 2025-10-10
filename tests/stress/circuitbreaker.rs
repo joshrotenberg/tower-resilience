@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
-use tower::{Layer, Service, ServiceExt};
+use tower::{Service, ServiceExt};
 use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
 
 use super::{ConcurrencyTracker, get_memory_usage_mb};
@@ -194,7 +194,8 @@ async fn stress_time_based_window_high_load() {
 
     let layer = CircuitBreakerLayer::<(), ()>::builder()
         .failure_rate_threshold(0.5)
-        .time_based_sliding_window(Duration::from_secs(1))
+        .sliding_window_type(tower_resilience_circuitbreaker::SlidingWindowType::TimeBased)
+        .sliding_window_duration(Duration::from_secs(1))
         .minimum_number_of_calls(100)
         .build();
 
