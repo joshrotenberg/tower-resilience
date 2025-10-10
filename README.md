@@ -60,14 +60,22 @@ Prevent cascading failures by opening the circuit when error rate exceeds thresh
 
 ```rust
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use std::time::Duration;
 
-let layer = CircuitBreakerLayer::builder()
-    .failure_rate_threshold(0.5)  // Open at 50% failure rate
-    .sliding_window_size(100)      // Track last 100 calls
+let layer = CircuitBreakerLayer::<String, ()>::builder()
+    .name("api-circuit")
+    .failure_rate_threshold(0.5)          // Open at 50% failure rate
+    .sliding_window_size(100)              // Track last 100 calls
+    .wait_duration_in_open(Duration::from_secs(60))  // Stay open 60s
+    .on_state_transition(|from, to| {
+        println!("Circuit breaker: {:?} -> {:?}", from, to);
+    })
     .build();
+
+let service = layer.layer(my_service);
 ```
 
-See [examples/circuitbreaker.rs](examples/circuitbreaker.rs) for a complete example.
+**Full examples:** [circuitbreaker.rs](examples/circuitbreaker.rs) | [circuitbreaker_fallback.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_fallback.rs) | [circuitbreaker_health_check.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_health_check.rs)
 
 ### Bulkhead
 
@@ -75,40 +83,69 @@ Limit concurrent requests to prevent resource exhaustion:
 
 ```rust
 use tower_resilience_bulkhead::BulkheadLayer;
+use std::time::Duration;
 
 let layer = BulkheadLayer::builder()
-    .max_concurrent_calls(10)
-    .wait_timeout(Duration::from_secs(5))
+    .name("worker-pool")
+    .max_concurrent_calls(10)                    // Max 10 concurrent
+    .max_wait_duration(Some(Duration::from_secs(5)))  // Wait up to 5s
+    .on_call_permitted(|concurrent| {
+        println!("Request permitted (concurrent: {})", concurrent);
+    })
+    .on_call_rejected(|max| {
+        println!("Request rejected (max: {})", max);
+    })
     .build();
+
+let service = layer.layer(my_service);
 ```
 
-See [examples/bulkhead.rs](examples/bulkhead.rs) for a complete example.
+**Full examples:** [bulkhead.rs](examples/bulkhead.rs) | [bulkhead_demo.rs](crates/tower-resilience-bulkhead/examples/bulkhead_demo.rs)
 
 ### Time Limiter
 
-Enforce timeouts on operations:
+Enforce timeouts on operations with configurable cancellation:
 
 ```rust
 use tower_resilience_timelimiter::TimeLimiterLayer;
+use std::time::Duration;
 
 let layer = TimeLimiterLayer::builder()
     .timeout_duration(Duration::from_secs(30))
-    .cancel_running_future(true)
+    .cancel_running_future(true)  // Cancel on timeout
+    .on_timeout(|| {
+        println!("Operation timed out!");
+    })
     .build();
+
+let service = layer.layer(my_service);
 ```
+
+**Full examples:** [timelimiter.rs](examples/timelimiter.rs) | [timelimiter_example.rs](crates/tower-resilience-timelimiter/examples/timelimiter_example.rs)
 
 ### Retry
 
-Retry failed requests with exponential backoff:
+Retry failed requests with exponential backoff and jitter:
 
 ```rust
 use tower_resilience_retry::RetryLayer;
+use std::time::Duration;
 
 let layer = RetryLayer::<MyError>::builder()
     .max_attempts(5)
     .exponential_backoff(Duration::from_millis(100))
+    .on_retry(|attempt, delay| {
+        println!("Retrying (attempt {}, delay {:?})", attempt, delay);
+    })
+    .on_success(|attempts| {
+        println!("Success after {} attempts", attempts);
+    })
     .build();
+
+let service = layer.layer(my_service);
 ```
+
+**Full examples:** [retry.rs](examples/retry.rs) | [retry_example.rs](crates/tower-resilience-retry/examples/retry_example.rs)
 
 ### Rate Limiter
 
@@ -116,26 +153,43 @@ Control request rate to protect downstream services:
 
 ```rust
 use tower_resilience_ratelimiter::RateLimiterLayer;
+use std::time::Duration;
 
 let layer = RateLimiterLayer::builder()
-    .max_permits(100)
-    .refresh_period(Duration::from_secs(1))
+    .limit_for_period(100)                      // 100 requests
+    .refresh_period(Duration::from_secs(1))     // per second
+    .timeout_duration(Duration::from_millis(500))  // Wait up to 500ms
+    .on_permit_acquired(|wait| {
+        println!("Request permitted (waited {:?})", wait);
+    })
     .build();
+
+let service = layer.layer(my_service);
 ```
+
+**Full examples:** [ratelimiter.rs](examples/ratelimiter.rs) | [ratelimiter_example.rs](crates/tower-resilience-ratelimiter/examples/ratelimiter_example.rs)
 
 ### Cache
 
 Cache responses to reduce load on expensive operations:
 
 ```rust
-use tower_resilience_cache::CacheLayer;
+use tower_resilience_cache::{CacheLayer, EvictionPolicy};
+use std::time::Duration;
 
 let layer = CacheLayer::builder()
     .max_size(1000)
-    .ttl(Duration::from_secs(300))
+    .ttl(Duration::from_secs(300))                 // 5 minute TTL
+    .eviction_policy(EvictionPolicy::Lru)          // LRU, LFU, or FIFO
     .key_extractor(|req: &Request| req.id.clone())
+    .on_hit(|| println!("Cache hit!"))
+    .on_miss(|| println!("Cache miss"))
     .build();
+
+let service = layer.layer(my_service);
 ```
+
+**Full examples:** [cache.rs](examples/cache.rs) | [cache_example.rs](crates/tower-resilience-cache/examples/cache_example.rs)
 
 ## Error Handling
 
