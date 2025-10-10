@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-core-v0.4.2...tower-resilience-core-v0.4.3) - 2025-10-10
+
+### Added
+
+- add Clone to CircuitBreaker and comprehensive stress tests ([#116](https://github.com/joshrotenberg/tower-resilience/pull/116))
+
+### Other
+
+- improve README examples with event listeners and links ([#114](https://github.com/joshrotenberg/tower-resilience/pull/114))
+
 ## [0.4.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-core-v0.3.0...tower-resilience-core-v0.4.0) - 2025-10-09
 
 ### Other
