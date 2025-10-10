@@ -1,6 +1,7 @@
 //! Configuration for cache.
 
 use crate::events::CacheEvent;
+use crate::eviction::EvictionPolicy;
 use std::hash::Hash;
 use std::sync::Arc;
 use std::time::Duration;
@@ -13,6 +14,7 @@ pub type KeyExtractor<Req, K> = Arc<dyn Fn(&Req) -> K + Send + Sync>;
 pub struct CacheConfig<Req, K> {
     pub(crate) max_size: usize,
     pub(crate) ttl: Option<Duration>,
+    pub(crate) eviction_policy: EvictionPolicy,
     pub(crate) key_extractor: KeyExtractor<Req, K>,
     pub(crate) event_listeners: EventListeners<CacheEvent>,
     pub(crate) name: String,
@@ -22,6 +24,7 @@ pub struct CacheConfig<Req, K> {
 pub struct CacheConfigBuilder<Req, K> {
     max_size: usize,
     ttl: Option<Duration>,
+    eviction_policy: EvictionPolicy,
     key_extractor: Option<KeyExtractor<Req, K>>,
     event_listeners: EventListeners<CacheEvent>,
     name: String,
@@ -36,6 +39,7 @@ where
         Self {
             max_size: 100,
             ttl: None,
+            eviction_policy: EvictionPolicy::default(),
             key_extractor: None,
             event_listeners: EventListeners::new(),
             name: String::from("<unnamed>"),
@@ -56,6 +60,42 @@ where
     /// Default: None (no expiration)
     pub fn ttl(mut self, ttl: Duration) -> Self {
         self.ttl = Some(ttl);
+        self
+    }
+
+    /// Sets the eviction policy for the cache.
+    ///
+    /// Determines which entry to evict when the cache reaches capacity.
+    ///
+    /// # Options
+    ///
+    /// - `EvictionPolicy::Lru` - Least Recently Used (default)
+    ///   - Evicts entries that haven't been accessed recently
+    ///   - Best for general-purpose caching
+    ///
+    /// - `EvictionPolicy::Lfu` - Least Frequently Used
+    ///   - Evicts entries with the lowest access count
+    ///   - Best for long-lived caches with consistently popular items
+    ///
+    /// - `EvictionPolicy::Fifo` - First In, First Out
+    ///   - Evicts the oldest entry regardless of access pattern
+    ///   - Best for time-based caching where age matters
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_cache::{CacheLayer, EvictionPolicy};
+    ///
+    /// let cache = CacheLayer::<String, String>::builder()
+    ///     .max_size(100)
+    ///     .eviction_policy(EvictionPolicy::Lfu)
+    ///     .key_extractor(|req| req.clone())
+    ///     .build();
+    /// ```
+    ///
+    /// Default: `EvictionPolicy::Lru`
+    pub fn eviction_policy(mut self, policy: EvictionPolicy) -> Self {
+        self.eviction_policy = policy;
         self
     }
 
@@ -220,6 +260,7 @@ where
         let config = CacheConfig {
             max_size: self.max_size,
             ttl: self.ttl,
+            eviction_policy: self.eviction_policy,
             key_extractor,
             event_listeners: self.event_listeners,
             name: self.name,
