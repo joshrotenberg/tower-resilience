@@ -68,9 +68,9 @@ where
 
 impl<S, Req, K> Layer<S> for CacheLayer<Req, K>
 where
-    K: Hash + Eq,
+    K: Hash + Eq + Clone + Send + 'static,
     S: tower::Service<Req>,
-    S::Response: Clone,
+    S::Response: Clone + Send + 'static,
 {
     type Service = Cache<S, Req, K, S::Response>;
 

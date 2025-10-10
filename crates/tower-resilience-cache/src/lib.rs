@@ -6,7 +6,7 @@
 //!
 //! # Features
 //!
-//! - **LRU Eviction**: Least Recently Used eviction policy
+//! - **Multiple Eviction Policies**: LRU, LFU, and FIFO eviction strategies
 //! - **TTL Support**: Optional time-to-live for cache entries
 //! - **Event System**: Observability through cache events (Hit, Miss, Eviction)
 //! - **Flexible Key Extraction**: User-defined key extraction from requests
@@ -14,15 +14,16 @@
 //! # Examples
 //!
 //! ```
-//! use tower_resilience_cache::CacheLayer;
+//! use tower_resilience_cache::{CacheLayer, EvictionPolicy};
 //! use tower::ServiceBuilder;
 //! use std::time::Duration;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! // Create a cache layer
+//! // Create a cache layer with LFU eviction
 //! let cache_layer = CacheLayer::builder()
 //!     .max_size(100)
 //!     .ttl(Duration::from_secs(60))
+//!     .eviction_policy(EvictionPolicy::Lfu)  // or Lru (default), Fifo
 //!     .key_extractor(|req: &String| req.clone())
 //!     .on_hit(|| println!("Cache hit!"))
 //!     .on_miss(|| println!("Cache miss!"))
@@ -41,12 +42,14 @@
 mod config;
 mod error;
 mod events;
+mod eviction;
 mod layer;
 mod store;
 
 pub use config::{CacheConfig, CacheConfigBuilder, KeyExtractor};
 pub use error::CacheError;
 pub use events::CacheEvent;
+pub use eviction::EvictionPolicy;
 pub use layer::CacheLayer;
 
 use futures::future::BoxFuture;
@@ -79,8 +82,8 @@ pub struct Cache<S, Req, K, Resp> {
 
 impl<S, Req, K, Resp> Cache<S, Req, K, Resp>
 where
-    K: Hash + Eq,
-    Resp: Clone,
+    K: Hash + Eq + Clone + Send + 'static,
+    Resp: Clone + Send + 'static,
 {
     /// Creates a new `Cache` wrapping the given service.
     pub fn new(inner: S, config: Arc<CacheConfig<Req, K>>) -> Self {
@@ -94,7 +97,11 @@ where
             describe_gauge!("cache_size", "Current number of entries in the cache");
         }
 
-        let store = Arc::new(Mutex::new(CacheStore::new(config.max_size, config.ttl)));
+        let store = Arc::new(Mutex::new(CacheStore::new(
+            config.max_size,
+            config.ttl,
+            config.eviction_policy,
+        )));
         Self {
             inner,
             config,
