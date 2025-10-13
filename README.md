@@ -217,7 +217,7 @@ let service = chaos.layer(my_service);
 
 **WARNING**: Only use in development/testing environments. Never in production.
 
-**Full examples:** [chaos_example.rs](crates/tower-resilience-chaos/examples/chaos_example.rs)
+**Full examples:** [chaos.rs](examples/chaos.rs) | [chaos_example.rs](crates/tower-resilience-chaos/examples/chaos_example.rs)
 
 ## Error Handling
 

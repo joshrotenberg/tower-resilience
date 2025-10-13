@@ -15,6 +15,7 @@ tower-resilience-cache = { path = "crates/tower-resilience-cache", features = ["
 tower-resilience-retry = { path = "crates/tower-resilience-retry", features = ["metrics"] }
 tower-resilience-timelimiter = { path = "crates/tower-resilience-timelimiter", features = ["metrics"] }
 tower-resilience-ratelimiter = { path = "crates/tower-resilience-ratelimiter", features = ["metrics"] }
+tower-resilience-chaos = { path = "crates/tower-resilience-chaos" }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"

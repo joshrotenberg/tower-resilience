@@ -7,6 +7,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use tower_resilience_core::{EventListeners, FnListener};
 
+/// Type alias for error generation function
+type ErrorFn<Req, Err> = Arc<dyn Fn(&Req) -> Err + Send + Sync>;
+
 /// Configuration for the chaos engineering layer.
 pub struct ChaosConfig<Req, Err> {
     /// Name of this chaos layer instance for observability
@@ -14,7 +17,7 @@ pub struct ChaosConfig<Req, Err> {
     /// Probability of injecting an error (0.0 - 1.0)
     pub(crate) error_rate: f64,
     /// Function to generate errors when injecting
-    pub(crate) error_fn: Option<Arc<dyn Fn(&Req) -> Err + Send + Sync>>,
+    pub(crate) error_fn: Option<ErrorFn<Req, Err>>,
     /// Probability of injecting latency (0.0 - 1.0)
     pub(crate) latency_rate: f64,
     /// Minimum latency to inject
@@ -61,7 +64,7 @@ impl<Req, Err> ChaosConfig<Req, Err> {
 pub struct ChaosConfigBuilder<Req, Err> {
     name: String,
     error_rate: f64,
-    error_fn: Option<Arc<dyn Fn(&Req) -> Err + Send + Sync>>,
+    error_fn: Option<ErrorFn<Req, Err>>,
     latency_rate: f64,
     min_latency: Duration,
     max_latency: Duration,
