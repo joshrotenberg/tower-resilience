@@ -21,6 +21,7 @@ Inspired by [Resilience4j](https://resilience4j.readme.io/), a fault tolerance l
 - **Retry** - Intelligent retry with exponential backoff and jitter
 - **Rate Limiter** - Controls request rate to protect services
 - **Cache** - Response memoization to reduce load
+- **Chaos** - Inject failures and latency for testing resilience (development/testing only)
 
 ## Features
 
@@ -190,6 +191,33 @@ let service = layer.layer(my_service);
 ```
 
 **Full examples:** [cache.rs](examples/cache.rs) | [cache_example.rs](crates/tower-resilience-cache/examples/cache_example.rs)
+
+### Chaos (Testing Only)
+
+Inject failures and latency to test your resilience patterns:
+
+```rust
+use tower_resilience_chaos::ChaosLayer;
+use std::time::Duration;
+
+let chaos = ChaosLayer::<String, std::io::Error>::builder()
+    .name("test-chaos")
+    .error_rate(0.1)                               // 10% of requests fail
+    .error_fn(|_req| std::io::Error::new(
+        std::io::ErrorKind::Other, "chaos!"
+    ))
+    .latency_rate(0.2)                             // 20% delayed
+    .min_latency(Duration::from_millis(50))
+    .max_latency(Duration::from_millis(200))
+    .seed(42)                                      // Deterministic chaos
+    .build();
+
+let service = chaos.layer(my_service);
+```
+
+**WARNING**: Only use in development/testing environments. Never in production.
+
+**Full examples:** [chaos.rs](examples/chaos.rs) | [chaos_example.rs](crates/tower-resilience-chaos/examples/chaos_example.rs)
 
 ## Error Handling
 
