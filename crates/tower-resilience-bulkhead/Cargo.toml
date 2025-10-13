@@ -8,8 +8,8 @@ authors.workspace = true
 rust-version.workspace = true
 readme = "../../README.md"
 description = "Bulkhead pattern for Tower services - resource isolation and concurrency limiting"
-categories = ["rust-patterns", "concurrency"]
-keywords = ["tower", "bulkhead", "resilience", "isolation", "concurrency"]
+categories = ["concurrency", "rust-patterns"]
+keywords = ["tower", "bulkhead", "resilience", "middleware", "concurrency"]
 
 [dependencies]
 tower-resilience-core = { workspace = true }

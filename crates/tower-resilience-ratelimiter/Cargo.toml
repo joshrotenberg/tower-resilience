@@ -9,7 +9,7 @@ rust-version.workspace = true
 readme = "../../README.md"
 description = "Advanced rate limiting middleware for Tower services"
 categories = ["network-programming", "web-programming::http-server"]
-keywords = ["rate-limit", "middleware", "resilience", "tower", "throttle"]
+keywords = ["tower", "rate-limit", "resilience", "middleware", "throttle"]
 
 [dependencies]
 tower-resilience-core = { workspace = true }
