@@ -42,6 +42,7 @@ members = [
     "crates/tower-resilience-ratelimiter",
     "crates/tower-resilience-chaos",
     "crates/tower-resilience",
+    "examples/axum-resilient-kv-store",
 ]
 
 [workspace.package]
