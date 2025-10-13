@@ -86,7 +86,7 @@ impl tower::Service<DbRequest> for DatabaseService {
             let rate_bits = chaos_rate.load(Ordering::Relaxed);
             let failure_rate = f64::from_bits(rate_bits as u64);
 
-            if rand::thread_rng().gen::<f64>() < failure_rate {
+            if rand::rng().random::<f64>() < failure_rate {
                 tracing::warn!("Chaos: Injected database failure for key '{}'", req.key);
                 return Err(DbError("Simulated database failure (chaos)".to_string()));
             }

@@ -55,7 +55,7 @@ impl<Req, Err> ChaosConfig<Req, Err> {
     pub(crate) fn create_rng(&self) -> StdRng {
         match self.seed {
             Some(seed) => StdRng::seed_from_u64(seed),
-            None => StdRng::from_entropy(),
+            None => StdRng::from_os_rng(),
         }
     }
 }

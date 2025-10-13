@@ -14,8 +14,9 @@ path = "src/client.rs"
 
 [dependencies]
 # Tonic gRPC framework
-tonic = "0.12"
-prost = "0.13"
+tonic = "0.14"
+tonic-prost = "0.14"
+prost = "0.14"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1"
 tower = "0.5"
@@ -29,7 +30,7 @@ tower-resilience-ratelimiter = { path = "../../crates/tower-resilience-ratelimit
 # Utilities
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-rand = "0.8"
+rand = "0.9"
 
 [build-dependencies]
-tonic-build = "0.12"
+tonic-prost-build = "0.14"
