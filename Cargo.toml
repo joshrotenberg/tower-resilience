@@ -56,7 +56,7 @@ rust-version = "1.64.0"
 tower = { version = "0.5", features = ["util"] }
 tower-layer = "0.3"
 tower-service = "0.3"
-tokio = { version = "1", features = ["time", "sync"] }
+tokio = { version = "1.47.1", features = ["time", "sync"] }
 futures = "0.3"
 thiserror = "2.0"
 tracing = "0.1"

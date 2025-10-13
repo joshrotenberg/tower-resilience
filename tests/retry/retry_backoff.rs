@@ -270,8 +270,8 @@ async fn exponential_random_backoff_has_variance() {
     let call_count = Arc::new(AtomicUsize::new(0));
     let all_delays = Arc::new(std::sync::Mutex::new(Vec::new()));
 
-    // Run multiple times to check variance
-    for _ in 0..5 {
+    // Run multiple times to check variance - increased sample size for better variance detection
+    for _ in 0..10 {
         let cc = Arc::clone(&call_count);
         let timestamps = Arc::new(std::sync::Mutex::new(Vec::new()));
         let ts = Arc::clone(&timestamps);
@@ -317,23 +317,31 @@ async fn exponential_random_backoff_has_variance() {
 
     let delays = all_delays.lock().unwrap();
     assert!(
-        delays.len() >= 3,
-        "Need at least 3 samples for variance test"
+        delays.len() >= 5,
+        "Need at least 5 samples for variance test"
     );
 
-    // Check that not all delays are the same (randomization is working)
-    let all_same = delays.windows(2).all(|w| w[0] == w[1]);
+    // Check that we have some variance in delays
+    // Instead of requiring all delays to be different (which can fail with timing resolution),
+    // check that we have at least 2 unique delay values
+    let mut unique_delays: Vec<Duration> = delays.clone();
+    unique_delays.sort();
+    unique_delays.dedup();
+
     assert!(
-        !all_same,
-        "Randomized backoff should produce varying delays"
+        unique_delays.len() >= 2,
+        "Randomized backoff should produce at least 2 different delays, got {} unique values from {} samples",
+        unique_delays.len(),
+        delays.len()
     );
 
     // All delays should be within the expected range
     // Base: 100ms, randomization 0.5 means 50ms to 150ms
+    // Use generous tolerance for CI environments
     for delay in delays.iter() {
         assert!(
             *delay >= Duration::from_millis(20) && *delay <= Duration::from_millis(180),
-            "Delay {:?} outside expected randomized range",
+            "Delay {:?} outside expected randomized range (20-180ms)",
             delay
         );
     }

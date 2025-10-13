@@ -1,0 +1,129 @@
+name: Stress Tests
+
+on:
+  schedule:
+    # Run nightly at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "tests/stress/**"
+      - ".github/workflows/stress-tests.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  stress-test:
+    name: Stress Tests (${{ matrix.pattern }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        pattern:
+          - bulkhead
+          - cache
+          - circuitbreaker
+          - composition
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Run stress tests for ${{ matrix.pattern }}
+        run: |
+          echo "Running stress tests for ${{ matrix.pattern }}..."
+          cargo test --test stress ${{ matrix.pattern }} -- --ignored --nocapture --test-threads=1
+        timeout-minutes: 45
+        continue-on-error: true
+        id: stress-test
+
+      - name: Create issue on failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pattern = '${{ matrix.pattern }}';
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const issueBody = `## Stress Test Failure: ${pattern}
+
+            The nightly stress tests for the **${pattern}** pattern have failed.
+
+            **Run:** ${runUrl}
+            **Date:** ${new Date().toISOString()}
+
+            This could indicate:
+            - Performance regression
+            - Memory leak
+            - Race condition
+            - Resource exhaustion issue
+
+            Please investigate the test logs and determine if this is a real issue or a flaky test.
+
+            /cc @joshrotenberg`;
+
+            // Check if there's already an open issue for this pattern
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['stress-test-failure', `pattern:${pattern}`]
+            });
+
+            if (issues.data.length === 0) {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Stress Test Failure: ${pattern}`,
+                body: issueBody,
+                labels: ['stress-test-failure', `pattern:${pattern}`, 'needs-investigation']
+              });
+            } else {
+              // Add comment to existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues.data[0].number,
+                body: `Another failure occurred:\n\n${runUrl}\n\nDate: ${new Date().toISOString()}`
+              });
+            }
+
+  summary:
+    name: Stress Test Summary
+    runs-on: ubuntu-latest
+    needs: stress-test
+    if: always()
+
+    steps:
+      - name: Summary
+        run: |
+          echo "## Stress Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All stress tests have completed." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "These tests validate:" >> $GITHUB_STEP_SUMMARY
+          echo "- High volume processing (millions of operations)" >> $GITHUB_STEP_SUMMARY
+          echo "- High concurrency (thousands of concurrent requests)" >> $GITHUB_STEP_SUMMARY
+          echo "- Memory usage and leak detection" >> $GITHUB_STEP_SUMMARY
+          echo "- State consistency under stress" >> $GITHUB_STEP_SUMMARY
+          echo "- Resource cleanup (no panics, deadlocks, or leaks)" >> $GITHUB_STEP_SUMMARY
+          echo "- Performance degradation characteristics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check individual test results for details." >> $GITHUB_STEP_SUMMARY
