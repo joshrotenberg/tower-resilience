@@ -47,7 +47,9 @@ cargo run --example circuitbreaker_example -p tower-resilience-circuitbreaker
 
 ### Code Standards
 
-- Follow Rust 2024 edition idioms
+- Published crates use Rust 2021 edition (MSRV 1.64.0, matching Tower's MSRV policy)
+- Root workspace uses Rust 2024 edition for development
+- When adding new crates, use `edition = "2021"` in their Cargo.toml
 - All public APIs must have doc comments
 - Run `cargo fmt` before committing
 - Ensure `cargo clippy` passes with `-D warnings`
