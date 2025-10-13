@@ -39,6 +39,7 @@ members = [
     "crates/tower-resilience-timelimiter",
     "crates/tower-resilience-cache",
     "crates/tower-resilience-ratelimiter",
+    "crates/tower-resilience-chaos",
     "crates/tower-resilience",
 ]
 
