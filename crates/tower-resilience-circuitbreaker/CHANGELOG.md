@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.4.3...tower-resilience-circuitbreaker-v0.4.4) - 2025-10-13
+
+### Added
+
+- add health check integration for circuit breaker ([#106](https://github.com/joshrotenberg/tower-resilience/pull/106)) ([#121](https://github.com/joshrotenberg/tower-resilience/pull/121))
+- add chaos engineering layer for testing resilience patterns ([#118](https://github.com/joshrotenberg/tower-resilience/pull/118))
+
 ## [0.4.3](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.4.2...tower-resilience-circuitbreaker-v0.4.3) - 2025-10-10
 
 ### Added
