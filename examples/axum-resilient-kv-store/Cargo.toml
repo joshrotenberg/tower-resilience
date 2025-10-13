@@ -9,13 +9,11 @@ publish = false
 axum = { version = "0.7", features = ["macros"] }
 tokio = { version = "1", features = ["full"] }
 tower = "0.5"
-tower-http = { version = "0.6", features = ["trace", "timeout", "compression-gzip", "util"] }
 
 # Tower resilience patterns
 tower-resilience-circuitbreaker = { path = "../../crates/tower-resilience-circuitbreaker", features = ["serde", "tracing"] }
 
 # Utilities
-clap = { version = "4", features = ["derive"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde = { version = "1", features = ["derive"] }
