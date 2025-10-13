@@ -21,11 +21,13 @@ tower-resilience-core.workspace = true
 tracing = { workspace = true, optional = true }
 metrics = { workspace = true, optional = true }
 metrics-util = { version = "0.20", optional = true }
+serde = { workspace = true, optional = true }
 
 [features]
 default = []
 metrics = ["dep:metrics", "dep:metrics-util"]
 tracing = ["dep:tracing"]
+serde = ["dep:serde"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }

@@ -227,6 +227,37 @@
 //! # }
 //! ```
 //!
+//! ## Health Check Integration
+//!
+//! The circuit breaker provides convenient methods for implementing health check endpoints:
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
+//! use tower::service_fn;
+//!
+//! # async fn example() {
+//! let layer = CircuitBreakerLayer::<String, ()>::builder().build();
+//! let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
+//! let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+//!
+//! // Simple health status
+//! let status = breaker.health_status(); // "healthy", "degraded", or "unhealthy"
+//!
+//! // HTTP status code for health endpoints
+//! let http_status = breaker.http_status(); // 200 or 503
+//!
+//! // Framework integration example (pseudo-code):
+//! // async fn health_handler(breaker: Extension<CircuitBreaker>) -> Response {
+//! //     let status_code = breaker.http_status();
+//! //     let body = json!({ "status": breaker.health_status() });
+//! //     Response::builder().status(status_code).json(body)
+//! // }
+//! # }
+//! ```
+//!
+//! With the `serde` feature enabled, `CircuitMetrics` and `CircuitState` can be serialized
+//! for JSON health check responses.
+//!
 //! ## Examples
 //!
 //! See the `examples/` directory for complete working examples:
@@ -249,6 +280,7 @@
 //! ## Feature Flags
 //! - `metrics`: enables metrics collection using the `metrics` crate
 //! - `tracing`: enables logging and tracing using the `tracing` crate
+//! - `serde`: enables `Serialize` for `CircuitState` and `CircuitMetrics` (useful for health checks)
 //!
 //! ## Examples
 //!
@@ -446,6 +478,63 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     /// Reads from an AtomicU8 that's kept synchronized with the actual state.
     pub fn state_sync(&self) -> CircuitState {
         CircuitState::from_u8(self.state_atomic.load(std::sync::atomic::Ordering::Acquire))
+    }
+
+    /// Returns an HTTP status code based on circuit state.
+    ///
+    /// This is useful for health check endpoints:
+    /// - Closed: 200 (OK)
+    /// - HalfOpen: 200 (OK) - accepting limited traffic
+    /// - Open: 503 (Service Unavailable)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
+    /// use tower::service_fn;
+    ///
+    /// # async fn example() {
+    /// let layer = CircuitBreakerLayer::<String, ()>::builder().build();
+    /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
+    /// let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+    ///
+    /// let status = breaker.http_status();
+    /// // Use in health check: returns 503 when circuit is open
+    /// # }
+    /// ```
+    pub fn http_status(&self) -> u16 {
+        match self.state_sync() {
+            CircuitState::Closed => 200,
+            CircuitState::HalfOpen => 200, // Still accepting limited traffic
+            CircuitState::Open => 503,
+        }
+    }
+
+    /// Returns a simple health status string.
+    ///
+    /// Returns "healthy" when circuit is closed or half-open, "unhealthy" when open.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
+    /// use tower::service_fn;
+    ///
+    /// # async fn example() {
+    /// let layer = CircuitBreakerLayer::<String, ()>::builder().build();
+    /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
+    /// let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+    ///
+    /// let status = breaker.health_status();
+    /// assert_eq!(status, "healthy");
+    /// # }
+    /// ```
+    pub fn health_status(&self) -> &'static str {
+        match self.state_sync() {
+            CircuitState::Closed => "healthy",
+            CircuitState::HalfOpen => "degraded",
+            CircuitState::Open => "unhealthy",
+        }
     }
 }
 
