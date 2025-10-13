@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 
 /// Represents the state of the circuit breaker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(u8)]
 pub enum CircuitState {
     /// The circuit is closed and calls are allowed.
@@ -24,6 +25,7 @@ pub enum CircuitState {
 /// without requiring async access. All fields represent a consistent snapshot taken
 /// when the metrics were retrieved.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct CircuitMetrics {
     /// Current state of the circuit breaker.
     pub state: CircuitState,
