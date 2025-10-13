@@ -17,7 +17,7 @@ tower-service = { workspace = true }
 tokio = { workspace = true }
 futures = { workspace = true }
 thiserror = { workspace = true }
-rand = "0.8"
+rand = "0.9"
 
 # Optional dependencies
 tracing = { workspace = true, optional = true }

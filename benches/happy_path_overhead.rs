@@ -1,5 +1,6 @@
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
 use futures::future::BoxFuture;
+use std::hint::black_box;
 use std::time::Duration;
 use tower::{Layer, Service, ServiceBuilder, ServiceExt};
 use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};

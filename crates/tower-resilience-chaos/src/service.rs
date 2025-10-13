@@ -62,20 +62,20 @@ where
 
                 // Check if we should inject an error
                 if config.error_rate > 0.0 {
-                    let roll: f64 = rng.gen();
+                    let roll: f64 = rng.random();
                     should_inject_error = roll < config.error_rate;
                 }
 
                 // Check if we should inject latency
                 if config.latency_rate > 0.0 && !should_inject_error {
-                    let roll: f64 = rng.gen();
+                    let roll: f64 = rng.random();
                     should_inject_latency = roll < config.latency_rate;
 
                     if should_inject_latency {
                         let min_ms = config.min_latency.as_millis() as u64;
                         let max_ms = config.max_latency.as_millis() as u64;
                         let delay_ms = if max_ms > min_ms {
-                            rng.gen_range(min_ms..=max_ms)
+                            rng.random_range(min_ms..=max_ms)
                         } else {
                             min_ms
                         };
