@@ -1,0 +1,35 @@
+[package]
+name = "tonic-resilient-greeter"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "server"
+path = "src/server.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
+
+[dependencies]
+# Tonic gRPC framework
+tonic = "0.12"
+prost = "0.13"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+tower = "0.5"
+
+# Tower resilience patterns
+tower-resilience-circuitbreaker = { path = "../../crates/tower-resilience-circuitbreaker", features = ["tracing"] }
+tower-resilience-bulkhead = { path = "../../crates/tower-resilience-bulkhead", features = ["tracing"] }
+tower-resilience-retry = { path = "../../crates/tower-resilience-retry", features = ["tracing"] }
+tower-resilience-ratelimiter = { path = "../../crates/tower-resilience-ratelimiter", features = ["tracing"] }
+
+# Utilities
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rand = "0.8"
+
+[build-dependencies]
+tonic-build = "0.12"

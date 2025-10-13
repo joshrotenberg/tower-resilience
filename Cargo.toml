@@ -43,6 +43,7 @@ members = [
     "crates/tower-resilience-chaos",
     "crates/tower-resilience",
     "examples/axum-resilient-kv-store",
+    "examples/tonic-resilient-greeter",
 ]
 
 [workspace.package]
