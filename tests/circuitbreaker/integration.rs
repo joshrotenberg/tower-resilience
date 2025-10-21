@@ -7,7 +7,7 @@ use std::sync::{
 };
 use std::task::{Context, Poll};
 use std::time::Duration;
-use tower::{Service, service_fn};
+use tower::{Service, ServiceBuilder, service_fn};
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_circuitbreaker::{CircuitBreakerError, CircuitState};
 
@@ -168,6 +168,29 @@ async fn all_successes_keep_circuit_closed() {
     }
 
     assert_eq!(breaker.state().await, CircuitState::Closed);
+}
+
+#[tokio::test]
+async fn integrates_with_service_builder_layer() {
+    let layer = CircuitBreakerLayer::<&'static str, &'static str>::builder()
+        .failure_rate_threshold(0.5)
+        .sliding_window_size(4)
+        .wait_duration_in_open(Duration::from_secs(1))
+        .build();
+
+    let mut service: tower_resilience_circuitbreaker::CircuitBreaker<
+        _,
+        (),
+        &'static str,
+        &'static str,
+    > = ServiceBuilder::new()
+        .layer(layer.for_request::<()>())
+        .service(service_fn(
+            |_: ()| async move { Ok::<_, &'static str>("ok") },
+        ));
+
+    let response = service.call(()).await.expect("call should succeed");
+    assert_eq!(response, "ok");
 }
 
 #[tokio::test]

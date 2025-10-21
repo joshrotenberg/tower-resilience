@@ -311,9 +311,23 @@ async fn scenario_full_stack() {
     let api = Arc::new(ExternalApi::new(ApiFailMode::FailFirst(2)));
     let api_call_count = Arc::clone(&api.call_count);
 
-    // Client resilience stack: Cache -> Retry
+    // Client resilience stack: Cache -> Circuit Breaker -> Retry
     // Note: Complex multi-layer stacks can hit trait bound limitations
     // In practice, layers can be applied at different architectural points
+    let circuit_breaker_layer = CircuitBreakerLayer::<Response, ClientError>::builder()
+        .failure_rate_threshold(0.6)
+        .sliding_window_size(6)
+        .minimum_number_of_calls(3)
+        .wait_duration_in_open(Duration::from_secs(2))
+        .name("external-api-client")
+        .on_state_transition(|from, to| {
+            println!(
+                "[Circuit Breaker] Client stack transition: {:?} -> {:?}",
+                from, to
+            );
+        })
+        .build();
+
     let client = ServiceBuilder::new()
         // 1. Cache (outermost) - Skip everything if cached
         .layer(
@@ -335,7 +349,9 @@ async fn scenario_full_stack() {
                 })
                 .build(),
         )
-        // 2. Retry - Handle transient failures
+        // 2. Circuit breaker - fail fast when downstream is degraded
+        .layer(circuit_breaker_layer.for_request::<Request>())
+        // 3. Retry - Handle transient failures
         .layer(
             RetryLayer::<ClientError>::builder()
                 .max_attempts(3)

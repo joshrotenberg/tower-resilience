@@ -305,7 +305,7 @@ pub use circuit::{CircuitMetrics, CircuitState};
 pub use config::{CircuitBreakerConfig, CircuitBreakerConfigBuilder, SlidingWindowType};
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
-pub use layer::CircuitBreakerLayer;
+pub use layer::{CircuitBreakerLayer, CircuitBreakerRequestLayer};
 
 mod circuit;
 mod config;
