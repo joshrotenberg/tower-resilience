@@ -5,6 +5,10 @@ on:
     # Run nightly at 02:00 UTC
     - cron: "0 2 * * *"
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "tests/stress/**"
+      - ".github/workflows/stress-tests.yml"
   push:
     branches:
       - main
