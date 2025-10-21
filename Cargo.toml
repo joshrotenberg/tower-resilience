@@ -15,7 +15,7 @@ tower-resilience-cache = { path = "crates/tower-resilience-cache", features = ["
 tower-resilience-retry = { path = "crates/tower-resilience-retry", features = ["metrics"] }
 tower-resilience-timelimiter = { path = "crates/tower-resilience-timelimiter", features = ["metrics"] }
 tower-resilience-ratelimiter = { path = "crates/tower-resilience-ratelimiter", features = ["metrics"] }
-tower-resilience-chaos = { path = "crates/tower-resilience-chaos" }
+tower-resilience-chaos = { path = "crates/tower-resilience-chaos", features = ["metrics"] }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
@@ -25,6 +25,7 @@ futures = { workspace = true }
 metrics = { workspace = true }
 metrics-util = { version = "0.20", default-features = false, features = ["debugging"] }
 criterion = { workspace = true }
+serial_test = "3.2"
 
 [[bench]]
 name = "happy_path_overhead"
