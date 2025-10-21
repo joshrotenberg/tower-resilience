@@ -8,26 +8,68 @@
 //! - **Open**: Circuit is tripped, requests are rejected immediately
 //! - **Half-Open**: Testing if service has recovered, limited requests allowed
 //!
-//! ## Basic Example
+//! ## Usage Patterns
+//!
+//! There are two ways to apply the circuit breaker layer:
+//!
+//! ### 1. Direct Application with `.layer()`
+//!
+//! Use this when you need to manually apply the layer to a service and want
+//! to call methods like `.with_fallback()` on the resulting circuit breaker:
 //!
 //! ```rust
 //! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
 //! use tower::service_fn;
 //! use std::time::Duration;
+//! use futures::future::BoxFuture;
 //!
 //! # async fn example() {
 //! let layer = CircuitBreakerLayer::<String, ()>::builder()
-//!     .failure_rate_threshold(0.5)  // Open at 50% failure rate
-//!     .sliding_window_size(100)     // Track last 100 calls
-//!     .wait_duration_in_open(Duration::from_secs(30))
+//!     .failure_rate_threshold(0.5)
+//!     .sliding_window_size(100)
 //!     .build();
 //!
 //! let svc = service_fn(|req: String| async move {
 //!     Ok::<String, ()>(req)
 //! });
-//! let mut service: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+//!
+//! // Direct application - returns CircuitBreaker, not a layer
+//! let mut service = layer.layer(svc)
+//!     .with_fallback(|_req: String| -> BoxFuture<'static, Result<String, ()>> {
+//!         Box::pin(async { Ok("fallback".to_string()) })
+//!     });
 //! # }
 //! ```
+//!
+//! ### 2. ServiceBuilder Integration with `.for_request()`
+//!
+//! Use this when composing multiple Tower layers with `ServiceBuilder`:
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+//! use tower::{ServiceBuilder, service_fn};
+//! use std::time::Duration;
+//!
+//! # async fn example() {
+//! let circuit_breaker = CircuitBreakerLayer::<String, ()>::builder()
+//!     .failure_rate_threshold(0.5)
+//!     .sliding_window_size(100)
+//!     .build();
+//!
+//! let mut service = ServiceBuilder::new()
+//!     .layer(circuit_breaker.for_request::<String>())  // Note: .for_request()
+//!     .service(service_fn(|req: String| async move {
+//!         Ok::<String, ()>(req)
+//!     }));
+//! # }
+//! ```
+//!
+//! The `.for_request()` method converts the layer into a type that implements
+//! Tower's `Layer` trait, which is required for `ServiceBuilder` integration.
+//!
+//! **When to use each:**
+//! - Use `.layer()` when applying directly and need access to `CircuitBreaker` methods
+//! - Use `.for_request()` when composing with other layers via `ServiceBuilder`
 //!
 //! ## Time-Based Sliding Window
 //!
@@ -305,7 +347,7 @@ pub use circuit::{CircuitMetrics, CircuitState};
 pub use config::{CircuitBreakerConfig, CircuitBreakerConfigBuilder, SlidingWindowType};
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
-pub use layer::CircuitBreakerLayer;
+pub use layer::{CircuitBreakerLayer, CircuitBreakerRequestLayer};
 
 mod circuit;
 mod config;

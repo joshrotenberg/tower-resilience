@@ -43,14 +43,20 @@ tower = "0.5"
 use tower::ServiceBuilder;
 use tower_resilience::prelude::*;
 
+let circuit_breaker = CircuitBreakerLayer::builder()
+    .failure_rate_threshold(0.5)
+    .build();
+
 let service = ServiceBuilder::new()
-    .layer(CircuitBreakerLayer::builder()
-        .failure_rate_threshold(0.5)
-        .build())
+    .layer(circuit_breaker.for_request::<()>())
     .layer(BulkheadLayer::builder()
         .max_concurrent_calls(10)
         .build())
     .service(my_service);
+
+Use `for_request::<T>()` with the request type `T` your service handles so the circuit
+breaker can plug into `ServiceBuilder`; the existing `layer.layer(service)` helper still
+returns a configured `CircuitBreaker` when you need direct control over the service value.
 ```
 
 ## Examples
@@ -241,7 +247,7 @@ type ServiceError = ResilienceError<AppError>;
 // All resilience layer errors automatically convert
 let service = ServiceBuilder::new()
     .layer(timeout_layer)
-    .layer(circuit_breaker)
+    .layer(circuit_breaker.for_request::<()>())
     .layer(bulkhead)
     .service(my_service);
 ```
@@ -267,7 +273,7 @@ use tower::ServiceBuilder;
 // Client-side: timeout -> circuit breaker -> retry
 let client = ServiceBuilder::new()
     .layer(timeout_layer)
-    .layer(circuit_breaker_layer)
+    .layer(circuit_breaker_layer.for_request::<()>())
     .layer(retry_layer)
     .service(http_client);
 
