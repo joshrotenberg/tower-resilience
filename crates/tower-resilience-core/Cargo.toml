@@ -24,3 +24,6 @@ metrics = ["dep:metrics"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }
+metrics-util = { version = "0.20", default-features = false, features = ["debugging"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
+serial_test = "3.2"
