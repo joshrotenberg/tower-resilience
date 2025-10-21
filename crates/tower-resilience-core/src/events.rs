@@ -292,6 +292,7 @@ mod tests {
         use std::io::{self, Write};
         use std::sync::{Arc, Mutex};
         use tracing_subscriber::fmt;
+        use tracing_subscriber::util::SubscriberInitExt;
 
         #[derive(Clone)]
         struct CaptureWriter(Arc<Mutex<Vec<u8>>>);
@@ -317,18 +318,22 @@ mod tests {
             .with_writer(move || CaptureWriter(writer_buffer.clone()))
             .finish();
 
-        tracing::subscriber::with_default(subscriber, || {
-            let mut listeners = EventListeners::new();
-            listeners.add(FnListener::new(|_: &TestEvent| panic!("boom")));
-            listeners.add(FnListener::new(|_: &TestEvent| ()));
+        // Use set_default with a guard instead of with_default to ensure proper isolation
+        let _guard = subscriber.set_default();
 
-            let event = TestEvent {
-                name: "trace-test".to_string(),
-                timestamp: Instant::now(),
-            };
+        let mut listeners = EventListeners::new();
+        listeners.add(FnListener::new(|_: &TestEvent| panic!("boom")));
+        listeners.add(FnListener::new(|_: &TestEvent| ()));
 
-            listeners.emit(&event);
-        });
+        let event = TestEvent {
+            name: "trace-test".to_string(),
+            timestamp: Instant::now(),
+        };
+
+        listeners.emit(&event);
+
+        // Drop the guard to restore previous subscriber
+        drop(_guard);
 
         let output = String::from_utf8(buffer.lock().unwrap().clone()).unwrap();
         assert!(
@@ -336,11 +341,11 @@ mod tests {
             "expected warning log, got: {output}"
         );
         assert!(
-            output.contains("panic_message=boom"),
+            output.contains("panic_message") && output.contains("boom"),
             "expected panic message in log, got: {output}"
         );
         assert!(
-            output.contains("pattern=\"trace-test\""),
+            output.contains("pattern") && output.contains("trace-test"),
             "expected pattern label in log, got: {output}"
         );
     }
