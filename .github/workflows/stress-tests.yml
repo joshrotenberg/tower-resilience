@@ -33,6 +33,9 @@ jobs:
           - cache
           - circuitbreaker
           - composition
+          - ratelimiter
+          - retry
+          - timelimiter
 
     steps:
       - uses: actions/checkout@v4
