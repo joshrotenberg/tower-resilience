@@ -293,7 +293,6 @@ mod tests {
         use std::io::{self, Write};
         use std::sync::{Arc, Mutex};
         use tracing_subscriber::fmt;
-        use tracing_subscriber::util::SubscriberInitExt;
 
         #[derive(Clone)]
         struct CaptureWriter(Arc<Mutex<Vec<u8>>>);
@@ -319,22 +318,19 @@ mod tests {
             .with_writer(move || CaptureWriter(writer_buffer.clone()))
             .finish();
 
-        // Use set_default with a guard instead of with_default to ensure proper isolation
-        let _guard = subscriber.set_default();
+        // Use with_default to scope the subscriber to this closure only
+        tracing::subscriber::with_default(subscriber, || {
+            let mut listeners = EventListeners::new();
+            listeners.add(FnListener::new(|_: &TestEvent| panic!("boom")));
+            listeners.add(FnListener::new(|_: &TestEvent| ()));
 
-        let mut listeners = EventListeners::new();
-        listeners.add(FnListener::new(|_: &TestEvent| panic!("boom")));
-        listeners.add(FnListener::new(|_: &TestEvent| ()));
+            let event = TestEvent {
+                name: "trace-test".to_string(),
+                timestamp: Instant::now(),
+            };
 
-        let event = TestEvent {
-            name: "trace-test".to_string(),
-            timestamp: Instant::now(),
-        };
-
-        listeners.emit(&event);
-
-        // Drop the guard to restore previous subscriber
-        drop(_guard);
+            listeners.emit(&event);
+        });
 
         let output = String::from_utf8(buffer.lock().unwrap().clone()).unwrap();
         assert!(
