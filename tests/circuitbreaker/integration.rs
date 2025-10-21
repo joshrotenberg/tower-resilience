@@ -385,3 +385,96 @@ async fn no_fallback_returns_error_when_circuit_open() {
         CircuitBreakerError::OpenCircuit
     ));
 }
+
+#[tokio::test]
+async fn multi_layer_composition_with_timeout() {
+    use tower_resilience_timelimiter::TimeLimiterLayer;
+
+    let service = service_fn(|delay_ms: u64| async move {
+        if delay_ms > 0 {
+            tokio::time::sleep(Duration::from_millis(delay_ms)).await;
+        }
+        Ok::<_, &'static str>("success")
+    });
+
+    // Compose timeout + circuit breaker
+    let timeout_layer = TimeLimiterLayer::builder()
+        .timeout_duration(Duration::from_millis(100))
+        .build();
+
+    let circuit_breaker_layer = CircuitBreakerLayer::<
+        &'static str,
+        tower_resilience_timelimiter::TimeLimiterError<&'static str>,
+    >::builder()
+    .failure_rate_threshold(0.5)
+    .sliding_window_size(4)
+    .minimum_number_of_calls(2)
+    .wait_duration_in_open(Duration::from_secs(10))
+    .build();
+
+    let mut composed = ServiceBuilder::new()
+        .layer(circuit_breaker_layer.for_request::<u64>())
+        .layer(timeout_layer)
+        .service(service);
+
+    // Fast request should succeed
+    let result = composed.call(10).await;
+    assert!(result.is_ok());
+
+    // Slow requests will timeout and count as failures
+    for _ in 0..3 {
+        let _ = composed.call(200).await; // Will timeout
+    }
+
+    // Circuit should now be open
+    let result = composed.call(10).await;
+    assert!(matches!(result, Err(CircuitBreakerError::OpenCircuit)));
+}
+
+#[tokio::test]
+async fn multi_layer_composition_with_retry() {
+    use tower_resilience_retry::RetryLayer;
+
+    let attempt_count = Arc::new(AtomicUsize::new(0));
+    let attempt_clone = Arc::clone(&attempt_count);
+
+    let service = service_fn(move |_req: ()| {
+        let count = attempt_clone.fetch_add(1, Ordering::Relaxed);
+        async move {
+            // Fail first 2 attempts, then succeed
+            if count < 2 {
+                Err::<&'static str, _>("transient error")
+            } else {
+                Ok("success")
+            }
+        }
+    });
+
+    // Compose circuit breaker + retry
+    // Note: Retry is inner, so it retries before circuit breaker sees failures
+    let circuit_breaker_layer = CircuitBreakerLayer::<&'static str, &'static str>::builder()
+        .failure_rate_threshold(0.5)
+        .sliding_window_size(4)
+        .minimum_number_of_calls(2)
+        .wait_duration_in_open(Duration::from_secs(10))
+        .build();
+
+    let retry_layer = RetryLayer::<&'static str>::builder()
+        .max_attempts(3)
+        .fixed_backoff(Duration::from_millis(10))
+        .build();
+
+    let mut composed = ServiceBuilder::new()
+        .layer(circuit_breaker_layer.for_request::<()>())
+        .layer(retry_layer)
+        .service(service);
+
+    // First call: retry will handle the transient errors
+    let result = composed.call(()).await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), "success");
+
+    // Should have made 3 attempts (2 failures + 1 success)
+    // But circuit breaker only sees 1 success
+    assert_eq!(attempt_count.load(Ordering::Relaxed), 3);
+}

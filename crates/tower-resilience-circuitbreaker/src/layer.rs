@@ -14,9 +14,17 @@ pub struct CircuitBreakerLayer<Res, Err> {
 }
 
 /// Request-typed circuit breaker layer that integrates with [`tower::ServiceBuilder`].
+///
+/// This layer carries the request type parameter `Req` needed for Tower's `Layer` trait
+/// implementation, allowing it to work seamlessly with `ServiceBuilder`.
+///
+/// Use [`CircuitBreakerLayer::for_request`] to create this from a base layer.
 #[derive(Clone)]
 pub struct CircuitBreakerRequestLayer<Req, Res, Err> {
     config: Arc<CircuitBreakerConfig<Res, Err>>,
+    /// PhantomData with fn() -> Req ensures covariance over Req, which is safe since
+    /// we never actually store Req values - only use it in type signatures.
+    /// Using fn() -> Req instead of Req makes the type covariant.
     _phantom: PhantomData<fn() -> Req>,
 }
 
