@@ -288,6 +288,7 @@ mod tests {
 
     #[cfg(feature = "tracing")]
     #[test]
+    #[serial_test::serial]
     fn listener_panics_are_logged() {
         use std::io::{self, Write};
         use std::sync::{Arc, Mutex};
