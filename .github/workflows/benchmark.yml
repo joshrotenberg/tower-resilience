@@ -55,10 +55,14 @@ jobs:
       - name: Compare benchmarks
         if: github.event_name == 'pull_request'
         id: compare
+        continue-on-error: true
         run: |
-          echo "## Benchmark Results" > comment.md
+          .github/scripts/compare-benchmarks.sh pr-output.txt base-output.txt 20 > comment.md || true
+
           echo "" >> comment.md
-          echo "Comparing PR branch against \`${{ github.base_ref }}\`" >> comment.md
+          echo "" >> comment.md
+          echo "<details>" >> comment.md
+          echo "<summary>Raw benchmark output</summary>" >> comment.md
           echo "" >> comment.md
           echo "### PR Branch Results" >> comment.md
           echo "\`\`\`" >> comment.md
@@ -69,9 +73,7 @@ jobs:
           echo "\`\`\`" >> comment.md
           cat base-output.txt >> comment.md
           echo "\`\`\`" >> comment.md
-          echo "" >> comment.md
-          echo "---" >> comment.md
-          echo "*Note: Benchmark results on CI can be noisy due to virtualization. Significant changes (>20%) are worth investigating.*" >> comment.md
+          echo "</details>" >> comment.md
 
       - name: Comment PR
         if: github.event_name == 'pull_request'
