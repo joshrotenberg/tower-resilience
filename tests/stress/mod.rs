@@ -27,6 +27,9 @@ pub mod bulkhead;
 pub mod cache;
 pub mod circuitbreaker;
 pub mod composition;
+pub mod ratelimiter;
+pub mod retry;
+pub mod timelimiter;
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
