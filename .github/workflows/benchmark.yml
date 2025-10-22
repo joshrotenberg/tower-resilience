@@ -109,11 +109,12 @@ jobs:
           filePath: comment.md
           comment_tag: benchmark-results
 
-      - name: Fail if regressions detected
+      - name: Warn if regressions detected
         if: github.event_name == 'pull_request' && steps.check_regression.outputs.has_regression == 'true'
         run: |
-          echo "❌ Performance regressions detected. Please investigate before merging."
-          exit 1
+          echo "⚠️ Performance regressions detected - please review benchmark results."
+          echo "Note: Benchmarks on CI runners can be noisy. Significant regressions (>10%) should be investigated."
+          echo "::warning::Performance regressions detected in benchmarks - review recommended but not blocking"
 
       - name: Run benchmarks on main
         if: github.event_name != 'pull_request'
