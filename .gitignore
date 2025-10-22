@@ -6,3 +6,9 @@ Cargo.lock
 CLAUDE.md
 .claude/AGENTS.md
 AGENTS.md
+
+# macOS Finder duplicate files (matches "file 2.ext", "file 3.ext", etc.)
+* [0-9].*
+*[0-9].toml
+*[0-9].md
+*[0-9].rs
