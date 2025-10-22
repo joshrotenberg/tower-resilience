@@ -5,6 +5,8 @@ git_release_enable = true
 git_tag_enable = true
 # Validate semantic versioning
 semver_check = true
+# Allow uncommitted changes (e.g., CLAUDE.md which is in .gitignore)
+allow_dirty = true
 
 # Generate separate changelogs for each crate
 [[package]]
