@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.4.4...tower-resilience-circuitbreaker-v0.4.5) - 2025-10-22
+
+### Added
+
+- add circuit breaker Layer integration ([#127](https://github.com/joshrotenberg/tower-resilience/pull/127))
+
+### Other
+
+- add fallback pattern documentation for all resilience layers ([#136](https://github.com/joshrotenberg/tower-resilience/pull/136))
+
 ## [0.4.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.4.3...tower-resilience-circuitbreaker-v0.4.4) - 2025-10-13
 
 ### Added
