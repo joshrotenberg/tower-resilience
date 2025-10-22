@@ -51,6 +51,101 @@
 //!     .build();
 //! # }
 //! ```
+//!
+//! ## Fallback on Timeout
+//!
+//! Handle timeout errors with fallback strategies:
+//!
+//! ### Return Partial Results
+//!
+//! ```rust
+//! use tower_resilience_timelimiter::{TimeLimiterLayer, TimeLimiterError};
+//! use tower::{Layer, Service, ServiceExt, service_fn};
+//! use std::time::Duration;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let layer = TimeLimiterLayer::builder()
+//!     .timeout_duration(Duration::from_millis(100))
+//!     .build();
+//!
+//! let svc = service_fn(|req: String| async move {
+//!     tokio::time::sleep(Duration::from_secs(1)).await;
+//!     Ok::<String, std::io::Error>(format!("Full result: {}", req))
+//! });
+//!
+//! let mut service = layer.layer(svc);
+//!
+//! let result = service.ready().await?.call("data".to_string()).await
+//!     .unwrap_or_else(|_| "Partial result: using cached data".to_string());
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Return Cached Data
+//!
+//! ```rust
+//! use tower_resilience_timelimiter::{TimeLimiterLayer, TimeLimiterError};
+//! use tower::{Layer, Service, ServiceExt, service_fn};
+//! use std::time::Duration;
+//! use std::sync::Arc;
+//! use std::collections::HashMap;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let cache = Arc::new(std::sync::RwLock::new(HashMap::new()));
+//! cache.write().unwrap().insert("key", "cached value");
+//!
+//! let layer = TimeLimiterLayer::builder()
+//!     .timeout_duration(Duration::from_millis(100))
+//!     .build();
+//!
+//! let svc = service_fn(|req: String| async move {
+//!     tokio::time::sleep(Duration::from_secs(1)).await;
+//!     Ok::<String, std::io::Error>(req)
+//! });
+//!
+//! let mut service = layer.layer(svc);
+//! let cache_clone = Arc::clone(&cache);
+//!
+//! let result = service.ready().await?.call("key".to_string()).await
+//!     .unwrap_or_else(|_| {
+//!         cache_clone.read().unwrap()
+//!             .get("key")
+//!             .map(|s| s.to_string())
+//!             .unwrap_or_else(|| "Default value".to_string())
+//!     });
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Informative Timeout Message
+//!
+//! ```rust
+//! use tower_resilience_timelimiter::{TimeLimiterLayer, TimeLimiterError};
+//! use tower::{Layer, Service, ServiceExt, service_fn};
+//! use std::time::Duration;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let layer = TimeLimiterLayer::builder()
+//!     .timeout_duration(Duration::from_millis(100))
+//!     .on_timeout(|| {
+//!         eprintln!("Operation timed out - this may indicate service degradation");
+//!     })
+//!     .build();
+//!
+//! let svc = service_fn(|req: String| async move {
+//!     tokio::time::sleep(Duration::from_secs(1)).await;
+//!     Ok::<String, std::io::Error>(req)
+//! });
+//!
+//! let mut service = layer.layer(svc);
+//!
+//! match service.ready().await?.call("request".to_string()).await {
+//!     Ok(response) => println!("Success: {}", response),
+//!     Err(_) => println!("Request timed out - please try again or contact support"),
+//! }
+//! # Ok(())
+//! # }
+//! ```
 
 use futures::future::BoxFuture;
 use std::sync::Arc;

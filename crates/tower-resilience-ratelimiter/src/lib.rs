@@ -12,6 +12,8 @@
 //!
 //! # Examples
 //!
+//! ## Basic Rate Limiting
+//!
 //! ```
 //! use tower_resilience_ratelimiter::RateLimiterLayer;
 //! use tower::ServiceBuilder;
@@ -37,6 +39,106 @@
 //!     .service(tower::service_fn(|req: String| async move {
 //!         Ok::<_, std::io::Error>(format!("Response: {}", req))
 //!     }));
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Fallback When Rate Limited
+//!
+//! Handle rate limiting errors with appropriate fallback strategies:
+//!
+//! ### Return Informative Error
+//!
+//! ```
+//! use tower_resilience_ratelimiter::{RateLimiterLayer, RateLimiterError};
+//! use tower::{Service, ServiceBuilder, ServiceExt};
+//! use std::time::Duration;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let rate_limiter = RateLimiterLayer::builder()
+//!     .limit_for_period(10)
+//!     .refresh_period(Duration::from_secs(1))
+//!     .timeout_duration(Duration::from_millis(100))
+//!     .build();
+//!
+//! let mut service = ServiceBuilder::new()
+//!     .layer(rate_limiter)
+//!     .service(tower::service_fn(|req: String| async move {
+//!         Ok::<String, std::io::Error>(format!("Processed: {}", req))
+//!     }));
+//!
+//! match service.ready().await?.call("request".to_string()).await {
+//!     Ok(response) => println!("Success: {}", response),
+//!     Err(e) => {
+//!         println!("Rate limited - please try again later");
+//!         // Could return 429 Too Many Requests in HTTP context
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Queue for Later Processing
+//!
+//! ```
+//! use tower_resilience_ratelimiter::{RateLimiterLayer, RateLimiterError};
+//! use tower::{Service, ServiceBuilder, ServiceExt};
+//! use std::time::Duration;
+//! use std::sync::Arc;
+//! use tokio::sync::Mutex;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let queue = Arc::new(Mutex::new(Vec::new()));
+//! let rate_limiter = RateLimiterLayer::builder()
+//!     .limit_for_period(10)
+//!     .refresh_period(Duration::from_secs(1))
+//!     .timeout_duration(Duration::from_millis(50))
+//!     .build();
+//!
+//! let mut service = ServiceBuilder::new()
+//!     .layer(rate_limiter)
+//!     .service(tower::service_fn(|req: String| async move {
+//!         Ok::<String, std::io::Error>(req)
+//!     }));
+//!
+//! let queue_clone = Arc::clone(&queue);
+//! let result: Result<String, std::io::Error> = match service.ready().await?.call("request".to_string()).await {
+//!     Ok(response) => Ok(response),
+//!     Err(_) => {
+//!         // Queue request for later processing
+//!         queue_clone.lock().await.push("request".to_string());
+//!         Ok("Queued for processing".to_string())
+//!     }
+//! };
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Shed Load Gracefully
+//!
+//! ```
+//! use tower_resilience_ratelimiter::{RateLimiterLayer, RateLimiterError};
+//! use tower::{Service, ServiceBuilder, ServiceExt};
+//! use std::time::Duration;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let rate_limiter = RateLimiterLayer::builder()
+//!     .limit_for_period(100)
+//!     .refresh_period(Duration::from_secs(1))
+//!     .timeout_duration(Duration::from_millis(10)) // Short timeout = fast rejection
+//!     .build();
+//!
+//! let mut service = ServiceBuilder::new()
+//!     .layer(rate_limiter)
+//!     .service(tower::service_fn(|req: String| async move {
+//!         Ok::<String, std::io::Error>(req)
+//!     }));
+//!
+//! let result = service.ready().await?.call("request".to_string()).await
+//!     .unwrap_or_else(|_| {
+//!         // Shed load - return reduced functionality response
+//!         "Service at capacity - showing cached data".to_string()
+//!     });
 //! # Ok(())
 //! # }
 //! ```
