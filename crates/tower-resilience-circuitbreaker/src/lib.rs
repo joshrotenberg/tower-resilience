@@ -427,6 +427,79 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     }
 
     /// Sets a fallback function to be called when the circuit is open.
+    ///
+    /// When the circuit breaker is in the open state, instead of immediately failing requests,
+    /// it will call the provided fallback function to generate an alternative response. This
+    /// enables graceful degradation patterns.
+    ///
+    /// # Common Fallback Patterns
+    ///
+    /// **Static Fallback Response:**
+    /// ```rust
+    /// # use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    /// # use tower::service_fn;
+    /// # use futures::future::BoxFuture;
+    /// # async fn example() {
+    /// let layer = CircuitBreakerLayer::<String, String>::builder().build();
+    /// let svc = service_fn(|req: String| async move { Ok::<String, String>(req) });
+    ///
+    /// let mut service = layer.layer(svc).with_fallback(|_req: String| {
+    ///     Box::pin(async {
+    ///         Ok("Service temporarily unavailable".to_string())
+    ///     })
+    /// });
+    /// # }
+    /// ```
+    ///
+    /// **Cached Data Fallback:**
+    /// ```rust
+    /// # use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    /// # use tower::service_fn;
+    /// # use futures::future::BoxFuture;
+    /// # use std::sync::Arc;
+    /// # use std::collections::HashMap;
+    /// # async fn example() {
+    /// let cache: Arc<std::sync::RwLock<HashMap<String, String>>> =
+    ///     Arc::new(std::sync::RwLock::new(HashMap::new()));
+    /// cache.write().unwrap().insert("key".to_string(), "value".to_string());
+    /// let layer = CircuitBreakerLayer::<String, String>::builder().build();
+    /// let svc = service_fn(|req: String| async move { Ok::<String, String>(req) });
+    ///
+    /// let cache_clone = Arc::clone(&cache);
+    /// let mut service = layer.layer(svc).with_fallback(move |req: String| {
+    ///     let cache = Arc::clone(&cache_clone);
+    ///     Box::pin(async move {
+    ///         cache.read().unwrap().get(&req).cloned()
+    ///             .ok_or_else(|| "Not in cache".to_string())
+    ///     })
+    /// });
+    /// # }
+    /// ```
+    ///
+    /// **Degraded Functionality:**
+    /// ```rust
+    /// # use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    /// # use tower::service_fn;
+    /// # use futures::future::BoxFuture;
+    /// # async fn example() {
+    /// let layer = CircuitBreakerLayer::<String, String>::builder().build();
+    /// let svc = service_fn(|req: String| async move { Ok::<String, String>(req) });
+    ///
+    /// let mut service = layer.layer(svc).with_fallback(|req: String| {
+    ///     Box::pin(async move {
+    ///         // Provide limited functionality instead of full failure
+    ///         Ok(format!("Queued for processing: {}", req))
+    ///     })
+    /// });
+    /// # }
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// The fallback is only called when the circuit is **open**. When closed or half-open,
+    /// requests are forwarded to the inner service normally.
+    ///
+    /// See `examples/circuitbreaker_fallback.rs` for complete examples.
     pub fn with_fallback<F>(mut self, fallback: F) -> Self
     where
         F: Fn(Req) -> BoxFuture<'static, Result<Res, Err>> + Send + Sync + 'static,

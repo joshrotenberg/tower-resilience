@@ -77,12 +77,114 @@
 //!         println!("Call finished in {:?}", duration);
 //!     })
 //!     .build();
+//! # }
+//! ```
+//!
+//! # Fallback When Bulkhead is Full
+//!
+//! Handle bulkhead capacity errors with graceful degradation:
+//!
+//! ## Shed Load with Informative Error
+//!
+//! ```rust
+//! use tower::{ServiceBuilder, ServiceExt};
+//! use tower_resilience_bulkhead::BulkheadLayer;
+//! use tower_resilience_core::ResilienceError;
+//! use std::time::Duration;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let layer = BulkheadLayer::builder()
+//!     .max_concurrent_calls(5)
+//!     .max_wait_duration(Some(Duration::from_millis(100)))
+//!     .build();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
 //!     .service_fn(|req: String| async move {
-//!         Ok::<_, ()>(req)
+//!         Ok::<String, ResilienceError<String>>(format!("Processed: {}", req))
 //!     });
+//!
+//! // Use ResilienceError to handle bulkhead errors
+//! match service.oneshot("request".to_string()).await {
+//!     Ok(response) => println!("Success: {}", response),
+//!     Err(e) if e.is_bulkhead_full() => {
+//!         println!("System at capacity - please try again later");
+//!         // Could return 503 Service Unavailable in HTTP context
+//!     }
+//!     Err(e) if e.is_timeout() => {
+//!         println!("Request queued too long - system busy");
+//!     }
+//!     Err(e) => {
+//!         println!("Service error: {:?}", e);
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Queue for Later Processing
+//!
+//! ```rust
+//! use tower::{ServiceBuilder, ServiceExt};
+//! use tower_resilience_bulkhead::BulkheadLayer;
+//! use tower_resilience_core::ResilienceError;
+//! use std::time::Duration;
+//! use std::sync::Arc;
+//! use tokio::sync::Mutex;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let queue = Arc::new(Mutex::new(Vec::new()));
+//! let layer = BulkheadLayer::builder()
+//!     .max_concurrent_calls(10)
+//!     .max_wait_duration(Some(Duration::from_millis(50)))
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service_fn(|req: String| async move {
+//!         Ok::<String, ResilienceError<String>>(req)
+//!     });
+//!
+//! let queue_clone = Arc::clone(&queue);
+//! let result = match service.oneshot("request".to_string()).await {
+//!     Ok(response) => Ok(response),
+//!     Err(e) if e.is_bulkhead_full() || e.is_timeout() => {
+//!         // Queue for background processing
+//!         queue_clone.lock().await.push("request".to_string());
+//!         Ok("Queued for processing".to_string())
+//!     }
+//!     Err(e) => Err(e),
+//! };
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Return Degraded Response
+//!
+//! ```rust
+//! use tower::{ServiceBuilder, ServiceExt};
+//! use tower_resilience_bulkhead::BulkheadLayer;
+//! use tower_resilience_core::ResilienceError;
+//! use std::time::Duration;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let layer = BulkheadLayer::builder()
+//!     .max_concurrent_calls(5)
+//!     .max_wait_duration(Some(Duration::from_millis(10)))
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service_fn(|req: String| async move {
+//!         Ok::<String, ResilienceError<String>>(format!("Full response: {}", req))
+//!     });
+//!
+//! let result = service.oneshot("data".to_string()).await
+//!     .unwrap_or_else(|_| {
+//!         // Provide degraded functionality instead of full failure
+//!         "Degraded mode: limited data available".to_string()
+//!     });
+//! # Ok(())
 //! # }
 //! ```
 //!

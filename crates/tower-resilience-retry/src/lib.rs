@@ -16,6 +16,8 @@
 //!
 //! # Examples
 //!
+//! ## Basic Retry with Exponential Backoff
+//!
 //! ```
 //! use tower_resilience_retry::RetryLayer;
 //! use tower::ServiceBuilder;
@@ -39,6 +41,86 @@
 //!     .service(tower::service_fn(|req: String| async move {
 //!         Ok::<_, MyError>(format!("Response: {}", req))
 //!     }));
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Fallback After Retry Exhaustion
+//!
+//! When retries are exhausted, you can provide a fallback response using standard error handling:
+//!
+//! ```
+//! use tower_resilience_retry::RetryLayer;
+//! use tower::{Service, ServiceBuilder, ServiceExt};
+//! use std::time::Duration;
+//!
+//! # #[derive(Debug, Clone)]
+//! # struct MyError;
+//! # impl std::fmt::Display for MyError {
+//! #     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//! #         write!(f, "MyError")
+//! #     }
+//! # }
+//! # impl std::error::Error for MyError {}
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let retry_layer = RetryLayer::<MyError>::builder()
+//!     .max_attempts(3)
+//!     .exponential_backoff(Duration::from_millis(100))
+//!     .build();
+//!
+//! let mut service = ServiceBuilder::new()
+//!     .layer(retry_layer)
+//!     .service(tower::service_fn(|req: String| async move {
+//!         Err::<String, MyError>(MyError) // Always fails
+//!     }));
+//!
+//! // Handle retry exhaustion with fallback
+//! let result = service.ready().await?.call("request".to_string()).await
+//!     .unwrap_or_else(|_| "Fallback: Service unavailable".to_string());
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Fallback with Cached Data
+//!
+//! ```
+//! use tower_resilience_retry::RetryLayer;
+//! use tower::{Service, ServiceBuilder, ServiceExt};
+//! use std::time::Duration;
+//! use std::sync::Arc;
+//! use std::collections::HashMap;
+//!
+//! # #[derive(Debug, Clone)]
+//! # struct MyError;
+//! # impl std::fmt::Display for MyError {
+//! #     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//! #         write!(f, "MyError")
+//! #     }
+//! # }
+//! # impl std::error::Error for MyError {}
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let cache = Arc::new(std::sync::RwLock::new(HashMap::new()));
+//! cache.write().unwrap().insert("key", "cached value");
+//!
+//! let retry_layer = RetryLayer::<MyError>::builder()
+//!     .max_attempts(3)
+//!     .exponential_backoff(Duration::from_millis(50))
+//!     .build();
+//!
+//! let mut service = ServiceBuilder::new()
+//!     .layer(retry_layer)
+//!     .service(tower::service_fn(|req: String| async move {
+//!         Err::<String, MyError>(MyError)
+//!     }));
+//!
+//! let cache_clone = Arc::clone(&cache);
+//! let result = service.ready().await?.call("key".to_string()).await
+//!     .unwrap_or_else(|_| {
+//!         cache_clone.read().unwrap()
+//!             .get("key")
+//!             .map(|s| s.to_string())
+//!             .unwrap_or_else(|| "Default value".to_string())
+//!     });
 //! # Ok(())
 //! # }
 //! ```
