@@ -3,7 +3,6 @@
 *.pdb
 Cargo.lock
 .DS_Store
-CLAUDE.md
 .claude/AGENTS.md
 AGENTS.md
 
