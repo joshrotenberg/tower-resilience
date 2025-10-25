@@ -19,6 +19,7 @@
 //! - **[Retry]** - Intelligent retry with exponential backoff and jitter
 //! - **[Rate Limiter]** - Controls request rate to protect services
 //! - **[Cache]** - Response memoization to reduce load
+//! - **[Reconnect]** - Automatic reconnection with configurable backoff strategies
 //!
 //! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
@@ -26,6 +27,7 @@
 //! [Retry]: https://docs.rs/tower-resilience-retry
 //! [Rate Limiter]: https://docs.rs/tower-resilience-ratelimiter
 //! [Cache]: https://docs.rs/tower-resilience-cache
+//! [Reconnect]: https://docs.rs/tower-resilience-reconnect
 //!
 //! # Documentation Guides
 //!
