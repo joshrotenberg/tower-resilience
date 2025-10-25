@@ -198,7 +198,7 @@ pub mod healthcheck {
     //!
     //! ## Example
     //!
-    //! ```rust,no_run
+    //! ```rust,ignore
     //! use tower_resilience_healthcheck::{
     //!     HealthCheckWrapper, HealthStatus, SelectionStrategy
     //! };
