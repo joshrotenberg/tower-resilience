@@ -12,3 +12,4 @@ AGENTS.md
 *[0-9].toml
 *[0-9].md
 *[0-9].rs
+tmp/
