@@ -80,10 +80,23 @@ pub mod reconnect {
     //! # Reconnect
     //!
     //! Automatically reconnects to services with configurable backoff strategies when
-    //! connection failures occur.
+    //! connection failures occur. Designed for **persistent connections** where the connection
+    //! state matters (databases, Redis, message queues, WebSockets).
+    //!
+    //! ## Reconnect vs Retry
+    //!
+    //! **Key distinction**: Reconnect manages **connection lifecycle**, Retry manages **operation resilience**.
+    //!
+    //! - **Reconnect**: Use for persistent connections that can break (Redis, databases, gRPC streams)
+    //! - **Retry**: Use for transient request failures on working connections (timeouts, rate limits)
+    //!
+    //! For persistent connection services, you often want BOTH:
+    //! - Reconnect layer handles connection-level errors (BrokenPipe, ConnectionReset)
+    //! - Retry layer handles application-level errors (RateLimited, Busy, Timeout)
     //!
     //! ## When to Use
     //!
+    //! - **Persistent connections**: Redis, databases, message queues, WebSockets
     //! - **Unstable connections**: Network issues, transient failures
     //! - **Service restarts**: Backend services that periodically restart
     //! - **Connection pooling**: Reconnect stale or broken connections
