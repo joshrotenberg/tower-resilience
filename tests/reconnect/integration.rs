@@ -183,3 +183,90 @@ async fn successful_on_first_attempt() {
         "Should succeed on first attempt"
     );
 }
+
+#[tokio::test]
+async fn reconnect_predicate_filters_errors() {
+    let inner = FailingService::new(5); // Will fail with ConnectionRefused
+
+    let config = ReconnectConfig::builder()
+        .policy(ReconnectPolicy::fixed(Duration::from_millis(1)))
+        .max_attempts(10)
+        .reconnect_predicate(move |error: &dyn std::error::Error| {
+            // Only reconnect on errors containing "broken pipe"
+            let error_str = error.to_string();
+            error_str.contains("broken pipe")
+        })
+        .build();
+
+    let layer = ReconnectLayer::new(config);
+    let mut service = layer.layer(inner);
+
+    let result = service.call("test".to_string()).await;
+
+    // Should fail immediately because error is ConnectionRefused, not BrokenPipe
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn reconnect_predicate_allows_matching_errors() {
+    use std::io::{Error, ErrorKind};
+
+    // Custom service that returns BrokenPipe
+    #[derive(Clone)]
+    struct BrokenPipeService {
+        fail_count: Arc<AtomicUsize>,
+        max_fails: usize,
+    }
+
+    impl Service<String> for BrokenPipeService {
+        type Response = String;
+        type Error = std::io::Error;
+        type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+
+        fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+
+        fn call(&mut self, req: String) -> Self::Future {
+            let count = self.fail_count.fetch_add(1, Ordering::SeqCst);
+            let max_fails = self.max_fails;
+
+            Box::pin(async move {
+                if count < max_fails {
+                    Err(Error::new(ErrorKind::BrokenPipe, "connection broken"))
+                } else {
+                    Ok(format!("Response: {}", req))
+                }
+            })
+        }
+    }
+
+    let inner = BrokenPipeService {
+        fail_count: Arc::new(AtomicUsize::new(0)),
+        max_fails: 2,
+    };
+    let attempts_tracker = inner.fail_count.clone();
+
+    let config = ReconnectConfig::builder()
+        .policy(ReconnectPolicy::fixed(Duration::from_millis(10)))
+        .max_attempts(5)
+        .reconnect_predicate(move |error: &dyn std::error::Error| {
+            // Use error message matching instead of downcast
+            let error_str = error.to_string();
+            error_str.contains("connection broken") || error_str.contains("broken pipe")
+        })
+        .build();
+
+    let layer = ReconnectLayer::new(config);
+    let mut service = layer.layer(inner);
+
+    let result = service.call("test".to_string()).await;
+
+    // Should succeed after 2 reconnect attempts
+    assert!(result.is_ok());
+    assert_eq!(
+        attempts_tracker.load(Ordering::SeqCst),
+        3,
+        "Should take 3 attempts (2 failures + 1 success)"
+    );
+}

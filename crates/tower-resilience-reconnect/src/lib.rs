@@ -111,7 +111,7 @@ mod policy;
 mod service;
 mod state;
 
-pub use config::{ReconnectConfig, ReconnectConfigBuilder};
+pub use config::{ReconnectConfig, ReconnectConfigBuilder, ReconnectPredicate};
 pub use layer::ReconnectLayer;
 pub use policy::ReconnectPolicy;
 pub use service::ReconnectService;

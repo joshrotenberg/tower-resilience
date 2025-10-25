@@ -117,6 +117,13 @@ where
                             return Poll::Ready(Ok(response));
                         }
                         Poll::Ready(Err(error)) => {
+                            // Check if this error should trigger reconnection
+                            if !this.config.should_reconnect(&error) {
+                                // Not a reconnectable error, fail immediately
+                                this.phase.set(Phase::Failed);
+                                return Poll::Ready(Err(ReconnectError::ServiceError(error)));
+                            }
+
                             this.state.mark_disconnected();
                             *this.attempt += 1;
 

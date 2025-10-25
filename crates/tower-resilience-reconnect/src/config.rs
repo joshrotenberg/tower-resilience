@@ -1,7 +1,11 @@
 use crate::policy::ReconnectPolicy;
-
-#[cfg(feature = "tracing")]
 use std::sync::Arc;
+
+/// Determines whether an error should trigger reconnection.
+///
+/// By default, all errors trigger reconnection. Use this predicate to distinguish
+/// connection-level errors (BrokenPipe, ConnectionReset) from application-level errors.
+pub type ReconnectPredicate = Arc<dyn Fn(&dyn std::error::Error) -> bool + Send + Sync>;
 
 /// Configuration for reconnection behavior.
 pub struct ReconnectConfig {
@@ -15,6 +19,10 @@ pub struct ReconnectConfig {
     /// Whether to retry the original command after successful reconnection.
     pub(crate) retry_on_reconnect: bool,
 
+    /// Predicate to determine which errors should trigger reconnection.
+    /// None means all errors trigger reconnection (default).
+    pub(crate) reconnect_predicate: Option<ReconnectPredicate>,
+
     /// Optional callback for reconnection events.
     #[cfg(feature = "tracing")]
     pub(crate) on_reconnect: Option<Arc<dyn Fn(u32) + Send + Sync>>,
@@ -26,6 +34,7 @@ impl Clone for ReconnectConfig {
             policy: self.policy.clone(),
             max_attempts: self.max_attempts,
             retry_on_reconnect: self.retry_on_reconnect,
+            reconnect_predicate: self.reconnect_predicate.clone(),
             #[cfg(feature = "tracing")]
             on_reconnect: self.on_reconnect.clone(),
         }
@@ -38,7 +47,8 @@ impl std::fmt::Debug for ReconnectConfig {
         debug_struct
             .field("policy", &self.policy)
             .field("max_attempts", &self.max_attempts)
-            .field("retry_on_reconnect", &self.retry_on_reconnect);
+            .field("retry_on_reconnect", &self.retry_on_reconnect)
+            .field("reconnect_predicate", &self.reconnect_predicate.is_some());
 
         #[cfg(feature = "tracing")]
         debug_struct.field("on_reconnect", &self.on_reconnect.is_some());
@@ -67,6 +77,18 @@ impl ReconnectConfig {
     pub fn retry_on_reconnect(&self) -> bool {
         self.retry_on_reconnect
     }
+
+    /// Checks if the given error should trigger reconnection.
+    ///
+    /// Returns `true` if the error should trigger reconnection, `false` otherwise.
+    /// If no predicate is configured, all errors trigger reconnection.
+    pub fn should_reconnect(&self, error: &dyn std::error::Error) -> bool {
+        if let Some(predicate) = &self.reconnect_predicate {
+            predicate(error)
+        } else {
+            true // Reconnect on all errors by default
+        }
+    }
 }
 
 impl Default for ReconnectConfig {
@@ -75,6 +97,7 @@ impl Default for ReconnectConfig {
             policy: ReconnectPolicy::default(),
             max_attempts: None,
             retry_on_reconnect: true,
+            reconnect_predicate: None,
             #[cfg(feature = "tracing")]
             on_reconnect: None,
         }
@@ -86,6 +109,7 @@ pub struct ReconnectConfigBuilder {
     policy: ReconnectPolicy,
     max_attempts: Option<u32>,
     retry_on_reconnect: bool,
+    reconnect_predicate: Option<ReconnectPredicate>,
     #[cfg(feature = "tracing")]
     on_reconnect: Option<Arc<dyn Fn(u32) + Send + Sync>>,
 }
@@ -96,7 +120,8 @@ impl std::fmt::Debug for ReconnectConfigBuilder {
         debug_struct
             .field("policy", &self.policy)
             .field("max_attempts", &self.max_attempts)
-            .field("retry_on_reconnect", &self.retry_on_reconnect);
+            .field("retry_on_reconnect", &self.retry_on_reconnect)
+            .field("reconnect_predicate", &self.reconnect_predicate.is_some());
 
         #[cfg(feature = "tracing")]
         debug_struct.field("on_reconnect", &self.on_reconnect.is_some());
@@ -181,6 +206,41 @@ impl ReconnectConfigBuilder {
         self
     }
 
+    /// Sets a predicate to determine which errors should trigger reconnection.
+    ///
+    /// By default, all errors trigger reconnection. Use this to distinguish
+    /// connection-level errors (BrokenPipe, ConnectionReset) from application-level
+    /// errors (RateLimited, Timeout) that should be handled by a retry layer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_reconnect::ReconnectConfig;
+    /// use std::io::{Error, ErrorKind};
+    ///
+    /// let config = ReconnectConfig::builder()
+    ///     .reconnect_predicate(|error| {
+    ///         // Only reconnect on connection-level errors
+    ///         if let Some(io_err) = error.downcast_ref::<Error>() {
+    ///             matches!(io_err.kind(),
+    ///                 ErrorKind::BrokenPipe |
+    ///                 ErrorKind::ConnectionReset |
+    ///                 ErrorKind::ConnectionAborted
+    ///             )
+    ///         } else {
+    ///             false
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
+    pub fn reconnect_predicate<F>(mut self, predicate: F) -> Self
+    where
+        F: Fn(&dyn std::error::Error) -> bool + Send + Sync + 'static,
+    {
+        self.reconnect_predicate = Some(Arc::new(predicate));
+        self
+    }
+
     /// Sets a callback to be invoked on each reconnection attempt.
     ///
     /// The callback receives the current attempt number.
@@ -211,6 +271,7 @@ impl ReconnectConfigBuilder {
             policy: self.policy,
             max_attempts: self.max_attempts,
             retry_on_reconnect: self.retry_on_reconnect,
+            reconnect_predicate: self.reconnect_predicate,
             #[cfg(feature = "tracing")]
             on_reconnect: self.on_reconnect,
         }
@@ -223,6 +284,7 @@ impl Default for ReconnectConfigBuilder {
             policy: ReconnectPolicy::default(),
             max_attempts: None,
             retry_on_reconnect: true,
+            reconnect_predicate: None,
             #[cfg(feature = "tracing")]
             on_reconnect: None,
         }
@@ -279,5 +341,49 @@ mod tests {
             ReconnectPolicy::Exponential(_) => {}
             _ => panic!("Expected exponential policy"),
         }
+    }
+
+    #[test]
+    fn test_should_reconnect_default() {
+        use std::io::{Error, ErrorKind};
+
+        let config = ReconnectConfig::default();
+
+        // Without a predicate, all errors should trigger reconnection
+        let error = Error::new(ErrorKind::BrokenPipe, "test");
+        assert!(config.should_reconnect(&error));
+
+        let error = Error::new(ErrorKind::Other, "test");
+        assert!(config.should_reconnect(&error));
+    }
+
+    #[test]
+    fn test_reconnect_predicate() {
+        use std::io::{Error, ErrorKind};
+
+        let config = ReconnectConfig::builder()
+            .reconnect_predicate(|error| {
+                if let Some(io_err) = error.downcast_ref::<Error>() {
+                    matches!(
+                        io_err.kind(),
+                        ErrorKind::BrokenPipe
+                            | ErrorKind::ConnectionReset
+                            | ErrorKind::ConnectionAborted
+                    )
+                } else {
+                    false
+                }
+            })
+            .build();
+
+        // Connection errors should trigger reconnection
+        assert!(config.should_reconnect(&Error::new(ErrorKind::BrokenPipe, "test")));
+        assert!(config.should_reconnect(&Error::new(ErrorKind::ConnectionReset, "test")));
+        assert!(config.should_reconnect(&Error::new(ErrorKind::ConnectionAborted, "test")));
+
+        // Other errors should NOT trigger reconnection
+        assert!(!config.should_reconnect(&Error::new(ErrorKind::Other, "test")));
+        assert!(!config.should_reconnect(&Error::new(ErrorKind::TimedOut, "test")));
+        assert!(!config.should_reconnect(&Error::new(ErrorKind::PermissionDenied, "test")));
     }
 }
