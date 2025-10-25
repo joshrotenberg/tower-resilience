@@ -1,4 +1,6 @@
 use crate::policy::ReconnectPolicy;
+
+#[cfg(feature = "tracing")]
 use std::sync::Arc;
 
 /// Configuration for reconnection behavior.
