@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.7](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.6...tower-resilience-v0.3.7) - 2025-10-25
+
+### Added
+
+- add tower-resilience-healthcheck module ([#145](https://github.com/joshrotenberg/tower-resilience/pull/145))
+
+### Other
+
+- add reconnect pattern to README and create top-level example ([#142](https://github.com/joshrotenberg/tower-resilience/pull/142))
+
 ## [0.3.6](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.5...tower-resilience-v0.3.6) - 2025-10-25
 
 ### Added

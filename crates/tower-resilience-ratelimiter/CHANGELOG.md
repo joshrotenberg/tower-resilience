@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-ratelimiter-v0.4.5...tower-resilience-ratelimiter-v0.4.6) - 2025-10-25
+
+### Added
+
+- add tower-resilience-healthcheck module ([#145](https://github.com/joshrotenberg/tower-resilience/pull/145))
+
+### Other
+
+- add reconnect pattern to README and create top-level example ([#142](https://github.com/joshrotenberg/tower-resilience/pull/142))
+
 ## [0.4.5](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-ratelimiter-v0.4.4...tower-resilience-ratelimiter-v0.4.5) - 2025-10-22
 
 ### Added
