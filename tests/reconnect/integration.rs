@@ -21,10 +21,6 @@ impl FailingService {
             max_fails,
         }
     }
-
-    fn attempts(&self) -> usize {
-        self.fail_count.load(Ordering::SeqCst)
-    }
 }
 
 impl Service<String> for FailingService {
