@@ -75,6 +75,98 @@ pub mod circuit_breaker {
     //! ```
 }
 
+/// Reconnect pattern guide
+pub mod reconnect {
+    //! # Reconnect
+    //!
+    //! Automatically reconnects to services with configurable backoff strategies when
+    //! connection failures occur. Designed for **persistent connections** where the connection
+    //! state matters (databases, Redis, message queues, WebSockets).
+    //!
+    //! ## Reconnect vs Retry
+    //!
+    //! **Key distinction**: Reconnect manages **connection lifecycle**, Retry manages **operation resilience**.
+    //!
+    //! - **Reconnect**: Use for persistent connections that can break (Redis, databases, gRPC streams)
+    //! - **Retry**: Use for transient request failures on working connections (timeouts, rate limits)
+    //!
+    //! For persistent connection services, you often want BOTH:
+    //! - Reconnect layer handles connection-level errors (BrokenPipe, ConnectionReset)
+    //! - Retry layer handles application-level errors (RateLimited, Busy, Timeout)
+    //!
+    //! ## When to Use
+    //!
+    //! - **Persistent connections**: Redis, databases, message queues, WebSockets
+    //! - **Unstable connections**: Network issues, transient failures
+    //! - **Service restarts**: Backend services that periodically restart
+    //! - **Connection pooling**: Reconnect stale or broken connections
+    //! - **Distributed systems**: Handle network partitions gracefully
+    //!
+    //! ## Trade-offs
+    //!
+    //! - **Latency impact**: Reconnection attempts add delay to requests
+    //! - **Resource usage**: Failed connections consume resources during backoff
+    //! - **Complexity**: Adds state management for connection tracking
+    //! - **Thundering herd**: Multiple clients reconnecting simultaneously
+    //!
+    //! ## Real-World Scenarios
+    //!
+    //! ```text
+    //! Database Connection Pool
+    //! ├─ Connection closed by server after idle timeout
+    //! ├─ Reconnect with exponential backoff (100ms -> 5s)
+    //! ├─ Retry original query after successful reconnection
+    //! └─ Application remains resilient to connection drops
+    //!
+    //! Message Queue Consumer
+    //! ├─ Broker temporarily unavailable during deployment
+    //! ├─ Reconnect with fixed 1s intervals, unlimited attempts
+    //! ├─ Resume consuming messages when broker returns
+    //! └─ No message loss or manual intervention
+    //! ```
+    //!
+    //! ## Anti-Patterns
+    //!
+    //! ❌ **Immediate retry**: Overwhelming failing service
+    //! ✅ Use exponential backoff to give service time to recover
+    //!
+    //! ❌ **Unlimited attempts without monitoring**: Silent failures pile up
+    //! ✅ Set max attempts for user-facing operations, monitor reconnection rates
+    //!
+    //! ❌ **No connection state tracking**: Can't determine system health
+    //! ✅ Expose connection state for health checks and observability
+    //!
+    //! ❌ **Reconnecting on non-retryable errors**: Permanent failures waste resources
+    //! ✅ Distinguish transient (network) from permanent (auth) errors
+    //!
+    //! ## Example
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "reconnect")]
+    //! # {
+    //! use tower_resilience_reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
+    //! use tower::Layer;
+    //! use std::time::Duration;
+    //!
+    //! # async fn example() {
+    //! # let database_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+    //! let reconnect = ReconnectLayer::new(
+    //!     ReconnectConfig::builder()
+    //!         .policy(ReconnectPolicy::exponential(
+    //!             Duration::from_millis(100),  // Start at 100ms
+    //!             Duration::from_secs(5),      // Max 5 seconds
+    //!         ))
+    //!         .max_attempts(10)
+    //!         .retry_on_reconnect(true)  // Retry original request
+    //!         .build()
+    //! );
+    //!
+    //! let service = reconnect.layer(database_service);
+    //! # }
+    //! # }
+    //! ```
+}
+
 /// Bulkhead pattern guide
 pub mod bulkhead {
     //! # Bulkhead

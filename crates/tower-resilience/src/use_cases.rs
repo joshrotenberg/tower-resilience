@@ -8,12 +8,14 @@ pub mod database {
     //!
     //! ```text
     //! Read Replicas
+    //! ├─ Reconnect for dropped connections
     //! ├─ Circuit breaker per replica
     //! ├─ Retry on connection errors
     //! ├─ Timeout for slow queries
     //! └─ Cache for hot queries
     //!
     //! Write Path
+    //! ├─ Reconnect with exponential backoff
     //! ├─ Retry on deadlocks (exponential backoff)
     //! ├─ Circuit breaker for replica lag
     //! ├─ Bulkhead for write capacity
@@ -27,12 +29,14 @@ pub mod message_queue {
     //!
     //! ```text
     //! Consumer
+    //! ├─ Reconnect to broker on disconnect
     //! ├─ Bulkhead per queue/priority
     //! ├─ Retry with exponential backoff
     //! ├─ Circuit breaker for downstream
     //! └─ Timeout for message processing
     //!
     //! Publisher
+    //! ├─ Reconnect with unlimited attempts
     //! ├─ Retry on publish failures
     //! ├─ Circuit breaker for broker health
     //! ├─ Rate limit for broker protection

@@ -21,6 +21,7 @@ Inspired by [Resilience4j](https://resilience4j.readme.io/), a fault tolerance l
 - **Retry** - Intelligent retry with exponential backoff and jitter
 - **Rate Limiter** - Controls request rate to protect services
 - **Cache** - Response memoization to reduce load
+- **Reconnect** - Automatic reconnection with configurable backoff strategies
 - **Chaos** - Inject failures and latency for testing resilience (development/testing only)
 
 ## Features
@@ -197,6 +198,34 @@ let service = layer.layer(my_service);
 ```
 
 **Full examples:** [cache.rs](examples/cache.rs) | [cache_example.rs](crates/tower-resilience-cache/examples/cache_example.rs)
+
+### Reconnect
+
+Automatically reconnect on connection failures with configurable backoff:
+
+```rust
+use tower_resilience_reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
+use std::time::Duration;
+
+let layer = ReconnectLayer::new(
+    ReconnectConfig::builder()
+        .policy(ReconnectPolicy::exponential(
+            Duration::from_millis(100),  // Start at 100ms
+            Duration::from_secs(5),       // Max 5 seconds
+        ))
+        .max_attempts(10)
+        .retry_on_reconnect(true)         // Retry request after reconnecting
+        .connection_errors_only()          // Only reconnect on connection errors
+        .on_state_change(|from, to| {
+            println!("Connection: {:?} -> {:?}", from, to);
+        })
+        .build()
+);
+
+let service = layer.layer(my_service);
+```
+
+**Full examples:** [reconnect.rs](examples/reconnect.rs) | [basic.rs](crates/tower-resilience-reconnect/examples/basic.rs) | [custom_policy.rs](crates/tower-resilience-reconnect/examples/custom_policy.rs)
 
 ### Chaos (Testing Only)
 
