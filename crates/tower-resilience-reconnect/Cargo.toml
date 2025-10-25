@@ -1,0 +1,34 @@
+[package]
+name = "tower-resilience-reconnect"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+description = "Automatic reconnection middleware for Tower services with configurable backoff strategies"
+categories = ["asynchronous", "network-programming"]
+keywords = ["tower", "reconnect", "resilience", "middleware", "connection"]
+
+[dependencies]
+tower-resilience-core = { workspace = true }
+tower-resilience-retry = { version = "0.4.5", path = "../tower-resilience-retry" }
+tower = { workspace = true, features = ["make"] }
+futures = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+pin-project = "1.1"
+
+# Optional dependencies
+metrics = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+tokio-test = "0.4"
+
+[features]
+default = []
+metrics = ["dep:metrics", "tower-resilience-core/metrics"]
+tracing = ["dep:tracing", "tower-resilience-core/tracing"]
