@@ -79,7 +79,7 @@ impl ReconnectPolicy {
     }
 
     /// Get the delay for a given attempt number
-    pub(crate) fn delay_for_attempt(&self, attempt: usize) -> Option<Duration> {
+    pub fn delay_for_attempt(&self, attempt: usize) -> Option<Duration> {
         match self {
             ReconnectPolicy::None => None,
             ReconnectPolicy::Fixed(interval) => Some(interval.next_interval(attempt)),
