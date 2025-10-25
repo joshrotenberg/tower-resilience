@@ -99,7 +99,8 @@ impl SelectionStrategy {
                     None
                 } else {
                     use rand::Rng;
-                    Some(usable[rand::rng().random_range(0..usable.len())])
+                    let idx = rand::rng().random_range(0..usable.len());
+                    Some(usable[idx])
                 }
             }
 

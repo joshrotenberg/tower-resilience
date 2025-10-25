@@ -75,7 +75,15 @@ where
     /// Start background health checking.
     ///
     /// Spawns a background task that periodically checks the health of all resources.
+    /// If a background task is already running, it will be aborted before starting a new one.
     pub async fn start(&self) {
+        let mut task_lock = self.health_check_task.write().await;
+
+        // Abort existing task if present to prevent task leak
+        if let Some(existing) = task_lock.take() {
+            existing.abort();
+        }
+
         let contexts = Arc::clone(&self.contexts);
         let checker = Arc::clone(&self.checker);
         let config = self.config.clone();
@@ -102,6 +110,10 @@ where
 
                     #[cfg(feature = "tracing")]
                     let on_health_change = config.on_health_change.clone();
+                    #[cfg(feature = "tracing")]
+                    let on_check_failed = config.on_check_failed.clone();
+                    #[cfg(feature = "tracing")]
+                    let ctx_name = ctx.name.clone();
 
                     let handle = tokio::spawn(async move {
                         // Perform health check with timeout
@@ -111,7 +123,14 @@ where
 
                         let status = match check_result {
                             Ok(status) => status,
-                            Err(_) => HealthStatus::Unhealthy, // Timeout = unhealthy
+                            Err(timeout_err) => {
+                                // Timeout = unhealthy, invoke callback if registered
+                                #[cfg(feature = "tracing")]
+                                if let Some(ref callback) = on_check_failed {
+                                    callback(&ctx_name, &timeout_err);
+                                }
+                                HealthStatus::Unhealthy
+                            }
                         };
 
                         // Update timestamp
@@ -172,7 +191,6 @@ where
             }
         });
 
-        let mut task_lock = self.health_check_task.write().await;
         *task_lock = Some(task);
     }
 

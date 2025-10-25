@@ -42,7 +42,6 @@ pub struct HealthCheckConfig {
     pub(crate) on_health_change: Option<HealthChangeCallback>,
 
     #[cfg(feature = "tracing")]
-    #[allow(dead_code)]
     pub(crate) on_check_failed: Option<CheckFailedCallback>,
 }
 
