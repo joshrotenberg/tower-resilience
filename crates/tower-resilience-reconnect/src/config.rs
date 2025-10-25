@@ -26,6 +26,12 @@ pub struct ReconnectConfig {
     /// Optional callback for reconnection events.
     #[cfg(feature = "tracing")]
     pub(crate) on_reconnect: Option<Arc<dyn Fn(u32) + Send + Sync>>,
+
+    /// Optional callback for state transitions.
+    #[cfg(feature = "tracing")]
+    pub(crate) on_state_change: Option<
+        Arc<dyn Fn(crate::state::ConnectionState, crate::state::ConnectionState) + Send + Sync>,
+    >,
 }
 
 impl Clone for ReconnectConfig {
@@ -37,6 +43,8 @@ impl Clone for ReconnectConfig {
             reconnect_predicate: self.reconnect_predicate.clone(),
             #[cfg(feature = "tracing")]
             on_reconnect: self.on_reconnect.clone(),
+            #[cfg(feature = "tracing")]
+            on_state_change: self.on_state_change.clone(),
         }
     }
 }
@@ -52,6 +60,12 @@ impl std::fmt::Debug for ReconnectConfig {
 
         #[cfg(feature = "tracing")]
         debug_struct.field("on_reconnect", &self.on_reconnect.is_some());
+
+        #[cfg(feature = "tracing")]
+        debug_struct.field("on_state_change", &self.on_state_change.is_some());
+
+        #[cfg(feature = "tracing")]
+        debug_struct.field("on_state_change", &self.on_state_change.is_some());
 
         debug_struct.finish()
     }
@@ -100,6 +114,8 @@ impl Default for ReconnectConfig {
             reconnect_predicate: None,
             #[cfg(feature = "tracing")]
             on_reconnect: None,
+            #[cfg(feature = "tracing")]
+            on_state_change: None,
         }
     }
 }
@@ -112,6 +128,10 @@ pub struct ReconnectConfigBuilder {
     reconnect_predicate: Option<ReconnectPredicate>,
     #[cfg(feature = "tracing")]
     on_reconnect: Option<Arc<dyn Fn(u32) + Send + Sync>>,
+    #[cfg(feature = "tracing")]
+    on_state_change: Option<
+        Arc<dyn Fn(crate::state::ConnectionState, crate::state::ConnectionState) + Send + Sync>,
+    >,
 }
 
 impl std::fmt::Debug for ReconnectConfigBuilder {
@@ -125,6 +145,12 @@ impl std::fmt::Debug for ReconnectConfigBuilder {
 
         #[cfg(feature = "tracing")]
         debug_struct.field("on_reconnect", &self.on_reconnect.is_some());
+
+        #[cfg(feature = "tracing")]
+        debug_struct.field("on_state_change", &self.on_state_change.is_some());
+
+        #[cfg(feature = "tracing")]
+        debug_struct.field("on_state_change", &self.on_state_change.is_some());
 
         debug_struct.finish()
     }
@@ -260,6 +286,62 @@ impl ReconnectConfigBuilder {
         self
     }
 
+    /// Sets a callback to be invoked on state transitions.
+    ///
+    /// The callback receives the old and new connection states.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_reconnect::{ReconnectConfig, ConnectionState};
+    ///
+    /// let config = ReconnectConfig::builder()
+    ///     .on_state_change(|from, to| {
+    ///         println!("State changed: {:?} -> {:?}", from, to);
+    ///     })
+    ///     .build();
+    /// ```
+    #[cfg(feature = "tracing")]
+    pub fn on_state_change<F>(mut self, callback: F) -> Self
+    where
+        F: Fn(crate::state::ConnectionState, crate::state::ConnectionState) + Send + Sync + 'static,
+    {
+        self.on_state_change = Some(Arc::new(callback));
+        self
+    }
+
+    /// Creates a predicate that only triggers reconnection) on common connection-level errors.
+    ///
+    /// This is a convenience helper that recognizes standard connection errors like:
+    /// - BrokenPipe
+    /// - ConnectionReset
+    /// - ConnectionAborted
+    /// - NotConnected
+    ///
+    /// For other error types, it falls back to string matching on error messages.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_reconnect::ReconnectConfig;
+    ///
+    /// let config = ReconnectConfig::builder()
+    ///     .connection_errors_only()
+    ///     .build();
+    /// ```
+    pub fn connection_errors_only(mut self) -> Self {
+        self.reconnect_predicate = Some(Arc::new(|error| {
+            // Use string matching to identify connection errors
+            let err_str = error.to_string().to_lowercase();
+            err_str.contains("broken pipe")
+                || err_str.contains("connection reset")
+                || err_str.contains("connection aborted")
+                || err_str.contains("not connected")
+                || err_str.contains("connection refused")
+        }));
+        self
+    }
+
     /// Builds the `ReconnectConfig`.
     pub fn build(self) -> ReconnectConfig {
         ReconnectConfig {
@@ -269,6 +351,8 @@ impl ReconnectConfigBuilder {
             reconnect_predicate: self.reconnect_predicate,
             #[cfg(feature = "tracing")]
             on_reconnect: self.on_reconnect,
+            #[cfg(feature = "tracing")]
+            on_state_change: self.on_state_change,
         }
     }
 }
@@ -282,6 +366,8 @@ impl Default for ReconnectConfigBuilder {
             reconnect_predicate: None,
             #[cfg(feature = "tracing")]
             on_reconnect: None,
+            #[cfg(feature = "tracing")]
+            on_state_change: None,
         }
     }
 }

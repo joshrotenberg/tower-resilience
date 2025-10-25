@@ -70,6 +70,7 @@ where
             state: self.state.clone(),
             request,
             attempt: 0,
+            last_error: None,
             phase: Phase::Calling(call_future),
         }
     }
@@ -86,6 +87,7 @@ where
     state: ReconnectState,
     request: Request,
     attempt: u32,
+    last_error: Option<S::Error>,
     #[pin]
     phase: Phase<S::Future>,
 }
@@ -114,6 +116,14 @@ where
                     match call_future.poll(cx) {
                         Poll::Ready(Ok(response)) => {
                             this.state.mark_connected();
+
+                            #[cfg(feature = "tracing")]
+                            if let Some(ref callback) = this.config.on_state_change {
+                                callback(
+                                    crate::state::ConnectionState::Reconnecting,
+                                    crate::state::ConnectionState::Connected,
+                                );
+                            }
                             return Poll::Ready(Ok(response));
                         }
                         Poll::Ready(Err(error)) => {
@@ -125,7 +135,18 @@ where
                             }
 
                             this.state.mark_disconnected();
+
+                            #[cfg(feature = "tracing")]
+                            if let Some(ref callback) = this.config.on_state_change {
+                                callback(
+                                    crate::state::ConnectionState::Connected,
+                                    crate::state::ConnectionState::Disconnected,
+                                );
+                            }
                             *this.attempt += 1;
+
+                            // Store the error for potential use
+                            *this.last_error = Some(error);
 
                             // Check if we've exceeded max attempts
                             if let Some(max) = this.config.max_attempts {
@@ -133,7 +154,7 @@ where
                                     this.phase.set(Phase::Failed);
                                     return Poll::Ready(Err(ReconnectError::MaxAttemptsExceeded {
                                         attempts: *this.attempt,
-                                        error: Box::new(error),
+                                        error: Box::new(this.last_error.take().unwrap()),
                                     }));
                                 }
                             }
@@ -145,6 +166,14 @@ where
                                 this.state.mark_reconnecting();
 
                                 #[cfg(feature = "tracing")]
+                                if let Some(ref callback) = this.config.on_state_change {
+                                    callback(
+                                        crate::state::ConnectionState::Disconnected,
+                                        crate::state::ConnectionState::Reconnecting,
+                                    );
+                                }
+
+                                #[cfg(feature = "tracing")]
                                 if let Some(ref callback) = this.config.on_reconnect {
                                     callback(*this.attempt);
                                 }
@@ -153,6 +182,7 @@ where
                             } else {
                                 // No backoff - fail immediately
                                 this.phase.set(Phase::Failed);
+                                let error = this.last_error.take().unwrap();
                                 return Poll::Ready(Err(ReconnectError::ConnectionFailed(error)));
                             }
                         }
@@ -162,9 +192,21 @@ where
                 PhaseProj::Sleeping(sleep) => {
                     match sleep.poll(cx) {
                         Poll::Ready(()) => {
-                            // Sleep complete, try calling again
-                            let call_future = this.inner.call(this.request.clone());
-                            this.phase.set(Phase::Calling(call_future));
+                            // Sleep complete - check retry_on_reconnect flag
+                            if this.config.retry_on_reconnect {
+                                // Retry the original request (reconnection happens via clone)
+                                let call_future = this.inner.call(this.request.clone());
+                                this.phase.set(Phase::Calling(call_future));
+                            } else {
+                                // Don't retry - return error to caller
+                                // The backoff succeeded, so mark connected for next request
+                                this.state.mark_connected();
+                                this.phase.set(Phase::Failed);
+                                let error = this.last_error.take().unwrap();
+                                return Poll::Ready(Err(ReconnectError::ConnectionFailedNoRetry(
+                                    error,
+                                )));
+                            }
                         }
                         Poll::Pending => return Poll::Pending,
                     }
@@ -191,6 +233,9 @@ pub enum ReconnectError<E> {
     /// Failed to establish a connection.
     ConnectionFailed(E),
 
+    /// Connection failed and retry_on_reconnect is false.
+    ConnectionFailedNoRetry(E),
+
     /// The service returned an error.
     ServiceError(E),
 }
@@ -209,6 +254,7 @@ where
                 )
             }
             Self::ConnectionFailed(e) => write!(f, "connection failed: {}", e),
+            Self::ConnectionFailedNoRetry(e) => write!(f, "connection failed (no retry): {}", e),
             Self::ServiceError(e) => write!(f, "service error: {}", e),
         }
     }
@@ -222,6 +268,7 @@ where
         match self {
             Self::MaxAttemptsExceeded { error, .. } => Some(error.as_ref()),
             Self::ConnectionFailed(e) => Some(e),
+            Self::ConnectionFailedNoRetry(e) => Some(e),
             Self::ServiceError(e) => Some(e),
         }
     }
@@ -331,6 +378,114 @@ mod tests {
                 assert_eq!(attempts, 4); // Initial + 3 retries
             }
             _ => panic!("Expected MaxAttemptsExceeded error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_retry_on_reconnect_false() {
+        let inner = FailingService {
+            fail_count: Arc::new(AtomicUsize::new(0)),
+            max_fails: 100, // Always fail
+        };
+
+        let config = ReconnectConfig::builder()
+            .policy(ReconnectPolicy::exponential(
+                Duration::from_millis(10),
+                Duration::from_millis(50),
+            ))
+            .max_attempts(3)
+            .retry_on_reconnect(false) // Don't retry after reconnection
+            .build();
+
+        let state = ReconnectState::new();
+        let mut service = ReconnectService::new(inner, Arc::new(config), state.clone());
+
+        let result = service.call("test".to_string()).await;
+        assert!(result.is_err());
+
+        // Should fail with ConnectionFailedNoRetry after first backoff
+        match result.unwrap_err() {
+            ReconnectError::ConnectionFailedNoRetry(_) => {
+                // Expected - reconnection succeeded but didn't retry
+            }
+            other => panic!("Expected ConnectionFailedNoRetry, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_reconnect_predicate_filters_errors() {
+        let inner = FailingService {
+            fail_count: Arc::new(AtomicUsize::new(0)),
+            max_fails: 100, // Always fail
+        };
+
+        let config = ReconnectConfig::builder()
+            .policy(ReconnectPolicy::exponential(
+                Duration::from_millis(10),
+                Duration::from_millis(50),
+            ))
+            .max_attempts(3) // Limit attempts to avoid exponential overflow
+            .reconnect_predicate(|error| {
+                // Only reconnect on connection errors, not on other errors
+                let error_str = error.to_string().to_lowercase();
+                error_str.contains("connection") || error_str.contains("broken pipe")
+            })
+            .build();
+
+        let state = ReconnectState::new();
+        let mut service = ReconnectService::new(inner, Arc::new(config), state);
+
+        // This will fail with ConnectionRefused, which matches our predicate
+        let result = service.call("test".to_string()).await;
+        assert!(result.is_err());
+
+        // Create a service that fails with a non-connection error
+        #[derive(Clone)]
+        struct NonConnectionError;
+
+        impl Service<String> for NonConnectionError {
+            type Response = String;
+            type Error = std::io::Error;
+            type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+
+            fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+                Poll::Ready(Ok(()))
+            }
+
+            fn call(&mut self, _req: String) -> Self::Future {
+                Box::pin(async move {
+                    Err(std::io::Error::new(
+                        std::io::ErrorKind::PermissionDenied,
+                        "permission denied",
+                    ))
+                })
+            }
+        }
+
+        let config2 = ReconnectConfig::builder()
+            .policy(ReconnectPolicy::exponential(
+                Duration::from_millis(10),
+                Duration::from_millis(50),
+            ))
+            .max_attempts(3) // Limit attempts to avoid exponential overflow
+            .reconnect_predicate(|error| {
+                let error_str = error.to_string().to_lowercase();
+                error_str.contains("connection") || error_str.contains("broken pipe")
+            })
+            .build();
+
+        let state2 = ReconnectState::new();
+        let mut service2 = ReconnectService::new(NonConnectionError, Arc::new(config2), state2);
+
+        let result2 = service2.call("test".to_string()).await;
+        assert!(result2.is_err());
+
+        // Should fail immediately with ServiceError (not a reconnectable error)
+        match result2.unwrap_err() {
+            ReconnectError::ServiceError(_) => {
+                // Expected - error didn't match predicate
+            }
+            other => panic!("Expected ServiceError, got {:?}", other),
         }
     }
 }

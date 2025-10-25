@@ -201,23 +201,28 @@ let service = layer.layer(my_service);
 
 ### Reconnect
 
-Automatically reconnect to services with configurable backoff strategies:
+Automatically reconnect on connection failures with configurable backoff:
 
 ```rust
 use tower_resilience_reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
 use std::time::Duration;
 
-let config = ReconnectConfig::builder()
-    .policy(ReconnectPolicy::exponential(
-        Duration::from_millis(100),  // Start at 100ms
-        Duration::from_secs(5),      // Max 5 seconds
-    ))
-    .max_attempts(10)
-    .retry_on_reconnect(true)  // Retry request after reconnecting
-    .build();
+let layer = ReconnectLayer::new(
+    ReconnectConfig::builder()
+        .policy(ReconnectPolicy::exponential(
+            Duration::from_millis(100),  // Start at 100ms
+            Duration::from_secs(5),       // Max 5 seconds
+        ))
+        .max_attempts(10)
+        .retry_on_reconnect(true)         // Retry request after reconnecting
+        .connection_errors_only()          // Only reconnect on connection errors
+        .on_state_change(|from, to| {
+            println!("Connection: {:?} -> {:?}", from, to);
+        })
+        .build()
+);
 
-let layer = ReconnectLayer::new(config);
-let service = layer.layer(make_service);
+let service = layer.layer(my_service);
 ```
 
 **Full examples:** [reconnect.rs](examples/reconnect.rs) | [basic.rs](crates/tower-resilience-reconnect/examples/basic.rs) | [custom_policy.rs](crates/tower-resilience-reconnect/examples/custom_policy.rs)
