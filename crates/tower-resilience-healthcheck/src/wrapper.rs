@@ -12,17 +12,23 @@ use tokio::task::JoinHandle;
 /// # Examples
 ///
 /// ```rust
-/// use tower_resilience_healthcheck::{HealthCheckWrapper, HealthStatus};
+/// use tower_resilience_healthcheck::{HealthCheckWrapper, HealthStatus, HealthChecker};
 /// use std::time::Duration;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-/// let wrapper = HealthCheckWrapper::builder()
-///     .with_context("primary", "primary")
-///     .with_context("secondary", "secondary")
-///     .with_checker(|resource: &str| async move {
+/// struct MyHealthChecker;
+///
+/// impl HealthChecker<String> for MyHealthChecker {
+///     async fn check(&self, resource: &String) -> HealthStatus {
 ///         // Your health check logic
 ///         HealthStatus::Healthy
-///     })
+///     }
+/// }
+///
+/// let wrapper = HealthCheckWrapper::builder()
+///     .with_context("primary".to_string(), "primary")
+///     .with_context("secondary".to_string(), "secondary")
+///     .with_checker(MyHealthChecker)
 ///     .with_interval(Duration::from_secs(5))
 ///     .build();
 ///
@@ -375,6 +381,7 @@ mod tests {
 
     #[derive(Clone)]
     struct MockResource {
+        #[allow(dead_code)]
         name: String,
         is_healthy: bool,
     }

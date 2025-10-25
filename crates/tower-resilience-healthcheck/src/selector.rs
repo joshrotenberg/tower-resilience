@@ -269,7 +269,7 @@ mod tests {
                 .iter()
                 .enumerate()
                 .filter(|(_, s)| s.is_healthy())
-                .last()
+                .next_back()
                 .map(|(i, _)| i)
         });
 

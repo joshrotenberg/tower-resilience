@@ -14,18 +14,25 @@
 //! # Examples
 //!
 //! ```rust
-//! use tower_resilience_healthcheck::{HealthCheckWrapper, HealthStatus};
+//! use tower_resilience_healthcheck::{HealthCheckWrapper, HealthStatus, HealthChecker};
 //! use std::time::Duration;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! // Create wrapper with multiple resources
-//! let wrapper = HealthCheckWrapper::builder()
-//!     .with_context("primary-db", "primary")
-//!     .with_context("secondary-db", "secondary")
-//!     .with_checker(|db: &str| async move {
+//! // Define a health checker for your resource type
+//! struct DbHealthChecker;
+//!
+//! impl HealthChecker<String> for DbHealthChecker {
+//!     async fn check(&self, db: &String) -> HealthStatus {
 //!         // Your health check logic here
 //!         HealthStatus::Healthy
-//!     })
+//!     }
+//! }
+//!
+//! // Create wrapper with multiple resources
+//! let wrapper = HealthCheckWrapper::builder()
+//!     .with_context("primary-db".to_string(), "primary")
+//!     .with_context("secondary-db".to_string(), "secondary")
+//!     .with_checker(DbHealthChecker)
 //!     .with_interval(Duration::from_secs(5))
 //!     .build();
 //!
