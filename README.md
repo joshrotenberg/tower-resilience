@@ -227,6 +227,41 @@ let service = layer.layer(my_service);
 
 **Full examples:** [reconnect.rs](examples/reconnect.rs) | [basic.rs](crates/tower-resilience-reconnect/examples/basic.rs) | [custom_policy.rs](crates/tower-resilience-reconnect/examples/custom_policy.rs)
 
+### Health Check
+
+Proactive health monitoring with intelligent resource selection:
+
+```rust
+use tower_resilience_healthcheck::{HealthCheckWrapper, HealthStatus, SelectionStrategy};
+use std::time::Duration;
+
+// Create wrapper with multiple resources
+let wrapper = HealthCheckWrapper::builder()
+    .with_context(primary_db, "primary")
+    .with_context(secondary_db, "secondary")
+    .with_checker(|db| async move {
+        match db.ping().await {
+            Ok(_) => HealthStatus::Healthy,
+            Err(_) => HealthStatus::Unhealthy,
+        }
+    })
+    .with_interval(Duration::from_secs(5))
+    .with_selection_strategy(SelectionStrategy::RoundRobin)
+    .build();
+
+// Start background health checking
+wrapper.start().await;
+
+// Get a healthy resource
+if let Some(db) = wrapper.get_healthy().await {
+    // Use healthy database
+}
+```
+
+**Note:** Health Check is not a Tower layer - it's a wrapper pattern for managing multiple resources with automatic failover.
+
+**Full examples:** [basic.rs](crates/tower-resilience-healthcheck/examples/basic.rs)
+
 ### Chaos (Testing Only)
 
 Inject failures and latency to test your resilience patterns:

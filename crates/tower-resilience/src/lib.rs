@@ -20,6 +20,7 @@
 //! - **[Rate Limiter]** - Controls request rate to protect services
 //! - **[Cache]** - Response memoization to reduce load
 //! - **[Reconnect]** - Automatic reconnection with configurable backoff strategies
+//! - **[Health Check]** - Proactive health monitoring with intelligent resource selection
 //!
 //! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
@@ -28,6 +29,7 @@
 //! [Rate Limiter]: https://docs.rs/tower-resilience-ratelimiter
 //! [Cache]: https://docs.rs/tower-resilience-cache
 //! [Reconnect]: https://docs.rs/tower-resilience-reconnect
+//! [Health Check]: https://docs.rs/tower-resilience-healthcheck
 //!
 //! # Documentation Guides
 //!

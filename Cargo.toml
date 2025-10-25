@@ -44,6 +44,7 @@ members = [
     "crates/tower-resilience-ratelimiter",
     "crates/tower-resilience-chaos",
     "crates/tower-resilience-reconnect",
+    "crates/tower-resilience-healthcheck",
     "crates/tower-resilience",
     "examples/axum-resilient-kv-store",
     "examples/tonic-resilient-greeter",

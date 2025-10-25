@@ -7,7 +7,8 @@ pub mod database {
     //! # Database Clients
     //!
     //! ```text
-    //! Read Replicas
+    //! Read Replicas (Multiple Instances)
+    //! ├─ Health Check wrapper for automatic failover
     //! ├─ Reconnect for dropped connections
     //! ├─ Circuit breaker per replica
     //! ├─ Retry on connection errors
@@ -15,6 +16,7 @@ pub mod database {
     //! └─ Cache for hot queries
     //!
     //! Write Path
+    //! ├─ Health Check for primary/secondary selection
     //! ├─ Reconnect with exponential backoff
     //! ├─ Retry on deadlocks (exponential backoff)
     //! ├─ Circuit breaker for replica lag
@@ -28,7 +30,8 @@ pub mod message_queue {
     //! # Message Queue Workers
     //!
     //! ```text
-    //! Consumer
+    //! Consumer (Multiple Brokers)
+    //! ├─ Health Check for broker selection
     //! ├─ Reconnect to broker on disconnect
     //! ├─ Bulkhead per queue/priority
     //! ├─ Retry with exponential backoff

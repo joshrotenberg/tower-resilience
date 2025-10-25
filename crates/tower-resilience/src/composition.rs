@@ -2,6 +2,29 @@
 //!
 //! Comprehensive guide to composing resilience patterns together, including layer ordering,
 //! error type integration, and workarounds for complex compositions.
+//!
+//! ## Note on Health Check
+//!
+//! Health Check is **not a Tower layer** and cannot be composed with other patterns in the
+//! layer stack. Instead, it wraps resource instances at a different architectural level:
+//!
+//! ```text
+//! Application Layer:
+//!   HealthCheckWrapper (manages multiple resources)
+//!     ├─ primary_db
+//!     ├─ secondary_db
+//!     └─ tertiary_db
+//!
+//! Tower Layer Stack:
+//!   ServiceBuilder
+//!     ├─ TimeLimit
+//!     ├─ CircuitBreaker
+//!     ├─ Retry
+//!     └─ Service (selected by HealthCheckWrapper)
+//! ```
+//!
+//! Use Health Check to **select** healthy resources, then apply Tower layers to the
+//! selected resource for request-level resilience.
 
 /// Common composition patterns
 pub mod patterns {
