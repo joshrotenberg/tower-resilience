@@ -125,3 +125,6 @@ pub use tower_resilience_retry as retry;
 
 #[cfg(feature = "ratelimiter")]
 pub use tower_resilience_ratelimiter as ratelimiter;
+
+#[cfg(feature = "reconnect")]
+pub use tower_resilience_reconnect as reconnect;
