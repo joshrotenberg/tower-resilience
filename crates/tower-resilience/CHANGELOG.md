@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.5...tower-resilience-v0.3.6) - 2025-10-25
+
+### Added
+
+- add reconnect layer with configurable backoff strategies ([#140](https://github.com/joshrotenberg/tower-resilience/pull/140))
+
 ## [0.3.5](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.4...tower-resilience-v0.3.5) - 2025-10-22
 
 ### Added
