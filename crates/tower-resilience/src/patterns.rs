@@ -75,6 +75,176 @@ pub mod circuit_breaker {
     //! ```
 }
 
+/// Health Check pattern guide
+pub mod healthcheck {
+    //! # Health Check
+    //!
+    //! Proactive health monitoring for resources with intelligent selection strategies.
+    //! Continuously checks resource health in the background and provides access to
+    //! healthy resources on demand.
+    //!
+    //! ## Health Check vs Circuit Breaker
+    //!
+    //! **Key distinction**: Health Check is **proactive**, Circuit Breaker is **reactive**.
+    //!
+    //! - **Health Check**: Monitors resources *before* use, prevents failures
+    //! - **Circuit Breaker**: Responds *after* failures happen, limits damage
+    //!
+    //! These patterns **complement each other perfectly**:
+    //! - Health Check layer selects healthy resources
+    //! - Circuit Breaker layer protects against cascading failures
+    //!
+    //! ## When to Use
+    //!
+    //! ✅ **Multiple resource instances**: Primary/secondary databases, regional endpoints
+    //! ✅ **Automatic failover**: Switch to healthy resources without manual intervention
+    //! ✅ **Load distribution**: Round-robin or weighted selection across healthy instances
+    //! ✅ **Kubernetes readiness**: Export health status for K8s probes
+    //!
+    //! ❌ **Single resource**: Use Circuit Breaker instead
+    //! ❌ **Request-level failures**: Use Retry layer
+    //! ❌ **Middleware composition**: Health Check is not a Tower layer
+    //!
+    //! ## Design Philosophy
+    //!
+    //! Health Check is **not a Tower layer** - it's a wrapper pattern that manages multiple
+    //! resources:
+    //!
+    //! ```text
+    //! Tower Layers (middleware):        Health Check (resource manager):
+    //!   Request → Retry →                  ┌─────────────────┐
+    //!             CircuitBreaker →         │  Health Wrapper │
+    //!             Service                  │  - primary ✓    │
+    //!                                      │  - secondary ✓  │
+    //!                                      │  - tertiary ✗   │
+    //!                                      └─────────────────┘
+    //!                                            ↓
+    //!                                      Select healthy resource
+    //! ```
+    //!
+    //! ## Selection Strategies
+    //!
+    //! ### FirstAvailable (Default)
+    //! Returns the first healthy resource. Best for primary/secondary failover.
+    //!
+    //! ### RoundRobin
+    //! Distributes load evenly across healthy resources.
+    //!
+    //! ### Random
+    //! Randomly selects from healthy resources (requires `random` feature).
+    //!
+    //! ### PreferHealthy
+    //! Prefers fully healthy resources, falls back to degraded if needed.
+    //!
+    //! ### Custom
+    //! Implement custom logic (latency-based, geographic proximity, weighted, etc.).
+    //!
+    //! ## Health Status States
+    //!
+    //! - **Healthy**: Resource is fully operational
+    //! - **Degraded**: Resource is slow but functional (high latency)
+    //! - **Unhealthy**: Resource should not be used
+    //! - **Unknown**: Not yet checked or check failed
+    //!
+    //! ## Trade-offs
+    //!
+    //! ### Advantages
+    //! - **Proactive**: Catches issues before use
+    //! - **Automatic failover**: No manual intervention needed
+    //! - **Flexible selection**: Multiple strategies for different use cases
+    //! - **Observable**: Export health status for monitoring
+    //!
+    //! ### Limitations
+    //! - **Not a layer**: Cannot compose with Tower middleware
+    //! - **Resource overhead**: Background health checks consume resources
+    //! - **Complexity**: Requires managing multiple resource instances
+    //! - **Health check design**: Poor health checks give false positives/negatives
+    //!
+    //! ## Real-World Scenarios
+    //!
+    //! ```text
+    //! Database Failover
+    //! ├─ Primary database: healthy
+    //! ├─ Secondary database: healthy
+    //! ├─ Primary fails → automatic switch to secondary
+    //! └─ Primary recovers → can switch back
+    //!
+    //! Regional API Endpoints
+    //! ├─ us-west: healthy (50ms latency)
+    //! ├─ us-east: healthy (120ms latency)
+    //! ├─ eu-west: degraded (300ms latency)
+    //! └─ Round-robin between us-west and us-east (eu-west used only if needed)
+    //!
+    //! Redis Cluster
+    //! ├─ Node 1: healthy
+    //! ├─ Node 2: healthy
+    //! ├─ Node 3: unhealthy (connection refused)
+    //! └─ Distribute load across nodes 1 and 2
+    //! ```
+    //!
+    //! ## Anti-Patterns
+    //!
+    //! ❌ **Too frequent checks**: Health checks every 100ms waste resources
+    //! ✅ Check every 5-30 seconds for most use cases
+    //!
+    //! ❌ **Expensive health checks**: Full database query takes 2 seconds
+    //! ✅ Simple ping/SELECT 1 takes milliseconds
+    //!
+    //! ❌ **No threshold**: One failure marks as unhealthy
+    //! ✅ Require 2-3 consecutive failures to prevent flapping
+    //!
+    //! ❌ **Ignoring degraded state**: Treat slow as failed
+    //! ✅ Use degraded resources when all healthy ones are down
+    //!
+    //! ## Example
+    //!
+    //! ```rust,no_run
+    //! use tower_resilience_healthcheck::{
+    //!     HealthCheckWrapper, HealthStatus, SelectionStrategy
+    //! };
+    //! use std::time::Duration;
+    //!
+    //! # #[derive(Clone)]
+    //! # struct Database { name: String }
+    //! # impl Database {
+    //! #     async fn ping(&self) -> Result<(), std::io::Error> { Ok(()) }
+    //! # }
+    //! # async fn example() {
+    //! # let primary_db = Database { name: "primary".into() };
+    //! # let secondary_db = Database { name: "secondary".into() };
+    //! // Create wrapper with multiple databases
+    //! let wrapper = HealthCheckWrapper::builder()
+    //!     .with_context(primary_db, "primary")
+    //!     .with_context(secondary_db, "secondary")
+    //!     .with_checker(|db| async move {
+    //!         match db.ping().await {
+    //!             Ok(_) => HealthStatus::Healthy,
+    //!             Err(_) => HealthStatus::Unhealthy,
+    //!         }
+    //!     })
+    //!     .with_interval(Duration::from_secs(10))
+    //!     .with_failure_threshold(3)  // 3 failures before marking unhealthy
+    //!     .with_success_threshold(2)  // 2 successes to recover
+    //!     .with_selection_strategy(SelectionStrategy::RoundRobin)
+    //!     .build();
+    //!
+    //! // Start background health checking
+    //! wrapper.start().await;
+    //!
+    //! // Get a healthy database
+    //! if let Some(db) = wrapper.get_healthy().await {
+    //!     // Use healthy database
+    //! }
+    //!
+    //! // Get health status for monitoring
+    //! let details = wrapper.get_health_details().await;
+    //! for detail in details {
+    //!     println!("{}: {:?}", detail.name, detail.status);
+    //! }
+    //! # }
+    //! ```
+}
+
 /// Reconnect pattern guide
 pub mod reconnect {
     //! # Reconnect
