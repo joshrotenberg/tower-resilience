@@ -1,5 +1,5 @@
 //! Simple example for tower-timelimiter
-//! Run with: cargo run --example simple -p tower-timelimiter
+//! Run with: cargo run --example timelimiter_example -p tower-resilience-timelimiter
 
 use std::time::Duration;
 use tokio::time::sleep;

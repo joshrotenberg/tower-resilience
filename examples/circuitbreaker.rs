@@ -1,6 +1,6 @@
 //! Simple example for tower-circuitbreaker
-//! Run with: cargo run --example simple
-//! With tracing: RUST_LOG=debug cargo run --example simple --features tracing
+//! Run with: cargo run --example circuitbreaker
+//! With tracing: RUST_LOG=debug cargo run --example circuitbreaker --features tracing
 
 use std::time::Duration;
 use tokio::time::sleep;

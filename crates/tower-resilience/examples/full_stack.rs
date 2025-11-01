@@ -1,6 +1,8 @@
 //! Example demonstrating multiple resilience patterns.
 //!
-//! This example shows each resilience patternspattern withworking separate servicesindependently:
+//! Run with: cargo run --example full_stack -p tower-resilience
+//!
+//! This example shows each resilience pattern working independently with separate services:
 //! - Circuit breaker + Bulkhead (from existing example)
 //! - Retry with exponential backoff
 //! - Timeout for slow calls

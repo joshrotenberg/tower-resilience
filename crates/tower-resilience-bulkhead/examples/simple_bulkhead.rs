@@ -1,3 +1,9 @@
+//! Simple bulkhead pattern example.
+//!
+//! Run with: cargo run --example simple_bulkhead -p tower-resilience-bulkhead
+//!
+//! This example shows basic bulkhead usage for limiting concurrent requests.
+
 use std::time::Duration;
 use tower::{Service, ServiceBuilder, ServiceExt};
 use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};

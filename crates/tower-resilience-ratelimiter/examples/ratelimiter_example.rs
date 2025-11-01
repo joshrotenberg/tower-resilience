@@ -1,3 +1,13 @@
+//! Rate limiting example with permit tracking.
+//!
+//! Run with: cargo run --example ratelimiter_example -p tower-resilience-ratelimiter
+//!
+//! This example demonstrates:
+//! - Limiting request rate to protect downstream services
+//! - Request rejection when rate limit is exceeded
+//! - Permit refresh after cooldown period
+//! - Event callbacks for monitoring
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;

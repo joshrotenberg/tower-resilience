@@ -1,3 +1,13 @@
+//! Response caching example with TTL and eviction.
+//!
+//! Run with: cargo run --example cache_example -p tower-resilience-cache
+//!
+//! This example demonstrates:
+//! - Cache hits and misses
+//! - TTL-based expiration
+//! - LRU eviction when cache is full
+//! - Event callbacks for cache operations
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;

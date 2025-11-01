@@ -1,3 +1,13 @@
+//! Comprehensive bulkhead pattern demonstration.
+//!
+//! Run with: cargo run --example bulkhead_demo -p tower-resilience-bulkhead
+//!
+//! This example demonstrates:
+//! - Limiting concurrent requests to protect resources
+//! - Rejecting requests when capacity is exceeded
+//! - Event callbacks for monitoring bulkhead behavior
+//! - Request queueing with timeout
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;

@@ -22,14 +22,51 @@ cargo fmt --all
 
 ## Running Examples
 
+The project has two sets of examples:
+
+### Top-Level Examples
+
+Simple, getting-started examples in the `examples/` directory:
+
 ```bash
-# Run top-level examples
 cargo run --example circuitbreaker
 cargo run --example bulkhead
 cargo run --example retry
+cargo run --example ratelimiter
+cargo run --example timelimiter
+cargo run --example cache
+cargo run --example chaos
+cargo run --example reconnect
+```
 
-# Run module-specific examples
+### Module-Specific Examples
+
+Detailed examples in each crate's `examples/` directory showing advanced features:
+
+```bash
+# Circuit breaker examples
 cargo run --example circuitbreaker_example -p tower-resilience-circuitbreaker
+cargo run --example circuitbreaker_fallback -p tower-resilience-circuitbreaker
+cargo run --example circuitbreaker_health_check -p tower-resilience-circuitbreaker
+
+# Bulkhead examples
+cargo run --example bulkhead_demo -p tower-resilience-bulkhead
+cargo run --example simple_bulkhead -p tower-resilience-bulkhead
+
+# Reconnect examples
+cargo run --example basic -p tower-resilience-reconnect
+cargo run --example custom_policy -p tower-resilience-reconnect
+
+# Other pattern examples
+cargo run --example cache_example -p tower-resilience-cache
+cargo run --example retry_example -p tower-resilience-retry
+cargo run --example ratelimiter_example -p tower-resilience-ratelimiter
+cargo run --example timelimiter_example -p tower-resilience-timelimiter
+cargo run --example chaos_example -p tower-resilience-chaos
+
+# Meta-crate examples (pattern composition)
+cargo run --example full_stack -p tower-resilience
+cargo run --example combined -p tower-resilience
 ```
 
 ## Project Structure
@@ -60,6 +97,40 @@ cargo run --example circuitbreaker_example -p tower-resilience-circuitbreaker
 - Unit tests in each crate's `src/` files
 - Integration tests in workspace `tests/` directory
 - Examples should be runnable and well-documented
+
+#### Running Tests
+
+```bash
+# Run all tests
+cargo test --workspace --all-features
+
+# Run only library tests
+cargo test --workspace --all-features --lib
+
+# Run only integration tests
+cargo test --workspace --all-features --test '*'
+
+# Run stress tests (opt-in, marked with #[ignore])
+cargo test --test stress -- --ignored
+
+# Run specific pattern stress tests
+cargo test --test stress circuitbreaker -- --ignored
+cargo test --test stress bulkhead -- --ignored
+cargo test --test stress cache -- --ignored
+
+# Run with output to see performance metrics
+cargo test --test stress -- --ignored --nocapture
+```
+
+#### Stress Tests
+
+Stress tests validate pattern behavior under extreme conditions:
+- High volume (millions of operations)
+- High concurrency (thousands of concurrent requests)
+- Memory stability (leak detection, bounded growth)
+- State consistency (correctness under load)
+
+These tests are marked with `#[ignore]` and must be explicitly run using the `--ignored` flag.
 
 ### Commit Messages
 
