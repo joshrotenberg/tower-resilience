@@ -16,7 +16,6 @@ tower-layer = { workspace = true }
 tower-service = { workspace = true }
 tokio = { workspace = true }
 futures = { workspace = true }
-thiserror = { workspace = true }
 rand = "0.9"
 
 # Optional dependencies
