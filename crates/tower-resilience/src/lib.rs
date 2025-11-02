@@ -132,3 +132,6 @@ pub use tower_resilience_ratelimiter as ratelimiter;
 
 #[cfg(feature = "reconnect")]
 pub use tower_resilience_reconnect as reconnect;
+
+#[cfg(feature = "healthcheck")]
+pub use tower_resilience_healthcheck as healthcheck;
