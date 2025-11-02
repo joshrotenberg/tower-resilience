@@ -16,7 +16,6 @@ tower-resilience-core = { workspace = true }
 tower = { workspace = true }
 futures = { workspace = true }
 tokio = { workspace = true }
-thiserror = { workspace = true }
 rand = "0.9"
 
 # Optional dependencies

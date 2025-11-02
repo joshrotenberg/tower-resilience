@@ -16,8 +16,7 @@ tower-resilience-core = { workspace = true }
 tower = { workspace = true }
 futures = { workspace = true }
 tokio = { workspace = true, features = ["sync", "time"] }
-lru = "0.16"
-thiserror = { workspace = true }
+lru = "0.16.2"
 
 # Optional dependencies
 metrics = { workspace = true, optional = true }
