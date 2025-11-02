@@ -1,5 +1,7 @@
 //! Example demonstrating multiple resilience patterns composed together.
 //!
+//! Run with: cargo run --example combined -p tower-resilience
+//!
 //! This shows how to stack circuit breaker and bulkhead middleware to protect
 //! a service with both failure-based circuit breaking and concurrency limiting.
 

@@ -1,3 +1,13 @@
+//! Retry pattern with exponential backoff examples.
+//!
+//! Run with: cargo run --example retry_example -p tower-resilience-retry
+//!
+//! This example demonstrates:
+//! - Fixed backoff retry
+//! - Exponential backoff with jitter
+//! - Selective retry with predicates
+//! - Retry exhaustion handling
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;

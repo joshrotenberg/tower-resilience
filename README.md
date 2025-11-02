@@ -9,9 +9,16 @@ A comprehensive resilience and fault-tolerance toolkit for [Tower](https://githu
 
 ## About
 
-Tower-resilience provides composable middleware for building robust distributed systems in Rust. [Tower](https://docs.rs/tower) is a library of modular and reusable components for building robust networking clients and servers. This crate extends Tower with resilience patterns commonly needed in production systems.
+Tower-resilience provides composable middleware for building robust distributed systems in Rust. Built on [Tower](https://docs.rs/tower), it extends the ecosystem with production-ready resilience patterns inspired by [Resilience4j](https://resilience4j.readme.io/).
 
-Inspired by [Resilience4j](https://resilience4j.readme.io/), a fault tolerance library for Java, tower-resilience adapts these battle-tested patterns to Rust's async ecosystem and Tower's middleware model.
+**What sets tower-resilience apart:**
+
+- **Circuit Breaker** - Not available in Tower's built-in middleware
+- **Advanced patterns** - Bulkhead isolation, reconnect strategies, and more
+- **Enhanced retry** - Multiple backoff strategies with better control than Tower's basic retry
+- **Unified observability** - Consistent event system across all patterns
+- **Ergonomic APIs** - Builder pattern with sensible defaults
+- **Battle-tested design** - Patterns adapted from production-proven Resilience4j
 
 ## Resilience Patterns
 
@@ -424,16 +431,7 @@ Stress tests cover:
 - State consistency (correctness under load)
 - Pattern composition (layered middleware)
 
-## Why tower-resilience?
 
-Tower provides some built-in resilience (timeout, retry, rate limiting), but tower-resilience offers:
-
-- **Circuit Breaker** - Not available in Tower
-- **Advanced retry** - More backoff strategies and better control
-- **Bulkhead** - True resource isolation with async-aware semaphores
-- **Unified events** - Consistent observability across all patterns
-- **Builder APIs** - Ergonomic configuration with sensible defaults
-- **Production-ready** - Patterns inspired by battle-tested Resilience4j
 
 ## Minimum Supported Rust Version (MSRV)
 

@@ -10,12 +10,13 @@ use std::num::NonZeroUsize;
 /// Eviction policy for the cache.
 ///
 /// Determines which entry to evict when the cache reaches capacity.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum EvictionPolicy {
     /// Least Recently Used - evicts the entry that was accessed longest ago.
     ///
     /// Best for general-purpose caching where recent items are more likely
     /// to be accessed again.
+    #[default]
     Lru,
 
     /// Least Frequently Used - evicts the entry with the lowest access count.
@@ -28,12 +29,6 @@ pub enum EvictionPolicy {
     ///
     /// Best for time-based caching where age matters more than access patterns.
     Fifo,
-}
-
-impl Default for EvictionPolicy {
-    fn default() -> Self {
-        Self::Lru
-    }
 }
 
 /// Trait for cache storage implementations with different eviction policies.

@@ -1,3 +1,10 @@
+//! Custom reconnection policy example.
+//!
+//! Run with: cargo run --example custom_policy -p tower-resilience-reconnect
+//!
+//! This example demonstrates how to create and use custom backoff strategies
+//! for reconnection, including fixed, exponential, and fully custom policies.
+
 use std::time::Duration;
 use tower_resilience_reconnect::{
     ExponentialBackoff, FixedInterval, IntervalFunction, ReconnectConfig, ReconnectLayer,
