@@ -123,7 +123,8 @@ where
 
                         let status = match check_result {
                             Ok(status) => status,
-                            Err(_timeout_err) => {
+                            #[cfg_attr(not(feature = "tracing"), allow(unused_variables))]
+                            Err(timeout_err) => {
                                 // Timeout = unhealthy, invoke callback if registered
                                 #[cfg(feature = "tracing")]
                                 if let Some(ref callback) = on_check_failed {
