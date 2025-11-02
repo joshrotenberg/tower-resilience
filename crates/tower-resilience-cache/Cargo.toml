@@ -1,6 +1,6 @@
 [package]
 name = "tower-resilience-cache"
-version = "0.3.6"
+version = "0.3.7"
 edition.workspace = true
 rust-version.workspace = true
 readme = "../../README.md"

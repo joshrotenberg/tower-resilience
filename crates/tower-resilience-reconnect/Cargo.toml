@@ -13,7 +13,7 @@ keywords = ["tower", "reconnect", "resilience", "middleware", "connection"]
 
 [dependencies]
 tower-resilience-core = { workspace = true }
-tower-resilience-retry = { version = "0.4.6", path = "../tower-resilience-retry" }
+tower-resilience-retry = { version = "0.4.7", path = "../tower-resilience-retry" }
 tower = { workspace = true, features = ["make"] }
 futures = { workspace = true }
 tokio = { workspace = true }
