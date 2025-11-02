@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.7](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.4.6...tower-resilience-retry-v0.4.7) - 2025-11-02
+
+### Other
+
+- update dependencies and remove unused thiserror ([#149](https://github.com/joshrotenberg/tower-resilience/pull/149))
+- add comprehensive stress tests and benchmarks for reconnect and healthcheck ([#148](https://github.com/joshrotenberg/tower-resilience/pull/148))
+- improve documentation and examples for new contributors ([#147](https://github.com/joshrotenberg/tower-resilience/pull/147))
+
 ## [0.4.6](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.4.5...tower-resilience-retry-v0.4.6) - 2025-10-25
 
 ### Added
