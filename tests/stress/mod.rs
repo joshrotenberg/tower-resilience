@@ -27,7 +27,9 @@ pub mod bulkhead;
 pub mod cache;
 pub mod circuitbreaker;
 pub mod composition;
+pub mod healthcheck;
 pub mod ratelimiter;
+pub mod reconnect;
 pub mod retry;
 pub mod timelimiter;
 

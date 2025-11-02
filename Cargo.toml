@@ -17,6 +17,7 @@ tower-resilience-timelimiter = { path = "crates/tower-resilience-timelimiter", f
 tower-resilience-ratelimiter = { path = "crates/tower-resilience-ratelimiter", features = ["metrics"] }
 tower-resilience-chaos = { path = "crates/tower-resilience-chaos", features = ["metrics"] }
 tower-resilience-reconnect = { path = "crates/tower-resilience-reconnect", features = ["metrics"] }
+tower-resilience-healthcheck = { path = "crates/tower-resilience-healthcheck" }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
@@ -27,9 +28,14 @@ metrics = { workspace = true }
 metrics-util = { version = "0.20", default-features = false, features = ["debugging"] }
 criterion = { workspace = true }
 serial_test = "3.2"
+rand = "0.9"
 
 [[bench]]
 name = "happy_path_overhead"
+harness = false
+
+[[bench]]
+name = "comprehensive_benchmarks"
 harness = false
 
 [workspace]

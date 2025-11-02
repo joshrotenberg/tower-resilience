@@ -29,6 +29,7 @@ Tower-resilience provides composable middleware for building robust distributed 
 - **Rate Limiter** - Controls request rate to protect services
 - **Cache** - Response memoization to reduce load
 - **Reconnect** - Automatic reconnection with configurable backoff strategies
+- **Health Check** - Proactive health monitoring with intelligent resource selection
 - **Chaos** - Inject failures and latency for testing resilience (development/testing only)
 
 ## Features

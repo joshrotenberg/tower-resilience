@@ -37,7 +37,9 @@ jobs:
           - cache
           - circuitbreaker
           - composition
+          - healthcheck
           - ratelimiter
+          - reconnect
           - retry
           - timelimiter
 
