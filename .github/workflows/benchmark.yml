@@ -43,7 +43,10 @@ jobs:
           git fetch origin ${{ github.base_ref }}
           git checkout origin/${{ github.base_ref }}
           cargo bench --bench happy_path_overhead -- --save-baseline base
-          cargo bench --bench comprehensive_benchmarks -- --save-baseline base
+          # Only run comprehensive_benchmarks if it exists in base branch
+          if [ -f benches/comprehensive_benchmarks.rs ]; then
+            cargo bench --bench comprehensive_benchmarks -- --save-baseline base
+          fi
 
       - name: Checkout PR branch
         if: github.event_name == 'pull_request'
@@ -55,7 +58,10 @@ jobs:
         continue-on-error: true
         run: |
           cargo bench --bench happy_path_overhead -- --baseline base | tee benchmark-output.txt
-          cargo bench --bench comprehensive_benchmarks -- --baseline base | tee -a benchmark-output.txt
+          # Only compare comprehensive_benchmarks if it exists
+          if [ -f benches/comprehensive_benchmarks.rs ]; then
+            cargo bench --bench comprehensive_benchmarks -- --baseline base | tee -a benchmark-output.txt
+          fi
 
       - name: Check for regressions
         if: github.event_name == 'pull_request'
@@ -122,7 +128,10 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           cargo bench --bench happy_path_overhead | tee output.txt
-          cargo bench --bench comprehensive_benchmarks | tee -a output.txt
+          # Only run comprehensive_benchmarks if it exists
+          if [ -f benches/comprehensive_benchmarks.rs ]; then
+            cargo bench --bench comprehensive_benchmarks | tee -a output.txt
+          fi
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
