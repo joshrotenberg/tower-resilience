@@ -73,7 +73,7 @@ futures = "0.3"
 thiserror = "2.0"
 tracing = "0.1"
 metrics = "0.24"
-criterion = { version = "0.7", features = ["async_tokio"] }
+criterion = { version = "0.8", features = ["async_tokio"] }
 serde = { version = "1.0", features = ["derive"] }
 
 tower-resilience-core = { version = "0.4.7", path = "crates/tower-resilience-core" }
