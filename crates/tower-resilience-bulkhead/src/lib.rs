@@ -27,6 +27,33 @@
 //! # }
 //! ```
 //!
+//! # Rejection Mode (Fail-Fast)
+//!
+//! Configure the bulkhead to reject requests immediately when at capacity,
+//! rather than queueing them. This is useful for load shedding and providing
+//! immediate feedback to callers.
+//!
+//! This addresses the use case in [tower-rs/tower#793](https://github.com/tower-rs/tower/issues/793).
+//!
+//! ```rust
+//! use tower::ServiceBuilder;
+//! use tower_resilience_bulkhead::BulkheadLayer;
+//!
+//! # async fn example() {
+//! // Reject immediately when at capacity (no waiting)
+//! let layer = BulkheadLayer::builder()
+//!     .max_concurrent_calls(100)
+//!     .reject_when_full()
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service_fn(|req: String| async move {
+//!         Ok::<_, ()>(req)
+//!     });
+//! # }
+//! ```
+//!
 //! # Example with Timeout
 //!
 //! Configure a maximum wait duration for requests when the bulkhead is at capacity:

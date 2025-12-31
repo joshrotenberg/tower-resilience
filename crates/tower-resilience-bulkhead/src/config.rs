@@ -53,6 +53,34 @@ impl BulkheadConfigBuilder {
         self
     }
 
+    /// Configures the bulkhead to reject requests immediately when at capacity.
+    ///
+    /// This is equivalent to `.max_wait_duration(Some(Duration::ZERO))`.
+    ///
+    /// Use this when you want fail-fast behavior instead of queueing requests.
+    /// This is useful for:
+    /// - Preventing request pile-up during traffic spikes
+    /// - Implementing load shedding
+    /// - Providing immediate feedback to callers when the system is overloaded
+    ///
+    /// # Example
+    /// ```rust
+    /// use tower_resilience_bulkhead::BulkheadLayer;
+    ///
+    /// // Reject immediately when 100 concurrent calls are in progress
+    /// let layer = BulkheadLayer::builder()
+    ///     .max_concurrent_calls(100)
+    ///     .reject_when_full()
+    ///     .build();
+    /// ```
+    ///
+    /// This addresses the use case described in [tower-rs/tower#793](https://github.com/tower-rs/tower/issues/793),
+    /// where users want a concurrency limiter that rejects rather than queues.
+    pub fn reject_when_full(mut self) -> Self {
+        self.max_wait_duration = Some(Duration::ZERO);
+        self
+    }
+
     /// Sets the name of this bulkhead instance.
     ///
     /// Default: "bulkhead"
