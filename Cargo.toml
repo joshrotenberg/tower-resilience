@@ -19,6 +19,7 @@ tower-resilience-chaos = { path = "crates/tower-resilience-chaos", features = ["
 tower-resilience-reconnect = { path = "crates/tower-resilience-reconnect", features = ["metrics"] }
 tower-resilience-healthcheck = { path = "crates/tower-resilience-healthcheck" }
 tower-resilience-fallback = { path = "crates/tower-resilience-fallback", features = ["metrics"] }
+tower-resilience-hedge = { path = "crates/tower-resilience-hedge", features = ["metrics"] }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
@@ -53,6 +54,7 @@ members = [
     "crates/tower-resilience-reconnect",
     "crates/tower-resilience-healthcheck",
     "crates/tower-resilience-fallback",
+    "crates/tower-resilience-hedge",
     "crates/tower-resilience",
     "examples/axum-resilient-kv-store",
     "examples/tonic-resilient-greeter",
@@ -77,6 +79,7 @@ tracing = "0.1"
 metrics = "0.24"
 criterion = { version = "0.8", features = ["async_tokio"] }
 serde = { version = "1.0", features = ["derive"] }
+pin-project-lite = "0.2"
 
 tower-resilience-core = { version = "0.4.7", path = "crates/tower-resilience-core" }
 
