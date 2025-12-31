@@ -5,6 +5,7 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use tower_resilience_core::aimd::{AimdConfig, AimdController};
 
 /// A budget that controls how many retries are allowed.
 ///
@@ -63,6 +64,8 @@ impl RetryBudgetBuilder {
     ///
     /// The budget grows linearly on successful deposits and shrinks
     /// multiplicatively when the budget is exhausted.
+    ///
+    /// This uses the shared AIMD controller from `tower-resilience-core`.
     ///
     /// # Example
     ///
@@ -221,9 +224,6 @@ impl TokenBucketBudget {
 
 impl RetryBudget for TokenBucketBudget {
     fn try_withdraw(&self) -> bool {
-        // Try to refill first (best effort, non-blocking)
-        // For a more accurate refill, we'd need async, but this is good enough
-        // for most cases since deposits also trigger refill
         const SCALE: u64 = 1000;
 
         loop {
@@ -243,8 +243,6 @@ impl RetryBudget for TokenBucketBudget {
     }
 
     fn deposit(&self) {
-        // Refill based on elapsed time, then add deposit bonus
-        // Since we can't easily do async here, we do a simple increment
         const SCALE: u64 = 1000;
         let current = self.tokens.load(Ordering::Relaxed);
         let new_tokens = (current + SCALE).min(self.max_tokens);
@@ -261,21 +259,19 @@ impl RetryBudget for TokenBucketBudget {
 ///
 /// The budget grows linearly with successful requests and shrinks
 /// multiplicatively when retries are rejected.
+///
+/// This implementation uses the shared [`AimdController`] from `tower-resilience-core`
+/// to manage the dynamic maximum limit, while tracking the current token balance
+/// separately.
 pub struct AimdBudget {
     /// Current token balance
     tokens: AtomicU64,
-    /// Minimum budget floor
-    min_budget: u64,
-    /// Current maximum budget (can decrease on exhaustion)
-    current_max: AtomicU64,
-    /// Absolute maximum budget
-    absolute_max: u64,
+    /// AIMD controller for the maximum budget limit
+    limit_controller: AimdController,
     /// Tokens to add on deposit
     deposit_amount: u64,
     /// Tokens to remove on withdraw
     withdraw_amount: u64,
-    /// Factor to multiply max by on exhaustion
-    decrease_factor: f64,
 }
 
 impl AimdBudget {
@@ -287,15 +283,24 @@ impl AimdBudget {
         withdraw_amount: usize,
         decrease_factor: f64,
     ) -> Self {
+        let config = AimdConfig::new()
+            .with_initial_limit(max_budget)
+            .with_min_limit(min_budget)
+            .with_max_limit(max_budget)
+            .with_increase_by(1) // Slowly recover the max limit
+            .with_decrease_factor(decrease_factor);
+
         Self {
             tokens: AtomicU64::new(max_budget as u64),
-            min_budget: min_budget as u64,
-            current_max: AtomicU64::new(max_budget as u64),
-            absolute_max: max_budget as u64,
+            limit_controller: AimdController::new(config),
             deposit_amount: deposit_amount as u64,
             withdraw_amount: withdraw_amount as u64,
-            decrease_factor,
         }
+    }
+
+    /// Get the current maximum limit (controlled by AIMD).
+    pub fn current_max(&self) -> usize {
+        self.limit_controller.limit()
     }
 }
 
@@ -304,11 +309,8 @@ impl RetryBudget for AimdBudget {
         loop {
             let current = self.tokens.load(Ordering::Relaxed);
             if current < self.withdraw_amount {
-                // Budget exhausted - apply multiplicative decrease to max
-                let current_max = self.current_max.load(Ordering::Relaxed);
-                let new_max =
-                    ((current_max as f64 * self.decrease_factor) as u64).max(self.min_budget);
-                self.current_max.store(new_max, Ordering::Relaxed);
+                // Budget exhausted - apply multiplicative decrease to max via controller
+                self.limit_controller.on_failure();
                 return false;
             }
             let new_tokens = current - self.withdraw_amount;
@@ -323,18 +325,15 @@ impl RetryBudget for AimdBudget {
     }
 
     fn deposit(&self) {
-        let current_max = self.current_max.load(Ordering::Relaxed);
+        let current_max = self.limit_controller.limit() as u64;
         let current = self.tokens.load(Ordering::Relaxed);
 
         // Additive increase: add deposit amount, cap at current max
         let new_tokens = (current + self.deposit_amount).min(current_max);
         self.tokens.store(new_tokens, Ordering::Relaxed);
 
-        // Also slowly increase the max back toward absolute max
-        if current_max < self.absolute_max {
-            let new_max = (current_max + 1).min(self.absolute_max);
-            self.current_max.store(new_max, Ordering::Relaxed);
-        }
+        // Also slowly increase the max back toward absolute max via controller
+        self.limit_controller.on_success();
     }
 
     fn balance(&self) -> usize {
@@ -427,6 +426,41 @@ mod tests {
             count >= 1,
             "Should allow at least 1 withdrawal after deposit"
         );
+    }
+
+    #[test]
+    fn test_aimd_current_max() {
+        let budget = AimdBudget::new(5, 100, 1, 1, 0.5);
+        assert_eq!(budget.current_max(), 100);
+
+        // Exhaust and trigger decrease
+        for _ in 0..100 {
+            budget.try_withdraw();
+        }
+        budget.try_withdraw(); // This triggers the decrease
+
+        assert_eq!(budget.current_max(), 50);
+    }
+
+    #[test]
+    fn test_aimd_uses_shared_controller() {
+        // Verify that the AIMD budget correctly uses the shared controller
+        let budget = AimdBudget::new(1, 10, 1, 1, 0.5);
+
+        // Exhaust tokens
+        for _ in 0..10 {
+            budget.try_withdraw();
+        }
+
+        // Trigger multiple failures to see multiplicative decrease
+        budget.try_withdraw(); // max -> 5
+        assert_eq!(budget.current_max(), 5);
+
+        budget.try_withdraw(); // max -> 2
+        assert_eq!(budget.current_max(), 2);
+
+        budget.try_withdraw(); // max -> 1 (min)
+        assert_eq!(budget.current_max(), 1);
     }
 
     #[test]
