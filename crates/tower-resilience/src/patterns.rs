@@ -1015,7 +1015,7 @@ pub mod hedge {
     //! # }
     //! # impl std::error::Error for DbError {}
     //! # async fn example() {
-    //! # let database_query = tower::service_fn(|_req: String| async { Ok::<_, DbError>("".into()) });
+    //! # let database_query = tower::service_fn(|_req: String| async { Ok::<String, DbError>(String::new()) });
     //! // Fire hedge after 50ms if primary hasn't responded
     //! let hedge = HedgeLayer::builder()
     //!     .name("db-query-hedge")
@@ -1043,7 +1043,7 @@ pub mod hedge {
     //! # }
     //! # impl std::error::Error for ApiError {}
     //! # async fn example() {
-    //! # let multi_region_api = tower::service_fn(|_req: String| async { Ok::<_, ApiError>("".into()) });
+    //! # let multi_region_api = tower::service_fn(|_req: String| async { Ok::<String, ApiError>(String::new()) });
     //! // Fire all 3 requests immediately, return fastest
     //! let hedge = HedgeLayer::<String, String, ApiError>::builder()
     //!     .name("multi-region-hedge")
@@ -1072,7 +1072,7 @@ pub mod hedge {
     //! # }
     //! # impl std::error::Error for CacheError {}
     //! # async fn example() {
-    //! # let cache_lookup = tower::service_fn(|_req: String| async { Ok::<_, CacheError>("".into()) });
+    //! # let cache_lookup = tower::service_fn(|_req: String| async { Ok::<String, CacheError>(String::new()) });
     //! // Increasing delays: 10ms, 40ms, 90ms...
     //! let hedge = HedgeLayer::builder()
     //!     .name("cache-hedge")
@@ -1102,7 +1102,7 @@ pub mod hedge {
     //! # }
     //! # impl std::error::Error for MyError {}
     //! # async fn example() {
-    //! # let service_fn = tower::service_fn(|_req: String| async { Ok::<_, MyError>("".into()) });
+    //! # let service_fn = tower::service_fn(|_req: String| async { Ok::<String, MyError>(String::new()) });
     //! let hedge = HedgeLayer::builder()
     //!     .name("monitored-hedge")
     //!     .delay(Duration::from_millis(50))
