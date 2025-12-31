@@ -6,13 +6,27 @@
 //! # Features
 //!
 //! - **Permit-based rate limiting**: Control requests per time period
+//! - **Multiple window types**: Fixed, sliding log, and sliding counter algorithms
 //! - **Configurable timeout**: Wait up to a specified duration for permits
 //! - **Automatic refresh**: Permits automatically refresh after each period
 //! - **Event system**: Observability through rate limiter events
 //!
+//! # Window Types
+//!
+//! The rate limiter supports three different windowing strategies:
+//!
+//! - **Fixed** (default): Resets permits at fixed intervals. Simple and efficient
+//!   but can allow bursts at window boundaries.
+//!
+//! - **SlidingLog**: Stores timestamps of each request. Provides precise rate limiting
+//!   with no burst allowance, but uses O(n) memory where n = requests in window.
+//!
+//! - **SlidingCounter**: Uses weighted averaging between time buckets. Approximate
+//!   sliding window behavior with O(1) memory - ideal for high-throughput APIs.
+//!
 //! # Examples
 //!
-//! ## Basic Rate Limiting
+//! ## Basic Rate Limiting (Fixed Window)
 //!
 //! ```
 //! use tower_resilience_ratelimiter::RateLimiterLayer;
@@ -34,6 +48,61 @@
 //!     .build();
 //!
 //! // Apply to a service
+//! let service = ServiceBuilder::new()
+//!     .layer(rate_limiter)
+//!     .service(tower::service_fn(|req: String| async move {
+//!         Ok::<_, std::io::Error>(format!("Response: {}", req))
+//!     }));
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Sliding Log Rate Limiting (Precise)
+//!
+//! Use sliding log for precise rate limiting with no burst allowance at window
+//! boundaries. This is ideal when you need to strictly enforce rate limits,
+//! such as when calling external APIs with strict quotas.
+//!
+//! ```
+//! use tower_resilience_ratelimiter::{RateLimiterLayer, WindowType};
+//! use tower::ServiceBuilder;
+//! use std::time::Duration;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let rate_limiter = RateLimiterLayer::builder()
+//!     .limit_for_period(100)
+//!     .refresh_period(Duration::from_secs(1))
+//!     .window_type(WindowType::SlidingLog)
+//!     .timeout_duration(Duration::from_millis(500))
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(rate_limiter)
+//!     .service(tower::service_fn(|req: String| async move {
+//!         Ok::<_, std::io::Error>(format!("Response: {}", req))
+//!     }));
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Sliding Counter Rate Limiting (Efficient)
+//!
+//! Use sliding counter for high-throughput APIs where you want approximate
+//! sliding window behavior without the memory overhead of storing timestamps.
+//!
+//! ```
+//! use tower_resilience_ratelimiter::{RateLimiterLayer, WindowType};
+//! use tower::ServiceBuilder;
+//! use std::time::Duration;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! let rate_limiter = RateLimiterLayer::builder()
+//!     .limit_for_period(10000)  // High throughput
+//!     .refresh_period(Duration::from_secs(1))
+//!     .window_type(WindowType::SlidingCounter)
+//!     .timeout_duration(Duration::from_millis(100))
+//!     .build();
+//!
 //! let service = ServiceBuilder::new()
 //!     .layer(rate_limiter)
 //!     .service(tower::service_fn(|req: String| async move {
@@ -149,7 +218,7 @@ mod events;
 mod layer;
 mod limiter;
 
-pub use config::{RateLimiterConfig, RateLimiterConfigBuilder};
+pub use config::{RateLimiterConfig, RateLimiterConfigBuilder, WindowType};
 pub use error::RateLimiterError;
 pub use events::RateLimiterEvent;
 pub use layer::RateLimiterLayer;
@@ -193,6 +262,7 @@ impl<S> RateLimiter<S> {
         }
 
         let limiter = SharedRateLimiter::new(
+            config.window_type,
             config.limit_for_period,
             config.refresh_period,
             config.timeout_duration,
