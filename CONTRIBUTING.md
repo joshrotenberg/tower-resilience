@@ -37,6 +37,7 @@ cargo run --example timelimiter
 cargo run --example cache
 cargo run --example chaos
 cargo run --example reconnect
+cargo run --example adaptive
 ```
 
 ### Module-Specific Examples
@@ -79,6 +80,7 @@ cargo run --example combined -p tower-resilience
 - `crates/tower-resilience-cache` - Response caching
 - `crates/tower-resilience-ratelimiter` - Rate limiting
 - `crates/tower-resilience-executor` - Executor delegation
+- `crates/tower-resilience-adaptive` - Adaptive concurrency limiting
 - `crates/tower-resilience` - Meta-crate re-exporting all patterns
 
 ## Development Guidelines

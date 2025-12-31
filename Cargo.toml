@@ -20,6 +20,7 @@ tower-resilience-reconnect = { path = "crates/tower-resilience-reconnect", featu
 tower-resilience-healthcheck = { path = "crates/tower-resilience-healthcheck" }
 tower-resilience-fallback = { path = "crates/tower-resilience-fallback", features = ["metrics"] }
 tower-resilience-hedge = { path = "crates/tower-resilience-hedge", features = ["metrics"] }
+tower-resilience-adaptive = { path = "crates/tower-resilience-adaptive" }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
