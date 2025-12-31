@@ -1,4 +1,5 @@
 use crate::backoff::{ExponentialBackoff, FixedInterval, IntervalFunction};
+use crate::budget::RetryBudget;
 use crate::events::RetryEvent;
 use crate::policy::{RetryPolicy, RetryPredicate};
 use std::sync::Arc;
@@ -10,6 +11,7 @@ pub struct RetryConfig<E> {
     pub(crate) policy: RetryPolicy<E>,
     pub(crate) event_listeners: EventListeners<RetryEvent>,
     pub(crate) name: String,
+    pub(crate) budget: Option<Arc<dyn RetryBudget>>,
 }
 
 /// Builder for [`RetryConfig`].
@@ -19,6 +21,7 @@ pub struct RetryConfigBuilder<E> {
     retry_predicate: Option<RetryPredicate<E>>,
     event_listeners: EventListeners<RetryEvent>,
     name: String,
+    budget: Option<Arc<dyn RetryBudget>>,
 }
 
 impl<E> Default for RetryConfigBuilder<E> {
@@ -34,6 +37,7 @@ impl<E> RetryConfigBuilder<E> {
     /// - max_attempts: 3
     /// - backoff: Exponential with 100ms initial interval
     /// - name: `"<unnamed>"`
+    /// - budget: None (unlimited retries)
     pub fn new() -> Self {
         Self {
             max_attempts: 3,
@@ -41,6 +45,7 @@ impl<E> RetryConfigBuilder<E> {
             retry_predicate: None,
             event_listeners: EventListeners::new(),
             name: "<unnamed>".to_string(),
+            budget: None,
         }
     }
 
@@ -86,6 +91,70 @@ impl<E> RetryConfigBuilder<E> {
     /// Sets the name for this retry instance (used in events).
     pub fn name<S: Into<String>>(mut self, name: S) -> Self {
         self.name = name.into();
+        self
+    }
+
+    /// Sets a retry budget to limit total retries across all requests.
+    ///
+    /// Retry budgets prevent retry storms by limiting the total number of
+    /// retries that can occur, regardless of how many concurrent requests
+    /// are being processed.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_retry::{RetryLayer, RetryBudgetBuilder};
+    /// use std::time::Duration;
+    ///
+    /// // Create a token bucket budget: 10 retries/sec, max burst of 100
+    /// let budget = RetryBudgetBuilder::new()
+    ///     .token_bucket()
+    ///     .tokens_per_second(10.0)
+    ///     .max_tokens(100)
+    ///     .build();
+    ///
+    /// let layer = RetryLayer::<std::io::Error>::builder()
+    ///     .max_attempts(5)
+    ///     .exponential_backoff(Duration::from_millis(100))
+    ///     .budget(budget)
+    ///     .build();
+    /// ```
+    pub fn budget(mut self, budget: Arc<dyn RetryBudget>) -> Self {
+        self.budget = Some(budget);
+        self
+    }
+
+    /// Registers a callback when a retry is skipped due to budget exhaustion.
+    ///
+    /// This callback is invoked when a retry would have been attempted, but
+    /// the retry budget has been exhausted. The request will fail immediately
+    /// instead of retrying.
+    ///
+    /// # Callback Signature
+    /// `Fn(usize)` - Called with the attempt number that was skipped.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use tower_resilience_retry::RetryLayer;
+    /// use std::time::Duration;
+    ///
+    /// let layer = RetryLayer::<std::io::Error>::builder()
+    ///     .max_attempts(5)
+    ///     .on_budget_exhausted(|attempt| {
+    ///         println!("Retry {} skipped - budget exhausted", attempt);
+    ///     })
+    ///     .build();
+    /// ```
+    pub fn on_budget_exhausted<F>(mut self, f: F) -> Self
+    where
+        F: Fn(usize) + Send + Sync + 'static,
+    {
+        self.event_listeners.add(FnListener::new(move |event| {
+            if let RetryEvent::BudgetExhausted { attempt, .. } = event {
+                f(*attempt);
+            }
+        }));
         self
     }
 
@@ -262,6 +331,7 @@ impl<E> RetryConfigBuilder<E> {
             policy,
             event_listeners: self.event_listeners,
             name: self.name,
+            budget: self.budget,
         };
 
         crate::RetryLayer::new(config)

@@ -126,6 +126,7 @@
 //! ```
 
 mod backoff;
+mod budget;
 mod config;
 mod events;
 mod layer;
@@ -134,6 +135,7 @@ mod policy;
 pub use backoff::{
     ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval, IntervalFunction,
 };
+pub use budget::{AimdBudget, RetryBudget, RetryBudgetBuilder, TokenBucketBudget};
 pub use config::{RetryConfig, RetryConfigBuilder};
 pub use events::RetryEvent;
 pub use layer::RetryLayer;
@@ -220,7 +222,11 @@ where
 
                 match result {
                     Ok(response) => {
-                        // Success
+                        // Success - deposit to budget if configured
+                        if let Some(ref budget) = config.budget {
+                            budget.deposit();
+                        }
+
                         #[cfg(feature = "metrics")]
                         {
                             counter!("retry_calls_total", "retry" => config.name.clone(), "result" => "success").increment(1);
@@ -276,6 +282,27 @@ where
                             };
                             config.event_listeners.emit(&event);
                             return Err(error);
+                        }
+
+                        // Check retry budget if configured
+                        if let Some(ref budget) = config.budget {
+                            if !budget.try_withdraw() {
+                                #[cfg(feature = "metrics")]
+                                {
+                                    counter!("retry_calls_total", "retry" => config.name.clone(), "result" => "budget_exhausted").increment(1);
+                                }
+
+                                #[cfg(feature = "tracing")]
+                                warn!(retry = %config.name, attempt = attempt + 1, "Retry budget exhausted, failing immediately");
+
+                                let event = RetryEvent::BudgetExhausted {
+                                    pattern_name: config.name.clone(),
+                                    timestamp: Instant::now(),
+                                    attempt: attempt + 1,
+                                };
+                                config.event_listeners.emit(&event);
+                                return Err(error);
+                            }
                         }
 
                         // Calculate backoff and retry
@@ -505,6 +532,75 @@ mod tests {
 
         assert_eq!(retry_count.load(Ordering::SeqCst), 2); // 2 retries
         assert_eq!(success_count.load(Ordering::SeqCst), 1); // 1 success
+    }
+
+    #[tokio::test]
+    async fn budget_limits_retries() {
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let budget_exhausted_count = Arc::new(AtomicUsize::new(0));
+
+        let cc = Arc::clone(&call_count);
+        let bec = Arc::clone(&budget_exhausted_count);
+
+        // Create a budget with only 1 token
+        let budget = RetryBudgetBuilder::new()
+            .token_bucket()
+            .max_tokens(1)
+            .initial_tokens(1)
+            .build();
+
+        let service = service_fn(move |_req: String| {
+            let cc = Arc::clone(&cc);
+            async move {
+                cc.fetch_add(1, Ordering::SeqCst);
+                Err::<String, _>(TestError::new("always fails"))
+            }
+        });
+
+        let layer = RetryLayer::<TestError>::builder()
+            .max_attempts(5)
+            .fixed_backoff(Duration::from_millis(1))
+            .budget(budget)
+            .on_budget_exhausted(move |_| {
+                bec.fetch_add(1, Ordering::SeqCst);
+            })
+            .build();
+
+        let mut service = layer.layer(service);
+
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call("test".to_string())
+            .await;
+
+        assert!(result.is_err());
+        // Should have called twice: 1 initial + 1 retry (budget allows 1 retry)
+        assert_eq!(call_count.load(Ordering::SeqCst), 2);
+        // Budget exhausted should be called once (when 2nd retry was blocked)
+        assert_eq!(budget_exhausted_count.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn budget_replenishes_on_success() {
+        let budget = RetryBudgetBuilder::new()
+            .token_bucket()
+            .max_tokens(10)
+            .initial_tokens(0) // Start empty
+            .build();
+
+        // Budget starts empty
+        assert_eq!(budget.balance(), 0);
+        assert!(!budget.try_withdraw());
+
+        // Deposit (simulating successful request)
+        budget.deposit();
+        assert_eq!(budget.balance(), 1);
+
+        // Now withdrawal should work
+        assert!(budget.try_withdraw());
+        assert_eq!(budget.balance(), 0);
     }
 
     // Note: Backoff behavior is tested in tests/retry/retry_backoff.rs

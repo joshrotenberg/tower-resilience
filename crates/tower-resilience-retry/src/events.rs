@@ -28,6 +28,12 @@ pub enum RetryEvent {
         pattern_name: String,
         timestamp: Instant,
     },
+    /// A retry was skipped because the retry budget was exhausted.
+    BudgetExhausted {
+        pattern_name: String,
+        timestamp: Instant,
+        attempt: usize,
+    },
 }
 
 impl ResilienceEvent for RetryEvent {
@@ -37,24 +43,27 @@ impl ResilienceEvent for RetryEvent {
             RetryEvent::Success { .. } => "Success",
             RetryEvent::Error { .. } => "Error",
             RetryEvent::IgnoredError { .. } => "IgnoredError",
+            RetryEvent::BudgetExhausted { .. } => "BudgetExhausted",
         }
     }
 
     fn timestamp(&self) -> Instant {
         match self {
-            RetryEvent::Retry { timestamp, .. } => *timestamp,
-            RetryEvent::Success { timestamp, .. } => *timestamp,
-            RetryEvent::Error { timestamp, .. } => *timestamp,
-            RetryEvent::IgnoredError { timestamp, .. } => *timestamp,
+            RetryEvent::Retry { timestamp, .. }
+            | RetryEvent::Success { timestamp, .. }
+            | RetryEvent::Error { timestamp, .. }
+            | RetryEvent::IgnoredError { timestamp, .. }
+            | RetryEvent::BudgetExhausted { timestamp, .. } => *timestamp,
         }
     }
 
     fn pattern_name(&self) -> &str {
         match self {
-            RetryEvent::Retry { pattern_name, .. } => pattern_name,
-            RetryEvent::Success { pattern_name, .. } => pattern_name,
-            RetryEvent::Error { pattern_name, .. } => pattern_name,
-            RetryEvent::IgnoredError { pattern_name, .. } => pattern_name,
+            RetryEvent::Retry { pattern_name, .. }
+            | RetryEvent::Success { pattern_name, .. }
+            | RetryEvent::Error { pattern_name, .. }
+            | RetryEvent::IgnoredError { pattern_name, .. }
+            | RetryEvent::BudgetExhausted { pattern_name, .. } => pattern_name,
         }
     }
 }
