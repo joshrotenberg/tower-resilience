@@ -30,11 +30,11 @@
 //! let controller = AimdController::new(config);
 //!
 //! // On success, limit increases
-//! controller.on_success();
+//! controller.record_success();
 //! assert_eq!(controller.limit(), 11);
 //!
 //! // On failure, limit decreases by factor
-//! controller.on_failure();
+//! controller.record_failure();
 //! assert_eq!(controller.limit(), 5); // 11 * 0.5 = 5.5 -> 5
 //! ```
 
@@ -152,7 +152,7 @@ impl AimdController {
     }
 
     /// Record a success - increases the limit additively.
-    pub fn on_success(&self) {
+    pub fn record_success(&self) {
         let current = self.limit.load(Ordering::Relaxed);
         let new_limit = current
             .saturating_add(self.config.increase_by)
@@ -161,7 +161,7 @@ impl AimdController {
     }
 
     /// Record a failure - decreases the limit multiplicatively.
-    pub fn on_failure(&self) {
+    pub fn record_failure(&self) {
         let current = self.limit.load(Ordering::Relaxed);
         let decreased = (current as f64 * self.config.decrease_factor) as usize;
         let new_limit = decreased.max(self.config.min_limit);
@@ -169,7 +169,7 @@ impl AimdController {
     }
 
     /// Record multiple successes at once.
-    pub fn on_successes(&self, count: usize) {
+    pub fn record_successes(&self, count: usize) {
         let current = self.limit.load(Ordering::Relaxed);
         let increase = self.config.increase_by.saturating_mul(count);
         let new_limit = current.saturating_add(increase).min(self.config.max_limit);
@@ -271,10 +271,10 @@ mod tests {
             .with_increase_by(2);
         let controller = AimdController::new(config);
 
-        controller.on_success();
+        controller.record_success();
         assert_eq!(controller.limit(), 12);
 
-        controller.on_success();
+        controller.record_success();
         assert_eq!(controller.limit(), 14);
     }
 
@@ -286,7 +286,7 @@ mod tests {
             .with_increase_by(5);
         let controller = AimdController::new(config);
 
-        controller.on_success();
+        controller.record_success();
         assert_eq!(controller.limit(), 100); // Clamped to max
     }
 
@@ -297,10 +297,10 @@ mod tests {
             .with_decrease_factor(0.5);
         let controller = AimdController::new(config);
 
-        controller.on_failure();
+        controller.record_failure();
         assert_eq!(controller.limit(), 50);
 
-        controller.on_failure();
+        controller.record_failure();
         assert_eq!(controller.limit(), 25);
     }
 
@@ -312,7 +312,7 @@ mod tests {
             .with_decrease_factor(0.1);
         let controller = AimdController::new(config);
 
-        controller.on_failure();
+        controller.record_failure();
         assert_eq!(controller.limit(), 5); // Clamped to min
     }
 
@@ -323,7 +323,7 @@ mod tests {
             .with_increase_by(1);
         let controller = AimdController::new(config);
 
-        controller.on_successes(5);
+        controller.record_successes(5);
         assert_eq!(controller.limit(), 15);
     }
 
@@ -332,8 +332,8 @@ mod tests {
         let config = AimdConfig::default().with_initial_limit(50);
         let controller = AimdController::new(config);
 
-        controller.on_success();
-        controller.on_success();
+        controller.record_success();
+        controller.record_success();
         assert_eq!(controller.limit(), 52);
 
         controller.reset();
@@ -353,22 +353,22 @@ mod tests {
 
         // Increase 10 times
         for _ in 0..10 {
-            controller.on_success();
+            controller.record_success();
         }
         assert_eq!(controller.limit(), 20);
 
         // Failure halves it
-        controller.on_failure();
+        controller.record_failure();
         assert_eq!(controller.limit(), 10);
 
         // Increase again
         for _ in 0..20 {
-            controller.on_success();
+            controller.record_success();
         }
         assert_eq!(controller.limit(), 30);
 
         // Another failure
-        controller.on_failure();
+        controller.record_failure();
         assert_eq!(controller.limit(), 15);
     }
 
@@ -376,13 +376,13 @@ mod tests {
     fn test_clone() {
         let config = AimdConfig::default().with_initial_limit(42);
         let controller = AimdController::new(config);
-        controller.on_success();
+        controller.record_success();
 
         let cloned = controller.clone();
         assert_eq!(cloned.limit(), 43);
 
         // Changes to original don't affect clone
-        controller.on_failure();
+        controller.record_failure();
         assert_eq!(controller.limit(), 21);
         assert_eq!(cloned.limit(), 43);
     }
@@ -413,7 +413,7 @@ mod tests {
             let c = Arc::clone(&controller);
             handles.push(thread::spawn(move || {
                 for _ in 0..100 {
-                    c.on_success();
+                    c.record_success();
                 }
             }));
         }

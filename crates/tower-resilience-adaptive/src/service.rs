@@ -130,8 +130,8 @@ where
                 in_flight.fetch_sub(1, Ordering::Relaxed);
 
                 match &result {
-                    Ok(_) => algorithm.on_success(latency),
-                    Err(_) => algorithm.on_failure(),
+                    Ok(_) => algorithm.record_success(latency),
+                    Err(_) => algorithm.record_failure(),
                 }
 
                 // Adjust semaphore based on new algorithm limit

@@ -310,7 +310,7 @@ impl RetryBudget for AimdBudget {
             let current = self.tokens.load(Ordering::Relaxed);
             if current < self.withdraw_amount {
                 // Budget exhausted - apply multiplicative decrease to max via controller
-                self.limit_controller.on_failure();
+                self.limit_controller.record_failure();
                 return false;
             }
             let new_tokens = current - self.withdraw_amount;
@@ -333,7 +333,7 @@ impl RetryBudget for AimdBudget {
         self.tokens.store(new_tokens, Ordering::Relaxed);
 
         // Also slowly increase the max back toward absolute max via controller
-        self.limit_controller.on_success();
+        self.limit_controller.record_success();
     }
 
     fn balance(&self) -> usize {

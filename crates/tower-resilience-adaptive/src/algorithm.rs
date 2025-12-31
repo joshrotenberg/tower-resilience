@@ -10,13 +10,13 @@ use tower_resilience_core::aimd::{AimdConfig, AimdController};
 /// Trait for adaptive concurrency control algorithms.
 pub trait ConcurrencyAlgorithm: Send + Sync {
     /// Record a successful request with its latency.
-    fn on_success(&self, latency: Duration);
+    fn record_success(&self, latency: Duration);
 
     /// Record a failed request.
-    fn on_failure(&self);
+    fn record_failure(&self);
 
     /// Record a dropped/cancelled request.
-    fn on_dropped(&self);
+    fn record_dropped(&self);
 
     /// Get the current concurrency limit.
     fn limit(&self) -> usize;
@@ -57,20 +57,20 @@ impl Aimd {
 }
 
 impl ConcurrencyAlgorithm for Aimd {
-    fn on_success(&self, latency: Duration) {
+    fn record_success(&self, latency: Duration) {
         if latency > self.latency_threshold {
             // High latency indicates congestion
-            self.controller.on_failure();
+            self.controller.record_failure();
         } else {
-            self.controller.on_success();
+            self.controller.record_success();
         }
     }
 
-    fn on_failure(&self) {
-        self.controller.on_failure();
+    fn record_failure(&self) {
+        self.controller.record_failure();
     }
 
-    fn on_dropped(&self) {
+    fn record_dropped(&self) {
         // Dropped requests don't affect the limit
     }
 
@@ -295,19 +295,19 @@ impl Vegas {
 }
 
 impl ConcurrencyAlgorithm for Vegas {
-    fn on_success(&self, latency: Duration) {
+    fn record_success(&self, latency: Duration) {
         self.update_rtt(latency);
         self.adjust_limit();
     }
 
-    fn on_failure(&self) {
+    fn record_failure(&self) {
         // On error, decrease limit immediately
         let current = self.limit.load(Ordering::Relaxed);
         let new_limit = (current / 2).max(self.min_limit);
         self.limit.store(new_limit, Ordering::Relaxed);
     }
 
-    fn on_dropped(&self) {
+    fn record_dropped(&self) {
         // Dropped requests don't affect the limit
     }
 
@@ -402,24 +402,24 @@ pub enum Algorithm {
 }
 
 impl ConcurrencyAlgorithm for Algorithm {
-    fn on_success(&self, latency: Duration) {
+    fn record_success(&self, latency: Duration) {
         match self {
-            Algorithm::Aimd(a) => a.on_success(latency),
-            Algorithm::Vegas(v) => v.on_success(latency),
+            Algorithm::Aimd(a) => a.record_success(latency),
+            Algorithm::Vegas(v) => v.record_success(latency),
         }
     }
 
-    fn on_failure(&self) {
+    fn record_failure(&self) {
         match self {
-            Algorithm::Aimd(a) => a.on_failure(),
-            Algorithm::Vegas(v) => v.on_failure(),
+            Algorithm::Aimd(a) => a.record_failure(),
+            Algorithm::Vegas(v) => v.record_failure(),
         }
     }
 
-    fn on_dropped(&self) {
+    fn record_dropped(&self) {
         match self {
-            Algorithm::Aimd(a) => a.on_dropped(),
-            Algorithm::Vegas(v) => v.on_dropped(),
+            Algorithm::Aimd(a) => a.record_dropped(),
+            Algorithm::Vegas(v) => v.record_dropped(),
         }
     }
 
@@ -474,7 +474,7 @@ mod tests {
             .build();
 
         // Fast request - should increase
-        aimd.on_success(Duration::from_millis(50));
+        aimd.record_success(Duration::from_millis(50));
         assert_eq!(aimd.limit(), 11);
     }
 
@@ -487,7 +487,7 @@ mod tests {
             .build();
 
         // Slow request - should decrease
-        aimd.on_success(Duration::from_millis(150));
+        aimd.record_success(Duration::from_millis(150));
         assert_eq!(aimd.limit(), 5);
     }
 
@@ -498,7 +498,7 @@ mod tests {
             .decrease_factor(0.5)
             .build();
 
-        aimd.on_failure();
+        aimd.record_failure();
         assert_eq!(aimd.limit(), 5);
     }
 
@@ -521,7 +521,7 @@ mod tests {
     fn test_vegas_failure_decreases() {
         let vegas = Vegas::builder().initial_limit(20).min_limit(1).build();
 
-        vegas.on_failure();
+        vegas.record_failure();
         assert_eq!(vegas.limit(), 10);
     }
 
@@ -529,9 +529,9 @@ mod tests {
     fn test_vegas_min_rtt_tracking() {
         let vegas = Vegas::builder().initial_limit(10).build();
 
-        vegas.on_success(Duration::from_millis(100));
-        vegas.on_success(Duration::from_millis(50));
-        vegas.on_success(Duration::from_millis(75));
+        vegas.record_success(Duration::from_millis(100));
+        vegas.record_success(Duration::from_millis(50));
+        vegas.record_success(Duration::from_millis(75));
 
         // Min RTT should be 50ms
         let min_rtt = vegas.min_rtt_nanos.load(Ordering::Relaxed);
