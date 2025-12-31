@@ -55,6 +55,7 @@ members = [
     "crates/tower-resilience-healthcheck",
     "crates/tower-resilience-fallback",
     "crates/tower-resilience-hedge",
+    "crates/tower-resilience-executor",
     "crates/tower-resilience",
     "examples/axum-resilient-kv-store",
     "examples/tonic-resilient-greeter",

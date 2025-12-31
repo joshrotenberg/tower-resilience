@@ -78,6 +78,7 @@ cargo run --example combined -p tower-resilience
 - `crates/tower-resilience-retry` - Retry with advanced backoff
 - `crates/tower-resilience-cache` - Response caching
 - `crates/tower-resilience-ratelimiter` - Rate limiting
+- `crates/tower-resilience-executor` - Executor delegation
 - `crates/tower-resilience` - Meta-crate re-exporting all patterns
 
 ## Development Guidelines

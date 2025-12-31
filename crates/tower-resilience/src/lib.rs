@@ -23,6 +23,7 @@
 //! - **[Health Check]** - Proactive health monitoring with intelligent resource selection
 //! - **[Fallback]** - Provides alternative responses when services fail
 //! - **[Hedge]** - Reduces tail latency by firing parallel requests
+//! - **[Executor]** - Delegates request processing to dedicated executors
 //!
 //! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
@@ -34,6 +35,7 @@
 //! [Health Check]: https://docs.rs/tower-resilience-healthcheck
 //! [Fallback]: https://docs.rs/tower-resilience-fallback
 //! [Hedge]: https://docs.rs/tower-resilience-hedge
+//! [Executor]: https://docs.rs/tower-resilience-executor
 //!
 //! # Documentation Guides
 //!
@@ -145,3 +147,6 @@ pub use tower_resilience_fallback as fallback;
 
 #[cfg(feature = "hedge")]
 pub use tower_resilience_hedge as hedge;
+
+#[cfg(feature = "executor")]
+pub use tower_resilience_executor as executor;
