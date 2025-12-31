@@ -9,36 +9,21 @@ A comprehensive resilience and fault-tolerance toolkit for [Tower](https://githu
 
 ## About
 
-Tower-resilience provides composable middleware for building robust distributed systems in Rust. Built on [Tower](https://docs.rs/tower), it extends the ecosystem with production-ready resilience patterns inspired by [Resilience4j](https://resilience4j.readme.io/).
-
-**What sets tower-resilience apart:**
-
-- **Circuit Breaker** - Not available in Tower's built-in middleware
-- **Advanced patterns** - Bulkhead isolation, reconnect strategies, and more
-- **Enhanced retry** - Multiple backoff strategies with better control than Tower's basic retry
-- **Unified observability** - Consistent event system across all patterns
-- **Ergonomic APIs** - Builder pattern with sensible defaults
-- **Battle-tested design** - Patterns adapted from production-proven Resilience4j
+Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Resilience4j](https://resilience4j.readme.io/). Includes circuit breaker, bulkhead, retry with backoff, rate limiting, and more.
 
 ## Resilience Patterns
 
 - **Circuit Breaker** - Prevents cascading failures by stopping calls to failing services
 - **Bulkhead** - Isolates resources to prevent system-wide failures  
 - **Time Limiter** - Advanced timeout handling with cancellation support
-- **Retry** - Intelligent retry with exponential backoff and jitter
-- **Rate Limiter** - Controls request rate to protect services
+- **Retry** - Intelligent retry with exponential backoff, jitter, and retry budgets
+- **Rate Limiter** - Controls request rate with fixed or sliding window algorithms
 - **Cache** - Response memoization to reduce load
+- **Fallback** - Graceful degradation when services fail
+- **Hedge** - Reduces tail latency by racing redundant requests
 - **Reconnect** - Automatic reconnection with configurable backoff strategies
 - **Health Check** - Proactive health monitoring with intelligent resource selection
 - **Chaos** - Inject failures and latency for testing resilience (development/testing only)
-
-## Features
-
-- **Composable** - Stack multiple resilience patterns using Tower's ServiceBuilder
-- **Observable** - Event system for monitoring pattern behavior (retries, state changes, etc.)
-- **Configurable** - Builder APIs with sensible defaults
-- **Async-first** - Built on tokio for async Rust applications
-- **Zero-cost abstractions** - Minimal overhead when patterns aren't triggered
 
 ## Quick Start
 
@@ -62,11 +47,9 @@ let service = ServiceBuilder::new()
         .max_concurrent_calls(10)
         .build())
     .service(my_service);
-
-Use `for_request::<T>()` with the request type `T` your service handles so the circuit
-breaker can plug into `ServiceBuilder`; the existing `layer.layer(service)` helper still
-returns a configured `CircuitBreaker` when you need direct control over the service value.
 ```
+
+> **Note:** Use `for_request::<T>()` with the request type `T` your service handles so the circuit breaker can plug into `ServiceBuilder`. The `layer.layer(service)` method still works when you need direct control over the service value.
 
 ## Examples
 
@@ -207,6 +190,54 @@ let service = layer.layer(my_service);
 
 **Full examples:** [cache.rs](examples/cache.rs) | [cache_example.rs](crates/tower-resilience-cache/examples/cache_example.rs)
 
+### Fallback
+
+Provide fallback responses when the primary service fails:
+
+```rust
+use tower_resilience_fallback::FallbackLayer;
+
+// Return a static fallback value on error
+let layer = FallbackLayer::<Request, Response, MyError>::value(
+    Response::default()
+);
+
+// Or compute fallback from the error
+let layer = FallbackLayer::<Request, Response, MyError>::from_error(|err| {
+    Response::error_response(err)
+});
+
+// Or use a backup service
+let layer = FallbackLayer::<Request, Response, MyError>::service(|req| async {
+    backup_service.call(req).await
+});
+
+let service = layer.layer(primary_service);
+```
+
+### Hedge
+
+Reduce tail latency by firing backup requests after a delay:
+
+```rust
+use tower_resilience_hedge::HedgeLayer;
+use std::time::Duration;
+
+// Fire a hedge request if primary takes > 100ms
+let layer = HedgeLayer::builder()
+    .delay(Duration::from_millis(100))
+    .max_hedged_attempts(2)
+    .build();
+
+// Or fire all requests in parallel (no delay)
+let layer = HedgeLayer::<(), String, MyError>::builder()
+    .no_delay()
+    .max_hedged_attempts(3)
+    .build();
+
+let service = layer.layer(my_service);
+```
+
 ### Reconnect
 
 Automatically reconnect on connection failures with configurable backoff:
@@ -299,41 +330,23 @@ let service = chaos.layer(my_service);
 
 ## Error Handling
 
-### Zero-Boilerplate with ResilienceError
-
-When composing multiple resilience layers, use `ResilienceError<E>` to eliminate manual error conversion code:
+`ResilienceError<E>` provides a unified error type for composed layers:
 
 ```rust
 use tower_resilience_core::ResilienceError;
 
-// Your application error
-#[derive(Debug)]
-enum AppError {
-    DatabaseDown,
-    InvalidRequest,
-}
-
-// That's it! No From implementations needed
 type ServiceError = ResilienceError<AppError>;
 
-// All resilience layer errors automatically convert
 let service = ServiceBuilder::new()
     .layer(timeout_layer)
     .layer(circuit_breaker.for_request::<()>())
     .layer(bulkhead)
     .service(my_service);
+
+// Check error types
+if err.is_timeout() { /* ... */ }
+if err.is_rate_limited() { /* ... */ }
 ```
-
-**Benefits:**
-- Zero boilerplate - no `From` trait implementations
-- Rich error context (layer names, counts, durations)
-- Convenient helpers: `is_timeout()`, `is_rate_limited()`, etc.
-
-See the [Layer Composition Guide](https://docs.rs/tower-resilience) for details.
-
-### Manual Error Handling
-
-For specific use cases, you can still implement custom error types with manual `From` conversions. See examples for both approaches.
 
 ## Pattern Composition
 
@@ -357,91 +370,42 @@ let server = ServiceBuilder::new()
     .service(handler);
 ```
 
-## Performance
+## Benchmarks
 
-Benchmarks measure the overhead of each pattern in the happy path (no failures, circuit closed, permits available):
+Happy path overhead (no failures triggered):
 
-| Pattern | Overhead (ns) | vs Baseline |
-|---------|--------------|-------------|
-| Baseline (no middleware) | ~10 ns | 1.0x |
-| Retry (no retries) | ~80-100 ns | ~8-10x |
-| Time Limiter | ~107 ns | ~10x |
-| Rate Limiter | ~124 ns | ~12x |
-| Bulkhead | ~162 ns | ~16x |
-| Cache (hit) | ~250 ns | ~25x |
-| Circuit Breaker (closed) | ~298 ns | ~29x |
-| Circuit Breaker + Bulkhead | ~413 ns | ~40x |
+| Pattern | Overhead |
+|---------|----------|
+| Retry (no retries) | ~80-100 ns |
+| Time Limiter | ~107 ns |
+| Rate Limiter | ~124 ns |
+| Bulkhead | ~162 ns |
+| Cache (hit) | ~250 ns |
+| Circuit Breaker (closed) | ~298 ns |
 
-**Key Takeaways:**
-- All patterns add < 300ns overhead individually
-- Overhead is additive when composing patterns
-- Even the heaviest pattern (circuit breaker) is negligible for most use cases
-- Retry and time limiter are the lightest weight options
-
-Run benchmarks yourself:
 ```bash
 cargo bench --bench happy_path_overhead
 ```
 
-## Documentation
+## Examples
 
-- [API Documentation](https://docs.rs/tower-resilience)
-- [Pattern Guides](https://docs.rs/tower-resilience) - In-depth guides on when and how to use each pattern
-
-### Examples
-
-Two sets of examples are provided:
-
-- **[Top-level examples](examples/)** - Simple, getting-started examples matching this README (one per pattern)
-- **Module examples** - Detailed examples in each crate's `examples/` directory showing advanced features
-
-Run top-level examples with:
 ```bash
 cargo run --example circuitbreaker
 cargo run --example bulkhead
 cargo run --example retry
-# etc.
 ```
+
+See [examples/](examples/) for more.
 
 ## Stress Tests
 
-Stress tests validate pattern behavior under extreme conditions (high volume, high concurrency, memory stability). They are opt-in and marked with `#[ignore]`:
-
 ```bash
-# Run all stress tests
 cargo test --test stress -- --ignored
-
-# Run specific pattern stress tests
-cargo test --test stress circuitbreaker -- --ignored
-cargo test --test stress bulkhead -- --ignored
-cargo test --test stress cache -- --ignored
-
-# Run with output to see performance metrics
-cargo test --test stress -- --ignored --nocapture
 ```
 
-Example results:
-- **1M calls** through circuit breaker: ~2.8s (357k calls/sec)
-- **10k fast operations** through bulkhead: ~56ms (176k ops/sec)
-- **100k cache** entries: Fill + hit test validates performance
+## MSRV
 
-Stress tests cover:
-- High volume (millions of operations)
-- High concurrency (thousands of concurrent requests)
-- Memory stability (leak detection, bounded growth)
-- State consistency (correctness under load)
-- Pattern composition (layered middleware)
-
-
-
-## Minimum Supported Rust Version (MSRV)
-
-This crate's MSRV is **1.64.0**, matching [Tower's MSRV policy](https://github.com/tower-rs/tower).
-
-We follow Tower's approach:
-- MSRV bumps are not considered breaking changes
-- When increasing MSRV, the new version must have been released at least 6 months ago
-- MSRV is tested in CI to prevent unintentional increases
+1.64.0 (matches Tower)
 
 ## License
 
