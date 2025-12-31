@@ -58,6 +58,7 @@ members = [
     "crates/tower-resilience-hedge",
     "crates/tower-resilience-executor",
     "crates/tower-resilience-adaptive",
+    "crates/tower-resilience-coalesce",
     "crates/tower-resilience",
     "examples/axum-resilient-kv-store",
     "examples/tonic-resilient-greeter",

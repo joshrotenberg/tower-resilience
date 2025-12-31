@@ -81,6 +81,7 @@ cargo run --example combined -p tower-resilience
 - `crates/tower-resilience-ratelimiter` - Rate limiting
 - `crates/tower-resilience-executor` - Executor delegation
 - `crates/tower-resilience-adaptive` - Adaptive concurrency limiting
+- `crates/tower-resilience-coalesce` - Request coalescing (singleflight)
 - `crates/tower-resilience` - Meta-crate re-exporting all patterns
 
 ## Development Guidelines

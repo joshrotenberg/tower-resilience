@@ -1,0 +1,33 @@
+[package]
+name = "tower-resilience-coalesce"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+description = "Request coalescing for Tower services - prevents cache stampedes by deduplicating concurrent identical requests"
+categories = ["asynchronous", "network-programming", "caching"]
+keywords = ["tower", "coalesce", "singleflight", "dedupe", "stampede"]
+
+[dependencies]
+tower-resilience-core = { workspace = true }
+tower = { workspace = true }
+tower-layer = { workspace = true }
+tower-service = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+parking_lot = "0.12"
+hashbrown = "0.15"
+
+# Optional dependencies
+tracing = { workspace = true, optional = true }
+metrics = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "time"] }
+
+[features]
+default = []
+tracing = ["dep:tracing"]
+metrics = ["dep:metrics"]

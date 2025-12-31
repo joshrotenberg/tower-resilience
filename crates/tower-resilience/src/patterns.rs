@@ -17,6 +17,7 @@
 //! - [Hedge](hedge) - Reduce tail latency with parallel requests
 //! - [Executor](executor) - Delegate request processing to dedicated executors
 //! - [Adaptive Concurrency](adaptive) - Dynamic concurrency limiting with AIMD/Vegas
+//! - [Coalesce](coalesce) - Deduplicate concurrent identical requests (singleflight)
 
 /// Circuit Breaker pattern guide
 pub mod circuit_breaker {
@@ -1384,4 +1385,194 @@ pub mod adaptive {
     //!     .layer(AdaptiveLimiterLayer::new(Aimd::builder().build()))
     //!     .service(my_service);
     //! ```
+}
+
+/// Coalesce pattern guide
+pub mod coalesce {
+    //! # Coalesce (Singleflight)
+    //!
+    //! Deduplicates concurrent identical requests, ensuring only one request executes
+    //! while others wait for its result. All callers receive a clone of the result.
+    //! This prevents "cache stampede" or "thundering herd" problems.
+    //!
+    //! ## Coalesce vs Cache
+    //!
+    //! **Key distinction**: Coalesce deduplicates **in-flight requests**, Cache stores **completed results**.
+    //!
+    //! - **Coalesce**: Multiple concurrent requests for same key share ONE execution
+    //! - **Cache**: Stores results after completion for future requests
+    //!
+    //! These patterns **complement each other perfectly**:
+    //! - Cache layer stores completed results
+    //! - Coalesce layer prevents stampede on cache miss
+    //!
+    //! ## How It Works
+    //!
+    //! ```text
+    //! Without Coalesce:                With Coalesce:
+    //! ─────────────────                ──────────────
+    //! Request A ──→ Backend            Request A ──→ Backend
+    //! Request B ──→ Backend            Request B ──┐
+    //! Request C ──→ Backend            Request C ──┤ Wait for A
+    //! (3 backend calls)                Request D ──┘
+    //!                                  (1 backend call, 4 responses)
+    //! ```
+    //!
+    //! ## When to Use
+    //!
+    //! - **Cache refresh protection**: When cached value expires, multiple requests may
+    //!   try to refresh simultaneously. Coalescing ensures only one refresh happens.
+    //!
+    //! - **Expensive computations**: Deduplicate requests for the same expensive operation
+    //!   (e.g., report generation, ML inference, complex queries).
+    //!
+    //! - **Rate-limited APIs**: Reduce calls to external APIs that have rate limits by
+    //!   coalescing identical requests within a time window.
+    //!
+    //! - **Database queries**: Combine identical queries that arrive within a short window
+    //!   to reduce database load.
+    //!
+    //! - **Microservice fanout**: When multiple internal services request the same data,
+    //!   coalesce to avoid redundant downstream calls.
+    //!
+    //! ## Requirements
+    //!
+    //! - **Key type**: Must implement `Hash + Eq + Clone + Send + Sync`
+    //! - **Response type**: Must implement `Clone` (to distribute to all waiters)
+    //! - **Error type**: Must implement `Clone` (errors are also distributed)
+    //!
+    //! ## Trade-offs
+    //!
+    //! - **Latency coupling**: All waiters blocked on slowest request
+    //! - **Error propagation**: One failure affects all waiters
+    //! - **Clone overhead**: Response cloned for each waiter
+    //! - **Memory**: In-flight tracking consumes memory
+    //!
+    //! ## Real-World Scenarios
+    //!
+    //! ```text
+    //! Cache Stampede Prevention
+    //! ├─ Popular item cache expires
+    //! ├─ 1000 requests arrive simultaneously
+    //! ├─ Without coalescing: 1000 database queries
+    //! ├─ With coalescing: 1 database query, 1000 cloned responses
+    //! └─ Database load reduced by 99.9%
+    //!
+    //! Report Generation
+    //! ├─ User A requests monthly report
+    //! ├─ User B requests same report while A's is generating
+    //! ├─ Only one report generated
+    //! └─ Both users receive the same result
+    //!
+    //! External API Protection
+    //! ├─ Multiple services need weather data for same city
+    //! ├─ External API has 100 req/min limit
+    //! ├─ Coalescing reduces calls from 50/sec to 1/sec
+    //! └─ Stay well under rate limit
+    //! ```
+    //!
+    //! ## Anti-Patterns
+    //!
+    //! ❌ **Coalescing non-idempotent operations**: Side effects may be skipped
+    //! ✅ Only coalesce read operations or truly idempotent writes
+    //!
+    //! ❌ **Large response objects**: Clone overhead exceeds savings
+    //! ✅ Return Arc<Response> or small response types
+    //!
+    //! ❌ **Long-running requests**: Waiters blocked for extended time
+    //! ✅ Combine with time limiter to bound wait time
+    //!
+    //! ❌ **Unique request keys**: Every request has different key
+    //! ✅ Design keys to maximize coalescing opportunities
+    //!
+    //! ## Example: Basic Usage
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "coalesce")]
+    //! # {
+    //! use tower_resilience::coalesce::CoalesceLayer;
+    //! use tower::ServiceBuilder;
+    //!
+    //! # #[derive(Clone, Hash, Eq, PartialEq)]
+    //! # struct Request { user_id: u64 }
+    //! # #[derive(Clone)]
+    //! # struct Response;
+    //! # #[derive(Debug, Clone)]
+    //! # struct MyError;
+    //! # async fn example() {
+    //! # let user_service = tower::service_fn(|_req: Request| async { Ok::<_, MyError>(Response) });
+    //! // Coalesce by user_id - concurrent requests for same user share execution
+    //! let layer = CoalesceLayer::new(|req: &Request| req.user_id);
+    //!
+    //! let service = ServiceBuilder::new()
+    //!     .layer(layer)
+    //!     .service(user_service);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: With Cache Layer
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(all(feature = "coalesce", feature = "cache"))]
+    //! # {
+    //! use tower_resilience::coalesce::CoalesceLayer;
+    //! use tower_resilience::cache::CacheLayer;
+    //! use tower::ServiceBuilder;
+    //! use std::time::Duration;
+    //!
+    //! # #[derive(Clone, Hash, Eq, PartialEq)]
+    //! # struct Request { id: String }
+    //! # #[derive(Clone)]
+    //! # struct Response;
+    //! # #[derive(Debug, Clone)]
+    //! # struct MyError;
+    //! # async fn example() {
+    //! # let backend = tower::service_fn(|_req: Request| async { Ok::<_, MyError>(Response) });
+    //! // Cache stores results, Coalesce prevents stampede on cache miss
+    //! let cache = CacheLayer::builder()
+    //!     .max_size(1000)
+    //!     .ttl(Duration::from_secs(300))
+    //!     .key_extractor(|req: &Request| req.id.clone())
+    //!     .build();
+    //!
+    //! let coalesce = CoalesceLayer::new(|req: &Request| req.id.clone());
+    //!
+    //! let service = ServiceBuilder::new()
+    //!     .layer(cache)      // Check cache first
+    //!     .layer(coalesce)   // Coalesce cache misses
+    //!     .service(backend);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: Named Instance
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "coalesce")]
+    //! # {
+    //! use tower_resilience::coalesce::CoalesceLayer;
+    //! use tower::ServiceBuilder;
+    //!
+    //! # #[derive(Debug, Clone)]
+    //! # struct MyError;
+    //! # async fn example() {
+    //! # let report_generator = tower::service_fn(|_req: String| async { Ok::<_, MyError>("report".to_string()) });
+    //! let layer = CoalesceLayer::builder(|req: &String| req.clone())
+    //!     .name("report-coalesce")
+    //!     .build();
+    //!
+    //! let service = ServiceBuilder::new()
+    //!     .layer(layer)
+    //!     .service(report_generator);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Prior Art
+    //!
+    //! This pattern is also known as:
+    //! - **Singleflight** (Go's `golang.org/x/sync/singleflight`)
+    //! - **Request deduplication**
+    //! - **Request collapsing**
 }

@@ -25,6 +25,7 @@
 //! - **[Hedge]** - Reduces tail latency by firing parallel requests
 //! - **[Executor]** - Delegates request processing to dedicated executors
 //! - **[Adaptive]** - Dynamic concurrency limiting using AIMD or Vegas algorithms
+//! - **[Coalesce]** - Deduplicates concurrent identical requests (singleflight)
 //!
 //! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
@@ -38,6 +39,7 @@
 //! [Hedge]: https://docs.rs/tower-resilience-hedge
 //! [Executor]: https://docs.rs/tower-resilience-executor
 //! [Adaptive]: https://docs.rs/tower-resilience-adaptive
+//! [Coalesce]: https://docs.rs/tower-resilience-coalesce
 //!
 //! # Documentation Guides
 //!
@@ -155,3 +157,6 @@ pub use tower_resilience_executor as executor;
 
 #[cfg(feature = "adaptive")]
 pub use tower_resilience_adaptive as adaptive;
+
+#[cfg(feature = "coalesce")]
+pub use tower_resilience_coalesce as coalesce;
