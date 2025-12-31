@@ -73,6 +73,11 @@ pub mod patterns {
     //!        │
     //!        ▼
     //! ┌─────────────────┐
+    //! │    Fallback     │ ← Graceful degradation
+    //! └────────┬────────┘
+    //!          │
+    //!          ▼
+    //! ┌─────────────────┐
     //! │  Time Limiter   │ ← Don't wait forever
     //! └────────┬────────┘
     //!          │
@@ -138,15 +143,17 @@ pub mod ordering {
     //!
     //! ```text
     //! ServiceBuilder::new()
-    //!     .layer(cache)              // 1st: Check cache before anything
-    //!     .layer(timeout)            // 2nd: Enforce overall deadline
-    //!     .layer(circuit_breaker)    // 3rd: Fail fast if down
-    //!     .layer(retry)              // 4th: Retry transient failures (innermost, closest to service)
+    //!     .layer(fallback)           // 1st: Graceful degradation on any error
+    //!     .layer(cache)              // 2nd: Check cache before anything
+    //!     .layer(timeout)            // 3rd: Enforce overall deadline
+    //!     .layer(circuit_breaker)    // 4th: Fail fast if down
+    //!     .layer(retry)              // 5th: Retry transient failures (innermost, closest to service)
     //!     .service(http_client);
     //! ```
     //!
     //! **Rationale**:
-    //! - **Cache** outermost: Skip all other layers on cache hit
+    //! - **Fallback** outermost: Catch any error and provide graceful degradation
+    //! - **Cache** next: Skip remaining layers on cache hit
     //! - **Timeout** next: Enforce deadline across retries and circuit breaker
     //! - **Circuit breaker** before retry: Don't retry when circuit is open
     //! - **Retry** innermost: Retry individual failures before circuit breaker sees them

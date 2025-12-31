@@ -18,6 +18,7 @@ tower-resilience-ratelimiter = { path = "crates/tower-resilience-ratelimiter", f
 tower-resilience-chaos = { path = "crates/tower-resilience-chaos", features = ["metrics"] }
 tower-resilience-reconnect = { path = "crates/tower-resilience-reconnect", features = ["metrics"] }
 tower-resilience-healthcheck = { path = "crates/tower-resilience-healthcheck" }
+tower-resilience-fallback = { path = "crates/tower-resilience-fallback", features = ["metrics"] }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
@@ -51,6 +52,7 @@ members = [
     "crates/tower-resilience-chaos",
     "crates/tower-resilience-reconnect",
     "crates/tower-resilience-healthcheck",
+    "crates/tower-resilience-fallback",
     "crates/tower-resilience",
     "examples/axum-resilient-kv-store",
     "examples/tonic-resilient-greeter",

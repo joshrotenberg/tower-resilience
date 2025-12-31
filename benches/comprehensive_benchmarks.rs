@@ -13,6 +13,7 @@ use tower::{Layer, Service, ServiceBuilder, ServiceExt};
 use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
 use tower_resilience_cache::CacheLayer;
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_fallback::FallbackLayer;
 use tower_resilience_healthcheck::{
     HealthCheckWrapper, HealthChecker, HealthStatus, SelectionStrategy,
 };
@@ -349,6 +350,109 @@ fn bench_timelimiter_timeout(c: &mut Criterion) {
 }
 
 // ============================================================================
+// Fallback Benchmarks
+// ============================================================================
+
+fn bench_fallback_no_failure(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("fallback_no_failure", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer =
+                FallbackLayer::<TestRequest, TestResponse, TestError>::value(TestResponse(0));
+
+            let mut service = layer.layer(BaselineService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
+fn bench_fallback_with_failure(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    // Service that always fails
+    #[derive(Clone)]
+    struct FailingService;
+
+    impl Service<TestRequest> for FailingService {
+        type Response = TestResponse;
+        type Error = TestError;
+        type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+        fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+
+        fn call(&mut self, _req: TestRequest) -> Self::Future {
+            Box::pin(async move { Err(TestError) })
+        }
+    }
+
+    c.bench_function("fallback_with_failure", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer =
+                FallbackLayer::<TestRequest, TestResponse, TestError>::value(TestResponse(999));
+
+            let mut service = layer.layer(FailingService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
+fn bench_fallback_from_error(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    #[derive(Clone)]
+    struct FailingService;
+
+    impl Service<TestRequest> for FailingService {
+        type Response = TestResponse;
+        type Error = TestError;
+        type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+        fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+
+        fn call(&mut self, _req: TestRequest) -> Self::Future {
+            Box::pin(async move { Err(TestError) })
+        }
+    }
+
+    c.bench_function("fallback_from_error", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer = FallbackLayer::<TestRequest, TestResponse, TestError>::from_error(
+                |_e: &TestError| TestResponse(0),
+            );
+
+            let mut service = layer.layer(FailingService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
+// ============================================================================
 // Pattern Composition Benchmarks
 // ============================================================================
 
@@ -405,9 +509,17 @@ criterion_group!(
 
 criterion_group!(composition_benches, bench_full_stack_composition,);
 
+criterion_group!(
+    fallback_benches,
+    bench_fallback_no_failure,
+    bench_fallback_with_failure,
+    bench_fallback_from_error,
+);
+
 criterion_main!(
     reconnect_benches,
     healthcheck_benches,
     worst_case_benches,
     composition_benches,
+    fallback_benches,
 );
