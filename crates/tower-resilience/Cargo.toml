@@ -25,6 +25,7 @@ tower-resilience-ratelimiter = { version = "0.4.7", path = "../tower-resilience-
 tower-resilience-reconnect = { version = "0.4.7", path = "../tower-resilience-reconnect", optional = true }
 tower-resilience-healthcheck = { version = "0.1.1", path = "../tower-resilience-healthcheck", optional = true }
 tower-resilience-fallback = { version = "0.1.0", path = "../tower-resilience-fallback", optional = true }
+tower-resilience-hedge = { version = "0.1.0", path = "../tower-resilience-hedge", optional = true }
 
 [features]
 default = []
@@ -38,8 +39,9 @@ ratelimiter = ["dep:tower-resilience-ratelimiter"]
 reconnect = ["dep:tower-resilience-reconnect"]
 healthcheck = ["dep:tower-resilience-healthcheck"]
 fallback = ["dep:tower-resilience-fallback"]
+hedge = ["dep:tower-resilience-hedge"]
 # Enable all patterns
-full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry", "ratelimiter", "reconnect", "healthcheck", "fallback"]
+full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry", "ratelimiter", "reconnect", "healthcheck", "fallback", "hedge"]
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }

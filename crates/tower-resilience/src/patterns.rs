@@ -14,6 +14,7 @@
 //! - [Reconnect](reconnect) - Auto-reconnect persistent connections
 //! - [Health Check](healthcheck) - Proactive resource health monitoring
 //! - [Fallback](fallback) - Provide alternative responses on failure
+//! - [Hedge](hedge) - Reduce tail latency with parallel requests
 
 /// Circuit Breaker pattern guide
 pub mod circuit_breaker {
@@ -901,6 +902,225 @@ pub mod fallback {
     //! });
     //!
     //! let service = fallback.layer(primary_service);
+    //! # }
+    //! # }
+    //! ```
+}
+
+/// Hedge pattern guide
+pub mod hedge {
+    //! # Hedge
+    //!
+    //! Reduces tail latency by executing parallel redundant requests. When the primary
+    //! request is slow, hedging fires additional requests and returns whichever
+    //! completes first successfully.
+    //!
+    //! ## Hedge vs Retry
+    //!
+    //! **Key distinction**: Hedge runs requests **in parallel**, Retry runs them **sequentially**.
+    //!
+    //! - **Hedge**: Fire backup requests while primary is still running (latency optimization)
+    //! - **Retry**: Wait for failure, then try again (reliability optimization)
+    //!
+    //! Use Hedge when latency matters more than resource usage. Use Retry for fault tolerance.
+    //!
+    //! ## Hedging Modes
+    //!
+    //! ### Latency Mode (delay > 0)
+    //! Wait for a specified duration before firing hedge requests. Only fires hedges
+    //! if the primary is slow. This is the default and most resource-efficient mode.
+    //!
+    //! ### Parallel Mode (delay = 0)
+    //! Fire all requests simultaneously. Returns the fastest response. Maximum latency
+    //! reduction at the cost of higher resource usage.
+    //!
+    //! ### Dynamic Delay
+    //! Adjust delay based on attempt number or other factors. Useful for graduated
+    //! hedging strategies.
+    //!
+    //! ## When to Use
+    //!
+    //! - **Tail latency critical**: P99/P999 latency matters (trading systems, real-time)
+    //! - **Idempotent operations**: Safe to execute multiple times (reads, idempotent writes)
+    //! - **Variable backend latency**: Some backends occasionally slow but usually fast
+    //! - **Low-cost operations**: Extra requests are cheap relative to latency improvement
+    //!
+    //! ## When NOT to Use
+    //!
+    //! ❌ **Non-idempotent operations**: Hedging POST /transfer could transfer money twice
+    //! ❌ **Resource-constrained backends**: Extra load could make things worse
+    //! ❌ **High-cost operations**: Hedging expensive operations wastes resources
+    //! ❌ **Consistently slow backends**: All requests will be slow; hedging won't help
+    //!
+    //! ## Trade-offs
+    //!
+    //! - **Latency vs resource usage**: Hedging uses more backend resources
+    //! - **Amplification**: N hedges = N times the backend load in worst case
+    //! - **Complexity**: Need to handle multiple in-flight requests
+    //! - **Cost**: More compute, network, and backend capacity needed
+    //!
+    //! ## Real-World Scenarios
+    //!
+    //! ```text
+    //! Database Read Latency
+    //! ├─ Primary query starts
+    //! ├─ After 50ms, primary still running → fire hedge query
+    //! ├─ Hedge completes in 20ms (hit hot cache replica)
+    //! ├─ Return hedge result, cancel primary
+    //! └─ P99 latency reduced from 200ms to 70ms
+    //!
+    //! Multi-Region API
+    //! ├─ Parallel mode: fire to all 3 regions simultaneously
+    //! ├─ us-west responds in 30ms (fastest)
+    //! ├─ Return us-west result, ignore slower regions
+    //! └─ User always gets fastest available response
+    //!
+    //! Key-Value Store Lookup
+    //! ├─ Primary request to shard A
+    //! ├─ After 10ms, fire hedge to replica B
+    //! ├─ Primary succeeds at 15ms, hedge cancelled
+    //! └─ Normal case: no extra load; slow case: hedging saves latency
+    //! ```
+    //!
+    //! ## Anti-Patterns
+    //!
+    //! ❌ **Hedging non-idempotent operations**: Duplicate side effects
+    //! ✅ Only hedge reads or idempotent writes with proper deduplication
+    //!
+    //! ❌ **Too aggressive hedging**: Delay too short, too many hedges
+    //! ✅ Set delay to P50-P75 latency, limit max_hedged_attempts (2-3)
+    //!
+    //! ❌ **Hedging to same backend**: Same slow node handles hedge
+    //! ✅ Ensure hedges route to different nodes/replicas
+    //!
+    //! ❌ **No monitoring**: Can't tell if hedging is helping or hurting
+    //! ✅ Track hedge success rate, primary vs hedge wins, resource amplification
+    //!
+    //! ❌ **Hedging already-optimized endpoints**: Diminishing returns
+    //! ✅ Target high-variance latency endpoints where hedging provides value
+    //!
+    //! ## Example: Latency Mode
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "hedge")]
+    //! # {
+    //! use tower_resilience::hedge::HedgeLayer;
+    //! use tower::Layer;
+    //! use std::time::Duration;
+    //!
+    //! # #[derive(Debug, Clone)]
+    //! # struct DbError;
+    //! # impl std::fmt::Display for DbError {
+    //! #     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "err") }
+    //! # }
+    //! # impl std::error::Error for DbError {}
+    //! # async fn example() {
+    //! # let database_query = tower::service_fn(|_req: String| async { Ok::<String, DbError>(String::new()) });
+    //! // Fire hedge after 50ms if primary hasn't responded
+    //! let hedge = HedgeLayer::<String, String, DbError>::builder()
+    //!     .name("db-query-hedge")
+    //!     .delay(Duration::from_millis(50))
+    //!     .max_hedged_attempts(2)
+    //!     .build();
+    //!
+    //! let service = hedge.layer(database_query);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: Parallel Mode
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "hedge")]
+    //! # {
+    //! use tower_resilience::hedge::HedgeLayer;
+    //! use tower::Layer;
+    //!
+    //! # #[derive(Debug, Clone)]
+    //! # struct ApiError;
+    //! # impl std::fmt::Display for ApiError {
+    //! #     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "err") }
+    //! # }
+    //! # impl std::error::Error for ApiError {}
+    //! # async fn example() {
+    //! # let multi_region_api = tower::service_fn(|_req: String| async { Ok::<String, ApiError>(String::new()) });
+    //! // Fire all 3 requests immediately, return fastest
+    //! let hedge = HedgeLayer::<String, String, ApiError>::builder()
+    //!     .name("multi-region-hedge")
+    //!     .no_delay()  // Parallel mode
+    //!     .max_hedged_attempts(3)
+    //!     .build();
+    //!
+    //! let service = hedge.layer(multi_region_api);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: Dynamic Delay
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "hedge")]
+    //! # {
+    //! use tower_resilience::hedge::HedgeLayer;
+    //! use tower::Layer;
+    //! use std::time::Duration;
+    //!
+    //! # #[derive(Debug, Clone)]
+    //! # struct CacheError;
+    //! # impl std::fmt::Display for CacheError {
+    //! #     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "err") }
+    //! # }
+    //! # impl std::error::Error for CacheError {}
+    //! # async fn example() {
+    //! # let cache_lookup = tower::service_fn(|_req: String| async { Ok::<String, CacheError>(String::new()) });
+    //! // Increasing delays: 10ms, 40ms, 90ms...
+    //! let hedge = HedgeLayer::<String, String, CacheError>::builder()
+    //!     .name("cache-hedge")
+    //!     .delay_fn(|attempt| Duration::from_millis(10 * (attempt as u64).pow(2)))
+    //!     .max_hedged_attempts(3)
+    //!     .build();
+    //!
+    //! let service = hedge.layer(cache_lookup);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: With Event Monitoring
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "hedge")]
+    //! # {
+    //! use tower_resilience::hedge::{HedgeLayer, HedgeEvent};
+    //! use tower_resilience::core::FnListener;
+    //! use tower::Layer;
+    //! use std::time::Duration;
+    //!
+    //! # #[derive(Debug, Clone)]
+    //! # struct MyError;
+    //! # impl std::fmt::Display for MyError {
+    //! #     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "err") }
+    //! # }
+    //! # impl std::error::Error for MyError {}
+    //! # async fn example() {
+    //! # let service_fn = tower::service_fn(|_req: String| async { Ok::<String, MyError>(String::new()) });
+    //! let hedge = HedgeLayer::<String, String, MyError>::builder()
+    //!     .name("monitored-hedge")
+    //!     .delay(Duration::from_millis(50))
+    //!     .max_hedged_attempts(2)
+    //!     .on_event(FnListener::new(|e: &HedgeEvent| {
+    //!         match e {
+    //!             HedgeEvent::HedgeSucceeded { attempt, duration, .. } => {
+    //!                 println!("Hedge {} won in {:?}", attempt, duration);
+    //!             }
+    //!             HedgeEvent::PrimarySucceeded { duration, .. } => {
+    //!                 println!("Primary won in {:?}", duration);
+    //!             }
+    //!             _ => {}
+    //!         }
+    //!     }))
+    //!     .build();
+    //!
+    //! let service = hedge.layer(service_fn);
     //! # }
     //! # }
     //! ```

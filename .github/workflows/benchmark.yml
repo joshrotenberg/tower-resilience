@@ -114,8 +114,8 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: thollander/actions-comment-pull-request@v3
         with:
-          filePath: comment.md
-          comment_tag: benchmark-results
+          file-path: comment.md
+          comment-tag: benchmark-results
 
       - name: Warn if regressions detected
         if: github.event_name == 'pull_request' && steps.check_regression.outputs.has_regression == 'true'

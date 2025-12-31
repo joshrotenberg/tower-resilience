@@ -22,6 +22,7 @@
 //! - **[Reconnect]** - Automatic reconnection with configurable backoff strategies
 //! - **[Health Check]** - Proactive health monitoring with intelligent resource selection
 //! - **[Fallback]** - Provides alternative responses when services fail
+//! - **[Hedge]** - Reduces tail latency by firing parallel requests
 //!
 //! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
@@ -32,6 +33,7 @@
 //! [Reconnect]: https://docs.rs/tower-resilience-reconnect
 //! [Health Check]: https://docs.rs/tower-resilience-healthcheck
 //! [Fallback]: https://docs.rs/tower-resilience-fallback
+//! [Hedge]: https://docs.rs/tower-resilience-hedge
 //!
 //! # Documentation Guides
 //!
@@ -140,3 +142,6 @@ pub use tower_resilience_healthcheck as healthcheck;
 
 #[cfg(feature = "fallback")]
 pub use tower_resilience_fallback as fallback;
+
+#[cfg(feature = "hedge")]
+pub use tower_resilience_hedge as hedge;

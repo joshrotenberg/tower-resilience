@@ -17,6 +17,7 @@ use tower_resilience_fallback::FallbackLayer;
 use tower_resilience_healthcheck::{
     HealthCheckWrapper, HealthChecker, HealthStatus, SelectionStrategy,
 };
+use tower_resilience_hedge::HedgeLayer;
 use tower_resilience_ratelimiter::RateLimiterLayer;
 use tower_resilience_reconnect::{ReconnectConfig, ReconnectLayer, ReconnectPolicy};
 use tower_resilience_retry::RetryLayer;
@@ -516,10 +517,126 @@ criterion_group!(
     bench_fallback_from_error,
 );
 
+// ============================================================================
+// Hedge Benchmarks
+// ============================================================================
+
+fn bench_hedge_no_delay_needed(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("hedge_no_delay_needed", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer = HedgeLayer::builder()
+                .delay(Duration::from_millis(100))
+                .max_hedged_attempts(2)
+                .build();
+
+            let mut service = layer.layer(BaselineService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
+fn bench_hedge_parallel_mode(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("hedge_parallel_mode", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer = HedgeLayer::<TestRequest, TestResponse, TestError>::builder()
+                .no_delay()
+                .max_hedged_attempts(3)
+                .build();
+
+            let mut service = layer.layer(BaselineService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
+fn bench_hedge_with_slow_primary(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    // Service that is slow on first call, fast on subsequent calls
+    #[derive(Clone)]
+    struct SlowThenFastService {
+        call_count: Arc<AtomicUsize>,
+    }
+
+    impl SlowThenFastService {
+        fn new() -> Self {
+            Self {
+                call_count: Arc::new(AtomicUsize::new(0)),
+            }
+        }
+    }
+
+    impl Service<TestRequest> for SlowThenFastService {
+        type Response = TestResponse;
+        type Error = TestError;
+        type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+        fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+
+        fn call(&mut self, req: TestRequest) -> Self::Future {
+            let count = self.call_count.fetch_add(1, Ordering::SeqCst);
+            Box::pin(async move {
+                if count == 0 {
+                    // Primary is slow
+                    tokio::time::sleep(Duration::from_millis(50)).await;
+                }
+                Ok(TestResponse(req.0))
+            })
+        }
+    }
+
+    c.bench_function("hedge_with_slow_primary", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer = HedgeLayer::builder()
+                .delay(Duration::from_millis(10))
+                .max_hedged_attempts(2)
+                .build();
+
+            let mut service = layer.layer(SlowThenFastService::new());
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
+criterion_group!(
+    hedge_benches,
+    bench_hedge_no_delay_needed,
+    bench_hedge_parallel_mode,
+    bench_hedge_with_slow_primary,
+);
+
 criterion_main!(
     reconnect_benches,
     healthcheck_benches,
     worst_case_benches,
     composition_benches,
     fallback_benches,
+    hedge_benches,
 );
