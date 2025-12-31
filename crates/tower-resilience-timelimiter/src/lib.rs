@@ -487,6 +487,7 @@ mod tests {
     async fn test_different_timeouts_per_request() {
         #[derive(Clone)]
         struct Request {
+            #[allow(dead_code)]
             id: u32,
             timeout_ms: Option<u64>,
         }
