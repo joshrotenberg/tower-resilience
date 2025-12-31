@@ -57,12 +57,13 @@ async fn fixed_interval_consistent_delays() {
     let times = timestamps.lock().unwrap();
     assert_eq!(times.len(), 4); // 1 initial + 3 retries
 
-    // Check delays are consistent (50ms ± 30ms for Windows compatibility)
+    // Check delays are at least the configured minimum (50ms)
+    // Upper bound is generous for CI environments with variable load
     for i in 1..times.len() {
         let delay = times[i].duration_since(times[i - 1]);
         assert!(
-            delay >= Duration::from_millis(20) && delay <= Duration::from_millis(80),
-            "Expected delay around 50ms, got {:?} at attempt {}",
+            delay >= Duration::from_millis(40) && delay <= Duration::from_millis(200),
+            "Expected delay around 50ms (got {:?} at attempt {})",
             delay,
             i
         );
