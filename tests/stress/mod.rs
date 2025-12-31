@@ -27,6 +27,7 @@ pub mod adaptive;
 pub mod bulkhead;
 pub mod cache;
 pub mod circuitbreaker;
+pub mod coalesce;
 pub mod composition;
 pub mod fallback;
 pub mod healthcheck;

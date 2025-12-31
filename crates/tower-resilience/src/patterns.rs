@@ -1477,7 +1477,7 @@ pub mod coalesce {
     //! ✅ Only coalesce read operations or truly idempotent writes
     //!
     //! ❌ **Large response objects**: Clone overhead exceeds savings
-    //! ✅ Return Arc<Response> or small response types
+    //! ✅ Return `Arc<Response>` or small response types
     //!
     //! ❌ **Long-running requests**: Waiters blocked for extended time
     //! ✅ Combine with time limiter to bound wait time
