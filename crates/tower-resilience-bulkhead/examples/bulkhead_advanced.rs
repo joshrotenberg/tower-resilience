@@ -1,6 +1,6 @@
 //! Comprehensive bulkhead pattern demonstration.
 //!
-//! Run with: cargo run --example bulkhead_demo -p tower-resilience-bulkhead
+//! Run with: cargo run --example bulkhead_advanced -p tower-resilience-bulkhead
 //!
 //! This example demonstrates:
 //! - Limiting concurrent requests to protect resources
