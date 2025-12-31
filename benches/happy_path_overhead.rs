@@ -109,7 +109,7 @@ fn bench_retry(c: &mut Criterion) {
 
     c.bench_function("retry_no_retries_needed", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = RetryLayer::<TestError>::builder()
+            let layer = RetryLayer::<TestRequest, TestError>::builder()
                 .max_attempts(3)
                 .fixed_backoff(Duration::from_millis(100))
                 .build();

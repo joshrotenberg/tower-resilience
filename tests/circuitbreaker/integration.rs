@@ -459,7 +459,7 @@ async fn multi_layer_composition_with_retry() {
         .wait_duration_in_open(Duration::from_secs(10))
         .build();
 
-    let retry_layer = RetryLayer::<&'static str>::builder()
+    let retry_layer = RetryLayer::<(), &'static str>::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_millis(10))
         .build();

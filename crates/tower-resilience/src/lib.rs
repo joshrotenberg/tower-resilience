@@ -77,7 +77,7 @@
 //!     .sliding_window_size(100)
 //!     .build();
 //!
-//! let retry = RetryLayer::<MyError>::builder()
+//! let retry = RetryLayer::<(), MyError>::builder()
 //!     .name("api-retry")
 //!     .max_attempts(3)
 //!     .exponential_backoff(Duration::from_millis(100))

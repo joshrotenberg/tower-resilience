@@ -130,7 +130,7 @@ Retry failed requests with exponential backoff and jitter:
 use tower_resilience_retry::RetryLayer;
 use std::time::Duration;
 
-let layer = RetryLayer::<MyError>::builder()
+let layer = RetryLayer::<(), MyError>::builder()
     .max_attempts(5)
     .exponential_backoff(Duration::from_millis(100))
     .on_retry(|attempt, delay| {

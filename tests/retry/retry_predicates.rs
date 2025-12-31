@@ -404,14 +404,14 @@ async fn different_predicates_different_services() {
     });
 
     // Service 1: retry transient errors
-    let layer1 = RetryLayer::<TestError>::builder()
+    let layer1 = RetryLayer::<String, TestError>::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Transient))
         .build();
 
     // Service 2: don't retry transient errors
-    let layer2 = RetryLayer::<TestError>::builder()
+    let layer2 = RetryLayer::<String, TestError>::builder()
         .max_attempts(3)
         .fixed_backoff(std::time::Duration::from_millis(10))
         .retry_on(|e| matches!(e, TestError::Permanent))

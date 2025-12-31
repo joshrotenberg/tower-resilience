@@ -122,7 +122,7 @@ async fn scenario_retry_transient_errors() {
     });
 
     // Configure retry: retry transient errors with exponential backoff
-    let retry_layer = RetryLayer::<DbError>::builder()
+    let retry_layer = RetryLayer::<DbQuery, DbError>::builder()
         .max_attempts(5)
         .exponential_backoff(Duration::from_millis(100))
         .retry_on(|err: &DbError| {
@@ -224,7 +224,7 @@ async fn scenario_full_stack() {
 
     // Combine circuit breaker with retry
     // Apply retry first (innermost layer), then circuit breaker
-    let retry_layer = RetryLayer::<DbError>::builder()
+    let retry_layer = RetryLayer::<DbQuery, DbError>::builder()
         .max_attempts(3)
         .exponential_backoff(Duration::from_millis(50))
         .retry_on(|err| matches!(err, DbError::Transient(_)))
