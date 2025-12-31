@@ -387,7 +387,7 @@ pub mod advanced {
     //! # async fn example() {
     //! # let base_service = tower::service_fn(|req: Request| async { Ok::<_, MyError>(req) });
     //! // Build layers inside-out manually
-    //! let with_retry = RetryLayer::<(), MyError>::builder()
+    //! let with_retry = RetryLayer::<Request, MyError>::builder()
     //!     .max_attempts(3)
     //!     .build()
     //!     .layer(base_service);
@@ -431,7 +431,7 @@ pub mod advanced {
     //!     .layer(TimeLimiterLayer::builder()
     //!         .timeout_duration(Duration::from_secs(5))
     //!         .build())
-    //!     .layer(RetryLayer::<(), MyError>::builder()
+    //!     .layer(RetryLayer::<Request, MyError>::builder()
     //!         .max_attempts(3)
     //!         .build())
     //!     .service(base_service);
