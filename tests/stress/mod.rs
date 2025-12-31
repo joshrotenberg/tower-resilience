@@ -23,6 +23,7 @@
 //! - **Resource cleanup**: No panics, deadlocks, or leaks
 //! - **Performance degradation**: Acceptable behavior under load
 
+pub mod adaptive;
 pub mod bulkhead;
 pub mod cache;
 pub mod circuitbreaker;
