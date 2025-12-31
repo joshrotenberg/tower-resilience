@@ -21,7 +21,7 @@ async fn stress_one_million_calls_no_retries() {
         async { Ok::<_, String>(()) }
     });
 
-    let layer = RetryLayer::<String>::builder()
+    let layer = RetryLayer::<u32, String>::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_millis(10))
         .build();
@@ -71,7 +71,7 @@ async fn stress_high_volume_with_retries() {
         }
     });
 
-    let layer = RetryLayer::<String>::builder()
+    let layer = RetryLayer::<u32, String>::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_micros(100))
         .build();
@@ -120,7 +120,7 @@ async fn stress_exponential_backoff_timing() {
         }
     });
 
-    let layer = RetryLayer::<String>::builder()
+    let layer = RetryLayer::<u32, String>::builder()
         .max_attempts(5)
         .exponential_backoff(Duration::from_millis(1))
         .build();
@@ -172,7 +172,7 @@ async fn stress_high_concurrency_with_retries() {
         }
     });
 
-    let layer = RetryLayer::<String>::builder()
+    let layer = RetryLayer::<u32, String>::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_millis(1))
         .build();
@@ -228,7 +228,7 @@ async fn stress_retry_exhaustion() {
         }
     });
 
-    let layer = RetryLayer::<String>::builder()
+    let layer = RetryLayer::<u32, String>::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_micros(100))
         .build();
@@ -284,7 +284,7 @@ async fn stress_memory_stability() {
         }
     });
 
-    let layer = RetryLayer::<String>::builder()
+    let layer = RetryLayer::<u32, String>::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_micros(100))
         .build();
@@ -357,7 +357,7 @@ async fn stress_custom_retry_predicate() {
     let retryable = Arc::clone(&retryable_failures);
     let permanent = Arc::clone(&permanent_failures);
 
-    let layer = RetryLayer::<String>::builder()
+    let layer = RetryLayer::<u32, String>::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_micros(100))
         .retry_on(move |err: &String| {

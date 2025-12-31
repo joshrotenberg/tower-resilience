@@ -10,6 +10,8 @@ pub type RetryPredicate<E> = Arc<dyn Fn(&E) -> bool + Send + Sync>;
 /// This policy combines the interval function (backoff strategy),
 /// maximum attempts, and retry predicate (which errors to retry).
 pub struct RetryPolicy<E> {
+    /// Default max attempts (may be overridden per-request via MaxAttemptsSource)
+    #[allow(dead_code)]
     pub(crate) max_attempts: usize,
     pub(crate) interval_fn: Arc<dyn IntervalFunction>,
     pub(crate) retry_predicate: Option<RetryPredicate<E>>,

@@ -175,7 +175,7 @@ async fn scenario_retry_transient() {
     });
 
     // Configure retry with exponential backoff
-    let retry_layer = RetryLayer::<ProcessingError>::builder()
+    let retry_layer = RetryLayer::<Message, ProcessingError>::builder()
         .max_attempts(5)
         .exponential_backoff(Duration::from_millis(100))
         .retry_on(|err| {
@@ -337,7 +337,7 @@ async fn scenario_full_worker_stack() {
         )
         // 2. Retry - handle transient failures
         .layer(
-            RetryLayer::<ProcessingError>::builder()
+            RetryLayer::<Message, ProcessingError>::builder()
                 .max_attempts(3)
                 .exponential_backoff(Duration::from_millis(100))
                 .retry_on(|err| {

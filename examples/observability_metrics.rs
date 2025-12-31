@@ -171,7 +171,7 @@ async fn demo_retry() {
         }
     });
 
-    let service = RetryLayer::<AppError>::builder()
+    let service = RetryLayer::<(), AppError>::builder()
         .name("api-retry") // ← Named instance for metrics
         .max_attempts(5)
         .build()

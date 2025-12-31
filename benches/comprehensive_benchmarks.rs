@@ -309,7 +309,7 @@ fn bench_retry_exhausted(c: &mut Criterion) {
 
     c.bench_function("worst_case_retry_exhausted", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = RetryLayer::<TestError>::builder()
+            let layer = RetryLayer::<TestRequest, TestError>::builder()
                 .max_attempts(1) // No retries
                 .fixed_backoff(Duration::from_millis(1))
                 .build();

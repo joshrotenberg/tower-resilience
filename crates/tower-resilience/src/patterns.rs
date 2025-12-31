@@ -561,7 +561,7 @@ pub mod retry {
     //! # struct MyError;
     //! # async fn example() {
     //! # let http_client = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
-    //! let retry = RetryLayer::<MyError>::builder()
+    //! let retry = RetryLayer::<(), MyError>::builder()
     //!     .max_attempts(3)
     //!     .exponential_backoff(Duration::from_millis(100))
     //!     .retry_on(|err: &MyError| {

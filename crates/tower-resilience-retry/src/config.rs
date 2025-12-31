@@ -2,35 +2,69 @@ use crate::backoff::{ExponentialBackoff, FixedInterval, IntervalFunction};
 use crate::budget::RetryBudget;
 use crate::events::RetryEvent;
 use crate::policy::{RetryPolicy, RetryPredicate};
+use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
 use tower_resilience_core::events::{EventListeners, FnListener};
 
+/// Source for determining the maximum number of retry attempts.
+///
+/// This enum allows configuring either a fixed max attempts for all requests
+/// or a dynamic max attempts extracted from each request.
+#[derive(Clone)]
+pub enum MaxAttemptsSource<Req> {
+    /// Fixed max attempts for all requests.
+    Fixed(usize),
+    /// Dynamic max attempts extracted from the request.
+    ///
+    /// The function receives a reference to the request and returns
+    /// the max attempts to use for that specific request.
+    Dynamic(Arc<dyn Fn(&Req) -> usize + Send + Sync>),
+}
+
+impl<Req> MaxAttemptsSource<Req> {
+    /// Get the max attempts for a request.
+    pub fn get_max_attempts(&self, req: &Req) -> usize {
+        match self {
+            MaxAttemptsSource::Fixed(n) => *n,
+            MaxAttemptsSource::Dynamic(f) => f(req),
+        }
+    }
+}
+
+impl<Req> Default for MaxAttemptsSource<Req> {
+    fn default() -> Self {
+        MaxAttemptsSource::Fixed(3)
+    }
+}
+
 /// Configuration for the retry middleware.
-pub struct RetryConfig<E> {
+pub struct RetryConfig<Req, E> {
     pub(crate) policy: RetryPolicy<E>,
+    pub(crate) max_attempts_source: MaxAttemptsSource<Req>,
     pub(crate) event_listeners: EventListeners<RetryEvent>,
     pub(crate) name: String,
     pub(crate) budget: Option<Arc<dyn RetryBudget>>,
 }
 
 /// Builder for [`RetryConfig`].
-pub struct RetryConfigBuilder<E> {
-    max_attempts: usize,
+pub struct RetryConfigBuilder<Req, E> {
+    max_attempts_source: MaxAttemptsSource<Req>,
     interval_fn: Option<Arc<dyn IntervalFunction>>,
     retry_predicate: Option<RetryPredicate<E>>,
     event_listeners: EventListeners<RetryEvent>,
     name: String,
     budget: Option<Arc<dyn RetryBudget>>,
+    _phantom: PhantomData<Req>,
 }
 
-impl<E> Default for RetryConfigBuilder<E> {
+impl<Req, E> Default for RetryConfigBuilder<Req, E> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<E> RetryConfigBuilder<E> {
+impl<Req, E> RetryConfigBuilder<Req, E> {
     /// Creates a new builder with defaults.
     ///
     /// Defaults:
@@ -40,21 +74,64 @@ impl<E> RetryConfigBuilder<E> {
     /// - budget: None (unlimited retries)
     pub fn new() -> Self {
         Self {
-            max_attempts: 3,
+            max_attempts_source: MaxAttemptsSource::default(),
             interval_fn: None,
             retry_predicate: None,
             event_listeners: EventListeners::new(),
             name: "<unnamed>".to_string(),
             budget: None,
+            _phantom: PhantomData,
         }
     }
 
-    /// Sets the maximum number of retry attempts.
+    /// Sets a fixed maximum number of retry attempts for all requests.
     ///
     /// This includes the initial attempt, so max_attempts=3 means
     /// 1 initial attempt + 2 retries.
     pub fn max_attempts(mut self, max_attempts: usize) -> Self {
-        self.max_attempts = max_attempts;
+        self.max_attempts_source = MaxAttemptsSource::Fixed(max_attempts);
+        self
+    }
+
+    /// Sets a dynamic max attempts extractor function.
+    ///
+    /// The function receives a reference to the request and returns
+    /// the maximum number of attempts to use for that specific request.
+    /// This enables per-request retry configuration based on request properties.
+    ///
+    /// # Use Cases
+    ///
+    /// - Idempotent requests can retry more aggressively
+    /// - Critical requests may have more retries
+    /// - Different operations may have different retry budgets
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_retry::RetryLayer;
+    /// use std::time::Duration;
+    ///
+    /// #[derive(Clone)]
+    /// struct MyRequest {
+    ///     is_idempotent: bool,
+    ///     // ... other fields
+    /// }
+    ///
+    /// #[derive(Debug, Clone)]
+    /// struct MyError;
+    ///
+    /// let layer = RetryLayer::<MyRequest, MyError>::builder()
+    ///     .max_attempts_fn(|req: &MyRequest| {
+    ///         if req.is_idempotent { 5 } else { 1 }
+    ///     })
+    ///     .exponential_backoff(Duration::from_millis(100))
+    ///     .build();
+    /// ```
+    pub fn max_attempts_fn<F>(mut self, f: F) -> Self
+    where
+        F: Fn(&Req) -> usize + Send + Sync + 'static,
+    {
+        self.max_attempts_source = MaxAttemptsSource::Dynamic(Arc::new(f));
         self
     }
 
@@ -113,7 +190,7 @@ impl<E> RetryConfigBuilder<E> {
     ///     .max_tokens(100)
     ///     .build();
     ///
-    /// let layer = RetryLayer::<std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), std::io::Error>::builder()
     ///     .max_attempts(5)
     ///     .exponential_backoff(Duration::from_millis(100))
     ///     .budget(budget)
@@ -139,7 +216,7 @@ impl<E> RetryConfigBuilder<E> {
     /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
-    /// let layer = RetryLayer::<std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), std::io::Error>::builder()
     ///     .max_attempts(5)
     ///     .on_budget_exhausted(|attempt| {
     ///         println!("Retry {} skipped - budget exhausted", attempt);
@@ -174,7 +251,7 @@ impl<E> RetryConfigBuilder<E> {
     /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
-    /// let layer = RetryLayer::<std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), std::io::Error>::builder()
     ///     .max_attempts(5)
     ///     .exponential_backoff(Duration::from_millis(100))
     ///     .on_retry(|attempt, delay| {
@@ -213,7 +290,7 @@ impl<E> RetryConfigBuilder<E> {
     /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
-    /// let layer = RetryLayer::<std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), std::io::Error>::builder()
     ///     .max_attempts(3)
     ///     .on_success(|attempts| {
     ///         if attempts == 1 {
@@ -256,7 +333,7 @@ impl<E> RetryConfigBuilder<E> {
     /// let failure_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&failure_count);
     ///
-    /// let layer = RetryLayer::<std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), std::io::Error>::builder()
     ///     .max_attempts(3)
     ///     .on_error(move |attempts| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
@@ -293,7 +370,7 @@ impl<E> RetryConfigBuilder<E> {
     /// use std::time::Duration;
     /// use std::io::{Error, ErrorKind};
     ///
-    /// let layer = RetryLayer::<Error>::builder()
+    /// let layer = RetryLayer::<(), Error>::builder()
     ///     .max_attempts(3)
     ///     .retry_on(|err| {
     ///         // Only retry transient errors
@@ -317,18 +394,25 @@ impl<E> RetryConfigBuilder<E> {
     }
 
     /// Builds the retry layer.
-    pub fn build(self) -> crate::RetryLayer<E> {
+    pub fn build(self) -> crate::RetryLayer<Req, E> {
         let interval_fn = self
             .interval_fn
             .unwrap_or_else(|| Arc::new(ExponentialBackoff::new(Duration::from_millis(100))));
 
-        let mut policy = RetryPolicy::new(self.max_attempts, interval_fn);
+        // Use a default max_attempts for the policy (will be overridden per-request if dynamic)
+        let default_max_attempts = match &self.max_attempts_source {
+            MaxAttemptsSource::Fixed(n) => *n,
+            MaxAttemptsSource::Dynamic(_) => 3, // Default for policy, actual comes from request
+        };
+
+        let mut policy = RetryPolicy::new(default_max_attempts, interval_fn);
         if let Some(predicate) = self.retry_predicate {
             policy.retry_predicate = Some(predicate);
         }
 
         let config = RetryConfig {
             policy,
+            max_attempts_source: self.max_attempts_source,
             event_listeners: self.event_listeners,
             name: self.name,
             budget: self.budget,
@@ -345,26 +429,54 @@ mod tests {
 
     #[test]
     fn test_builder_defaults() {
-        let _layer = RetryLayer::<std::io::Error>::builder().build();
-        // If this compiles and doesn't panic, the builder works
+        let _layer = RetryLayer::<(), std::io::Error>::builder().build();
     }
 
     #[test]
     fn test_builder_custom_values() {
-        let _layer = RetryLayer::<std::io::Error>::builder()
+        let _layer = RetryLayer::<(), std::io::Error>::builder()
             .max_attempts(5)
             .fixed_backoff(Duration::from_secs(2))
             .name("test-retry")
             .build();
-        // If this compiles and doesn't panic, the builder works
     }
 
     #[test]
     fn test_event_listeners() {
-        let _layer = RetryLayer::<std::io::Error>::builder()
+        let _layer = RetryLayer::<(), std::io::Error>::builder()
             .on_retry(|_, _| {})
             .on_success(|_| {})
             .build();
-        // If this compiles and doesn't panic, the event listener registration works
+    }
+
+    #[test]
+    fn test_max_attempts_fn() {
+        #[derive(Clone)]
+        struct MyRequest {
+            is_idempotent: bool,
+        }
+
+        let _layer = RetryLayer::<MyRequest, std::io::Error>::builder()
+            .max_attempts_fn(|req: &MyRequest| if req.is_idempotent { 5 } else { 1 })
+            .build();
+    }
+
+    #[test]
+    fn test_max_attempts_source_fixed() {
+        let source: MaxAttemptsSource<()> = MaxAttemptsSource::Fixed(5);
+        assert_eq!(source.get_max_attempts(&()), 5);
+    }
+
+    #[test]
+    fn test_max_attempts_source_dynamic() {
+        #[derive(Clone)]
+        struct Req {
+            retries: usize,
+        }
+
+        let source: MaxAttemptsSource<Req> =
+            MaxAttemptsSource::Dynamic(Arc::new(|req: &Req| req.retries));
+        let req = Req { retries: 10 };
+        assert_eq!(source.get_max_attempts(&req), 10);
     }
 }

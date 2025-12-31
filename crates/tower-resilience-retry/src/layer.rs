@@ -1,4 +1,5 @@
 use crate::{Retry, RetryConfig};
+use std::marker::PhantomData;
 use std::sync::Arc;
 use tower::Layer;
 
@@ -9,6 +10,8 @@ use tower::Layer;
 ///
 /// # Examples
 ///
+/// ## Fixed max attempts (simple)
+///
 /// ```
 /// use tower_resilience_retry::RetryLayer;
 /// use tower::ServiceBuilder;
@@ -17,7 +20,7 @@ use tower::Layer;
 /// # #[derive(Debug, Clone)]
 /// # struct MyError;
 /// # async fn example() {
-/// let retry_layer: tower_resilience_retry::RetryLayer<MyError> = RetryLayer::builder()
+/// let retry_layer = RetryLayer::<String, MyError>::builder()
 ///     .max_attempts(5)
 ///     .exponential_backoff(Duration::from_millis(100))
 ///     .build();
@@ -30,14 +33,40 @@ use tower::Layer;
 /// #     tower::service_fn(|req: String| async move { Ok::<_, MyError>(req) })
 /// # }
 /// ```
+///
+/// ## Per-request max attempts (dynamic)
+///
+/// ```
+/// use tower_resilience_retry::RetryLayer;
+/// use tower::ServiceBuilder;
+/// use std::time::Duration;
+///
+/// #[derive(Clone)]
+/// struct MyRequest {
+///     is_idempotent: bool,
+///     data: String,
+/// }
+///
+/// # #[derive(Debug, Clone)]
+/// # struct MyError;
+/// # async fn example() {
+/// // Idempotent requests can retry more, non-idempotent get 1 attempt
+/// let retry_layer = RetryLayer::<MyRequest, MyError>::builder()
+///     .max_attempts_fn(|req: &MyRequest| {
+///         if req.is_idempotent { 5 } else { 1 }
+///     })
+///     .exponential_backoff(Duration::from_millis(100))
+///     .build();
+/// # }
+/// ```
 #[derive(Clone)]
-pub struct RetryLayer<E> {
-    config: Arc<RetryConfig<E>>,
+pub struct RetryLayer<Req, E> {
+    config: Arc<RetryConfig<Req, E>>,
 }
 
-impl<E> RetryLayer<E> {
+impl<Req, E> RetryLayer<Req, E> {
     /// Creates a new `RetryLayer` with the given configuration.
-    pub fn new(config: RetryConfig<E>) -> Self {
+    pub fn new(config: RetryConfig<Req, E>) -> Self {
         Self {
             config: Arc::new(config),
         }
@@ -53,23 +82,24 @@ impl<E> RetryLayer<E> {
     ///
     /// # #[derive(Debug, Clone)]
     /// # struct MyError;
-    /// let layer: RetryLayer<MyError> = RetryLayer::builder()
+    /// let layer = RetryLayer::<(), MyError>::builder()
     ///     .max_attempts(5)
     ///     .exponential_backoff(Duration::from_millis(100))
     ///     .build();
     /// ```
-    pub fn builder() -> crate::RetryConfigBuilder<E> {
+    pub fn builder() -> crate::RetryConfigBuilder<Req, E> {
         crate::RetryConfigBuilder::new()
     }
 }
 
-impl<S, E> Layer<S> for RetryLayer<E>
+impl<S, Req, E> Layer<S> for RetryLayer<Req, E>
 where
     E: Clone,
+    Req: 'static,
 {
-    type Service = Retry<S, E>;
+    type Service = Retry<S, Req, E>;
 
     fn layer(&self, service: S) -> Self::Service {
-        Retry::new(service, Arc::clone(&self.config))
+        Retry::new(service, Arc::clone(&self.config), PhantomData)
     }
 }

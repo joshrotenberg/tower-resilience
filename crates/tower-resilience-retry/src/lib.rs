@@ -10,6 +10,7 @@
 //!   - Exponential backoff with configurable multiplier
 //!   - Exponential random backoff with randomization factor
 //!   - Custom function-based backoff
+//! - **Per-request configuration**: Extract max attempts from the request
 //! - **Retry predicates**: Control which errors should be retried
 //! - **Event system**: Observability through retry events
 //! - **Flexible configuration**: Builder API with sensible defaults
@@ -27,7 +28,7 @@
 //! # struct MyError;
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create retry layer with exponential backoff
-//! let retry_layer = RetryLayer::<MyError>::builder()
+//! let retry_layer = RetryLayer::<String, MyError>::builder()
 //!     .max_attempts(5)
 //!     .exponential_backoff(Duration::from_millis(100))
 //!     .on_retry(|attempt, delay| {
@@ -42,6 +43,34 @@
 //!         Ok::<_, MyError>(format!("Response: {}", req))
 //!     }));
 //! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Per-Request Max Attempts
+//!
+//! Extract retry configuration from the request itself:
+//!
+//! ```
+//! use tower_resilience_retry::RetryLayer;
+//! use tower::ServiceBuilder;
+//! use std::time::Duration;
+//!
+//! #[derive(Clone)]
+//! struct MyRequest {
+//!     is_idempotent: bool,
+//!     data: String,
+//! }
+//!
+//! # #[derive(Debug, Clone)]
+//! # struct MyError;
+//! # async fn example() {
+//! // Idempotent requests can retry more aggressively
+//! let retry_layer = RetryLayer::<MyRequest, MyError>::builder()
+//!     .max_attempts_fn(|req: &MyRequest| {
+//!         if req.is_idempotent { 5 } else { 1 }
+//!     })
+//!     .exponential_backoff(Duration::from_millis(100))
+//!     .build();
 //! # }
 //! ```
 //!
@@ -63,7 +92,7 @@
 //! # }
 //! # impl std::error::Error for MyError {}
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let retry_layer = RetryLayer::<MyError>::builder()
+//! let retry_layer = RetryLayer::<String, MyError>::builder()
 //!     .max_attempts(3)
 //!     .exponential_backoff(Duration::from_millis(100))
 //!     .build();
@@ -102,7 +131,7 @@
 //! let cache = Arc::new(std::sync::RwLock::new(HashMap::new()));
 //! cache.write().unwrap().insert("key", "cached value");
 //!
-//! let retry_layer = RetryLayer::<MyError>::builder()
+//! let retry_layer = RetryLayer::<String, MyError>::builder()
 //!     .max_attempts(3)
 //!     .exponential_backoff(Duration::from_millis(50))
 //!     .build();
@@ -136,12 +165,13 @@ pub use backoff::{
     ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval, IntervalFunction,
 };
 pub use budget::{AimdBudget, RetryBudget, RetryBudgetBuilder, TokenBucketBudget};
-pub use config::{RetryConfig, RetryConfigBuilder};
+pub use config::{MaxAttemptsSource, RetryConfig, RetryConfigBuilder};
 pub use events::RetryEvent;
 pub use layer::RetryLayer;
 pub use policy::{RetryPolicy, RetryPredicate};
 
 use futures::future::BoxFuture;
+use std::marker::PhantomData;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Instant;
@@ -157,14 +187,15 @@ use tracing::{debug, info, warn};
 ///
 /// This service wraps an inner service and automatically retries requests
 /// that fail, according to the configured retry policy and backoff strategy.
-pub struct Retry<S, E> {
+pub struct Retry<S, Req, E> {
     inner: S,
-    config: Arc<RetryConfig<E>>,
+    config: Arc<RetryConfig<Req, E>>,
+    _phantom: PhantomData<Req>,
 }
 
-impl<S, E> Retry<S, E> {
+impl<S, Req, E> Retry<S, Req, E> {
     /// Creates a new `Retry` service wrapping the given service.
-    pub fn new(inner: S, config: Arc<RetryConfig<E>>) -> Self {
+    pub fn new(inner: S, config: Arc<RetryConfig<Req, E>>, _phantom: PhantomData<Req>) -> Self {
         #[cfg(feature = "metrics")]
         {
             describe_counter!(
@@ -178,11 +209,15 @@ impl<S, E> Retry<S, E> {
             describe_histogram!("retry_attempts", "Number of attempts per successful call");
         }
 
-        Self { inner, config }
+        Self {
+            inner,
+            config,
+            _phantom,
+        }
     }
 }
 
-impl<S, E> Clone for Retry<S, E>
+impl<S, Req, E> Clone for Retry<S, Req, E>
 where
     S: Clone,
 {
@@ -190,11 +225,12 @@ where
         Self {
             inner: self.inner.clone(),
             config: Arc::clone(&self.config),
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<S, Req, E> Service<Req> for Retry<S, E>
+impl<S, Req, E> Service<Req> for Retry<S, Req, E>
 where
     S: Service<Req, Error = E> + Clone + Send + 'static,
     S::Future: Send + 'static,
@@ -213,6 +249,9 @@ where
     fn call(&mut self, req: Req) -> Self::Future {
         let mut service = self.inner.clone();
         let config = Arc::clone(&self.config);
+
+        // Extract max_attempts from request before moving it
+        let max_attempts = config.max_attempts_source.get_max_attempts(&req);
 
         Box::pin(async move {
             let mut attempt = 0;
@@ -265,15 +304,15 @@ where
                             return Err(error);
                         }
 
-                        // Check if we've exhausted retries
-                        if attempt + 1 >= config.policy.max_attempts {
+                        // Check if we've exhausted retries (use per-request max_attempts)
+                        if attempt + 1 >= max_attempts {
                             #[cfg(feature = "metrics")]
                             {
                                 counter!("retry_calls_total", "retry" => config.name.clone(), "result" => "exhausted").increment(1);
                             }
 
                             #[cfg(feature = "tracing")]
-                            warn!(retry = %config.name, attempts = attempt + 1, max_attempts = config.policy.max_attempts, "Retry attempts exhausted");
+                            warn!(retry = %config.name, attempts = attempt + 1, max_attempts = max_attempts, "Retry attempts exhausted");
 
                             let event = RetryEvent::Error {
                                 pattern_name: config.name.clone(),
@@ -369,7 +408,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<TestError>::builder()
+        let layer = RetryLayer::<String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
@@ -405,7 +444,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<TestError>::builder()
+        let layer = RetryLayer::<String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
@@ -437,7 +476,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<TestError>::builder()
+        let layer = RetryLayer::<String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
@@ -468,7 +507,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<TestError>::builder()
+        let layer = RetryLayer::<String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .retry_on(|_: &TestError| false) // Never retry
@@ -510,7 +549,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<TestError>::builder()
+        let layer = RetryLayer::<String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .on_retry(move |_, _| {
@@ -557,7 +596,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<TestError>::builder()
+        let layer = RetryLayer::<String, TestError>::builder()
             .max_attempts(5)
             .fixed_backoff(Duration::from_millis(1))
             .budget(budget)
@@ -601,6 +640,115 @@ mod tests {
         // Now withdrawal should work
         assert!(budget.try_withdraw());
         assert_eq!(budget.balance(), 0);
+    }
+
+    #[tokio::test]
+    async fn per_request_max_attempts() {
+        #[derive(Clone)]
+        struct Request {
+            is_idempotent: bool,
+        }
+
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let cc = Arc::clone(&call_count);
+
+        let service = service_fn(move |_req: Request| {
+            let cc = Arc::clone(&cc);
+            async move {
+                cc.fetch_add(1, Ordering::SeqCst);
+                Err::<String, _>(TestError::new("always fails"))
+            }
+        });
+
+        let layer = RetryLayer::<Request, TestError>::builder()
+            .max_attempts_fn(|req: &Request| if req.is_idempotent { 5 } else { 1 })
+            .fixed_backoff(Duration::from_millis(1))
+            .build();
+
+        let mut service = layer.layer(service);
+
+        // Non-idempotent request - should only try once
+        call_count.store(0, Ordering::SeqCst);
+        let _ = service
+            .ready()
+            .await
+            .unwrap()
+            .call(Request {
+                is_idempotent: false,
+            })
+            .await;
+        assert_eq!(call_count.load(Ordering::SeqCst), 1);
+
+        // Idempotent request - should try 5 times
+        call_count.store(0, Ordering::SeqCst);
+        let _ = service
+            .ready()
+            .await
+            .unwrap()
+            .call(Request {
+                is_idempotent: true,
+            })
+            .await;
+        assert_eq!(call_count.load(Ordering::SeqCst), 5);
+    }
+
+    #[tokio::test]
+    async fn per_request_max_attempts_with_success() {
+        #[derive(Clone)]
+        struct Request {
+            max_retries: usize,
+            succeed_on_attempt: usize,
+        }
+
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let cc = Arc::clone(&call_count);
+
+        let service = service_fn(move |req: Request| {
+            let cc = Arc::clone(&cc);
+            async move {
+                let attempt = cc.fetch_add(1, Ordering::SeqCst);
+                if attempt >= req.succeed_on_attempt {
+                    Ok::<_, TestError>("success".to_string())
+                } else {
+                    Err(TestError::new("not yet"))
+                }
+            }
+        });
+
+        let layer = RetryLayer::<Request, TestError>::builder()
+            .max_attempts_fn(|req: &Request| req.max_retries)
+            .fixed_backoff(Duration::from_millis(1))
+            .build();
+
+        let mut service = layer.layer(service);
+
+        // Request that succeeds on 3rd attempt with 5 max retries
+        call_count.store(0, Ordering::SeqCst);
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call(Request {
+                max_retries: 5,
+                succeed_on_attempt: 2,
+            })
+            .await;
+        assert!(result.is_ok());
+        assert_eq!(call_count.load(Ordering::SeqCst), 3);
+
+        // Request that would need 3 attempts but only has 2 max
+        call_count.store(0, Ordering::SeqCst);
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call(Request {
+                max_retries: 2,
+                succeed_on_attempt: 2,
+            })
+            .await;
+        assert!(result.is_err());
+        assert_eq!(call_count.load(Ordering::SeqCst), 2);
     }
 
     // Note: Backoff behavior is tested in tests/retry/retry_backoff.rs

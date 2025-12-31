@@ -175,7 +175,7 @@ async fn scenario_retry_timeout() {
                 .build(),
         )
         .layer(
-            RetryLayer::<ClientError>::builder()
+            RetryLayer::<Request, ClientError>::builder()
                 .max_attempts(5)
                 .exponential_backoff(Duration::from_millis(100))
                 .retry_on(|err| {
@@ -353,7 +353,7 @@ async fn scenario_full_stack() {
         .layer(circuit_breaker_layer.for_request::<Request>())
         // 3. Retry - Handle transient failures
         .layer(
-            RetryLayer::<ClientError>::builder()
+            RetryLayer::<Request, ClientError>::builder()
                 .max_attempts(3)
                 .exponential_backoff(Duration::from_millis(100))
                 .retry_on(|err| matches!(err, ClientError::Network(_)))

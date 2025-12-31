@@ -551,12 +551,12 @@ async fn different_configs_different_services() {
         }
     });
 
-    let layer1 = RetryLayer::<TestError>::builder()
+    let layer1 = RetryLayer::<String, TestError>::builder()
         .max_attempts(2)
         .fixed_backoff(Duration::from_millis(10))
         .build();
 
-    let layer2 = RetryLayer::<TestError>::builder()
+    let layer2 = RetryLayer::<String, TestError>::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(10))
         .build();

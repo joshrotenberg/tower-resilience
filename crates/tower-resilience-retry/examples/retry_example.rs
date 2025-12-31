@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let retry_layer = RetryLayer::<TemporaryError>::builder()
+    let retry_layer = RetryLayer::<String, TemporaryError>::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(100))
         .on_retry(|attempt, delay| {
@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let retry_layer = RetryLayer::<TemporaryError>::builder()
+    let retry_layer = RetryLayer::<String, TemporaryError>::builder()
         .max_attempts(5)
         .backoff(
             ExponentialBackoff::new(Duration::from_millis(50))
@@ -125,7 +125,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err::<String, _>(PermanentError)
     });
 
-    let retry_layer = RetryLayer::<PermanentError>::builder()
+    let retry_layer = RetryLayer::<String, PermanentError>::builder()
         .max_attempts(5)
         .fixed_backoff(Duration::from_millis(50))
         .retry_on(|_: &PermanentError| false) // Never retry permanent errors
@@ -153,7 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    let retry_layer = RetryLayer::<TemporaryError>::builder()
+    let retry_layer = RetryLayer::<String, TemporaryError>::builder()
         .max_attempts(3)
         .fixed_backoff(Duration::from_millis(50))
         .on_retry(|attempt, _| {
