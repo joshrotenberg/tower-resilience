@@ -78,6 +78,6 @@ async fn main() {
     println!("  - Works with any MakeService implementation\n");
 
     println!("For a working example with actual connections, see:");
-    println!("  crates/tower-resilience-reconnect/examples/basic.rs");
-    println!("  crates/tower-resilience-reconnect/examples/custom_policy.rs");
+    println!("  crates/tower-resilience-reconnect/examples/reconnect_basic.rs");
+    println!("  crates/tower-resilience-reconnect/examples/reconnect_custom_policy.rs");
 }

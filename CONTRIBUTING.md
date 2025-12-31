@@ -50,12 +50,12 @@ cargo run --example circuitbreaker_fallback -p tower-resilience-circuitbreaker
 cargo run --example circuitbreaker_health_check -p tower-resilience-circuitbreaker
 
 # Bulkhead examples
-cargo run --example bulkhead_demo -p tower-resilience-bulkhead
-cargo run --example simple_bulkhead -p tower-resilience-bulkhead
+cargo run --example bulkhead_advanced -p tower-resilience-bulkhead
+cargo run --example bulkhead_basic -p tower-resilience-bulkhead
 
 # Reconnect examples
-cargo run --example basic -p tower-resilience-reconnect
-cargo run --example custom_policy -p tower-resilience-reconnect
+cargo run --example reconnect_basic -p tower-resilience-reconnect
+cargo run --example reconnect_custom_policy -p tower-resilience-reconnect
 
 # Other pattern examples
 cargo run --example cache_example -p tower-resilience-cache
