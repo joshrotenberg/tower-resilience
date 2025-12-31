@@ -2,6 +2,18 @@
 //!
 //! Detailed guides for each resilience pattern, including when to use them, trade-offs,
 //! real-world scenarios, and anti-patterns.
+//!
+//! ## Available Patterns
+//!
+//! - [Circuit Breaker](circuit_breaker) - Stop calling failing services
+//! - [Bulkhead](bulkhead) - Isolate resources with concurrency limits
+//! - [Time Limiter](time_limiter) - Enforce operation timeouts
+//! - [Retry](retry) - Retry transient failures with backoff
+//! - [Rate Limiter](rate_limiter) - Control request throughput
+//! - [Cache](cache) - Memoize expensive operations
+//! - [Reconnect](reconnect) - Auto-reconnect persistent connections
+//! - [Health Check](healthcheck) - Proactive resource health monitoring
+//! - [Fallback](fallback) - Provide alternative responses on failure
 
 /// Circuit Breaker pattern guide
 pub mod circuit_breaker {
@@ -709,6 +721,186 @@ pub mod cache {
     //! let service = tower::ServiceBuilder::new()
     //!     .layer(cache)
     //!     .service(expensive_operation);
+    //! # }
+    //! # }
+    //! ```
+}
+
+/// Fallback pattern guide
+pub mod fallback {
+    //! # Fallback
+    //!
+    //! Provides alternative responses when services fail, ensuring graceful degradation
+    //! instead of error propagation.
+    //!
+    //! ## Fallback vs Circuit Breaker Fallback
+    //!
+    //! **Key distinction**: Standalone Fallback is **composable**, Circuit Breaker fallback is **integrated**.
+    //!
+    //! - **Standalone Fallback**: Works with any layer, flexible strategies, selective error handling
+    //! - **Circuit Breaker `.with_fallback()`**: Only triggers when circuit is open
+    //!
+    //! Use standalone Fallback when you want fallback behavior independent of circuit state,
+    //! or when composing with layers other than circuit breaker.
+    //!
+    //! ## Fallback Strategies
+    //!
+    //! ### Value
+    //! Return a static fallback value. Best for simple default responses.
+    //!
+    //! ### FromError
+    //! Compute fallback from the error. Best when fallback depends on error type.
+    //!
+    //! ### FromRequestError
+    //! Compute fallback from both request and error. Best for request-specific defaults.
+    //!
+    //! ### Service
+    //! Delegate to a fallback service. Best for complex fallback logic or secondary backends.
+    //!
+    //! ### Exception
+    //! Transform the error instead of providing a response. Best for error normalization.
+    //!
+    //! ## When to Use
+    //!
+    //! - **Graceful degradation**: Show cached/default content when live data unavailable
+    //! - **User experience**: Never show raw errors to users
+    //! - **Partial failures**: Some data is better than no data
+    //! - **Secondary backends**: Fall back to backup service
+    //! - **Default values**: Return sensible defaults for missing data
+    //!
+    //! ## Trade-offs
+    //!
+    //! - **Data freshness**: Fallback data may be stale or incomplete
+    //! - **Silent failures**: Errors may be hidden from monitoring
+    //! - **Complexity**: Multiple code paths to maintain
+    //! - **Testing**: Need to verify fallback behavior works correctly
+    //!
+    //! ## Real-World Scenarios
+    //!
+    //! ```text
+    //! Product Catalog API
+    //! ├─ Primary: Live inventory service
+    //! ├─ Fallback: Cached catalog (possibly stale)
+    //! ├─ User sees products even during outage
+    //! └─ "Inventory may be outdated" warning shown
+    //!
+    //! User Profile Service
+    //! ├─ Primary: Database query
+    //! ├─ Fallback: Default avatar and "Guest" name
+    //! ├─ Page renders even if profile service down
+    //! └─ Graceful degradation vs error page
+    //!
+    //! Search Service
+    //! ├─ Primary: Elasticsearch cluster
+    //! ├─ Fallback: Simple database LIKE query
+    //! ├─ Slower but functional search
+    //! └─ Better than "Search unavailable"
+    //! ```
+    //!
+    //! ## Anti-Patterns
+    //!
+    //! ❌ **Hiding all errors**: Critical failures go unnoticed
+    //! ✅ Use predicates to only handle expected failures, log/alert on others
+    //!
+    //! ❌ **Stale fallback data**: Users see outdated information
+    //! ✅ Show indicators when using fallback data, set reasonable cache TTLs
+    //!
+    //! ❌ **Fallback that can also fail**: Cascading fallback failures
+    //! ✅ Make fallback as simple and reliable as possible
+    //!
+    //! ❌ **No monitoring**: Can't tell when fallback is being used
+    //! ✅ Use event listeners to track fallback usage and alert on high rates
+    //!
+    //! ## Example: Static Value Fallback
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "fallback")]
+    //! # {
+    //! use tower_resilience::fallback::FallbackLayer;
+    //! use tower::Layer;
+    //!
+    //! # #[derive(Debug, Clone)]
+    //! # struct ApiError;
+    //! # async fn example() {
+    //! # let api_client = tower::service_fn(|_req: String| async { Err::<String, _>(ApiError) });
+    //! let fallback = FallbackLayer::<String, String, ApiError>::value(
+    //!     "Service temporarily unavailable".to_string()
+    //! );
+    //!
+    //! let service = fallback.layer(api_client);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: Dynamic Fallback from Error
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "fallback")]
+    //! # {
+    //! use tower_resilience::fallback::FallbackLayer;
+    //! use tower::Layer;
+    //!
+    //! # #[derive(Debug, Clone)]
+    //! # struct ApiError { code: u16, message: String }
+    //! # async fn example() {
+    //! # let api_client = tower::service_fn(|_req: String| async {
+    //! #     Err::<String, _>(ApiError { code: 503, message: "down".into() })
+    //! # });
+    //! let fallback = FallbackLayer::<String, String, ApiError>::from_error(|e| {
+    //!     format!("Error {}: {}", e.code, e.message)
+    //! });
+    //!
+    //! let service = fallback.layer(api_client);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: Selective Fallback with Predicate
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "fallback")]
+    //! # {
+    //! use tower_resilience::fallback::FallbackLayer;
+    //! use tower::Layer;
+    //!
+    //! # #[derive(Debug, Clone)]
+    //! # struct ApiError { code: u16 }
+    //! # async fn example() {
+    //! # let api_client = tower::service_fn(|_req: String| async {
+    //! #     Err::<String, _>(ApiError { code: 503 })
+    //! # });
+    //! // Only provide fallback for 5xx errors, propagate 4xx
+    //! let fallback: FallbackLayer<String, String, ApiError> = FallbackLayer::builder()
+    //!     .value("Server error fallback".to_string())
+    //!     .handle(|e: &ApiError| e.code >= 500)
+    //!     .build();
+    //!
+    //! let service = fallback.layer(api_client);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: Service-Based Fallback
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "fallback")]
+    //! # {
+    //! use tower_resilience::fallback::FallbackLayer;
+    //! use tower::Layer;
+    //!
+    //! # #[derive(Debug, Clone)]
+    //! # struct ApiError;
+    //! # async fn example() {
+    //! # let primary_service = tower::service_fn(|_req: String| async { Err::<String, _>(ApiError) });
+    //! // Fallback to a backup service
+    //! let fallback = FallbackLayer::<String, String, ApiError>::service(|req| {
+    //!     Box::pin(async move {
+    //!         // Call backup service, return cached data, etc.
+    //!         Ok(format!("Backup response for: {}", req))
+    //!     })
+    //! });
+    //!
+    //! let service = fallback.layer(primary_service);
     //! # }
     //! # }
     //! ```

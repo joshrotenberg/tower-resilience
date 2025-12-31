@@ -21,6 +21,7 @@
 //! - **[Cache]** - Response memoization to reduce load
 //! - **[Reconnect]** - Automatic reconnection with configurable backoff strategies
 //! - **[Health Check]** - Proactive health monitoring with intelligent resource selection
+//! - **[Fallback]** - Provides alternative responses when services fail
 //!
 //! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
@@ -30,6 +31,7 @@
 //! [Cache]: https://docs.rs/tower-resilience-cache
 //! [Reconnect]: https://docs.rs/tower-resilience-reconnect
 //! [Health Check]: https://docs.rs/tower-resilience-healthcheck
+//! [Fallback]: https://docs.rs/tower-resilience-fallback
 //!
 //! # Documentation Guides
 //!
@@ -135,3 +137,6 @@ pub use tower_resilience_reconnect as reconnect;
 
 #[cfg(feature = "healthcheck")]
 pub use tower_resilience_healthcheck as healthcheck;
+
+#[cfg(feature = "fallback")]
+pub use tower_resilience_fallback as fallback;

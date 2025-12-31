@@ -1,0 +1,28 @@
+[package]
+name = "tower-resilience-fallback"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+description = "Fallback middleware for Tower services"
+keywords = ["tower", "resilience", "fallback", "fault-tolerance", "middleware"]
+categories = ["asynchronous", "network-programming"]
+
+[features]
+default = []
+metrics = ["dep:metrics"]
+tracing = ["dep:tracing"]
+
+[dependencies]
+tower-resilience-core = { version = "0.4.7", path = "../tower-resilience-core" }
+tower = { workspace = true }
+tower-layer = { workspace = true }
+tower-service = { workspace = true }
+futures = { workspace = true }
+metrics = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "time"] }
