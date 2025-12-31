@@ -1,12 +1,12 @@
 //! Advanced timeout handling for Tower services.
 //!
 //! Provides timeout functionality with:
-//! - Configurable timeout duration
+//! - Configurable timeout duration (fixed or per-request)
 //! - Optional future cancellation on timeout
 //! - Event system for observability (onSuccess, onError, onTimeout)
 //! - Metrics integration
 //!
-//! ## Basic Example
+//! ## Basic Example (Fixed Timeout)
 //!
 //! ```rust
 //! use tower_resilience_timelimiter::TimeLimiterLayer;
@@ -14,7 +14,7 @@
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = TimeLimiterLayer::builder()
+//! let layer = TimeLimiterLayer::<String>::builder()
 //!     .timeout_duration(Duration::from_secs(5))
 //!     .cancel_running_future(true)
 //!     .on_timeout(|| {
@@ -30,6 +30,39 @@
 //! # }
 //! ```
 //!
+//! ## Per-Request Timeout
+//!
+//! Extract timeout from the request itself for different SLAs:
+//!
+//! ```rust
+//! use tower_resilience_timelimiter::TimeLimiterLayer;
+//! use tower::{Layer, service_fn};
+//! use std::time::Duration;
+//!
+//! #[derive(Clone)]
+//! struct MyRequest {
+//!     operation: String,
+//!     timeout_ms: Option<u64>,
+//! }
+//!
+//! # async fn example() {
+//! // Extract timeout from request, with fallback default
+//! let layer = TimeLimiterLayer::<MyRequest>::builder()
+//!     .timeout_fn(|req: &MyRequest| {
+//!         req.timeout_ms
+//!             .map(Duration::from_millis)
+//!             .unwrap_or(Duration::from_secs(5))
+//!     })
+//!     .build();
+//!
+//! let svc = service_fn(|req: MyRequest| async move {
+//!     Ok::<String, ()>(format!("Processed: {}", req.operation))
+//! });
+//!
+//! let mut service = layer.layer(svc);
+//! # }
+//! ```
+//!
 //! ## Event Listeners
 //!
 //! ```rust
@@ -37,7 +70,7 @@
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = TimeLimiterLayer::builder()
+//! let layer = TimeLimiterLayer::<()>::builder()
 //!     .timeout_duration(Duration::from_secs(5))
 //!     .on_success(|duration| {
 //!         println!("Call succeeded in {:?}", duration);
@@ -64,7 +97,7 @@
 //! use std::time::Duration;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let layer = TimeLimiterLayer::builder()
+//! let layer = TimeLimiterLayer::<String>::builder()
 //!     .timeout_duration(Duration::from_millis(100))
 //!     .build();
 //!
@@ -94,7 +127,7 @@
 //! let cache = Arc::new(std::sync::RwLock::new(HashMap::new()));
 //! cache.write().unwrap().insert("key", "cached value");
 //!
-//! let layer = TimeLimiterLayer::builder()
+//! let layer = TimeLimiterLayer::<String>::builder()
 //!     .timeout_duration(Duration::from_millis(100))
 //!     .build();
 //!
@@ -125,7 +158,7 @@
 //! use std::time::Duration;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let layer = TimeLimiterLayer::builder()
+//! let layer = TimeLimiterLayer::<String>::builder()
 //!     .timeout_duration(Duration::from_millis(100))
 //!     .on_timeout(|| {
 //!         eprintln!("Operation timed out - this may indicate service degradation");
@@ -148,6 +181,7 @@
 //! ```
 
 use futures::future::BoxFuture;
+use std::marker::PhantomData;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Instant;
@@ -160,7 +194,7 @@ use metrics::{counter, describe_counter, describe_histogram, histogram};
 #[cfg(feature = "tracing")]
 use tracing::{debug, warn};
 
-pub use config::{TimeLimiterConfig, TimeLimiterConfigBuilder};
+pub use config::{TimeLimiterConfig, TimeLimiterConfigBuilder, TimeoutSource};
 pub use error::TimeLimiterError;
 pub use events::TimeLimiterEvent;
 pub use layer::TimeLimiterLayer;
@@ -172,14 +206,19 @@ mod layer;
 
 /// A Tower service that applies timeout limiting to an inner service.
 #[derive(Clone)]
-pub struct TimeLimiter<S> {
+pub struct TimeLimiter<S, Req> {
     inner: S,
-    config: Arc<TimeLimiterConfig>,
+    config: Arc<TimeLimiterConfig<Req>>,
+    _phantom: PhantomData<Req>,
 }
 
-impl<S> TimeLimiter<S> {
+impl<S, Req> TimeLimiter<S, Req> {
     /// Creates a new time limiter wrapping the given service.
-    pub(crate) fn new(inner: S, config: Arc<TimeLimiterConfig>) -> Self {
+    pub(crate) fn new(
+        inner: S,
+        config: Arc<TimeLimiterConfig<Req>>,
+        _phantom: PhantomData<Req>,
+    ) -> Self {
         #[cfg(feature = "metrics")]
         {
             describe_counter!(
@@ -192,17 +231,21 @@ impl<S> TimeLimiter<S> {
             );
         }
 
-        Self { inner, config }
+        Self {
+            inner,
+            config,
+            _phantom,
+        }
     }
 }
 
-impl<S, Request> Service<Request> for TimeLimiter<S>
+impl<S, Req> Service<Req> for TimeLimiter<S, Req>
 where
-    S: Service<Request> + Clone + Send + 'static,
+    S: Service<Req> + Clone + Send + 'static,
     S::Future: Send + 'static,
     S::Response: Send + 'static,
     S::Error: Send + 'static,
-    Request: Send + 'static,
+    Req: Send + 'static,
 {
     type Response = S::Response;
     type Error = TimeLimiterError<S::Error>;
@@ -212,10 +255,12 @@ where
         self.inner.poll_ready(cx).map_err(TimeLimiterError::Inner)
     }
 
-    fn call(&mut self, req: Request) -> Self::Future {
+    fn call(&mut self, req: Req) -> Self::Future {
         let mut inner = self.inner.clone();
         let config = Arc::clone(&self.config);
-        let timeout_duration = config.timeout_duration;
+
+        // Extract timeout from request before moving it
+        let timeout_duration = config.timeout_source.get_timeout(&req);
 
         Box::pin(async move {
             let start = Instant::now();
@@ -305,7 +350,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_success_within_timeout() {
-        let layer = TimeLimiterLayer::builder()
+        let layer = TimeLimiterLayer::<()>::builder()
             .timeout_duration(Duration::from_millis(100))
             .build();
 
@@ -323,7 +368,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_timeout_occurs() {
-        let layer = TimeLimiterLayer::builder()
+        let layer = TimeLimiterLayer::<()>::builder()
             .timeout_duration(Duration::from_millis(10))
             .build();
 
@@ -341,7 +386,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_inner_error_propagates() {
-        let layer = TimeLimiterLayer::builder()
+        let layer = TimeLimiterLayer::<()>::builder()
             .timeout_duration(Duration::from_millis(100))
             .build();
 
@@ -364,7 +409,7 @@ mod tests {
         let sc = Arc::clone(&success_count);
         let tc = Arc::clone(&timeout_count);
 
-        let layer = TimeLimiterLayer::builder()
+        let layer = TimeLimiterLayer::<()>::builder()
             .timeout_duration(Duration::from_millis(50))
             .on_success(move |_| {
                 sc.fetch_add(1, Ordering::SeqCst);
@@ -391,6 +436,111 @@ mod tests {
         let mut service = layer.layer(svc);
         let _ = service.ready().await.unwrap().call(()).await;
         assert_eq!(timeout_count.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn test_per_request_timeout() {
+        #[derive(Clone)]
+        struct Request {
+            timeout_ms: u64,
+            sleep_ms: u64,
+        }
+
+        let layer = TimeLimiterLayer::<Request>::builder()
+            .timeout_fn(|req: &Request| Duration::from_millis(req.timeout_ms))
+            .build();
+
+        let svc = service_fn(|req: Request| async move {
+            sleep(Duration::from_millis(req.sleep_ms)).await;
+            Ok::<_, ()>("done")
+        });
+
+        let mut service = layer.layer(svc);
+
+        // Request with long timeout, short sleep - should succeed
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call(Request {
+                timeout_ms: 100,
+                sleep_ms: 10,
+            })
+            .await;
+        assert!(result.is_ok());
+
+        // Request with short timeout, long sleep - should timeout
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call(Request {
+                timeout_ms: 10,
+                sleep_ms: 100,
+            })
+            .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().is_timeout());
+    }
+
+    #[tokio::test]
+    async fn test_different_timeouts_per_request() {
+        #[derive(Clone)]
+        struct Request {
+            id: u32,
+            timeout_ms: Option<u64>,
+        }
+
+        let layer = TimeLimiterLayer::<Request>::builder()
+            .timeout_fn(|req: &Request| {
+                req.timeout_ms
+                    .map(Duration::from_millis)
+                    .unwrap_or(Duration::from_millis(50)) // default
+            })
+            .build();
+
+        let svc = service_fn(|_req: Request| async move {
+            sleep(Duration::from_millis(30)).await;
+            Ok::<_, ()>("done")
+        });
+
+        let mut service = layer.layer(svc);
+
+        // Request with custom timeout (100ms) - should succeed (30ms < 100ms)
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call(Request {
+                id: 1,
+                timeout_ms: Some(100),
+            })
+            .await;
+        assert!(result.is_ok());
+
+        // Request with custom timeout (10ms) - should timeout (30ms > 10ms)
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call(Request {
+                id: 2,
+                timeout_ms: Some(10),
+            })
+            .await;
+        assert!(result.is_err());
+
+        // Request with default timeout (50ms) - should succeed (30ms < 50ms)
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call(Request {
+                id: 3,
+                timeout_ms: None,
+            })
+            .await;
+        assert!(result.is_ok());
     }
 
     // Note: The cancel_running_future flag is tested in tests/timelimiter/cancellation.rs
