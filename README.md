@@ -23,6 +23,7 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 - **Hedge** - Reduces tail latency by racing redundant requests
 - **Reconnect** - Automatic reconnection with configurable backoff strategies
 - **Health Check** - Proactive health monitoring with intelligent resource selection
+- **Executor** - Delegates request processing to dedicated executors for parallelism
 - **Chaos** - Inject failures and latency for testing resilience (development/testing only)
 
 ## Quick Start
@@ -300,6 +301,36 @@ if let Some(db) = wrapper.get_healthy().await {
 **Note:** Health Check is not a Tower layer - it's a wrapper pattern for managing multiple resources with automatic failover.
 
 **Full examples:** [basic.rs](crates/tower-resilience-healthcheck/examples/basic.rs)
+
+### Executor
+
+Delegate request processing to dedicated executors for parallel execution:
+
+```rust
+use tower_resilience_executor::ExecutorLayer;
+use tower::ServiceBuilder;
+
+// Use a dedicated runtime for CPU-heavy work
+let compute_runtime = tokio::runtime::Builder::new_multi_thread()
+    .worker_threads(8)
+    .thread_name("compute")
+    .build()
+    .unwrap();
+
+let layer = ExecutorLayer::new(compute_runtime.handle().clone());
+
+// Or use the current runtime
+let layer = ExecutorLayer::current();
+
+let service = ServiceBuilder::new()
+    .layer(layer)
+    .service(my_service);
+```
+
+Use cases:
+- **CPU-bound processing**: Parallelize CPU-intensive request handling
+- **Runtime isolation**: Process requests on a dedicated runtime
+- **Thread pool delegation**: Use specific thread pools for certain workloads
 
 ### Chaos (Testing Only)
 

@@ -15,6 +15,7 @@
 //! - [Health Check](healthcheck) - Proactive resource health monitoring
 //! - [Fallback](fallback) - Provide alternative responses on failure
 //! - [Hedge](hedge) - Reduce tail latency with parallel requests
+//! - [Executor](executor) - Delegate request processing to dedicated executors
 
 /// Circuit Breaker pattern guide
 pub mod circuit_breaker {
@@ -902,6 +903,101 @@ pub mod fallback {
     //! });
     //!
     //! let service = fallback.layer(primary_service);
+    //! # }
+    //! # }
+    //! ```
+}
+
+/// Executor pattern guide
+pub mod executor {
+    //! # Executor
+    //!
+    //! Delegates request processing to dedicated executors for parallel execution,
+    //! runtime isolation, or thread pool delegation.
+    //!
+    //! ## When to Use
+    //!
+    //! - **CPU-bound processing**: Parallelize CPU-intensive request handling
+    //! - **Runtime isolation**: Process requests on a dedicated runtime
+    //! - **Thread pool delegation**: Use specific thread pools for certain workloads
+    //! - **Work stealing**: Distribute work across multiple worker threads
+    //!
+    //! ## Trade-offs
+    //!
+    //! - **Overhead**: Spawning tasks adds scheduling overhead
+    //! - **Context switching**: Work on different runtimes incurs switching costs
+    //! - **Complexity**: Managing multiple runtimes adds operational complexity
+    //! - **Resource usage**: Additional runtimes consume memory and threads
+    //!
+    //! ## Real-World Scenarios
+    //!
+    //! ```text
+    //! CPU-Heavy Image Processing
+    //! ├─ Main runtime handles HTTP requests
+    //! ├─ Executor delegates to compute runtime (8 workers)
+    //! ├─ Image processing runs in parallel
+    //! └─ Main runtime stays responsive for other requests
+    //!
+    //! Mixed Workload API
+    //! ├─ I/O-bound endpoints: default runtime
+    //! ├─ CPU-bound endpoints: compute runtime
+    //! ├─ Background jobs: background runtime
+    //! └─ Each workload gets appropriate resources
+    //! ```
+    //!
+    //! ## Anti-Patterns
+    //!
+    //! ❌ **Executor for simple I/O**: Overhead exceeds benefit
+    //! ✅ Only use executor for CPU-bound or isolation requirements
+    //!
+    //! ❌ **Too many runtimes**: Resource fragmentation
+    //! ✅ Use 2-3 runtimes max, sized appropriately
+    //!
+    //! ❌ **Blocking in executor**: Starves worker threads
+    //! ✅ Use spawn_blocking for blocking operations
+    //!
+    //! ## Example
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "executor")]
+    //! # {
+    //! use tower_resilience::executor::ExecutorLayer;
+    //! use tower::ServiceBuilder;
+    //!
+    //! # async fn example() {
+    //! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+    //! // Create a dedicated compute runtime
+    //! let compute_runtime = tokio::runtime::Builder::new_multi_thread()
+    //!     .worker_threads(8)
+    //!     .thread_name("compute")
+    //!     .build()
+    //!     .unwrap();
+    //!
+    //! let layer = ExecutorLayer::new(compute_runtime.handle().clone());
+    //!
+    //! let service = ServiceBuilder::new()
+    //!     .layer(layer)
+    //!     .service(my_service);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: Current Runtime
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "executor")]
+    //! # {
+    //! use tower_resilience::executor::ExecutorLayer;
+    //! use tower::ServiceBuilder;
+    //!
+    //! # async fn example() {
+    //! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+    //! // Use the current tokio runtime
+    //! let layer = ExecutorLayer::current();
+    //!
+    //! let service = ServiceBuilder::new()
+    //!     .layer(layer)
+    //!     .service(my_service);
     //! # }
     //! # }
     //! ```
