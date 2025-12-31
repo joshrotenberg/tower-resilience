@@ -159,7 +159,7 @@ async fn demo_timeout() {
         Ok::<_, ServiceError>("Completed")
     });
 
-    let timeout_layer = TimeLimiterLayer::builder()
+    let timeout_layer = TimeLimiterLayer::<Duration>::builder()
         .timeout_duration(Duration::from_millis(100))
         .on_timeout(|| println!("  [Timeout] Request timed out!"))
         .on_success(|duration| println!("  [Success] Completed in {:?}", duration))
