@@ -1,3 +1,10 @@
+//! Basic reconnection example with exponential backoff.
+//!
+//! Run with: cargo run --example reconnect_basic -p tower-resilience-reconnect
+//!
+//! This example shows how to wrap a service with automatic reconnection
+//! capabilities using the ReconnectLayer.
+
 use std::time::Duration;
 use tower::{Service, ServiceBuilder};
 use tower_resilience_reconnect::{ReconnectConfig, ReconnectLayer, ReconnectPolicy};

@@ -1,6 +1,6 @@
 //! Simple bulkhead pattern example.
 //!
-//! Run with: cargo run --example simple_bulkhead -p tower-resilience-bulkhead
+//! Run with: cargo run --example bulkhead_basic -p tower-resilience-bulkhead
 //!
 //! This example shows basic bulkhead usage for limiting concurrent requests.
 

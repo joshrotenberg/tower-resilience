@@ -1,6 +1,6 @@
 //! Basic example demonstrating health checking with mock services.
 //!
-//! Run with: cargo run --example basic
+//! Run with: cargo run --example healthcheck_basic -p tower-resilience-healthcheck
 
 use std::time::Duration;
 use tower_resilience_healthcheck::{HealthCheckWrapper, HealthStatus, SelectionStrategy};

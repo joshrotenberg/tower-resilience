@@ -99,7 +99,7 @@ let layer = BulkheadLayer::builder()
 let service = layer.layer(my_service);
 ```
 
-**Full examples:** [bulkhead.rs](examples/bulkhead.rs) | [bulkhead_demo.rs](crates/tower-resilience-bulkhead/examples/bulkhead_demo.rs)
+**Full examples:** [bulkhead.rs](examples/bulkhead.rs) | [bulkhead_advanced.rs](crates/tower-resilience-bulkhead/examples/bulkhead_advanced.rs)
 
 ### Time Limiter
 
@@ -264,7 +264,7 @@ let layer = ReconnectLayer::new(
 let service = layer.layer(my_service);
 ```
 
-**Full examples:** [reconnect.rs](examples/reconnect.rs) | [basic.rs](crates/tower-resilience-reconnect/examples/basic.rs) | [custom_policy.rs](crates/tower-resilience-reconnect/examples/custom_policy.rs)
+**Full examples:** [reconnect.rs](examples/reconnect.rs) | [reconnect_basic.rs](crates/tower-resilience-reconnect/examples/reconnect_basic.rs) | [reconnect_custom_policy.rs](crates/tower-resilience-reconnect/examples/reconnect_custom_policy.rs)
 
 ### Health Check
 
