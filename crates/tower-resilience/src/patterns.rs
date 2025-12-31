@@ -1017,7 +1017,7 @@ pub mod hedge {
     //! # async fn example() {
     //! # let database_query = tower::service_fn(|_req: String| async { Ok::<String, DbError>(String::new()) });
     //! // Fire hedge after 50ms if primary hasn't responded
-    //! let hedge = HedgeLayer::builder()
+    //! let hedge = HedgeLayer::<String, String, DbError>::builder()
     //!     .name("db-query-hedge")
     //!     .delay(Duration::from_millis(50))
     //!     .max_hedged_attempts(2)
@@ -1074,7 +1074,7 @@ pub mod hedge {
     //! # async fn example() {
     //! # let cache_lookup = tower::service_fn(|_req: String| async { Ok::<String, CacheError>(String::new()) });
     //! // Increasing delays: 10ms, 40ms, 90ms...
-    //! let hedge = HedgeLayer::builder()
+    //! let hedge = HedgeLayer::<String, String, CacheError>::builder()
     //!     .name("cache-hedge")
     //!     .delay_fn(|attempt| Duration::from_millis(10 * (attempt as u64).pow(2)))
     //!     .max_hedged_attempts(3)
@@ -1103,7 +1103,7 @@ pub mod hedge {
     //! # impl std::error::Error for MyError {}
     //! # async fn example() {
     //! # let service_fn = tower::service_fn(|_req: String| async { Ok::<String, MyError>(String::new()) });
-    //! let hedge = HedgeLayer::builder()
+    //! let hedge = HedgeLayer::<String, String, MyError>::builder()
     //!     .name("monitored-hedge")
     //!     .delay(Duration::from_millis(50))
     //!     .max_hedged_attempts(2)
