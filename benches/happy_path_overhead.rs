@@ -3,6 +3,7 @@ use futures::future::BoxFuture;
 use std::hint::black_box;
 use std::time::Duration;
 use tower::{Layer, Service, ServiceBuilder, ServiceExt};
+use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd};
 use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
 use tower_resilience_cache::CacheLayer;
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
@@ -196,6 +197,30 @@ fn bench_time_limiter(c: &mut Criterion) {
     });
 }
 
+fn bench_adaptive_limiter(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("adaptive_limiter_permits_available", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer = AdaptiveLimiterLayer::new(
+                Aimd::builder()
+                    .initial_limit(100)
+                    .latency_threshold(Duration::from_secs(1))
+                    .build(),
+            );
+            let mut service = ServiceBuilder::new().layer(layer).service(BaselineService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
 fn bench_composition_simple(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
 
@@ -232,6 +257,7 @@ criterion_group!(
     bench_rate_limiter,
     bench_cache,
     bench_time_limiter,
+    bench_adaptive_limiter,
     bench_composition_simple
 );
 criterion_main!(benches);

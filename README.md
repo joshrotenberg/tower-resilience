@@ -24,6 +24,7 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 - **Reconnect** - Automatic reconnection with configurable backoff strategies
 - **Health Check** - Proactive health monitoring with intelligent resource selection
 - **Executor** - Delegates request processing to dedicated executors for parallelism
+- **Adaptive Concurrency** - Dynamic concurrency limiting using AIMD or Vegas algorithms
 - **Chaos** - Inject failures and latency for testing resilience (development/testing only)
 
 ## Quick Start
@@ -331,6 +332,49 @@ Use cases:
 - **CPU-bound processing**: Parallelize CPU-intensive request handling
 - **Runtime isolation**: Process requests on a dedicated runtime
 - **Thread pool delegation**: Use specific thread pools for certain workloads
+
+### Adaptive Concurrency
+
+Dynamically adjust concurrency limits based on observed latency and error rates:
+
+```rust
+use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd, Vegas};
+use tower::ServiceBuilder;
+use std::time::Duration;
+
+// AIMD: Classic TCP-style congestion control
+// Increases limit on success, decreases on failure/high latency
+let layer = AdaptiveLimiterLayer::new(
+    Aimd::builder()
+        .initial_limit(10)
+        .min_limit(1)
+        .max_limit(100)
+        .increase_by(1)                           // Add 1 on success
+        .decrease_factor(0.5)                     // Halve on failure
+        .latency_threshold(Duration::from_millis(100))
+        .build()
+);
+
+// Vegas: More stable, uses RTT to estimate queue depth
+let layer = AdaptiveLimiterLayer::new(
+    Vegas::builder()
+        .initial_limit(10)
+        .alpha(3)    // Increase when queue < 3
+        .beta(6)     // Decrease when queue > 6
+        .build()
+);
+
+let service = ServiceBuilder::new()
+    .layer(layer)
+    .service(my_service);
+```
+
+Use cases:
+- **Auto-tuning**: No manual concurrency limit configuration needed
+- **Variable backends**: Adapts to changing downstream capacity
+- **Load shedding**: Automatically reduces load when backends struggle
+
+**Full examples:** [adaptive.rs](examples/adaptive.rs)
 
 ### Chaos (Testing Only)
 

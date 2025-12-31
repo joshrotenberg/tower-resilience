@@ -24,6 +24,7 @@
 //! - **[Fallback]** - Provides alternative responses when services fail
 //! - **[Hedge]** - Reduces tail latency by firing parallel requests
 //! - **[Executor]** - Delegates request processing to dedicated executors
+//! - **[Adaptive]** - Dynamic concurrency limiting using AIMD or Vegas algorithms
 //!
 //! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
@@ -36,6 +37,7 @@
 //! [Fallback]: https://docs.rs/tower-resilience-fallback
 //! [Hedge]: https://docs.rs/tower-resilience-hedge
 //! [Executor]: https://docs.rs/tower-resilience-executor
+//! [Adaptive]: https://docs.rs/tower-resilience-adaptive
 //!
 //! # Documentation Guides
 //!
@@ -150,3 +152,6 @@ pub use tower_resilience_hedge as hedge;
 
 #[cfg(feature = "executor")]
 pub use tower_resilience_executor as executor;
+
+#[cfg(feature = "adaptive")]
+pub use tower_resilience_adaptive as adaptive;

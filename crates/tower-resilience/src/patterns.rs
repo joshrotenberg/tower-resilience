@@ -16,6 +16,7 @@
 //! - [Fallback](fallback) - Provide alternative responses on failure
 //! - [Hedge](hedge) - Reduce tail latency with parallel requests
 //! - [Executor](executor) - Delegate request processing to dedicated executors
+//! - [Adaptive Concurrency](adaptive) - Dynamic concurrency limiting with AIMD/Vegas
 
 /// Circuit Breaker pattern guide
 pub mod circuit_breaker {
@@ -1219,5 +1220,168 @@ pub mod hedge {
     //! let service = hedge.layer(service_fn);
     //! # }
     //! # }
+    //! ```
+}
+
+/// Adaptive Concurrency pattern guide
+pub mod adaptive {
+    //! # Adaptive Concurrency
+    //!
+    //! Dynamically adjusts concurrency limits based on observed latency and error rates.
+    //! Unlike static concurrency limits (like Bulkhead), adaptive limiters automatically
+    //! find the optimal concurrency for your downstream services.
+    //!
+    //! ## Adaptive vs Bulkhead
+    //!
+    //! **Key distinction**: Adaptive is **self-tuning**, Bulkhead is **statically configured**.
+    //!
+    //! - **Adaptive**: Automatically finds optimal concurrency based on feedback
+    //! - **Bulkhead**: Fixed limit you configure upfront
+    //!
+    //! Use Adaptive when you don't know the right limit or when capacity varies.
+    //! Use Bulkhead when you have a known, fixed resource pool.
+    //!
+    //! ## Algorithms
+    //!
+    //! ### AIMD (Additive Increase Multiplicative Decrease)
+    //!
+    //! Classic TCP-style congestion control:
+    //! - On success with low latency: increase limit by a fixed amount (e.g., +1)
+    //! - On failure or high latency: decrease limit by a factor (e.g., halve it)
+    //!
+    //! Creates a "sawtooth" pattern as it continuously probes for capacity.
+    //! Simple, well-understood, works in most scenarios.
+    //!
+    //! ### Vegas
+    //!
+    //! More sophisticated algorithm using RTT measurements:
+    //! - Estimates queue depth from RTT variations
+    //! - Increases limit when queue is small (under-utilized)
+    //! - Decreases limit when queue is large (congested)
+    //!
+    //! More stable than AIMD, avoids sawtooth pattern, better for latency-sensitive
+    //! applications.
+    //!
+    //! ## When to Use
+    //!
+    //! - **Unknown capacity**: Don't know optimal concurrency for downstream
+    //! - **Variable backends**: Capacity changes due to autoscaling, load, etc.
+    //! - **Auto-tuning**: Want "set it and forget it" concurrency management
+    //! - **Latency optimization**: Need to keep latency low while maximizing throughput
+    //!
+    //! ## Trade-offs
+    //!
+    //! - **Warm-up time**: Takes time to find optimal limit
+    //! - **Oscillation**: AIMD continuously probes, causing limit fluctuations
+    //! - **Shared fate**: All callers share the same limit
+    //! - **Algorithm choice**: AIMD vs Vegas requires understanding your workload
+    //!
+    //! ## Real-World Scenarios
+    //!
+    //! ```text
+    //! Auto-scaling Backend
+    //! ├─ Backend starts with 2 pods (low capacity)
+    //! ├─ Adaptive limiter finds limit ~20
+    //! ├─ Backend scales to 10 pods
+    //! ├─ Latency drops, limiter increases to ~100
+    //! └─ Throughput automatically maximized
+    //!
+    //! Database Connection Pool
+    //! ├─ Unknown optimal connection count
+    //! ├─ Vegas algorithm monitors query latency
+    //! ├─ Limit increases until queue builds up
+    //! ├─ Settles at optimal ~50 connections
+    //! └─ Adapts as query patterns change
+    //!
+    //! External API with Variable Rate Limits
+    //! ├─ API has undocumented rate limits
+    //! ├─ AIMD probes for capacity
+    //! ├─ Backs off when 429s are returned
+    //! └─ Finds sustainable request rate
+    //! ```
+    //!
+    //! ## Anti-Patterns
+    //!
+    //! ❌ **Too aggressive decrease factor**: Limit drops too fast, under-utilizes
+    //! ✅ Start with 0.5-0.9 decrease factor
+    //!
+    //! ❌ **No minimum limit**: Can drop to 0 and never recover
+    //! ✅ Always set min_limit >= 1
+    //!
+    //! ❌ **Latency threshold too low**: Normal variance triggers decreases
+    //! ✅ Set threshold to P90-P99 latency, not P50
+    //!
+    //! ❌ **Using for isolation**: Adaptive shares limit across all callers
+    //! ✅ Use Bulkhead for tenant/resource isolation
+    //!
+    //! ## Example: AIMD Algorithm
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "adaptive")]
+    //! # {
+    //! use tower_resilience::adaptive::{AdaptiveLimiterLayer, Aimd};
+    //! use tower::ServiceBuilder;
+    //! use std::time::Duration;
+    //!
+    //! # async fn example() {
+    //! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+    //! let layer = AdaptiveLimiterLayer::new(
+    //!     Aimd::builder()
+    //!         .initial_limit(10)
+    //!         .min_limit(1)
+    //!         .max_limit(100)
+    //!         .increase_by(1)
+    //!         .decrease_factor(0.5)
+    //!         .latency_threshold(Duration::from_millis(100))
+    //!         .build()
+    //! );
+    //!
+    //! let service = ServiceBuilder::new()
+    //!     .layer(layer)
+    //!     .service(my_service);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: Vegas Algorithm
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "adaptive")]
+    //! # {
+    //! use tower_resilience::adaptive::{AdaptiveLimiterLayer, Vegas};
+    //! use tower::ServiceBuilder;
+    //!
+    //! # async fn example() {
+    //! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+    //! let layer = AdaptiveLimiterLayer::new(
+    //!     Vegas::builder()
+    //!         .initial_limit(10)
+    //!         .min_limit(1)
+    //!         .max_limit(100)
+    //!         .alpha(3)   // Increase when queue < 3
+    //!         .beta(6)    // Decrease when queue > 6
+    //!         .build()
+    //! );
+    //!
+    //! let service = ServiceBuilder::new()
+    //!     .layer(layer)
+    //!     .service(my_service);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! ## Example: Composition with Circuit Breaker
+    //!
+    //! ```rust,ignore
+    //! use tower_resilience::adaptive::{AdaptiveLimiterLayer, Aimd};
+    //! use tower_resilience::circuitbreaker::CircuitBreakerLayer;
+    //! use tower::ServiceBuilder;
+    //!
+    //! // Circuit breaker catches catastrophic failures
+    //! // Adaptive limiter optimizes throughput
+    //! let service = ServiceBuilder::new()
+    //!     .layer(CircuitBreakerLayer::builder().build())
+    //!     .layer(AdaptiveLimiterLayer::new(Aimd::builder().build()))
+    //!     .service(my_service);
     //! ```
 }
