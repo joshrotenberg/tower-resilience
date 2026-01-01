@@ -1,24 +1,16 @@
 name: Benchmark
 
 on:
-  pull_request:
-    paths:
-      - "crates/**"
-      - "benches/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - ".github/workflows/benchmark.yml"
   push:
     branches:
       - main
   workflow_dispatch:
   schedule:
-    # Run weekly on Monday at 00:00 UTC
-    - cron: "0 0 * * 1"
+    # Run nightly at 00:00 UTC
+    - cron: "0 0 * * *"
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   benchmark:
@@ -26,8 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -37,98 +27,9 @@ jobs:
         with:
           cache-on-failure: true
 
-      - name: Run benchmarks on base branch (establish baseline)
-        if: github.event_name == 'pull_request'
-        run: |
-          git fetch origin ${{ github.base_ref }}
-          git checkout origin/${{ github.base_ref }}
-          cargo bench --bench happy_path_overhead -- --save-baseline base
-          # Only run comprehensive_benchmarks if it exists in base branch
-          if [ -f benches/comprehensive_benchmarks.rs ]; then
-            cargo bench --bench comprehensive_benchmarks -- --save-baseline base
-          fi
-
-      - name: Checkout PR branch
-        if: github.event_name == 'pull_request'
-        run: |
-          git checkout ${{ github.event.pull_request.head.sha }}
-
-      - name: Run benchmarks on PR branch (compare to baseline)
-        if: github.event_name == 'pull_request'
-        continue-on-error: true
-        run: |
-          cargo bench --bench happy_path_overhead -- --baseline base | tee benchmark-output.txt
-          # Only compare comprehensive_benchmarks if it exists
-          if [ -f benches/comprehensive_benchmarks.rs ]; then
-            cargo bench --bench comprehensive_benchmarks -- --baseline base | tee -a benchmark-output.txt
-          fi
-
-      - name: Check for regressions
-        if: github.event_name == 'pull_request'
-        id: check_regression
-        run: |
-          # Extract all benchmark blocks that show regression, excluding baseline
-          # We exclude baseline_no_middleware because it's just noise/variance
-          if grep -B 1 "Performance has regressed" benchmark-output.txt | grep -v "baseline_no_middleware" | grep -q "Performance has regressed"; then
-            echo "has_regression=true" >> $GITHUB_OUTPUT
-            echo "⚠️ Performance regression detected in middleware patterns!" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "has_regression=false" >> $GITHUB_OUTPUT
-            echo "✅ No performance regressions detected in middleware patterns" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Format benchmark results for PR comment
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "## Benchmark Results" > comment.md
-          echo "" >> comment.md
-          echo "Comparing PR branch against \`${{ github.base_ref }}\`" >> comment.md
-          echo "" >> comment.md
-
-          if grep -q "Performance has regressed" benchmark-output.txt; then
-            echo "### ⚠️ Performance Regressions Detected" >> comment.md
-            echo "" >> comment.md
-            echo "One or more benchmarks show statistically significant regressions." >> comment.md
-            echo "" >> comment.md
-          elif grep -q "Performance has improved" benchmark-output.txt; then
-            echo "### ✅ Performance Improvements Detected" >> comment.md
-            echo "" >> comment.md
-          else
-            echo "### ✅ No Significant Changes" >> comment.md
-            echo "" >> comment.md
-          fi
-
-          echo "<details>" >> comment.md
-          echo "<summary>Full Benchmark Results</summary>" >> comment.md
-          echo "" >> comment.md
-          echo "\`\`\`" >> comment.md
-          cat benchmark-output.txt >> comment.md
-          echo "\`\`\`" >> comment.md
-          echo "</details>" >> comment.md
-          echo "" >> comment.md
-          echo "---" >> comment.md
-          echo "" >> comment.md
-          echo "*Criterion.rs uses statistical analysis with confidence intervals and p-values to detect significant changes.*" >> comment.md
-
-      - name: Comment PR
-        if: github.event_name == 'pull_request'
-        uses: thollander/actions-comment-pull-request@v3
-        with:
-          file-path: comment.md
-          comment-tag: benchmark-results
-
-      - name: Warn if regressions detected
-        if: github.event_name == 'pull_request' && steps.check_regression.outputs.has_regression == 'true'
-        run: |
-          echo "⚠️ Performance regressions detected - please review benchmark results."
-          echo "Note: Benchmarks on CI runners can be noisy. Significant regressions (>10%) should be investigated."
-          echo "::warning::Performance regressions detected in benchmarks - review recommended but not blocking"
-
-      - name: Run benchmarks on main
-        if: github.event_name != 'pull_request'
+      - name: Run benchmarks
         run: |
           cargo bench --bench happy_path_overhead | tee output.txt
-          # Only run comprehensive_benchmarks if it exists
           if [ -f benches/comprehensive_benchmarks.rs ]; then
             cargo bench --bench comprehensive_benchmarks | tee -a output.txt
           fi
@@ -137,8 +38,5 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: benchmark-results-${{ github.sha }}
-          path: |
-            benchmark-output.txt
-            output.txt
+          path: output.txt
           retention-days: 90
-          if-no-files-found: ignore
