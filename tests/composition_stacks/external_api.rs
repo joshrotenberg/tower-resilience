@@ -13,7 +13,7 @@ use tower_resilience_timelimiter::TimeLimiterLayer;
 
 /// Test error type
 #[derive(Debug, Clone)]
-struct ApiError(String);
+pub struct ApiError(pub String);
 
 impl std::fmt::Display for ApiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -25,14 +25,30 @@ impl std::error::Error for ApiError {}
 
 /// Test request type
 #[derive(Debug, Clone)]
-struct ApiRequest {
-    endpoint: String,
+pub struct ApiRequest {
+    pub endpoint: String,
+}
+
+impl ApiRequest {
+    pub fn new(endpoint: &str) -> Self {
+        Self {
+            endpoint: endpoint.to_string(),
+        }
+    }
 }
 
 /// Test response type
 #[derive(Debug, Clone)]
-struct ApiResponse {
-    body: String,
+pub struct ApiResponse {
+    pub body: String,
+}
+
+impl ApiResponse {
+    pub fn new(body: &str) -> Self {
+        Self {
+            body: body.to_string(),
+        }
+    }
 }
 
 /// Creates a mock HTTP client service for testing
@@ -132,7 +148,13 @@ async fn full_stack_with_fallback_compiles() {
     let _service = fallback.layer(with_total_timeout);
 }
 
-/// Stack with hedging for latency-sensitive idempotent calls
+/// Stack with hedging for latency-sensitive idempotent calls.
+///
+/// Hedge positioning rationale:
+/// - Hedge is INSIDE circuit breaker: CB sees hedge failures, preventing
+///   a broken service from triggering endless hedge attempts
+/// - Hedge is OUTSIDE per-attempt timeout: each hedged request gets its
+///   own timeout, so a slow primary doesn't block the hedge from winning
 #[tokio::test]
 async fn stack_with_hedging_compiles() {
     let per_attempt_timeout = TimeLimiterLayer::<ApiRequest>::builder()
@@ -159,7 +181,12 @@ async fn stack_with_hedging_compiles() {
 
     let http_client = mock_http_client();
 
-    // Manual composition
+    // Manual composition (innermost to outermost):
+    // 1. Per-attempt timeout wraps raw client
+    // 2. Hedge wraps timeout (each hedge attempt gets own timeout)
+    // 3. CB wraps hedge (sees hedge failures, can trip on broken service)
+    // 4. Retry wraps CB (retries after CB rejects or hedge fails)
+    // 5. Total timeout bounds everything
     let with_timeout = per_attempt_timeout.layer(http_client);
     let with_hedge = hedge.layer(with_timeout);
     let with_cb = circuit_breaker.layer::<_, ApiRequest>(with_hedge);
