@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.9](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.8...tower-resilience-v0.3.9) - 2026-01-01
+
+### Added
+
+- add request coalescing (singleflight) pattern ([#180](https://github.com/joshrotenberg/tower-resilience/pull/180))
+- add adaptive concurrency limiter with AIMD and Vegas algorithms ([#178](https://github.com/joshrotenberg/tower-resilience/pull/178))
+- add executor delegation layer for parallel request processing ([#177](https://github.com/joshrotenberg/tower-resilience/pull/177))
+- add per-request max attempts extraction to retry ([#176](https://github.com/joshrotenberg/tower-resilience/pull/176))
+- add per-request timeout extraction to timelimiter ([#175](https://github.com/joshrotenberg/tower-resilience/pull/175))
+- add hedging pattern for tail latency reduction ([#164](https://github.com/joshrotenberg/tower-resilience/pull/164))
+- add standalone fallback middleware crate ([#158](https://github.com/joshrotenberg/tower-resilience/pull/158))
+
+### Fixed
+
+- resolve example name collision and standardize naming ([#174](https://github.com/joshrotenberg/tower-resilience/pull/174))
+
+### Other
+
+- simplify README and reduce marketing language ([#173](https://github.com/joshrotenberg/tower-resilience/pull/173))
+
 ## [0.3.8](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.7...tower-resilience-v0.3.8) - 2025-11-02
 
 ### Other
