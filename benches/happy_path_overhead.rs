@@ -7,6 +7,7 @@ use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd};
 use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
 use tower_resilience_cache::CacheLayer;
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_coalesce::CoalesceLayer;
 use tower_resilience_ratelimiter::RateLimiterLayer;
 use tower_resilience_retry::RetryLayer;
 use tower_resilience_timelimiter::TimeLimiterLayer;
@@ -221,6 +222,25 @@ fn bench_adaptive_limiter(c: &mut Criterion) {
     });
 }
 
+fn bench_coalesce(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("coalesce_no_dedup", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer = CoalesceLayer::new(|req: &TestRequest| req.0);
+            let mut service = layer.layer(BaselineService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
 fn bench_composition_simple(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
 
@@ -258,6 +278,7 @@ criterion_group!(
     bench_cache,
     bench_time_limiter,
     bench_adaptive_limiter,
+    bench_coalesce,
     bench_composition_simple
 );
 criterion_main!(benches);

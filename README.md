@@ -25,6 +25,7 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 - **Health Check** - Proactive health monitoring with intelligent resource selection
 - **Executor** - Delegates request processing to dedicated executors for parallelism
 - **Adaptive Concurrency** - Dynamic concurrency limiting using AIMD or Vegas algorithms
+- **Coalesce** - Deduplicates concurrent identical requests (singleflight pattern)
 - **Chaos** - Inject failures and latency for testing resilience (development/testing only)
 
 ## Quick Start
@@ -302,6 +303,35 @@ if let Some(db) = wrapper.get_healthy().await {
 **Note:** Health Check is not a Tower layer - it's a wrapper pattern for managing multiple resources with automatic failover.
 
 **Full examples:** [basic.rs](crates/tower-resilience-healthcheck/examples/basic.rs)
+
+### Coalesce
+
+Deduplicate concurrent identical requests (singleflight pattern):
+
+```rust
+use tower_resilience_coalesce::CoalesceLayer;
+use tower::ServiceBuilder;
+
+// Coalesce by request ID - concurrent requests for same ID share one execution
+let layer = CoalesceLayer::new(|req: &Request| req.id.clone());
+
+let service = ServiceBuilder::new()
+    .layer(layer)
+    .service(my_service);
+
+// Use with cache to prevent stampede on cache miss
+let service = ServiceBuilder::new()
+    .layer(cache_layer)      // Check cache first
+    .layer(coalesce_layer)   // Coalesce cache misses
+    .service(backend);
+```
+
+Use cases:
+- **Cache stampede prevention**: When cache expires, only one request refreshes it
+- **Expensive computations**: Deduplicate identical report generation requests
+- **Rate-limited APIs**: Reduce calls to external APIs by coalescing identical requests
+
+**Note:** Response and error types must implement `Clone` to be shared with all waiters.
 
 ### Executor
 

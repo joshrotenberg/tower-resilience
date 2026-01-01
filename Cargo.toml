@@ -21,6 +21,7 @@ tower-resilience-healthcheck = { path = "crates/tower-resilience-healthcheck" }
 tower-resilience-fallback = { path = "crates/tower-resilience-fallback", features = ["metrics"] }
 tower-resilience-hedge = { path = "crates/tower-resilience-hedge", features = ["metrics"] }
 tower-resilience-adaptive = { path = "crates/tower-resilience-adaptive" }
+tower-resilience-coalesce = { path = "crates/tower-resilience-coalesce" }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"
@@ -58,6 +59,7 @@ members = [
     "crates/tower-resilience-hedge",
     "crates/tower-resilience-executor",
     "crates/tower-resilience-adaptive",
+    "crates/tower-resilience-coalesce",
     "crates/tower-resilience",
     "examples/axum-resilient-kv-store",
     "examples/tonic-resilient-greeter",
