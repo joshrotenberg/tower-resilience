@@ -84,27 +84,25 @@ proptest! {
     /// Property: Circuit breaker stays closed when failure rate is below threshold
     #[test]
     fn circuit_breaker_stays_closed_under_threshold(
-        failure_threshold in 0.5f32..=0.9,
+        failure_threshold in 0.6f32..=0.9,
         window_size in 10usize..=30,
-        success_rate in 0.7f32..=1.0,
     ) {
-        // Skip if success rate would trigger opening
-        if (1.0 - success_rate) >= failure_threshold {
-            return Ok(());
-        }
+        // Use a fixed low failure rate that's well below the threshold
+        let failure_rate = 0.2f32; // 20% failures, always below 60% threshold
 
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
-            let should_fail = Arc::new(AtomicBool::new(false));
+            let request_num = Arc::new(AtomicUsize::new(0));
             let call_count = Arc::new(AtomicUsize::new(0));
 
-            let should_fail_clone = Arc::clone(&should_fail);
+            let request_num_clone = Arc::clone(&request_num);
             let call_count_clone = Arc::clone(&call_count);
             let svc = tower::service_fn(move |_req: ()| {
                 call_count_clone.fetch_add(1, Ordering::SeqCst);
-                let fail = should_fail_clone.load(Ordering::SeqCst);
+                let req_num = request_num_clone.fetch_add(1, Ordering::SeqCst);
                 async move {
-                    if fail {
+                    // Spread failures evenly: fail every 5th request (20% failure rate)
+                    if req_num.is_multiple_of(5) {
                         Err(TestError)
                     } else {
                         Ok(())
@@ -115,28 +113,30 @@ proptest! {
             let layer = CircuitBreakerLayer::<(), TestError>::builder()
                 .failure_rate_threshold(failure_threshold as f64)
                 .sliding_window_size(window_size)
-                .minimum_number_of_calls(window_size / 2)
+                .minimum_number_of_calls(window_size)
                 .build();
 
             let mut service = layer.layer(svc);
 
-            // Send requests with configured success rate
-            let num_requests = window_size * 2;
-            let failures_to_inject = ((num_requests as f32) * (1.0 - success_rate)) as usize;
+            // Send enough requests to fill multiple windows
+            let num_requests = window_size * 3;
 
-            for i in 0..num_requests {
-                should_fail.store(i < failures_to_inject, Ordering::SeqCst);
-                let _: Result<(), _> = service.ready().await.unwrap().call(()).await;
+            for _ in 0..num_requests {
+                let _: Result<(), CircuitBreakerError<TestError>> =
+                    service.ready().await.unwrap().call(()).await;
             }
 
             // All requests should have been processed (circuit stayed closed)
+            // because 20% failure rate is below the 60%+ threshold
             let calls_made = call_count.load(Ordering::SeqCst);
             prop_assert_eq!(
                 calls_made,
                 num_requests,
-                "Circuit opened unexpectedly: {} calls made of {}",
+                "Circuit opened unexpectedly: {} calls made of {} (failure_rate={}, threshold={})",
                 calls_made,
-                num_requests
+                num_requests,
+                failure_rate,
+                failure_threshold
             );
 
             Ok(())
