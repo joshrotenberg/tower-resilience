@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-timelimiter-v0.4.0...tower-resilience-timelimiter-v0.4.1) - 2026-01-01
+
+### Other
+
+- add comprehensive pattern selection and composition guide ([#185](https://github.com/joshrotenberg/tower-resilience/pull/185))
+
 ## [0.4.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-timelimiter-v0.3.7...tower-resilience-timelimiter-v0.4.0) - 2026-01-01
 
 ### Added
