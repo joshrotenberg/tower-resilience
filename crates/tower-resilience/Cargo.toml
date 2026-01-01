@@ -1,6 +1,6 @@
 [package]
 name = "tower-resilience"
-version = "0.3.9"
+version = "0.3.10"
 edition = "2021"
 rust-version.workspace = true
 readme = "../../README.md"
@@ -16,19 +16,19 @@ categories = ["asynchronous", "network-programming"]
 tower-resilience-core = { workspace = true }
 
 # Optional pattern dependencies
-tower-resilience-circuitbreaker = { version = "0.5.0", path = "../tower-resilience-circuitbreaker", optional = true }
-tower-resilience-bulkhead = { version = "0.5.0", path = "../tower-resilience-bulkhead", optional = true }
-tower-resilience-timelimiter = { version = "0.4.0", path = "../tower-resilience-timelimiter", optional = true }
-tower-resilience-cache = { version = "0.3.8", path = "../tower-resilience-cache", optional = true }
-tower-resilience-retry = { version = "0.5.0", path = "../tower-resilience-retry", optional = true }
-tower-resilience-ratelimiter = { version = "0.5.0", path = "../tower-resilience-ratelimiter", optional = true }
-tower-resilience-reconnect = { version = "0.5.0", path = "../tower-resilience-reconnect", optional = true }
+tower-resilience-circuitbreaker = { version = "0.5.1", path = "../tower-resilience-circuitbreaker", optional = true }
+tower-resilience-bulkhead = { version = "0.5.1", path = "../tower-resilience-bulkhead", optional = true }
+tower-resilience-timelimiter = { version = "0.4.1", path = "../tower-resilience-timelimiter", optional = true }
+tower-resilience-cache = { version = "0.3.9", path = "../tower-resilience-cache", optional = true }
+tower-resilience-retry = { version = "0.5.1", path = "../tower-resilience-retry", optional = true }
+tower-resilience-ratelimiter = { version = "0.5.1", path = "../tower-resilience-ratelimiter", optional = true }
+tower-resilience-reconnect = { version = "0.5.1", path = "../tower-resilience-reconnect", optional = true }
 tower-resilience-healthcheck = { version = "0.1.2", path = "../tower-resilience-healthcheck", optional = true }
-tower-resilience-fallback = { version = "0.1.1", path = "../tower-resilience-fallback", optional = true }
-tower-resilience-hedge = { version = "0.1.1", path = "../tower-resilience-hedge", optional = true }
-tower-resilience-executor = { version = "0.5.0", path = "../tower-resilience-executor", optional = true }
-tower-resilience-adaptive = { version = "0.5.0", path = "../tower-resilience-adaptive", optional = true }
-tower-resilience-coalesce = { version = "0.5.0", path = "../tower-resilience-coalesce", optional = true }
+tower-resilience-fallback = { version = "0.1.2", path = "../tower-resilience-fallback", optional = true }
+tower-resilience-hedge = { version = "0.1.2", path = "../tower-resilience-hedge", optional = true }
+tower-resilience-executor = { version = "0.5.1", path = "../tower-resilience-executor", optional = true }
+tower-resilience-adaptive = { version = "0.5.1", path = "../tower-resilience-adaptive", optional = true }
+tower-resilience-coalesce = { version = "0.5.1", path = "../tower-resilience-coalesce", optional = true }
 
 [features]
 default = []
