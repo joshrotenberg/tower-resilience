@@ -65,7 +65,7 @@ pub mod selection {
     //! | Context | Goal | Primary Patterns |
     //! |---------|------|------------------|
     //! | **Client-side** | Protect self from slow/failing dependencies | Retry, CircuitBreaker, Timeout, Hedge, Fallback |
-    //! | **Server-side** | Protect self from overwhelming traffic | RateLimiter, Bulkhead, LoadShed |
+    //! | **Server-side** | Protect self from overwhelming traffic | RateLimiter, Bulkhead, Timeout |
     //!
     //! Most applications need both: client-side patterns for outgoing calls,
     //! server-side patterns for incoming requests.
@@ -329,8 +329,8 @@ pub mod stacks {
     //! **Standard Stack:**
     //! ```text
     //! ServiceBuilder::new()
+    //!     .layer(FallbackLayer::value(None))                        // Outermost: cache miss is OK
     //!     .layer(TimeLimiterLayer::new(Duration::from_millis(50)))  // Fast timeout
-    //!     .layer(FallbackLayer::value(None))                        // Cache miss is OK
     //!     .layer(CircuitBreakerLayer::builder()                     // Fail fast if cache down
     //!         .failure_rate_threshold(0.3)                          // Sensitive threshold
     //!         .build())
@@ -489,7 +489,7 @@ pub mod ordering {
     //! | 2 | Total Timeout | Bound entire operation | Can wait forever across retries |
     //! | 3 | Retry | Retry within timeout budget | Retries exceed total timeout |
     //! | 4 | Circuit Breaker | Fail fast when down | Wastes retries on dead service |
-    //! | 5 | Bulkhead | Limit concurrency | Resource exhaustion before CB trips |
+    //! | 5 | Bulkhead | Limit concurrency | Slow calls exhaust resources before CB trips |
     //! | 6 | Per-call Timeout | Bound each attempt | One slow call consumes retry budget |
     //! | 7 | Rate Limiter | Respect downstream limits | Retry amplifies rate limit violations |
     //! | 8 | Hedge | Fire parallel requests | Hedges not bounded by per-call timeout |

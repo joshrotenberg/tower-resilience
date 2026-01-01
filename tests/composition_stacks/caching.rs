@@ -40,10 +40,10 @@ fn mock_redis_client() -> impl Service<CacheKey, Response = CacheValue, Error = 
     })
 }
 
-/// Standard cache stack: Timeout + Fallback (cache miss OK) + CircuitBreaker
+/// Standard cache stack: Fallback (cache miss OK) + Timeout + CircuitBreaker
 #[tokio::test]
 async fn standard_cache_stack_compiles() {
-    // Fallback to None (cache miss) on error
+    // Fallback to None (cache miss) on error - outermost to catch all errors
     let fallback = FallbackLayer::<CacheKey, CacheValue, RedisError>::value(CacheValue(None));
 
     let circuit_breaker = CircuitBreakerLayer::<CacheKey, RedisError>::builder()
@@ -56,10 +56,12 @@ async fn standard_cache_stack_compiles() {
 
     let redis_client = mock_redis_client();
 
-    // Manual composition
+    // Manual composition (innermost to outermost)
+    // ServiceBuilder order: Fallback -> Timeout -> CircuitBreaker -> service
+    // Manual order: apply CircuitBreaker first, then Timeout, then Fallback
     let with_cb = circuit_breaker.layer::<_, CacheKey>(redis_client);
-    let with_fallback = fallback.layer(with_cb);
-    let _service = timeout.layer(with_fallback);
+    let with_timeout = timeout.layer(with_cb);
+    let _service = fallback.layer(with_timeout);
 }
 
 /// Cache stack with request coalescing (simpler - coalesce + timeout)
