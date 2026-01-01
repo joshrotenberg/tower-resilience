@@ -475,6 +475,11 @@ let server = ServiceBuilder::new()
     .service(handler);
 ```
 
+For comprehensive guidance on composing patterns effectively, see:
+
+- **[Composition Guide](https://docs.rs/tower-resilience/latest/tower_resilience/composition/)** - Pattern selection, recommended stacks, layer ordering, and anti-patterns
+- **[Composition Tests](tests/composition_stacks/)** - Working examples of all documented stacks that verify correct compilation
+
 ## Benchmarks
 
 Happy path overhead (no failures triggered):
