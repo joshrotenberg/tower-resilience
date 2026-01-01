@@ -34,6 +34,7 @@ metrics-util = { version = "0.20", default-features = false, features = ["debugg
 criterion = { workspace = true }
 serial_test = "3.2"
 rand = "0.9"
+proptest = { workspace = true }
 
 [[bench]]
 name = "happy_path_overhead"
@@ -86,6 +87,7 @@ metrics = "0.24"
 criterion = { version = "0.8", features = ["async_tokio"] }
 serde = { version = "1.0", features = ["derive"] }
 pin-project-lite = "0.2"
+proptest = "1.6"
 
 tower-resilience-core = { version = "0.5.0", path = "crates/tower-resilience-core" }
 
