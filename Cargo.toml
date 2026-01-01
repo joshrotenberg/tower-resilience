@@ -22,6 +22,7 @@ tower-resilience-fallback = { path = "crates/tower-resilience-fallback", feature
 tower-resilience-hedge = { path = "crates/tower-resilience-hedge", features = ["metrics"] }
 tower-resilience-adaptive = { path = "crates/tower-resilience-adaptive" }
 tower-resilience-coalesce = { path = "crates/tower-resilience-coalesce" }
+tower-resilience-executor = { path = "crates/tower-resilience-executor" }
 tower = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = "0.3"

@@ -8,7 +8,10 @@ use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
 use tower_resilience_cache::CacheLayer;
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_coalesce::CoalesceLayer;
+use tower_resilience_fallback::FallbackLayer;
+use tower_resilience_hedge::HedgeLayer;
 use tower_resilience_ratelimiter::RateLimiterLayer;
+use tower_resilience_reconnect::{ReconnectConfig, ReconnectLayer};
 use tower_resilience_retry::RetryLayer;
 use tower_resilience_timelimiter::TimeLimiterLayer;
 
@@ -20,6 +23,14 @@ struct TestResponse(#[allow(dead_code)] u64);
 
 #[derive(Clone, Debug)]
 struct TestError;
+
+impl std::fmt::Display for TestError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "test error")
+    }
+}
+
+impl std::error::Error for TestError {}
 
 impl From<BulkheadError> for TestError {
     fn from(_: BulkheadError) -> Self {
@@ -241,6 +252,67 @@ fn bench_coalesce(c: &mut Criterion) {
     });
 }
 
+fn bench_fallback(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("fallback_no_error", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer =
+                FallbackLayer::<TestRequest, TestResponse, TestError>::value(TestResponse(0));
+            let mut service = layer.layer(BaselineService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
+fn bench_hedge(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("hedge_primary_succeeds", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer = HedgeLayer::<TestRequest, TestResponse, TestError>::builder()
+                .delay(Duration::from_millis(100))
+                .max_hedged_attempts(2)
+                .build();
+            let mut service = layer.layer(BaselineService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
+fn bench_reconnect(c: &mut Criterion) {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    c.bench_function("reconnect_no_reconnect_needed", |b| {
+        b.to_async(&runtime).iter(|| async {
+            let layer = ReconnectLayer::new(ReconnectConfig::default());
+            let mut service = layer.layer(BaselineService);
+
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box(TestRequest(42)))
+                .await;
+            black_box(response)
+        });
+    });
+}
+
 fn bench_composition_simple(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
 
@@ -279,6 +351,9 @@ criterion_group!(
     bench_time_limiter,
     bench_adaptive_limiter,
     bench_coalesce,
+    bench_fallback,
+    bench_hedge,
+    bench_reconnect,
     bench_composition_simple
 );
 criterion_main!(benches);
