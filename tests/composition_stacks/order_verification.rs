@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use tower::{Layer, Service};
 use tower_resilience_retry::RetryLayer;
-use tower_resilience_timelimiter::TimeLimiterLayer;
+use tower_resilience_timelimiter::{TimeLimiterError, TimeLimiterLayer};
 
 use super::external_api::{ApiError, ApiRequest, ApiResponse};
 
@@ -156,5 +156,33 @@ async fn timeout_terminates_slow_service() {
     assert!(
         elapsed < Duration::from_millis(200),
         "Should have timed out quickly"
+    );
+}
+
+/// Verify timeout produces a recognizable error type.
+///
+/// When timeout wraps a service, errors become TimeLimiterError::Timeout.
+#[tokio::test]
+async fn timeout_error_is_identifiable() {
+    let slow_service = tower::service_fn(|_req: ApiRequest| async {
+        tokio::time::sleep(Duration::from_secs(10)).await;
+        Ok::<_, ApiError>(ApiResponse::new("never reached"))
+    });
+
+    let timeout = TimeLimiterLayer::<ApiRequest>::builder()
+        .timeout_duration(Duration::from_millis(50))
+        .build();
+
+    let mut service = timeout.layer(slow_service);
+
+    let result: Result<ApiResponse, TimeLimiterError<ApiError>> =
+        service.call(ApiRequest::new("test")).await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(
+        matches!(err, TimeLimiterError::Timeout),
+        "Error should be a timeout, got: {:?}",
+        err
     );
 }
