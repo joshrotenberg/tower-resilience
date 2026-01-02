@@ -7,16 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.10](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.9...tower-resilience-v0.3.10) - 2026-01-01
-
-### Other
-
-- add comprehensive pattern selection and composition guide ([#185](https://github.com/joshrotenberg/tower-resilience/pull/185))
-
-## [0.3.9](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.8...tower-resilience-v0.3.9) - 2026-01-01
+## [0.4.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.8...tower-resilience-v0.4.0) - 2026-01-02
 
 ### Added
 
+- add comprehensive pattern selection and composition guide ([#185](https://github.com/joshrotenberg/tower-resilience/pull/185))
 - add request coalescing (singleflight) pattern ([#180](https://github.com/joshrotenberg/tower-resilience/pull/180))
 - add adaptive concurrency limiter with AIMD and Vegas algorithms ([#178](https://github.com/joshrotenberg/tower-resilience/pull/178))
 - add executor delegation layer for parallel request processing ([#177](https://github.com/joshrotenberg/tower-resilience/pull/177))
@@ -31,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
+- [**breaking**] bump version to 0.4.0 due to breaking changes in sub-crates (retry 0.5.0, timelimiter 0.4.0 add Req type parameter)
 - simplify README and reduce marketing language ([#173](https://github.com/joshrotenberg/tower-resilience/pull/173))
 
 ## [0.3.8](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.3.7...tower-resilience-v0.3.8) - 2025-11-02

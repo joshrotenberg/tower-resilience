@@ -8,7 +8,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! tower-resilience = { version = "0.1", features = ["circuitbreaker", "bulkhead"] }
+//! tower-resilience = { version = "0.4", features = ["circuitbreaker", "bulkhead"] }
 //! ```
 //!
 //! # Resilience Patterns

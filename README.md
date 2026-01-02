@@ -32,7 +32,7 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 
 ```toml
 [dependencies]
-tower-resilience = "0.1"
+tower-resilience = "0.4"
 tower = "0.5"
 ```
 
