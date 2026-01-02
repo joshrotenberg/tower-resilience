@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-timelimiter-v0.4.1...tower-resilience-timelimiter-v0.4.2) - 2026-01-02
+
+### Fixed
+
+- bump tower-resilience to 0.4.0 for breaking sub-crate changes ([#187](https://github.com/joshrotenberg/tower-resilience/pull/187))
+
 ## [0.4.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-timelimiter-v0.4.0...tower-resilience-timelimiter-v0.4.1) - 2026-01-01
 
 ### Other
