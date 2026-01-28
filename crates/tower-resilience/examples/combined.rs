@@ -76,7 +76,7 @@ async fn main() {
     // Apply bulkhead first
     let bulkhead_layer = BulkheadLayer::builder()
         .max_concurrent_calls(3)
-        .max_wait_duration(Some(Duration::from_millis(100)))
+        .max_wait_duration(Duration::from_millis(100))
         .on_call_rejected(move |_| {
             bulkhead_clone.fetch_add(1, Ordering::SeqCst);
         })

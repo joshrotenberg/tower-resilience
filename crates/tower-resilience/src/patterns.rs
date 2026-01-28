@@ -413,7 +413,7 @@ pub mod bulkhead {
     //! # let expensive_operation = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
     //! let bulkhead = BulkheadLayer::builder()
     //!     .max_concurrent_calls(10)
-    //!     .max_wait_duration(Some(Duration::from_secs(5)))
+    //!     .max_wait_duration(Duration::from_secs(5))
     //!     .on_call_rejected(|max| {
     //!         eprintln!("Bulkhead exhausted (max: {})", max);
     //!     })

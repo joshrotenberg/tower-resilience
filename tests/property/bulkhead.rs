@@ -157,7 +157,7 @@ proptest! {
 
             let layer = BulkheadLayer::builder()
                 .max_concurrent_calls(max_concurrent)
-                .max_wait_duration(Some(Duration::from_secs(10)))
+                .max_wait_duration(Duration::from_secs(10))
                 .build();
 
             let service = layer.layer(tracker);
@@ -202,7 +202,7 @@ proptest! {
 
             let layer = BulkheadLayer::builder()
                 .max_concurrent_calls(max_concurrent)
-                .max_wait_duration(Some(Duration::from_secs(30)))
+                .max_wait_duration(Duration::from_secs(30))
                 .build();
 
             let service = layer.layer(counting_svc);

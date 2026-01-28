@@ -196,7 +196,7 @@ async fn test_permits_not_leaked_on_timeout() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::from_millis(50)))
+        .max_wait_duration(Duration::from_millis(50))
         .name("no-leak-timeout-bulkhead")
         .on_call_permitted(move |_| {
             p.fetch_add(1, Ordering::SeqCst);

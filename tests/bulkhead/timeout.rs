@@ -21,7 +21,7 @@ impl From<BulkheadError> for TestError {
 async fn test_zero_timeout() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::ZERO))
+        .max_wait_duration(Duration::ZERO)
         .name("zero-timeout-bulkhead")
         .build();
 
@@ -71,7 +71,7 @@ async fn test_zero_timeout() {
 async fn test_very_short_timeout() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::from_millis(1)))
+        .max_wait_duration(Duration::from_millis(1))
         .name("short-timeout-bulkhead")
         .build();
 
@@ -125,7 +125,7 @@ async fn test_very_short_timeout() {
 async fn test_long_timeout() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::from_secs(5)))
+        .max_wait_duration(Duration::from_secs(5))
         .name("long-timeout-bulkhead")
         .build();
 
@@ -175,7 +175,7 @@ async fn test_long_timeout() {
 async fn test_no_timeout_none() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(None) // No timeout
+        // Default: wait indefinitely (no timeout)
         .name("no-timeout-bulkhead")
         .build();
 
@@ -222,7 +222,7 @@ async fn test_timeout_precision() {
     let timeout_duration = Duration::from_millis(100);
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(timeout_duration))
+        .max_wait_duration(timeout_duration)
         .name("precision-timeout-bulkhead")
         .build();
 
@@ -277,7 +277,7 @@ async fn test_multiple_timeouts() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::from_millis(50)))
+        .max_wait_duration(Duration::from_millis(50))
         .name("multiple-timeout-bulkhead")
         .on_call_rejected(move |_| {
             r.fetch_add(1, Ordering::SeqCst);
@@ -333,7 +333,7 @@ async fn test_multiple_timeouts() {
 async fn test_timeout_then_success() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::from_millis(50)))
+        .max_wait_duration(Duration::from_millis(50))
         .name("timeout-success-bulkhead")
         .build();
 
@@ -394,7 +394,7 @@ async fn test_timeout_then_success() {
 async fn test_concurrent_timeouts() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(2)
-        .max_wait_duration(Some(Duration::from_millis(50)))
+        .max_wait_duration(Duration::from_millis(50))
         .name("concurrent-timeout-bulkhead")
         .build();
 
@@ -447,7 +447,7 @@ async fn test_timeout_boundary_conditions() {
     // Test with max duration (approximately 2 minutes)
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::from_secs(120)))
+        .max_wait_duration(Duration::from_secs(120))
         .name("boundary-timeout-bulkhead")
         .build();
 
@@ -473,13 +473,13 @@ async fn test_changing_timeout_behavior() {
     // Create two bulkheads with different timeouts
     let short_timeout = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::from_millis(10)))
+        .max_wait_duration(Duration::from_millis(10))
         .name("short-timeout")
         .build();
 
     let long_timeout = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::from_millis(200)))
+        .max_wait_duration(Duration::from_millis(200))
         .name("long-timeout")
         .build();
 

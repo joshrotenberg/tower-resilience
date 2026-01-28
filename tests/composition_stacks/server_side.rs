@@ -55,7 +55,7 @@ async fn server_side_stack_compiles() {
 
     let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(100)
-        .max_wait_duration(Some(Duration::from_secs(1)))
+        .max_wait_duration(Duration::from_secs(1))
         .build();
 
     let rate_limiter = RateLimiterLayer::builder()
@@ -93,7 +93,7 @@ async fn rate_limiter_only_compiles() {
 async fn bulkhead_tenant_isolation_compiles() {
     let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(10) // Per-tenant limit
-        .max_wait_duration(Some(Duration::from_secs(5)))
+        .max_wait_duration(Duration::from_secs(5))
         .build();
 
     let timeout = TimeLimiterLayer::<HttpRequest>::builder()

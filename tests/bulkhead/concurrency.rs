@@ -122,7 +122,7 @@ async fn rejection_under_load_with_timeout() {
         .layer(
             BulkheadLayer::builder()
                 .max_concurrent_calls(2)
-                .max_wait_duration(Some(Duration::from_millis(10)))
+                .max_wait_duration(Duration::from_millis(10))
                 .build(),
         )
         .service_fn(|_req: ()| async {
@@ -322,7 +322,7 @@ async fn zero_concurrent_immediately_rejects() {
         .layer(
             BulkheadLayer::builder()
                 .max_concurrent_calls(0)
-                .max_wait_duration(Some(Duration::from_millis(10)))
+                .max_wait_duration(Duration::from_millis(10))
                 .build(),
         )
         .service_fn(|_req: ()| async { Ok::<_, TestError>(()) });

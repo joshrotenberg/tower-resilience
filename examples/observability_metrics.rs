@@ -234,7 +234,7 @@ async fn demo_bulkhead() {
     let service = BulkheadLayer::builder()
         .name("payment-bulkhead") // ← Named instance for metrics
         .max_concurrent_calls(2)
-        .max_wait_duration(Some(Duration::from_millis(100)))
+        .max_wait_duration(Duration::from_millis(100))
         .build()
         .layer(base_service);
 

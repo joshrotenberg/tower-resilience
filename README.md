@@ -90,7 +90,7 @@ use std::time::Duration;
 let layer = BulkheadLayer::builder()
     .name("worker-pool")
     .max_concurrent_calls(10)                    // Max 10 concurrent
-    .max_wait_duration(Some(Duration::from_secs(5)))  // Wait up to 5s
+    .max_wait_duration(Duration::from_secs(5))        // Wait up to 5s
     .on_call_permitted(|concurrent| {
         println!("Request permitted (concurrent: {})", concurrent);
     })
