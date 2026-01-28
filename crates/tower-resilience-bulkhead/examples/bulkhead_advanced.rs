@@ -37,7 +37,7 @@ async fn main() {
     // Create bulkhead configuration
     let config = BulkheadLayer::builder()
         .max_concurrent_calls(3)
-        .max_wait_duration(Some(Duration::from_millis(100)))
+        .max_wait_duration(Duration::from_millis(100))
         .name("demo-bulkhead")
         .on_call_permitted(move |concurrent| {
             p.fetch_add(1, Ordering::SeqCst);

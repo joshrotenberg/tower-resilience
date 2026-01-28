@@ -72,7 +72,7 @@ async fn test_bulkhead_rejects_when_full_with_timeout() {
         .layer(
             BulkheadLayer::builder()
                 .max_concurrent_calls(2)
-                .max_wait_duration(Some(Duration::from_millis(10)))
+                .max_wait_duration(Duration::from_millis(10))
                 .build(),
         )
         .service_fn(|_req: ()| async {
@@ -184,7 +184,7 @@ async fn test_bulkhead_without_timeout_waits() {
         .layer(
             BulkheadLayer::builder()
                 .max_concurrent_calls(1)
-                .max_wait_duration(None) // Wait indefinitely
+                // Default: wait indefinitely
                 .build(),
         )
         .service_fn(|_req: ()| async {

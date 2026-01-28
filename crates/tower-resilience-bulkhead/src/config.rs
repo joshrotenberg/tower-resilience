@@ -46,16 +46,26 @@ impl BulkheadConfigBuilder {
 
     /// Sets the maximum time to wait for a permit.
     ///
-    /// If `None`, calls will wait indefinitely.
-    /// Default: None
-    pub fn max_wait_duration(mut self, duration: Option<Duration>) -> Self {
-        self.max_wait_duration = duration;
+    /// If not called, calls will wait indefinitely (the default).
+    ///
+    /// # Example
+    /// ```rust
+    /// use tower_resilience_bulkhead::BulkheadLayer;
+    /// use std::time::Duration;
+    ///
+    /// let layer = BulkheadLayer::builder()
+    ///     .max_concurrent_calls(10)
+    ///     .max_wait_duration(Duration::from_secs(5))
+    ///     .build();
+    /// ```
+    pub fn max_wait_duration(mut self, duration: Duration) -> Self {
+        self.max_wait_duration = Some(duration);
         self
     }
 
     /// Configures the bulkhead to reject requests immediately when at capacity.
     ///
-    /// This is equivalent to `.max_wait_duration(Some(Duration::ZERO))`.
+    /// This is equivalent to `.max_wait_duration(Duration::ZERO)`.
     ///
     /// Use this when you want fail-fast behavior instead of queueing requests.
     /// This is useful for:

@@ -107,7 +107,7 @@ async fn test_max_concurrent_calls_zero() {
     // Zero concurrent calls means all calls should be rejected immediately
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(0)
-        .max_wait_duration(Some(Duration::from_millis(10)))
+        .max_wait_duration(Duration::from_millis(10))
         .name("zero-capacity-bulkhead")
         .build();
 
@@ -228,14 +228,13 @@ async fn test_config_timeout_some_vs_none() {
     // Config with Some timeout
     let layer_some = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(Some(Duration::from_millis(50)))
+        .max_wait_duration(Duration::from_millis(50))
         .name("timeout-some")
         .build();
 
-    // Config with None timeout
+    // Config with no timeout (default: wait indefinitely)
     let layer_none = BulkheadLayer::builder()
         .max_concurrent_calls(1)
-        .max_wait_duration(None)
         .name("timeout-none")
         .build();
 
@@ -288,7 +287,7 @@ async fn test_builder_pattern_chaining() {
     // Test that all builder methods can be chained
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(10)
-        .max_wait_duration(Some(Duration::from_secs(1)))
+        .max_wait_duration(Duration::from_secs(1))
         .name("chained-bulkhead")
         .on_call_permitted(move |_| {
             c.fetch_add(1, Ordering::SeqCst);
@@ -440,7 +439,7 @@ async fn test_config_with_all_options() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(2)
-        .max_wait_duration(Some(Duration::from_millis(50)))
+        .max_wait_duration(Duration::from_millis(50))
         .name("comprehensive-bulkhead")
         .on_call_permitted(move |_| {
             p.fetch_add(1, Ordering::SeqCst);
@@ -504,7 +503,7 @@ async fn test_config_different_timeouts() {
     for (idx, timeout) in timeouts.iter().enumerate() {
         let layer = BulkheadLayer::builder()
             .max_concurrent_calls(5)
-            .max_wait_duration(Some(*timeout))
+            .max_wait_duration(*timeout)
             .name(format!("bulkhead-{}", idx))
             .build();
 

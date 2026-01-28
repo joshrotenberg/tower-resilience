@@ -34,7 +34,7 @@ impl BulkheadLayer {
     ///
     /// let layer = BulkheadLayer::builder()
     ///     .max_concurrent_calls(10)
-    ///     .max_wait_duration(Some(Duration::from_secs(5)))
+    ///     .max_wait_duration(Duration::from_secs(5))
     ///     .build();
     /// ```
     pub fn builder() -> crate::BulkheadConfigBuilder {

@@ -182,7 +182,7 @@ async fn scenario_bulkhead() {
     // Configure bulkhead: max 2 concurrent requests to expensive endpoint
     let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(2)
-        .max_wait_duration(Some(Duration::from_millis(200)))
+        .max_wait_duration(Duration::from_millis(200))
         .name("report-endpoint")
         .on_call_permitted(|current| {
             println!("[Bulkhead] Call permitted (current: {})", current);
@@ -248,7 +248,7 @@ async fn scenario_full_server_stack() {
         .layer(
             BulkheadLayer::builder()
                 .max_concurrent_calls(3)
-                .max_wait_duration(Some(Duration::from_millis(500)))
+                .max_wait_duration(Duration::from_millis(500))
                 .name("api-server")
                 .on_call_permitted(|current| {
                     println!("[Bulkhead] Call permitted (current: {})", current);

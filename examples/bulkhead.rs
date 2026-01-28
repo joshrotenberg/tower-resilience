@@ -47,7 +47,7 @@ async fn main() {
     // Wrap with bulkhead that limits to 3 concurrent calls
     let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(3)
-        .max_wait_duration(Some(Duration::from_secs(1)))
+        .max_wait_duration(Duration::from_secs(1))
         .name("example-bulkhead")
         .on_call_permitted(|concurrent| {
             println!("  [BULKHEAD] Permitted (concurrent: {})", concurrent);

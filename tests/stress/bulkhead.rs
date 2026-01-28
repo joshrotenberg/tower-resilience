@@ -44,7 +44,7 @@ async fn stress_large_queue() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(10)
-        .max_wait_duration(Some(Duration::from_secs(30)))
+        .max_wait_duration(Duration::from_secs(30))
         .build();
 
     let service = layer.layer(svc);
@@ -95,7 +95,7 @@ async fn stress_permit_churn() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(50)
-        .max_wait_duration(None) // No timeout
+        // Default: wait indefinitely (no timeout)
         .build();
 
     let service = layer.layer(svc);
@@ -152,7 +152,7 @@ async fn stress_long_running_operations() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
-        .max_wait_duration(Some(Duration::from_secs(10)))
+        .max_wait_duration(Duration::from_secs(10))
         .build();
 
     let service = layer.layer(svc);
@@ -207,7 +207,7 @@ async fn stress_timeout_under_load() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(10)
-        .max_wait_duration(Some(Duration::from_millis(100)))
+        .max_wait_duration(Duration::from_millis(100))
         .build();
 
     let service = layer.layer(svc);
@@ -259,7 +259,7 @@ async fn stress_memory_with_queue() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(10)
-        .max_wait_duration(Some(Duration::from_secs(60)))
+        .max_wait_duration(Duration::from_secs(60))
         .build();
 
     let service = layer.layer(svc);
@@ -317,7 +317,7 @@ async fn stress_burst_pattern() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(20)
-        .max_wait_duration(Some(Duration::from_secs(5)))
+        .max_wait_duration(Duration::from_secs(5))
         .build();
 
     let service = layer.layer(svc);
@@ -384,7 +384,7 @@ async fn stress_mixed_operation_speeds() {
 
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(50)
-        .max_wait_duration(Some(Duration::from_secs(10)))
+        .max_wait_duration(Duration::from_secs(10))
         .build();
 
     let service = layer.layer(svc);

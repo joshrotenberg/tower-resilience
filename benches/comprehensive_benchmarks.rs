@@ -239,7 +239,7 @@ fn bench_bulkhead_full(c: &mut Criterion) {
         b.to_async(&runtime).iter(|| async {
             let config = BulkheadLayer::builder()
                 .max_concurrent_calls(1) // Very limited
-                .max_wait_duration(Some(Duration::from_millis(1))) // Short timeout
+                .max_wait_duration(Duration::from_millis(1)) // Short timeout
                 .build();
 
             let mut service = ServiceBuilder::new().layer(config).service(BaselineService);

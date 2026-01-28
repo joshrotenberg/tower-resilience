@@ -66,7 +66,7 @@
 //! # async fn example() {
 //! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(5)
-//!     .max_wait_duration(Some(Duration::from_secs(2)))
+//!     .max_wait_duration(Duration::from_secs(2))
 //!     .name("timeout-bulkhead")
 //!     .build();
 //!
@@ -122,7 +122,7 @@
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(5)
-//!     .max_wait_duration(Some(Duration::from_millis(100)))
+//!     .max_wait_duration(Duration::from_millis(100))
 //!     .build();
 //!
 //! let service = ServiceBuilder::new()
@@ -163,7 +163,7 @@
 //! let queue = Arc::new(Mutex::new(Vec::new()));
 //! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(10)
-//!     .max_wait_duration(Some(Duration::from_millis(50)))
+//!     .max_wait_duration(Duration::from_millis(50))
 //!     .build();
 //!
 //! let service = ServiceBuilder::new()
@@ -197,7 +197,7 @@
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(5)
-//!     .max_wait_duration(Some(Duration::from_millis(10)))
+//!     .max_wait_duration(Duration::from_millis(10))
 //!     .build();
 //!
 //! let service = ServiceBuilder::new()
@@ -281,7 +281,7 @@ mod tests {
 
         let _layer = BulkheadLayer::builder()
             .max_concurrent_calls(5)
-            .max_wait_duration(Some(Duration::from_millis(100)))
+            .max_wait_duration(Duration::from_millis(100))
             .name("test-bulkhead")
             .on_call_permitted(move |_| {
                 c.fetch_add(1, Ordering::SeqCst);

@@ -659,7 +659,7 @@ pub mod anti_patterns {
     //! // Good: Sized for expected concurrency + headroom
     //! BulkheadLayer::builder()
     //!     .max_concurrent_calls(50)  // Based on load testing
-    //!     .max_wait_duration(Some(Duration::from_secs(1)))
+    //!     .max_wait_duration(Duration::from_secs(1))
     //!     .build()
     //! ```
     //!

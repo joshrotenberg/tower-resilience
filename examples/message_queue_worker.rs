@@ -228,7 +228,7 @@ async fn scenario_bulkhead() {
     // Configure bulkhead: process max 2 messages concurrently
     let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(2)
-        .max_wait_duration(Some(Duration::from_millis(500)))
+        .max_wait_duration(Duration::from_millis(500))
         .name("message-processor")
         .on_call_permitted(|current| {
             println!("[Bulkhead] Message permitted (concurrent: {})", current);
@@ -328,7 +328,7 @@ async fn scenario_full_worker_stack() {
         .layer(
             BulkheadLayer::builder()
                 .max_concurrent_calls(3)
-                .max_wait_duration(Some(Duration::from_secs(1)))
+                .max_wait_duration(Duration::from_secs(1))
                 .name("worker-pool")
                 .on_call_permitted(|current| {
                     println!("[Bulkhead] Worker permitted (concurrent: {})", current);
