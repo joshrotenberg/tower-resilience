@@ -1,6 +1,5 @@
+use crate::classifier::{DefaultClassifier, FnClassifier};
 use crate::events::CircuitBreakerEvent;
-use crate::SharedFailureClassifier;
-use std::sync::Arc;
 use std::time::Duration;
 use tower_resilience_core::EventListeners;
 
@@ -14,7 +13,13 @@ pub enum SlidingWindowType {
 }
 
 /// Configuration for the circuit breaker pattern.
-pub struct CircuitBreakerConfig<Res, Err> {
+///
+/// The type parameter `C` is the failure classifier type, which determines
+/// how results are classified as failures.
+///
+/// - `CircuitBreakerConfig<DefaultClassifier>` - uses the default classifier (errors = failures)
+/// - `CircuitBreakerConfig<FnClassifier<F>>` - uses a custom classifier function
+pub struct CircuitBreakerConfig<C> {
     pub(crate) failure_rate_threshold: f64,
     pub(crate) sliding_window_type: SlidingWindowType,
     pub(crate) sliding_window_size: usize,
@@ -22,7 +27,7 @@ pub struct CircuitBreakerConfig<Res, Err> {
     pub(crate) wait_duration_in_open: Duration,
     pub(crate) permitted_calls_in_half_open: usize,
     pub(crate) minimum_number_of_calls: usize,
-    pub(crate) failure_classifier: SharedFailureClassifier<Res, Err>,
+    pub(crate) failure_classifier: C,
     pub(crate) slow_call_duration_threshold: Option<Duration>,
     pub(crate) slow_call_rate_threshold: f64,
     pub(crate) event_listeners: EventListeners<CircuitBreakerEvent>,
@@ -30,14 +35,47 @@ pub struct CircuitBreakerConfig<Res, Err> {
 }
 
 /// Builder for configuring and constructing a circuit breaker.
-pub struct CircuitBreakerConfigBuilder<Res, Err> {
+///
+/// The type parameter `C` is the failure classifier type. By default, this is
+/// `DefaultClassifier` which treats all errors as failures. When you call
+/// `.failure_classifier()` with a custom function, the type changes to
+/// `FnClassifier<F>`.
+///
+/// # Default Usage (no type parameters needed)
+///
+/// ```rust
+/// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+///
+/// // No type parameters required!
+/// let layer = CircuitBreakerLayer::builder()
+///     .failure_rate_threshold(0.5)
+///     .build();
+/// ```
+///
+/// # Custom Classifier (types inferred from closure)
+///
+/// ```rust
+/// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+///
+/// let layer = CircuitBreakerLayer::builder()
+///     .failure_classifier(|result: &Result<String, std::io::Error>| {
+///         match result {
+///             Ok(_) => false,
+///             // Don't count timeouts as failures
+///             Err(e) if e.kind() == std::io::ErrorKind::TimedOut => false,
+///             Err(_) => true,
+///         }
+///     })
+///     .build();
+/// ```
+pub struct CircuitBreakerConfigBuilder<C = DefaultClassifier> {
     failure_rate_threshold: f64,
     sliding_window_type: SlidingWindowType,
     sliding_window_size: usize,
     sliding_window_duration: Option<Duration>,
     wait_duration_in_open: Duration,
     permitted_calls_in_half_open: usize,
-    failure_classifier: SharedFailureClassifier<Res, Err>,
+    failure_classifier: C,
     minimum_number_of_calls: Option<usize>,
     slow_call_duration_threshold: Option<Duration>,
     slow_call_rate_threshold: f64,
@@ -45,8 +83,17 @@ pub struct CircuitBreakerConfigBuilder<Res, Err> {
     name: String,
 }
 
-impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
+impl Default for CircuitBreakerConfigBuilder<DefaultClassifier> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl CircuitBreakerConfigBuilder<DefaultClassifier> {
     /// Creates a new builder with default values.
+    ///
+    /// The default classifier treats all `Err` results as failures.
+    /// No type parameters are required when using the default classifier.
     pub fn new() -> Self {
         Self {
             failure_rate_threshold: 0.5,
@@ -55,7 +102,7 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
             sliding_window_duration: None,
             wait_duration_in_open: Duration::from_secs(30),
             permitted_calls_in_half_open: 1,
-            failure_classifier: Arc::new(|res| res.is_err()),
+            failure_classifier: DefaultClassifier,
             minimum_number_of_calls: None,
             slow_call_duration_threshold: None,
             slow_call_rate_threshold: 1.0,
@@ -63,7 +110,9 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
             name: String::from("<unnamed>"),
         }
     }
+}
 
+impl<C> CircuitBreakerConfigBuilder<C> {
     /// Sets the failure rate threshold at which the circuit will open.
     ///
     /// Default: 0.5 (50%)
@@ -118,17 +167,6 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
-    /// Sets a custom failure classifier function.
-    ///
-    /// Default: classifies errors as failures
-    pub fn failure_classifier<F>(mut self, classifier: F) -> Self
-    where
-        F: Fn(&Result<Res, Err>) -> bool + Send + Sync + 'static,
-    {
-        self.failure_classifier = Arc::new(classifier);
-        self
-    }
-
     /// Sets the minimum number of calls before failure rate is evaluated.
     ///
     /// Default: same as sliding_window_size
@@ -166,6 +204,79 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         self
     }
 
+    /// Sets a custom failure classifier function.
+    ///
+    /// The classifier determines which results should be counted as failures
+    /// for the purpose of calculating the failure rate.
+    ///
+    /// This method changes the builder's type from `CircuitBreakerConfigBuilder<C>`
+    /// to `CircuitBreakerConfigBuilder<FnClassifier<F>>`, binding the response and
+    /// error types based on the closure signature.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    /// use std::io::{Error, ErrorKind};
+    ///
+    /// let layer = CircuitBreakerLayer::builder()
+    ///     .failure_classifier(|result: &Result<String, Error>| {
+    ///         match result {
+    ///             Ok(_) => false,
+    ///             // Don't count timeouts as failures
+    ///             Err(e) if e.kind() == ErrorKind::TimedOut => false,
+    ///             Err(_) => true,
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
+    ///
+    /// # Services with `Error = Infallible`
+    ///
+    /// For services that never return errors (e.g., those that encode errors in
+    /// the response body), you must provide a custom failure classifier that
+    /// inspects the response:
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    /// use std::convert::Infallible;
+    ///
+    /// // Assuming Response has a status() method
+    /// # struct Response { status_code: u16 }
+    /// # impl Response { fn status(&self) -> u16 { self.status_code } }
+    ///
+    /// let layer = CircuitBreakerLayer::builder()
+    ///     .failure_classifier(|result: &Result<Response, Infallible>| {
+    ///         match result {
+    ///             Ok(response) => response.status() >= 500,
+    ///             Err(_) => unreachable!(), // Infallible can never be constructed
+    ///         }
+    ///     })
+    ///     .build();
+    /// ```
+    pub fn failure_classifier<F, Res, Err>(
+        self,
+        classifier: F,
+    ) -> CircuitBreakerConfigBuilder<FnClassifier<F>>
+    where
+        F: Fn(&Result<Res, Err>) -> bool + Send + Sync + 'static,
+    {
+        CircuitBreakerConfigBuilder {
+            failure_rate_threshold: self.failure_rate_threshold,
+            sliding_window_type: self.sliding_window_type,
+            sliding_window_size: self.sliding_window_size,
+            sliding_window_duration: self.sliding_window_duration,
+            wait_duration_in_open: self.wait_duration_in_open,
+            permitted_calls_in_half_open: self.permitted_calls_in_half_open,
+            failure_classifier: FnClassifier::new(classifier),
+            minimum_number_of_calls: self.minimum_number_of_calls,
+            slow_call_duration_threshold: self.slow_call_duration_threshold,
+            slow_call_rate_threshold: self.slow_call_rate_threshold,
+            event_listeners: self.event_listeners,
+            name: self.name,
+        }
+    }
+
     /// Registers a callback when the circuit breaker transitions between states.
     ///
     /// The circuit breaker has three states: Closed (normal operation), Open (failing),
@@ -181,7 +292,7 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     /// ```rust,no_run
     /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
     ///
-    /// let config = CircuitBreakerLayer::<(), ()>::builder()
+    /// let layer = CircuitBreakerLayer::builder()
     ///     .on_state_transition(|from, to| {
     ///         println!("Circuit breaker: {:?} -> {:?}", from, to);
     ///         match to {
@@ -230,7 +341,7 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     /// let call_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&call_count);
     ///
-    /// let config = CircuitBreakerLayer::<(), ()>::builder()
+    /// let layer = CircuitBreakerLayer::builder()
     ///     .on_call_permitted(move |state| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Call #{} permitted in state: {:?}", count + 1, state);
@@ -271,7 +382,7 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     /// let rejection_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&rejection_count);
     ///
-    /// let config = CircuitBreakerLayer::<(), ()>::builder()
+    /// let layer = CircuitBreakerLayer::builder()
     ///     .on_call_rejected(move || {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Call rejected - circuit is open (total: {})", count + 1);
@@ -306,7 +417,7 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     /// ```rust,no_run
     /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
     ///
-    /// let config = CircuitBreakerLayer::<(), ()>::builder()
+    /// let layer = CircuitBreakerLayer::builder()
     ///     .on_success(|state| {
     ///         match state {
     ///             CircuitState::HalfOpen => println!("Success in half-open - may recover soon"),
@@ -349,7 +460,7 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     /// let failure_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&failure_count);
     ///
-    /// let config = CircuitBreakerLayer::<(), ()>::builder()
+    /// let layer = CircuitBreakerLayer::builder()
     ///     .on_failure(move |state| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Failure #{} recorded in state: {:?}", count + 1, state);
@@ -391,7 +502,7 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
     /// use std::time::Duration;
     ///
-    /// let config = CircuitBreakerLayer::<(), ()>::builder()
+    /// let layer = CircuitBreakerLayer::builder()
     ///     .slow_call_duration_threshold(Duration::from_secs(2))
     ///     .slow_call_rate_threshold(0.5) // Open if >50% of calls are slow
     ///     .on_slow_call(|duration| {
@@ -417,7 +528,7 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
     }
 
     /// Builds the configuration and returns a CircuitBreakerLayer.
-    pub fn build(self) -> crate::layer::CircuitBreakerLayer<Res, Err> {
+    pub fn build(self) -> crate::layer::CircuitBreakerLayer<C> {
         // Validate time-based window configuration
         if self.sliding_window_type == SlidingWindowType::TimeBased
             && self.sliding_window_duration.is_none()
@@ -443,11 +554,5 @@ impl<Res, Err> CircuitBreakerConfigBuilder<Res, Err> {
         };
 
         crate::layer::CircuitBreakerLayer::new(config)
-    }
-}
-
-impl<Res, Err> Default for CircuitBreakerConfigBuilder<Res, Err> {
-    fn default() -> Self {
-        Self::new()
     }
 }

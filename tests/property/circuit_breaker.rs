@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::runtime::Runtime;
-use tower::{Service, ServiceExt};
+use tower::{Layer, Service, ServiceExt};
 use tower_resilience_circuitbreaker::{CircuitBreakerError, CircuitBreakerLayer};
 
 /// A cloneable error type for testing
@@ -54,7 +54,7 @@ proptest! {
                 }
             });
 
-            let layer = CircuitBreakerLayer::<(), TestError>::builder()
+            let layer = CircuitBreakerLayer::builder()
                 .failure_rate_threshold(failure_threshold as f64)
                 .sliding_window_size(window_size)
                 .minimum_number_of_calls(min_failures.min(window_size))
@@ -110,7 +110,7 @@ proptest! {
                 }
             });
 
-            let layer = CircuitBreakerLayer::<(), TestError>::builder()
+            let layer = CircuitBreakerLayer::builder()
                 .failure_rate_threshold(failure_threshold as f64)
                 .sliding_window_size(window_size)
                 .minimum_number_of_calls(window_size)
@@ -168,7 +168,7 @@ proptest! {
                 }
             });
 
-            let layer = CircuitBreakerLayer::<(), TestError>::builder()
+            let layer = CircuitBreakerLayer::builder()
                 .failure_rate_threshold(0.5)
                 .sliding_window_size(window_size)
                 .minimum_number_of_calls(window_size)
@@ -242,7 +242,7 @@ proptest! {
                 }
             });
 
-            let layer = CircuitBreakerLayer::<(), TestError>::builder()
+            let layer = CircuitBreakerLayer::builder()
                 .failure_rate_threshold(0.5)
                 .sliding_window_size(window_size)
                 .minimum_number_of_calls(window_size)

@@ -46,7 +46,7 @@ async fn standard_cache_stack_compiles() {
     // Fallback to None (cache miss) on error - outermost to catch all errors
     let fallback = FallbackLayer::<CacheKey, CacheValue, RedisError>::value(CacheValue(None));
 
-    let circuit_breaker = CircuitBreakerLayer::<CacheKey, RedisError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.3) // Sensitive threshold for cache
         .build();
 
@@ -59,7 +59,7 @@ async fn standard_cache_stack_compiles() {
     // Manual composition (innermost to outermost)
     // ServiceBuilder order: Fallback -> Timeout -> CircuitBreaker -> service
     // Manual order: apply CircuitBreaker first, then Timeout, then Fallback
-    let with_cb = circuit_breaker.layer::<_, CacheKey>(redis_client);
+    let with_cb = circuit_breaker.layer(redis_client);
     let with_timeout = timeout.layer(with_cb);
     let _service = fallback.layer(with_timeout);
 }

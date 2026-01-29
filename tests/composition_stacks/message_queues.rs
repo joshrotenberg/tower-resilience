@@ -79,7 +79,7 @@ fn mock_queue_producer()
 /// Consumer stack: Timeout + Retry (with backoff) + CircuitBreaker
 #[tokio::test]
 async fn consumer_stack_compiles() {
-    let circuit_breaker = CircuitBreakerLayer::<Message, MessageError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .wait_duration_in_open(Duration::from_secs(60))
         .build();
@@ -96,7 +96,7 @@ async fn consumer_stack_compiles() {
     let message_handler = mock_message_handler();
 
     // Manual composition
-    let with_cb = circuit_breaker.layer::<_, Message>(message_handler);
+    let with_cb = circuit_breaker.layer(message_handler);
     let with_retry = retry.layer(with_cb);
     let _service = timeout.layer(with_retry);
 }

@@ -12,7 +12,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
-use tower::Service;
+use tower::{Layer, Service};
 use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitMetrics, CircuitState};
 
 // Simulate a backend service that can fail
@@ -46,12 +46,9 @@ impl HealthStatus {
 }
 
 // Synchronous health check function (no async!)
-fn check_health<S, Req, Res, Err>(
-    breaker: &tower_resilience_circuitbreaker::CircuitBreaker<S, Req, Res, Err>,
-) -> HealthStatus
-where
-    S: Service<Req, Response = Res, Error = Err>,
-{
+fn check_health<S, C>(
+    breaker: &tower_resilience_circuitbreaker::CircuitBreaker<S, C>,
+) -> HealthStatus {
     // Use sync state inspection - no await needed!
     let state = breaker.state_sync();
     let is_open = breaker.is_open();
@@ -80,12 +77,9 @@ where
 }
 
 // Async detailed metrics function
-async fn get_detailed_metrics<S, Req, Res, Err>(
-    breaker: &tower_resilience_circuitbreaker::CircuitBreaker<S, Req, Res, Err>,
-) -> CircuitMetrics
-where
-    S: Service<Req, Response = Res, Error = Err>,
-{
+async fn get_detailed_metrics<S, C>(
+    breaker: &tower_resilience_circuitbreaker::CircuitBreaker<S, C>,
+) -> CircuitMetrics {
     breaker.metrics().await
 }
 
@@ -94,7 +88,7 @@ async fn main() {
     println!("=== Circuit Breaker Health Check Example ===\n");
 
     // Create circuit breaker with tight thresholds for demo
-    let layer = CircuitBreakerLayer::<String, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)

@@ -112,7 +112,7 @@ impl Circuit {
     ///
     /// This method provides a consistent view of all metrics at a point in time.
     /// For time-based windows, it includes all records within the current window.
-    pub fn metrics(&self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) -> CircuitMetrics {
+    pub fn metrics<C>(&self, config: &CircuitBreakerConfig<C>) -> CircuitMetrics {
         let (total_calls, failure_count, success_count, slow_call_count) =
             match config.sliding_window_type {
                 SlidingWindowType::CountBased => (
@@ -182,9 +182,9 @@ impl Circuit {
         (total, failures, successes, slow)
     }
 
-    pub fn record_success(
+    pub fn record_success<C>(
         &mut self,
-        config: &CircuitBreakerConfig<impl Sized, impl Sized>,
+        config: &CircuitBreakerConfig<C>,
         duration: std::time::Duration,
     ) {
         let is_slow = config
@@ -261,9 +261,9 @@ impl Circuit {
         }
     }
 
-    pub fn record_failure(
+    pub fn record_failure<C>(
         &mut self,
-        config: &CircuitBreakerConfig<impl Sized, impl Sized>,
+        config: &CircuitBreakerConfig<C>,
         duration: std::time::Duration,
     ) {
         let is_slow = config
@@ -334,7 +334,7 @@ impl Circuit {
         }
     }
 
-    pub fn try_acquire(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) -> bool {
+    pub fn try_acquire<C>(&mut self, config: &CircuitBreakerConfig<C>) -> bool {
         match self.state {
             CircuitState::Closed => {
                 config
@@ -391,23 +391,19 @@ impl Circuit {
         }
     }
 
-    pub fn force_open(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+    pub fn force_open<C>(&mut self, config: &CircuitBreakerConfig<C>) {
         self.transition_to(CircuitState::Open, config);
     }
 
-    pub fn force_closed(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+    pub fn force_closed<C>(&mut self, config: &CircuitBreakerConfig<C>) {
         self.transition_to(CircuitState::Closed, config);
     }
 
-    pub fn reset(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+    pub fn reset<C>(&mut self, config: &CircuitBreakerConfig<C>) {
         self.transition_to(CircuitState::Closed, config);
     }
 
-    fn transition_to(
-        &mut self,
-        state: CircuitState,
-        config: &CircuitBreakerConfig<impl Sized, impl Sized>,
-    ) {
+    fn transition_to<C>(&mut self, state: CircuitState, config: &CircuitBreakerConfig<C>) {
         if self.state == state {
             return;
         }
@@ -463,7 +459,7 @@ impl Circuit {
         self.call_records.clear();
     }
 
-    fn evaluate_window(&mut self, config: &CircuitBreakerConfig<impl Sized, impl Sized>) {
+    fn evaluate_window<C>(&mut self, config: &CircuitBreakerConfig<C>) {
         let (total_count, failure_count, _success_count, slow_call_count) =
             match config.sliding_window_type {
                 SlidingWindowType::CountBased => (

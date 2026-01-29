@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
-use tower::{Service, ServiceExt};
+use tower::{Layer, Service, ServiceExt};
 use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
 
 use super::{ConcurrencyTracker, get_memory_usage_mb};
@@ -21,7 +21,7 @@ async fn stress_one_million_calls() {
         async { Ok::<_, ()>(()) }
     });
 
-    let layer = CircuitBreakerLayer::<(), ()>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
         .build();
@@ -54,7 +54,7 @@ async fn stress_rapid_state_transitions() {
     let svc =
         tower::service_fn(|req: bool| async move { if req { Ok::<_, ()>(()) } else { Err(()) } });
 
-    let layer = CircuitBreakerLayer::<(), ()>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .wait_duration_in_open(Duration::from_millis(10))
@@ -110,7 +110,7 @@ async fn stress_high_concurrency() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), ()>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(1000)
         .build();
@@ -149,7 +149,7 @@ async fn stress_large_sliding_window() {
 
     let svc = tower::service_fn(|_req: u32| async { Ok::<_, ()>(()) });
 
-    let layer = CircuitBreakerLayer::<(), ()>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10_000)
         .build();
@@ -192,7 +192,7 @@ async fn stress_time_based_window_high_load() {
         async { Ok::<_, ()>(()) }
     });
 
-    let layer = CircuitBreakerLayer::<(), ()>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_type(tower_resilience_circuitbreaker::SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_secs(1))
@@ -248,7 +248,7 @@ async fn stress_mixed_results_high_volume() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), ()>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
         .wait_duration_in_open(Duration::from_millis(100))
@@ -293,7 +293,7 @@ async fn stress_memory_stability() {
     let svc =
         tower::service_fn(|req: u32| async move { if req % 10 < 3 { Err(()) } else { Ok(()) } });
 
-    let layer = CircuitBreakerLayer::<(), ()>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(1000)
         .wait_duration_in_open(Duration::from_millis(50))

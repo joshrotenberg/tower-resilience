@@ -8,149 +8,126 @@
 //! - **Open**: Circuit is tripped, requests are rejected immediately
 //! - **Half-Open**: Testing if service has recovered, limited requests allowed
 //!
-//! ## Usage Patterns
+//! ## Usage
 //!
-//! There are two ways to apply the circuit breaker layer:
+//! ### Basic Usage with ServiceBuilder
 //!
-//! ### 1. Direct Application with `.layer()`
-//!
-//! Use this when you need to manually apply the layer to a service and want
-//! to call methods like `.with_fallback()` on the resulting circuit breaker:
+//! The circuit breaker layer can be used directly with `ServiceBuilder` without
+//! any type parameters:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+//! use tower::{ServiceBuilder, service_fn};
+//!
+//! # async fn example() {
+//! // No type parameters needed!
+//! let circuit_breaker = CircuitBreakerLayer::builder()
+//!     .failure_rate_threshold(0.5)
+//!     .sliding_window_size(100)
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(circuit_breaker)
+//!     .service(service_fn(|req: String| async move {
+//!         Ok::<String, std::io::Error>(req)
+//!     }));
+//! # }
+//! ```
+//!
+//! ### With Fallback Handler
+//!
+//! Use `layer_fn()` to get access to the `CircuitBreaker` service for setting a fallback:
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 //! use tower::service_fn;
-//! use std::time::Duration;
 //! use futures::future::BoxFuture;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::<String, ()>::builder()
+//! let layer = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(0.5)
-//!     .sliding_window_size(100)
 //!     .build();
 //!
 //! let svc = service_fn(|req: String| async move {
 //!     Ok::<String, ()>(req)
 //! });
 //!
-//! // Direct application - returns CircuitBreaker, not a layer
-//! let mut service = layer.layer(svc)
+//! let mut service = layer.layer_fn(svc)
 //!     .with_fallback(|_req: String| -> BoxFuture<'static, Result<String, ()>> {
 //!         Box::pin(async { Ok("fallback".to_string()) })
 //!     });
 //! # }
 //! ```
 //!
-//! ### 2. ServiceBuilder Integration with `.for_request()`
+//! ### Custom Failure Classification
 //!
-//! Use this when composing multiple Tower layers with `ServiceBuilder`:
+//! By default, all errors are counted as failures. You can customize this:
 //!
 //! ```rust
 //! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 //! use tower::{ServiceBuilder, service_fn};
-//! use std::time::Duration;
+//! use std::io::{Error, ErrorKind};
 //!
 //! # async fn example() {
-//! let circuit_breaker = CircuitBreakerLayer::<String, ()>::builder()
-//!     .failure_rate_threshold(0.5)
-//!     .sliding_window_size(100)
+//! let layer = CircuitBreakerLayer::builder()
+//!     .failure_classifier(|result: &Result<String, Error>| {
+//!         match result {
+//!             Ok(_) => false,
+//!             // Don't count timeouts as failures
+//!             Err(e) if e.kind() == ErrorKind::TimedOut => false,
+//!             Err(_) => true,
+//!         }
+//!     })
 //!     .build();
 //!
-//! let mut service = ServiceBuilder::new()
-//!     .layer(circuit_breaker.for_request::<String>())  // Note: .for_request()
-//!     .service(service_fn(|req: String| async move {
-//!         Ok::<String, ()>(req)
-//!     }));
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service(service_fn(|req: String| async move { Ok::<_, Error>(req) }));
 //! # }
 //! ```
 //!
-//! The `.for_request()` method converts the layer into a type that implements
-//! Tower's `Layer` trait, which is required for `ServiceBuilder` integration.
+//! ### Services with `Error = Infallible`
 //!
-//! **When to use each:**
-//! - Use `.layer()` when applying directly and need access to `CircuitBreaker` methods
-//! - Use `.for_request()` when composing with other layers via `ServiceBuilder`
+//! For services that encode errors in the response body (e.g., HTTP services that
+//! return error status codes as `Ok`), provide a custom classifier:
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+//! use std::convert::Infallible;
+//!
+//! # struct Response { status_code: u16 }
+//! # impl Response { fn status(&self) -> u16 { self.status_code } }
+//!
+//! let layer = CircuitBreakerLayer::builder()
+//!     .failure_classifier(|result: &Result<Response, Infallible>| {
+//!         match result {
+//!             Ok(response) => response.status() >= 500,
+//!             Err(_) => unreachable!(),
+//!         }
+//!     })
+//!     .build();
+//! ```
 //!
 //! ## Time-Based Sliding Window
 //!
 //! Use time-based windows instead of count-based:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker, SlidingWindowType};
-//! use tower::service_fn;
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, SlidingWindowType};
+//! use tower::{ServiceBuilder, service_fn};
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::<String, ()>::builder()
+//! let layer = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_type(SlidingWindowType::TimeBased)
 //!     .sliding_window_duration(Duration::from_secs(60))  // Last 60 seconds
 //!     .minimum_number_of_calls(10)
 //!     .build();
 //!
-//! let svc = service_fn(|req: String| async move {
-//!     Ok::<String, ()>(req)
-//! });
-//! let mut service: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
-//! # }
-//! ```
-//!
-//! ## Fallback Handler
-//!
-//! Provide fallback responses when circuit is open:
-//!
-//! ```rust
-//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
-//! use tower::service_fn;
-//! use std::time::Duration;
-//! use futures::future::BoxFuture;
-//!
-//! # async fn example() {
-//! let layer = CircuitBreakerLayer::<String, ()>::builder()
-//!     .failure_rate_threshold(0.5)
-//!     .sliding_window_size(100)
-//!     .build();
-//!
-//! let base_service = service_fn(|req: String| async move {
-//!     Ok::<String, ()>(req)
-//! });
-//!
-//! let mut service = layer.layer(base_service)
-//!     .with_fallback(|_req: String| -> BoxFuture<'static, Result<String, ()>> {
-//!         Box::pin(async {
-//!             Ok("fallback response".to_string())
-//!         })
-//!     });
-//! # }
-//! ```
-//!
-//! ## Custom Failure Classification
-//!
-//! Control what counts as a failure:
-//!
-//! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
-//! use tower::service_fn;
-//! use std::time::Duration;
-//!
-//! # async fn example() {
-//! let layer = CircuitBreakerLayer::<String, std::io::Error>::builder()
-//!     .failure_rate_threshold(0.5)
-//!     .sliding_window_size(100)
-//!     .failure_classifier(|result: &Result<String, std::io::Error>| {
-//!         match result {
-//!             // Don't count timeouts as failures
-//!             Err(e) if e.kind() == std::io::ErrorKind::TimedOut => false,
-//!             Err(_) => true,
-//!             Ok(_) => false,
-//!         }
-//!     })
-//!     .build();
-//!
-//! let svc = service_fn(|req: String| async move {
-//!     Ok::<String, std::io::Error>(req)
-//! });
-//! let mut service: CircuitBreaker<_, String, String, std::io::Error> = layer.layer(svc);
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service(service_fn(|req: String| async move { Ok::<_, ()>(req) }));
 //! # }
 //! ```
 //!
@@ -159,22 +136,21 @@
 //! Open circuit based on slow calls:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
-//! use tower::service_fn;
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+//! use tower::{ServiceBuilder, service_fn};
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::<String, ()>::builder()
+//! let layer = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(1.0)  // Don't open on failures
 //!     .slow_call_duration_threshold(Duration::from_secs(2))
 //!     .slow_call_rate_threshold(0.5)  // Open at 50% slow calls
 //!     .sliding_window_size(100)
 //!     .build();
 //!
-//! let svc = service_fn(|req: String| async move {
-//!     Ok::<String, ()>(req)
-//! });
-//! let mut service: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service(service_fn(|req: String| async move { Ok::<_, ()>(req) }));
 //! # }
 //! ```
 //!
@@ -183,12 +159,11 @@
 //! Monitor circuit breaker behavior:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
-//! use tower::service_fn;
-//! use std::time::Duration;
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+//! use tower::{ServiceBuilder, service_fn};
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::<String, ()>::builder()
+//! let layer = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_size(100)
 //!     .on_state_transition(|from, to| {
@@ -205,10 +180,9 @@
 //!     })
 //!     .build();
 //!
-//! let svc = service_fn(|req: String| async move {
-//!     Ok::<String, ()>(req)
-//! });
-//! let mut service: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+//! let service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service(service_fn(|req: String| async move { Ok::<_, ()>(req) }));
 //! # }
 //! ```
 //!
@@ -216,13 +190,13 @@
 //!
 //! ```rust
 //! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreakerError};
-//! use tower::{Service, service_fn};
+//! use tower::{Service, ServiceBuilder, service_fn};
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::<String, ()>::builder().build();
-//! let mut service = layer.layer(service_fn(|req: String| async move {
-//!     Ok::<_, ()>(req)
-//! }));
+//! let layer = CircuitBreakerLayer::builder().build();
+//! let mut service = ServiceBuilder::new()
+//!     .layer(layer)
+//!     .service(service_fn(|req: String| async move { Ok::<_, ()>(req) }));
 //!
 //! match service.call("request".to_string()).await {
 //!     Ok(response) => println!("Success: {}", response),
@@ -239,16 +213,16 @@
 //! ## State Inspection and Observability
 //!
 //! The circuit breaker provides both synchronous and asynchronous methods for
-//! inspecting state and metrics, useful for health checks and monitoring:
+//! inspecting state and metrics:
 //!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState, CircuitBreaker};
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
 //! use tower::service_fn;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::<String, ()>::builder().build();
+//! let layer = CircuitBreakerLayer::builder().build();
 //! let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
-//! let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+//! let breaker = layer.layer_fn(svc);
 //!
 //! // Sync state inspection (no await needed, lock-free)
 //! match breaker.state_sync() {
@@ -271,41 +245,22 @@
 //!
 //! ## Health Check Integration
 //!
-//! The circuit breaker provides convenient methods for implementing health check endpoints:
-//!
 //! ```rust
-//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 //! use tower::service_fn;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::<String, ()>::builder().build();
+//! let layer = CircuitBreakerLayer::builder().build();
 //! let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
-//! let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
+//! let breaker = layer.layer_fn(svc);
 //!
 //! // Simple health status
 //! let status = breaker.health_status(); // "healthy", "degraded", or "unhealthy"
 //!
 //! // HTTP status code for health endpoints
 //! let http_status = breaker.http_status(); // 200 or 503
-//!
-//! // Framework integration example (pseudo-code):
-//! // async fn health_handler(breaker: Extension<CircuitBreaker>) -> Response {
-//! //     let status_code = breaker.http_status();
-//! //     let body = json!({ "status": breaker.health_status() });
-//! //     Response::builder().status(status_code).json(body)
-//! // }
 //! # }
 //! ```
-//!
-//! With the `serde` feature enabled, `CircuitMetrics` and `CircuitState` can be serialized
-//! for JSON health check responses.
-//!
-//! ## Examples
-//!
-//! See the `examples/` directory for complete working examples:
-//! - `circuitbreaker_example.rs` - Basic usage with state transitions
-//! - `circuitbreaker_fallback.rs` - Fallback strategies for graceful degradation
-//! - `circuitbreaker_health_check.rs` - Health check endpoints and monitoring
 //!
 //! ## Features
 //! - Count-based and time-based sliding windows
@@ -322,15 +277,17 @@
 //! ## Feature Flags
 //! - `metrics`: enables metrics collection using the `metrics` crate
 //! - `tracing`: enables logging and tracing using the `tracing` crate
-//! - `serde`: enables `Serialize` for `CircuitState` and `CircuitMetrics` (useful for health checks)
+//! - `serde`: enables `Serialize` for `CircuitState` and `CircuitMetrics`
 //!
 //! ## Examples
 //!
 //! See the `examples/` directory for complete working examples:
 //! - `circuitbreaker_example.rs` - Basic usage with state transitions
 //! - `circuitbreaker_fallback.rs` - Fallback strategies for graceful degradation
+//! - `circuitbreaker_health_check.rs` - Health check endpoints and monitoring
 
 use crate::circuit::Circuit;
+use crate::classifier::FailureClassifier;
 use futures::future::BoxFuture;
 #[cfg(feature = "metrics")]
 use metrics::{counter, describe_counter, describe_gauge, describe_histogram};
@@ -344,19 +301,21 @@ use tower::Service;
 use tracing::debug;
 
 pub use circuit::{CircuitMetrics, CircuitState};
+pub use classifier::{
+    DefaultClassifier, FailureClassifier as FailureClassifierTrait, FnClassifier,
+};
 pub use config::{CircuitBreakerConfig, CircuitBreakerConfigBuilder, SlidingWindowType};
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
+#[allow(deprecated)]
 pub use layer::{CircuitBreakerLayer, CircuitBreakerRequestLayer};
 
 mod circuit;
+pub mod classifier;
 mod config;
 mod error;
 mod events;
 mod layer;
-
-pub(crate) type FailureClassifier<Res, Err> = dyn Fn(&Result<Res, Err>) -> bool + Send + Sync;
-pub(crate) type SharedFailureClassifier<Res, Err> = Arc<FailureClassifier<Res, Err>>;
 
 pub(crate) type FallbackFn<Req, Res, Err> =
     dyn Fn(Req) -> BoxFuture<'static, Result<Res, Err>> + Send + Sync;
@@ -369,7 +328,22 @@ static METRICS_INIT: Once = Once::new();
 ///
 /// This is a convenience function that returns a builder. You can also use
 /// `CircuitBreakerLayer::builder()` directly.
-pub fn circuit_breaker_builder<Res, Err>() -> CircuitBreakerConfigBuilder<Res, Err> {
+///
+/// # Example
+///
+/// ```rust
+/// use tower_resilience_circuitbreaker::circuit_breaker_builder;
+/// use tower::{ServiceBuilder, service_fn};
+///
+/// let layer = circuit_breaker_builder()
+///     .failure_rate_threshold(0.5)
+///     .build();
+///
+/// let service = ServiceBuilder::new()
+///     .layer(layer)
+///     .service(service_fn(|req: String| async move { Ok::<_, ()>(req) }));
+/// ```
+pub fn circuit_breaker_builder() -> CircuitBreakerConfigBuilder<DefaultClassifier> {
     #[cfg(feature = "metrics")]
     {
         METRICS_INIT.call_once(|| {
@@ -401,18 +375,21 @@ pub fn circuit_breaker_builder<Res, Err>() -> CircuitBreakerConfigBuilder<Res, E
 /// A Tower Service that applies circuit breaker logic to an inner service.
 ///
 /// Manages the circuit state and controls calls to the inner service accordingly.
-pub struct CircuitBreaker<S, Req, Res, Err> {
+///
+/// # Type Parameters
+///
+/// - `S`: The inner service type
+/// - `C`: The failure classifier type (e.g., `DefaultClassifier` or `FnClassifier<F>`)
+pub struct CircuitBreaker<S, C> {
     inner: S,
     circuit: Arc<Mutex<Circuit>>,
     state_atomic: Arc<std::sync::atomic::AtomicU8>,
-    config: Arc<CircuitBreakerConfig<Res, Err>>,
-    fallback: Option<SharedFallback<Req, Res, Err>>,
-    _phantom: std::marker::PhantomData<Req>,
+    config: Arc<CircuitBreakerConfig<C>>,
 }
 
-impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
+impl<S, C> CircuitBreaker<S, C> {
     /// Creates a new `CircuitBreaker` wrapping the given service and configuration.
-    pub(crate) fn new(inner: S, config: Arc<CircuitBreakerConfig<Res, Err>>) -> Self {
+    pub(crate) fn new(inner: S, config: Arc<CircuitBreakerConfig<C>>) -> Self {
         let state_atomic = Arc::new(std::sync::atomic::AtomicU8::new(CircuitState::Closed as u8));
         Self {
             inner,
@@ -421,8 +398,6 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
             )))),
             state_atomic,
             config,
-            fallback: None,
-            _phantom: std::marker::PhantomData,
         }
     }
 
@@ -432,63 +407,22 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     /// it will call the provided fallback function to generate an alternative response. This
     /// enables graceful degradation patterns.
     ///
-    /// # Common Fallback Patterns
+    /// Returns a `CircuitBreakerWithFallback` which also implements `Service`.
     ///
-    /// **Static Fallback Response:**
+    /// # Example
+    ///
     /// ```rust
-    /// # use tower_resilience_circuitbreaker::CircuitBreakerLayer;
-    /// # use tower::service_fn;
-    /// # use futures::future::BoxFuture;
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    /// use tower::service_fn;
+    /// use futures::future::BoxFuture;
+    ///
     /// # async fn example() {
-    /// let layer = CircuitBreakerLayer::<String, String>::builder().build();
+    /// let layer = CircuitBreakerLayer::builder().build();
     /// let svc = service_fn(|req: String| async move { Ok::<String, String>(req) });
     ///
-    /// let mut service = layer.layer(svc).with_fallback(|_req: String| {
+    /// let mut service = layer.layer_fn(svc).with_fallback(|_req: String| {
     ///     Box::pin(async {
-    ///         Ok("Service temporarily unavailable".to_string())
-    ///     })
-    /// });
-    /// # }
-    /// ```
-    ///
-    /// **Cached Data Fallback:**
-    /// ```rust
-    /// # use tower_resilience_circuitbreaker::CircuitBreakerLayer;
-    /// # use tower::service_fn;
-    /// # use futures::future::BoxFuture;
-    /// # use std::sync::Arc;
-    /// # use std::collections::HashMap;
-    /// # async fn example() {
-    /// let cache: Arc<std::sync::RwLock<HashMap<String, String>>> =
-    ///     Arc::new(std::sync::RwLock::new(HashMap::new()));
-    /// cache.write().unwrap().insert("key".to_string(), "value".to_string());
-    /// let layer = CircuitBreakerLayer::<String, String>::builder().build();
-    /// let svc = service_fn(|req: String| async move { Ok::<String, String>(req) });
-    ///
-    /// let cache_clone = Arc::clone(&cache);
-    /// let mut service = layer.layer(svc).with_fallback(move |req: String| {
-    ///     let cache = Arc::clone(&cache_clone);
-    ///     Box::pin(async move {
-    ///         cache.read().unwrap().get(&req).cloned()
-    ///             .ok_or_else(|| "Not in cache".to_string())
-    ///     })
-    /// });
-    /// # }
-    /// ```
-    ///
-    /// **Degraded Functionality:**
-    /// ```rust
-    /// # use tower_resilience_circuitbreaker::CircuitBreakerLayer;
-    /// # use tower::service_fn;
-    /// # use futures::future::BoxFuture;
-    /// # async fn example() {
-    /// let layer = CircuitBreakerLayer::<String, String>::builder().build();
-    /// let svc = service_fn(|req: String| async move { Ok::<String, String>(req) });
-    ///
-    /// let mut service = layer.layer(svc).with_fallback(|req: String| {
-    ///     Box::pin(async move {
-    ///         // Provide limited functionality instead of full failure
-    ///         Ok(format!("Queued for processing: {}", req))
+    ///         Ok::<String, String>("Service temporarily unavailable".to_string())
     ///     })
     /// });
     /// # }
@@ -498,14 +432,21 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     ///
     /// The fallback is only called when the circuit is **open**. When closed or half-open,
     /// requests are forwarded to the inner service normally.
-    ///
-    /// See `examples/circuitbreaker_fallback.rs` for complete examples.
-    pub fn with_fallback<F>(mut self, fallback: F) -> Self
+    pub fn with_fallback<Req, Res, Err, F>(
+        self,
+        fallback: F,
+    ) -> CircuitBreakerWithFallback<S, C, Req, Res, Err>
     where
         F: Fn(Req) -> BoxFuture<'static, Result<Res, Err>> + Send + Sync + 'static,
     {
-        self.fallback = Some(Arc::new(fallback));
-        self
+        CircuitBreakerWithFallback {
+            inner: self.inner,
+            circuit: self.circuit,
+            state_atomic: self.state_atomic,
+            config: self.config,
+            fallback: Arc::new(fallback),
+            _phantom: std::marker::PhantomData,
+        }
     }
 
     /// Forces the circuit into the open state.
@@ -523,53 +464,11 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     /// Returns whether the circuit is currently open.
     ///
     /// This is a convenience method equivalent to `self.state_sync() == CircuitState::Open`.
-    /// It's useful for quick checks without pattern matching in synchronous contexts
-    /// like health checks or metrics collection.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
-    /// use tower::service_fn;
-    ///
-    /// # async fn example() {
-    /// let layer = CircuitBreakerLayer::<String, ()>::builder().build();
-    /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
-    /// let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
-    ///
-    /// if breaker.is_open() {
-    ///     // Return 503 Service Unavailable
-    ///     println!("Service is unavailable");
-    /// }
-    /// # }
-    /// ```
     pub fn is_open(&self) -> bool {
         self.state_sync() == CircuitState::Open
     }
 
     /// Returns a snapshot of the current circuit breaker metrics.
-    ///
-    /// This method takes a lock to read the internal state and return a consistent
-    /// snapshot of all metrics. For lock-free state checks, use [`state()`](Self::state) instead.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
-    /// use tower::service_fn;
-    ///
-    /// # async fn example() {
-    /// let layer = CircuitBreakerLayer::<String, ()>::builder().build();
-    /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
-    /// let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
-    ///
-    /// // Get detailed metrics
-    /// let metrics = breaker.metrics().await;
-    /// println!("Failure rate: {:.2}%", metrics.failure_rate * 100.0);
-    /// println!("Total calls: {}", metrics.total_calls);
-    /// println!("Failed calls: {}", metrics.failure_count);
-    /// # }
-    /// ```
     pub async fn metrics(&self) -> crate::circuit::CircuitMetrics {
         let circuit = self.circuit.lock().await;
         circuit.metrics(&self.config)
@@ -590,60 +489,27 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     /// Returns the current state of the circuit without requiring async context.
     ///
     /// This is safe to call from sync code (e.g., metrics collection, health checks).
-    /// Reads from an AtomicU8 that's kept synchronized with the actual state.
     pub fn state_sync(&self) -> CircuitState {
         CircuitState::from_u8(self.state_atomic.load(std::sync::atomic::Ordering::Acquire))
     }
 
     /// Returns an HTTP status code based on circuit state.
     ///
-    /// This is useful for health check endpoints:
     /// - Closed: 200 (OK)
     /// - HalfOpen: 200 (OK) - accepting limited traffic
     /// - Open: 503 (Service Unavailable)
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
-    /// use tower::service_fn;
-    ///
-    /// # async fn example() {
-    /// let layer = CircuitBreakerLayer::<String, ()>::builder().build();
-    /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
-    /// let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
-    ///
-    /// let status = breaker.http_status();
-    /// // Use in health check: returns 503 when circuit is open
-    /// # }
-    /// ```
     pub fn http_status(&self) -> u16 {
         match self.state_sync() {
             CircuitState::Closed => 200,
-            CircuitState::HalfOpen => 200, // Still accepting limited traffic
+            CircuitState::HalfOpen => 200,
             CircuitState::Open => 503,
         }
     }
 
     /// Returns a simple health status string.
     ///
-    /// Returns "healthy" when circuit is closed or half-open, "unhealthy" when open.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitBreaker};
-    /// use tower::service_fn;
-    ///
-    /// # async fn example() {
-    /// let layer = CircuitBreakerLayer::<String, ()>::builder().build();
-    /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
-    /// let breaker: CircuitBreaker<_, String, String, ()> = layer.layer(svc);
-    ///
-    /// let status = breaker.health_status();
-    /// assert_eq!(status, "healthy");
-    /// # }
-    /// ```
+    /// Returns "healthy" when circuit is closed, "degraded" when half-open,
+    /// "unhealthy" when open.
     pub fn health_status(&self) -> &'static str {
         match self.state_sync() {
             CircuitState::Closed => "healthy",
@@ -653,7 +519,7 @@ impl<S, Req, Res, Err> CircuitBreaker<S, Req, Res, Err> {
     }
 }
 
-impl<S, Req, Res, Err> Clone for CircuitBreaker<S, Req, Res, Err>
+impl<S, C> Clone for CircuitBreaker<S, C>
 where
     S: Clone,
 {
@@ -663,23 +529,22 @@ where
             circuit: Arc::clone(&self.circuit),
             state_atomic: Arc::clone(&self.state_atomic),
             config: Arc::clone(&self.config),
-            fallback: self.fallback.clone(),
-            _phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<S, Req, Res, Err> Service<Req> for CircuitBreaker<S, Req, Res, Err>
+impl<S, C, Req> Service<Req> for CircuitBreaker<S, C>
 where
-    S: Service<Req, Response = Res, Error = Err> + Clone + Send + 'static,
+    S: Service<Req> + Clone + Send + 'static,
+    S::Response: Send + 'static,
+    S::Error: Send + 'static,
     S::Future: Send + 'static,
-    Res: Send + 'static,
-    Err: Send + 'static,
     Req: Send + 'static,
+    C: FailureClassifier<S::Response, S::Error> + Send + Sync + 'static,
 {
-    type Response = Res;
-    type Error = CircuitBreakerError<Err>;
-    type Future = BoxFuture<'static, Result<Res, Self::Error>>;
+    type Response = S::Response;
+    type Error = CircuitBreakerError<S::Error>;
+    type Future = BoxFuture<'static, Result<S::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner
@@ -691,7 +556,6 @@ where
         let config = Arc::clone(&self.config);
         let circuit = Arc::clone(&self.circuit);
         let mut inner = self.inner.clone();
-        let fallback = self.fallback.clone();
 
         Box::pin(async move {
             #[cfg(feature = "tracing")]
@@ -702,20 +566,6 @@ where
                     "Checking if call is permitted by circuit breaker"
                 );
             }
-
-            #[cfg(feature = "tracing")]
-            let circuit_check_span = {
-                use tracing::{span, Level};
-                let state = {
-                    // To avoid holding the lock too long, just get the state for span field.
-                    let circuit = circuit.lock().await;
-                    circuit.state()
-                };
-                let cb_name = &config.name;
-                span!(Level::DEBUG, "circuit_check", breaker = cb_name, state = ?state)
-            };
-            #[cfg(feature = "tracing")]
-            let _enter = circuit_check_span.enter();
 
             let permitted = {
                 let mut circuit = circuit.lock().await;
@@ -741,17 +591,6 @@ where
                     counter!("circuitbreaker_calls_total", "circuitbreaker" => config.name.clone(), "outcome" => "rejected").increment(1);
                 }
 
-                // If a fallback is configured, call it instead of returning an error
-                if let Some(fallback_fn) = fallback {
-                    #[cfg(feature = "tracing")]
-                    {
-                        let cb_name = &config.name;
-                        tracing::debug!(breaker = cb_name, "Calling fallback handler");
-                    }
-
-                    return fallback_fn(req).await.map_err(CircuitBreakerError::Inner);
-                }
-
                 return Err(CircuitBreakerError::OpenCircuit);
             }
 
@@ -760,7 +599,180 @@ where
             let duration = start.elapsed();
 
             let mut circuit = circuit.lock().await;
-            if (config.failure_classifier)(&result) {
+            if config.failure_classifier.classify(&result) {
+                circuit.record_failure(&config, duration);
+            } else {
+                circuit.record_success(&config, duration);
+            }
+
+            result.map_err(CircuitBreakerError::Inner)
+        })
+    }
+}
+
+/// A circuit breaker with a configured fallback handler.
+///
+/// This type is returned by [`CircuitBreaker::with_fallback`] and implements
+/// `Service<Req>` with fallback behavior when the circuit is open.
+pub struct CircuitBreakerWithFallback<S, C, Req, Res, Err> {
+    inner: S,
+    circuit: Arc<Mutex<Circuit>>,
+    state_atomic: Arc<std::sync::atomic::AtomicU8>,
+    config: Arc<CircuitBreakerConfig<C>>,
+    fallback: SharedFallback<Req, Res, Err>,
+    _phantom: std::marker::PhantomData<(Req, Res, Err)>,
+}
+
+impl<S, C, Req, Res, Err> CircuitBreakerWithFallback<S, C, Req, Res, Err> {
+    /// Forces the circuit into the open state.
+    pub async fn force_open(&self) {
+        let mut circuit = self.circuit.lock().await;
+        circuit.force_open(&self.config);
+    }
+
+    /// Forces the circuit into the closed state.
+    pub async fn force_closed(&self) {
+        let mut circuit = self.circuit.lock().await;
+        circuit.force_closed(&self.config);
+    }
+
+    /// Returns whether the circuit is currently open.
+    pub fn is_open(&self) -> bool {
+        self.state_sync() == CircuitState::Open
+    }
+
+    /// Returns a snapshot of the current circuit breaker metrics.
+    pub async fn metrics(&self) -> crate::circuit::CircuitMetrics {
+        let circuit = self.circuit.lock().await;
+        circuit.metrics(&self.config)
+    }
+
+    /// Resets the circuit to the closed state and clears counts.
+    pub async fn reset(&self) {
+        let mut circuit = self.circuit.lock().await;
+        circuit.reset(&self.config);
+    }
+
+    /// Returns the current state of the circuit.
+    pub async fn state(&self) -> CircuitState {
+        let circuit = self.circuit.lock().await;
+        circuit.state()
+    }
+
+    /// Returns the current state of the circuit without requiring async context.
+    pub fn state_sync(&self) -> CircuitState {
+        CircuitState::from_u8(self.state_atomic.load(std::sync::atomic::Ordering::Acquire))
+    }
+
+    /// Returns an HTTP status code based on circuit state.
+    pub fn http_status(&self) -> u16 {
+        match self.state_sync() {
+            CircuitState::Closed => 200,
+            CircuitState::HalfOpen => 200,
+            CircuitState::Open => 503,
+        }
+    }
+
+    /// Returns a simple health status string.
+    pub fn health_status(&self) -> &'static str {
+        match self.state_sync() {
+            CircuitState::Closed => "healthy",
+            CircuitState::HalfOpen => "degraded",
+            CircuitState::Open => "unhealthy",
+        }
+    }
+}
+
+impl<S, C, Req, Res, Err> Clone for CircuitBreakerWithFallback<S, C, Req, Res, Err>
+where
+    S: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            circuit: Arc::clone(&self.circuit),
+            state_atomic: Arc::clone(&self.state_atomic),
+            config: Arc::clone(&self.config),
+            fallback: Arc::clone(&self.fallback),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<S, C, Req, Res, Err> Service<Req> for CircuitBreakerWithFallback<S, C, Req, Res, Err>
+where
+    S: Service<Req, Response = Res, Error = Err> + Clone + Send + 'static,
+    S::Future: Send + 'static,
+    Res: Send + 'static,
+    Err: Send + 'static,
+    Req: Send + 'static,
+    C: FailureClassifier<Res, Err> + Send + Sync + 'static,
+{
+    type Response = Res;
+    type Error = CircuitBreakerError<Err>;
+    type Future = BoxFuture<'static, Result<Res, Self::Error>>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner
+            .poll_ready(cx)
+            .map_err(CircuitBreakerError::Inner)
+    }
+
+    fn call(&mut self, req: Req) -> Self::Future {
+        let config = Arc::clone(&self.config);
+        let circuit = Arc::clone(&self.circuit);
+        let mut inner = self.inner.clone();
+        let fallback = Arc::clone(&self.fallback);
+
+        Box::pin(async move {
+            #[cfg(feature = "tracing")]
+            {
+                let cb_name = &config.name;
+                debug!(
+                    breaker = cb_name,
+                    "Checking if call is permitted by circuit breaker"
+                );
+            }
+
+            let permitted = {
+                let mut circuit = circuit.lock().await;
+                circuit.try_acquire(&config)
+            };
+
+            #[cfg(feature = "tracing")]
+            {
+                let cb_name = &config.name;
+                if permitted {
+                    tracing::trace!(breaker = cb_name, "circuit breaker permitted call");
+                } else {
+                    tracing::trace!(
+                        breaker = cb_name,
+                        "circuit breaker rejected call (circuit open)"
+                    );
+                }
+            }
+
+            if !permitted {
+                #[cfg(feature = "metrics")]
+                {
+                    counter!("circuitbreaker_calls_total", "circuitbreaker" => config.name.clone(), "outcome" => "rejected").increment(1);
+                }
+
+                #[cfg(feature = "tracing")]
+                {
+                    let cb_name = &config.name;
+                    tracing::debug!(breaker = cb_name, "Calling fallback handler");
+                }
+
+                return fallback(req).await.map_err(CircuitBreakerError::Inner);
+            }
+
+            let start = std::time::Instant::now();
+            let result = inner.call(req).await;
+            let duration = start.elapsed();
+
+            let mut circuit = circuit.lock().await;
+            if config.failure_classifier.classify(&result) {
                 circuit.record_failure(&config, duration);
             } else {
                 circuit.record_success(&config, duration);
@@ -774,9 +786,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::classifier::DefaultClassifier;
     use std::time::Duration;
 
-    fn dummy_config() -> CircuitBreakerConfig<(), ()> {
+    fn dummy_config() -> CircuitBreakerConfig<DefaultClassifier> {
         use tower_resilience_core::EventListeners;
         CircuitBreakerConfig {
             failure_rate_threshold: 0.5,
@@ -785,7 +798,7 @@ mod tests {
             sliding_window_duration: None,
             wait_duration_in_open: Duration::from_secs(1),
             permitted_calls_in_half_open: 1,
-            failure_classifier: Arc::new(|r| r.is_err()),
+            failure_classifier: DefaultClassifier,
             minimum_number_of_calls: 10,
             slow_call_duration_threshold: None,
             slow_call_rate_threshold: 1.0,
@@ -827,7 +840,7 @@ mod tests {
     #[tokio::test]
     async fn manual_override_controls_work() {
         let config = Arc::new(dummy_config());
-        let breaker: CircuitBreaker<(), (), (), ()> = CircuitBreaker::new((), config);
+        let breaker: CircuitBreaker<(), DefaultClassifier> = CircuitBreaker::new((), config);
 
         breaker.force_open().await;
         assert_eq!(breaker.state().await, CircuitState::Open);
@@ -864,14 +877,14 @@ mod tests {
         let s_clone = Arc::clone(&successes);
         let f_clone = Arc::clone(&failures);
 
-        let config: CircuitBreakerConfig<(), ()> = CircuitBreakerConfig {
+        let config: CircuitBreakerConfig<DefaultClassifier> = CircuitBreakerConfig {
             failure_rate_threshold: 0.5,
             sliding_window_type: crate::config::SlidingWindowType::CountBased,
             sliding_window_size: 10,
             sliding_window_duration: None,
             wait_duration_in_open: Duration::from_secs(1),
             permitted_calls_in_half_open: 1,
-            failure_classifier: Arc::new(|r| r.is_err()),
+            failure_classifier: DefaultClassifier,
             minimum_number_of_calls: 10,
             slow_call_duration_threshold: None,
             slow_call_rate_threshold: 1.0,
@@ -932,14 +945,14 @@ mod tests {
         let slow_calls = Arc::new(AtomicUsize::new(0));
         let slow_clone = Arc::clone(&slow_calls);
 
-        let config: CircuitBreakerConfig<(), ()> = CircuitBreakerConfig {
+        let config: CircuitBreakerConfig<DefaultClassifier> = CircuitBreakerConfig {
             failure_rate_threshold: 0.5,
             sliding_window_type: crate::config::SlidingWindowType::CountBased,
             sliding_window_size: 10,
             sliding_window_duration: None,
             wait_duration_in_open: Duration::from_secs(1),
             permitted_calls_in_half_open: 1,
-            failure_classifier: Arc::new(|r| r.is_err()),
+            failure_classifier: DefaultClassifier,
             minimum_number_of_calls: 10,
             slow_call_duration_threshold: Some(Duration::from_millis(100)),
             slow_call_rate_threshold: 0.5,
@@ -973,44 +986,11 @@ mod tests {
         assert_eq!(circuit.state(), CircuitState::Open);
     }
 
-    #[test]
-    fn test_slow_call_with_failures() {
-        use tower_resilience_core::EventListeners;
-
-        let config: CircuitBreakerConfig<(), ()> = CircuitBreakerConfig {
-            failure_rate_threshold: 1.0, // Don't open on failures
-            sliding_window_type: crate::config::SlidingWindowType::CountBased,
-            sliding_window_size: 10,
-            sliding_window_duration: None,
-            wait_duration_in_open: Duration::from_secs(1),
-            permitted_calls_in_half_open: 1,
-            failure_classifier: Arc::new(|r| r.is_err()),
-            minimum_number_of_calls: 10,
-            slow_call_duration_threshold: Some(Duration::from_millis(100)),
-            slow_call_rate_threshold: 0.5,
-            event_listeners: EventListeners::new(),
-            name: "test".into(),
-        };
-
-        let mut circuit = Circuit::new();
-
-        // Record 6 slow failures (failures can also be slow)
-        for _ in 0..6 {
-            circuit.record_failure(&config, Duration::from_millis(150));
-        }
-        // Record 4 fast successes
-        for _ in 0..4 {
-            circuit.record_success(&config, Duration::from_millis(50));
-        }
-
-        // Should open due to slow call rate, not failure rate
-        assert_eq!(circuit.state(), CircuitState::Open);
-    }
-
     #[tokio::test]
     async fn test_circuit_breaker_sync_state() {
         let config = Arc::new(dummy_config());
-        let breaker: CircuitBreaker<(), (), (), ()> = CircuitBreaker::new((), config.clone());
+        let breaker: CircuitBreaker<(), DefaultClassifier> =
+            CircuitBreaker::new((), config.clone());
 
         // Can access state synchronously without .await
         let sync_state = breaker.state_sync();
@@ -1025,7 +1005,7 @@ mod tests {
     #[tokio::test]
     async fn test_is_open_convenience_method() {
         let config = Arc::new(dummy_config());
-        let breaker: CircuitBreaker<(), (), (), ()> = CircuitBreaker::new((), config);
+        let breaker: CircuitBreaker<(), DefaultClassifier> = CircuitBreaker::new((), config);
 
         // Initially closed
         assert!(!breaker.is_open());
@@ -1052,7 +1032,7 @@ mod tests {
     #[tokio::test]
     async fn test_metrics_snapshot() {
         let config = Arc::new(dummy_config());
-        let breaker: CircuitBreaker<(), (), (), ()> = CircuitBreaker::new((), config);
+        let breaker: CircuitBreaker<(), DefaultClassifier> = CircuitBreaker::new((), config);
 
         // Get initial metrics
         let metrics = breaker.metrics().await;
@@ -1077,40 +1057,5 @@ mod tests {
         assert_eq!(metrics.success_count, 2);
         assert_eq!(metrics.failure_count, 1);
         assert!((metrics.failure_rate - 0.333).abs() < 0.01);
-    }
-
-    #[tokio::test]
-    async fn test_metrics_with_slow_calls() {
-        use crate::config::SlidingWindowType;
-
-        let config = Arc::new(CircuitBreakerConfig {
-            failure_rate_threshold: 0.5,
-            sliding_window_type: SlidingWindowType::CountBased,
-            sliding_window_size: 10,
-            sliding_window_duration: None,
-            wait_duration_in_open: Duration::from_secs(1),
-            permitted_calls_in_half_open: 1,
-            failure_classifier: Arc::new(|r: &Result<(), ()>| r.is_err()),
-            minimum_number_of_calls: 5,
-            slow_call_duration_threshold: Some(Duration::from_millis(50)),
-            slow_call_rate_threshold: 0.5,
-            event_listeners: tower_resilience_core::EventListeners::new(),
-            name: "test-slow".into(),
-        });
-
-        let breaker: CircuitBreaker<(), (), (), ()> = CircuitBreaker::new((), config);
-
-        // Record fast and slow calls
-        {
-            let mut circuit = breaker.circuit.lock().await;
-            circuit.record_success(&breaker.config, Duration::from_millis(10)); // fast
-            circuit.record_success(&breaker.config, Duration::from_millis(100)); // slow
-            circuit.record_success(&breaker.config, Duration::from_millis(10)); // fast
-        }
-
-        let metrics = breaker.metrics().await;
-        assert_eq!(metrics.total_calls, 3);
-        assert_eq!(metrics.slow_call_count, 1);
-        assert!((metrics.slow_call_rate - 0.333).abs() < 0.01);
     }
 }

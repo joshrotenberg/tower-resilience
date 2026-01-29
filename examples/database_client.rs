@@ -166,7 +166,7 @@ async fn scenario_circuit_breaker() {
     });
 
     // Configure circuit breaker: open after 50% failure rate over 4 calls
-    let circuit_breaker = CircuitBreakerLayer::<Vec<String>, DbError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(4)
         .minimum_number_of_calls(2)
@@ -230,7 +230,7 @@ async fn scenario_full_stack() {
         .retry_on(|err| matches!(err, DbError::Transient(_)))
         .build();
 
-    let circuit_breaker = CircuitBreakerLayer::<Vec<String>, DbError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.6)
         .sliding_window_size(10)
         .minimum_number_of_calls(3)

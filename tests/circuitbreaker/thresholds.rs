@@ -4,7 +4,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio::time::sleep;
-use tower::Service;
+use tower::{Layer, Service};
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_circuitbreaker::CircuitState;
 
@@ -26,7 +26,7 @@ async fn failure_rate_exactly_at_threshold() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(10)
@@ -62,7 +62,7 @@ async fn failure_rate_just_below_threshold() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(10)
@@ -98,7 +98,7 @@ async fn failure_rate_just_above_threshold() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(10)
@@ -135,7 +135,7 @@ async fn slow_call_rate_exactly_at_threshold() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.5)
         .sliding_window_size(10)
@@ -163,7 +163,7 @@ async fn duration_exactly_at_slow_threshold() {
         Ok::<_, String>("success")
     });
 
-    let layer = CircuitBreakerLayer::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.5)
         .sliding_window_size(5)
@@ -191,7 +191,7 @@ async fn duration_just_below_slow_threshold() {
         Ok::<_, String>("success")
     });
 
-    let layer = CircuitBreakerLayer::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.5)
         .sliding_window_size(5)
@@ -219,7 +219,7 @@ async fn duration_just_above_slow_threshold() {
         Ok::<_, String>("success")
     });
 
-    let layer = CircuitBreakerLayer::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.5)
         .sliding_window_size(5)
@@ -268,7 +268,7 @@ async fn combined_failure_and_slow_thresholds() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5) // 30% failure rate < 50%
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.4) // 30% slow rate < 40%
@@ -297,7 +297,7 @@ async fn either_threshold_can_trip() {
         Ok::<_, String>("success")
     });
 
-    let layer = CircuitBreakerLayer::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5) // 0% < 50%, would not trip
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.5) // 100% >= 50%, will trip
@@ -335,7 +335,7 @@ async fn floating_point_precision() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.33) // 33.333...% > 33%
         .sliding_window_size(3)
         .minimum_number_of_calls(3)
@@ -358,7 +358,7 @@ async fn floating_point_precision() {
 async fn threshold_small_window() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.99) // Very high threshold
         .sliding_window_size(2)
         .minimum_number_of_calls(2)

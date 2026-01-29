@@ -51,7 +51,7 @@ fn mock_grpc_client()
 /// Standard microservices stack: Timeout + Retry + CircuitBreaker
 #[tokio::test]
 async fn standard_microservices_stack_compiles() {
-    let circuit_breaker = CircuitBreakerLayer::<GrpcRequest, ServiceError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.6)
         .slow_call_rate_threshold(0.8)
         .slow_call_duration_threshold(Duration::from_secs(2))
@@ -69,7 +69,7 @@ async fn standard_microservices_stack_compiles() {
     let grpc_client = mock_grpc_client();
 
     // Manual composition
-    let with_cb = circuit_breaker.layer::<_, GrpcRequest>(grpc_client);
+    let with_cb = circuit_breaker.layer(grpc_client);
     let with_retry = retry.layer(with_cb);
     let _service = timeout.layer(with_retry);
 }

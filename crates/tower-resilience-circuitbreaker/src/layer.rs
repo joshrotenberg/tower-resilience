@@ -1,104 +1,205 @@
+use crate::classifier::{DefaultClassifier, FnClassifier};
 use crate::config::CircuitBreakerConfig;
 use crate::CircuitBreaker;
-use std::marker::PhantomData;
 use std::sync::Arc;
 use tower::Layer;
-use tower::Service;
 
 /// A Tower Layer that applies circuit breaker behavior to an inner service.
 ///
-/// Wraps an inner service and manages its state according to circuit breaker logic.
+/// The type parameter `C` is the failure classifier type:
+/// - `CircuitBreakerLayer<DefaultClassifier>` - uses default classification (errors = failures)
+/// - `CircuitBreakerLayer<FnClassifier<F>>` - uses a custom classifier function
+///
+/// # Usage
+///
+/// ## Default Classifier (recommended for most cases)
+///
+/// When using the default classifier, no type parameters are needed and the layer
+/// can be used directly with `ServiceBuilder`:
+///
+/// ```rust
+/// use tower::{ServiceBuilder, service_fn};
+/// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+///
+/// let layer = CircuitBreakerLayer::builder()
+///     .failure_rate_threshold(0.5)
+///     .build();
+///
+/// // Works directly with ServiceBuilder - no .for_request() needed!
+/// let service = ServiceBuilder::new()
+///     .layer(layer)
+///     .service(service_fn(|req: String| async move { Ok::<_, std::io::Error>(req) }));
+/// ```
+///
+/// ## Custom Classifier
+///
+/// When you provide a custom failure classifier, the types are inferred from
+/// the closure signature:
+///
+/// ```rust
+/// use tower::{ServiceBuilder, service_fn};
+/// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+/// use std::io::{Error, ErrorKind};
+///
+/// let layer = CircuitBreakerLayer::builder()
+///     .failure_classifier(|result: &Result<String, Error>| {
+///         match result {
+///             Ok(_) => false,
+///             Err(e) if e.kind() == ErrorKind::TimedOut => false, // Don't count timeouts
+///             Err(_) => true,
+///         }
+///     })
+///     .build();
+///
+/// let service = ServiceBuilder::new()
+///     .layer(layer)
+///     .service(service_fn(|req: String| async move { Ok::<_, Error>(req) }));
+/// ```
 #[derive(Clone)]
-pub struct CircuitBreakerLayer<Res, Err> {
-    config: Arc<CircuitBreakerConfig<Res, Err>>,
+pub struct CircuitBreakerLayer<C = DefaultClassifier> {
+    config: Arc<CircuitBreakerConfig<C>>,
 }
 
-/// Request-typed circuit breaker layer that integrates with [`tower::ServiceBuilder`].
-///
-/// This layer carries the request type parameter `Req` needed for Tower's `Layer` trait
-/// implementation, allowing it to work seamlessly with `ServiceBuilder`.
-///
-/// Use [`CircuitBreakerLayer::for_request`] to create this from a base layer.
-#[derive(Clone)]
-pub struct CircuitBreakerRequestLayer<Req, Res, Err> {
-    config: Arc<CircuitBreakerConfig<Res, Err>>,
-    /// PhantomData with fn() -> Req ensures covariance over Req, which is safe since
-    /// we never actually store Req values - only use it in type signatures.
-    /// Using fn() -> Req instead of Req makes the type covariant.
-    _phantom: PhantomData<fn() -> Req>,
-}
-
-impl<Res, Err> CircuitBreakerLayer<Res, Err> {
+impl<C> CircuitBreakerLayer<C> {
     /// Creates a new `CircuitBreakerLayer` from the given configuration.
-    pub(crate) fn new(config: impl Into<Arc<CircuitBreakerConfig<Res, Err>>>) -> Self {
+    pub(crate) fn new(config: impl Into<Arc<CircuitBreakerConfig<C>>>) -> Self {
         Self {
             config: config.into(),
         }
     }
 
-    /// Creates a new builder for configuring a circuit breaker layer.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tower::{ServiceBuilder, service_fn};
-    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
-    ///
-    /// # type MyResponse = String;
-    /// # type MyError = std::io::Error;
-    /// let layer: CircuitBreakerLayer<MyResponse, MyError> = CircuitBreakerLayer::builder()
-    ///     .failure_rate_threshold(0.5)
-    ///     .sliding_window_size(100)
-    ///     .build();
-    ///
-    /// let service = ServiceBuilder::new()
-    ///     .layer(layer.for_request::<String>())
-    ///     .service(service_fn(|req: String| async move { Ok::<_, MyError>(req) }));
-    /// ```
-    pub fn builder() -> crate::CircuitBreakerConfigBuilder<Res, Err> {
-        crate::CircuitBreakerConfigBuilder::new()
-    }
-
-    /// Converts this layer into a request-typed layer that implements [`Layer`].
-    ///
-    /// This enables ergonomic integration with `tower::ServiceBuilder`.
-    pub fn for_request<Req>(&self) -> CircuitBreakerRequestLayer<Req, Res, Err> {
-        CircuitBreakerRequestLayer {
-            config: Arc::clone(&self.config),
-            _phantom: PhantomData,
-        }
-    }
-
     /// Wraps the given service with the circuit breaker middleware.
-    pub fn layer<S, Req>(&self, service: S) -> CircuitBreaker<S, Req, Res, Err> {
-        CircuitBreaker::new(service, Arc::clone(&self.config))
-    }
-}
-
-impl<Req, Res, Err> CircuitBreakerRequestLayer<Req, Res, Err> {
-    fn apply<S>(&self, service: S) -> CircuitBreaker<S, Req, Res, Err>
+    ///
+    /// This is useful when you need direct access to the `CircuitBreaker` service,
+    /// for example to call `with_fallback()` or access state inspection methods.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    /// use tower::service_fn;
+    /// use futures::future::BoxFuture;
+    ///
+    /// # async fn example() {
+    /// let layer = CircuitBreakerLayer::builder().build();
+    /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
+    ///
+    /// let mut service = layer.layer_fn(svc)
+    ///     .with_fallback(|_req: String| -> BoxFuture<'static, Result<String, ()>> {
+    ///         Box::pin(async { Ok("fallback".to_string()) })
+    ///     });
+    /// # }
+    /// ```
+    pub fn layer_fn<S>(&self, service: S) -> CircuitBreaker<S, C>
     where
-        S: Service<Req, Response = Res, Error = Err> + Clone + Send + 'static,
-        S::Future: Send + 'static,
-        Res: Send + 'static,
-        Err: Send + 'static,
-        Req: Send + 'static,
+        C: Clone,
     {
         CircuitBreaker::new(service, Arc::clone(&self.config))
     }
 }
 
-impl<S, Req, Res, Err> Layer<S> for CircuitBreakerRequestLayer<Req, Res, Err>
-where
-    S: Service<Req, Response = Res, Error = Err> + Clone + Send + 'static,
-    S::Future: Send + 'static,
-    Res: Send + 'static,
-    Err: Send + 'static,
-    Req: Send + 'static,
-{
-    type Service = CircuitBreaker<S, Req, Res, Err>;
+impl CircuitBreakerLayer<DefaultClassifier> {
+    /// Creates a new builder for configuring a circuit breaker layer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower::{ServiceBuilder, service_fn};
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// // No type parameters needed!
+    /// let layer = CircuitBreakerLayer::builder()
+    ///     .failure_rate_threshold(0.5)
+    ///     .sliding_window_size(100)
+    ///     .build();
+    ///
+    /// let service = ServiceBuilder::new()
+    ///     .layer(layer)
+    ///     .service(service_fn(|req: String| async move { Ok::<_, std::io::Error>(req) }));
+    /// ```
+    pub fn builder() -> crate::CircuitBreakerConfigBuilder<DefaultClassifier> {
+        crate::CircuitBreakerConfigBuilder::new()
+    }
+}
+
+// Implement Layer<S> for DefaultClassifier - works with any service
+impl<S> Layer<S> for CircuitBreakerLayer<DefaultClassifier> {
+    type Service = CircuitBreaker<S, DefaultClassifier>;
 
     fn layer(&self, service: S) -> Self::Service {
-        self.apply(service)
+        CircuitBreaker::new(service, Arc::clone(&self.config))
+    }
+}
+
+// Implement Layer<S> for FnClassifier - the classifier determines compatible services
+impl<S, F> Layer<S> for CircuitBreakerLayer<FnClassifier<F>> {
+    type Service = CircuitBreaker<S, FnClassifier<F>>;
+
+    fn layer(&self, service: S) -> Self::Service {
+        CircuitBreaker::new(service, Arc::clone(&self.config))
+    }
+}
+
+// Keep the old API for backwards compatibility, but mark as deprecated
+/// Request-typed circuit breaker layer for backwards compatibility.
+///
+/// This type is **deprecated**. Use `CircuitBreakerLayer` directly instead,
+/// which now implements `Layer<S>` without requiring `.for_request()`.
+#[deprecated(
+    since = "0.7.0",
+    note = "CircuitBreakerLayer now implements Layer<S> directly. Use CircuitBreakerLayer::builder().build() instead."
+)]
+#[derive(Clone)]
+pub struct CircuitBreakerRequestLayer<Req, C> {
+    config: Arc<CircuitBreakerConfig<C>>,
+    _phantom: std::marker::PhantomData<fn() -> Req>,
+}
+
+#[allow(deprecated)]
+impl<S, Req, C> Layer<S> for CircuitBreakerRequestLayer<Req, C>
+where
+    C: Clone,
+{
+    type Service = CircuitBreaker<S, C>;
+
+    fn layer(&self, service: S) -> Self::Service {
+        CircuitBreaker::new(service, Arc::clone(&self.config))
+    }
+}
+
+impl<C> CircuitBreakerLayer<C>
+where
+    C: Clone,
+{
+    /// Converts this layer into a request-typed layer.
+    ///
+    /// **Deprecated**: This method is no longer needed. `CircuitBreakerLayer` now
+    /// implements `Layer<S>` directly.
+    ///
+    /// # Migration
+    ///
+    /// Before:
+    /// ```rust,ignore
+    /// ServiceBuilder::new()
+    ///     .layer(layer.for_request::<MyRequest>())
+    ///     .service(my_service)
+    /// ```
+    ///
+    /// After:
+    /// ```rust,ignore
+    /// ServiceBuilder::new()
+    ///     .layer(layer)
+    ///     .service(my_service)
+    /// ```
+    #[deprecated(
+        since = "0.7.0",
+        note = "CircuitBreakerLayer now implements Layer<S> directly. Remove .for_request() call."
+    )]
+    #[allow(deprecated)]
+    pub fn for_request<Req>(&self) -> CircuitBreakerRequestLayer<Req, C> {
+        CircuitBreakerRequestLayer {
+            config: Arc::clone(&self.config),
+            _phantom: std::marker::PhantomData,
+        }
     }
 }

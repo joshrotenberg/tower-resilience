@@ -4,7 +4,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio::time::sleep;
-use tower::Service;
+use tower::{Layer, Service};
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_circuitbreaker::{CircuitState, SlidingWindowType};
 
@@ -43,7 +43,7 @@ async fn time_based_slow_call_failure_classification() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_secs(5))
         .failure_rate_threshold(0.7) // 60% failure rate < 70%
@@ -84,7 +84,7 @@ async fn count_based_dual_thresholds() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .sliding_window_type(SlidingWindowType::CountBased)
         .sliding_window_size(10)
         .failure_rate_threshold(0.6) // 50% < 60%, won't trip
@@ -129,7 +129,7 @@ async fn custom_classifier_with_slow_calls() {
     });
 
     // Only count "fatal_error" as failures
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .sliding_window_size(10)
         .failure_rate_threshold(0.5)
         .slow_call_duration_threshold(Duration::from_millis(80)) // Lower threshold with more margin
@@ -185,7 +185,7 @@ async fn event_listeners_with_complex_config() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_secs(10))
         .failure_rate_threshold(0.5)
@@ -236,7 +236,7 @@ async fn event_listeners_with_complex_config() {
 async fn manual_override_during_failures() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -287,7 +287,7 @@ async fn custom_classifier_transient_errors() {
     });
 
     // Only "transient_error" counts as failure
-    let layer = CircuitBreakerLayer::<String, &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .sliding_window_size(10)
         .failure_rate_threshold(0.7)
         .minimum_number_of_calls(5)
@@ -338,7 +338,7 @@ async fn time_based_kitchen_sink() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_secs(10))
         .failure_rate_threshold(0.7)

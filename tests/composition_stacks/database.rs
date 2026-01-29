@@ -92,7 +92,7 @@ async fn standard_database_stack_compiles() {
 async fn database_with_circuit_breaker_compiles() {
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(20).build();
 
-    let circuit_breaker = CircuitBreakerLayer::<Query, DbError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .minimum_number_of_calls(10)
         .build();
@@ -105,7 +105,7 @@ async fn database_with_circuit_breaker_compiles() {
 
     // Manual composition
     let with_bulkhead = bulkhead.layer(db_client);
-    let with_cb = circuit_breaker.layer::<_, Query>(with_bulkhead);
+    let with_cb = circuit_breaker.layer(with_bulkhead);
     let _service = timeout.layer(with_cb);
 }
 

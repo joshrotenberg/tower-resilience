@@ -3,7 +3,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 use std::time::Duration;
-use tower::Service;
+use tower::{Layer, Service};
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_circuitbreaker::{CircuitState, SlidingWindowType};
 
@@ -12,7 +12,7 @@ use tower_resilience_circuitbreaker::{CircuitState, SlidingWindowType};
 async fn reset_from_open() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -20,8 +20,7 @@ async fn reset_from_open() {
         .name("reset-open")
         .build();
 
-    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str> =
-        layer.layer(service);
+    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
     // Trip circuit
     for _ in 0..5 {
@@ -39,7 +38,7 @@ async fn reset_from_open() {
 async fn reset_from_half_open() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -48,8 +47,7 @@ async fn reset_from_half_open() {
         .name("reset-halfopen")
         .build();
 
-    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str> =
-        layer.layer(service);
+    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
     // Trip circuit
     for _ in 0..5 {
@@ -72,7 +70,7 @@ async fn reset_from_half_open() {
 async fn reset_from_closed() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), String>(()) });
 
-    let layer = CircuitBreakerLayer::<(), String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -80,8 +78,7 @@ async fn reset_from_closed() {
         .name("reset-closed")
         .build();
 
-    let cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), String> =
-        layer.layer(service);
+    let cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
     assert_eq!(cb.state().await, CircuitState::Closed);
 
@@ -107,7 +104,7 @@ async fn reset_clears_counters_count_based() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .sliding_window_type(SlidingWindowType::CountBased)
         .sliding_window_size(10)
         .failure_rate_threshold(0.5)
@@ -116,8 +113,7 @@ async fn reset_clears_counters_count_based() {
         .name("reset-counters")
         .build();
 
-    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str> =
-        layer.layer(service);
+    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
     // Make 4 failing calls (not enough to trip)
     for _ in 0..4 {
@@ -154,7 +150,7 @@ async fn reset_clears_time_based_records() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_secs(10))
         .failure_rate_threshold(0.5)
@@ -163,8 +159,7 @@ async fn reset_clears_time_based_records() {
         .name("reset-timebased")
         .build();
 
-    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str> =
-        layer.layer(service);
+    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
     // Make 6 failing calls (would trip: 6 >= 5 minimum, 100% failure >= 50%)
     for _ in 0..6 {
@@ -204,7 +199,7 @@ async fn reset_during_concurrent_operations() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -254,7 +249,7 @@ async fn reset_during_concurrent_operations() {
 async fn multiple_resets() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -262,8 +257,7 @@ async fn multiple_resets() {
         .name("multiple-resets")
         .build();
 
-    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str> =
-        layer.layer(service);
+    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
     for _ in 0..3 {
         // Trip circuit
@@ -296,7 +290,7 @@ async fn reset_with_slow_call_detection() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.5)
@@ -306,8 +300,7 @@ async fn reset_with_slow_call_detection() {
         .name("reset-slow")
         .build();
 
-    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str> =
-        layer.layer(service);
+    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
     // Make slow failing calls
     for _ in 0..5 {
@@ -345,7 +338,7 @@ async fn reset_preserves_configuration() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -353,8 +346,7 @@ async fn reset_preserves_configuration() {
         .name("reset-config")
         .build();
 
-    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str> =
-        layer.layer(service);
+    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
     // Trip circuit
     for _ in 0..10 {

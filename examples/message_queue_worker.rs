@@ -280,7 +280,7 @@ async fn scenario_circuit_breaker() {
     });
 
     // Configure circuit breaker
-    let circuit_breaker = CircuitBreakerLayer::<ProcessingResult, ProcessingError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(4)
         .minimum_number_of_calls(2)

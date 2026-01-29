@@ -78,14 +78,14 @@ pub mod circuit_breaker {
     //!
     //! # async fn example() {
     //! # let database_client = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
-    //! let circuit_breaker = CircuitBreakerLayer::<(), std::io::Error>::builder()
+    //! let circuit_breaker = CircuitBreakerLayer::builder()
     //!     .failure_rate_threshold(0.5)      // Open at 50% failures
     //!     .sliding_window_size(100)         // Over last 100 calls
     //!     .minimum_number_of_calls(10)      // Need at least 10 calls
     //!     .wait_duration_in_open(Duration::from_secs(30))  // Stay open 30s
     //!     .build();
     //!
-    //! let service = circuit_breaker.layer::<_, ()>(database_client);
+    //! let service = circuit_breaker.layer(database_client);
     //! # }
     //! # }
     //! ```
