@@ -75,7 +75,7 @@ async fn standard_database_stack_compiles() {
         .retry_on(|e: &DbError| e.is_transient())
         .build();
 
-    let timeout = TimeLimiterLayer::<Query>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(5))
         .build();
 
@@ -97,7 +97,7 @@ async fn database_with_circuit_breaker_compiles() {
         .minimum_number_of_calls(10)
         .build();
 
-    let timeout = TimeLimiterLayer::<Query>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(5))
         .build();
 
@@ -112,7 +112,7 @@ async fn database_with_circuit_breaker_compiles() {
 /// Two-layer stack via ServiceBuilder (should work reliably)
 #[tokio::test]
 async fn two_layer_servicebuilder_compiles() {
-    let timeout = TimeLimiterLayer::<Query>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(5))
         .build();
 

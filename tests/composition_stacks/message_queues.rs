@@ -89,7 +89,7 @@ async fn consumer_stack_compiles() {
         .exponential_backoff(Duration::from_secs(1))
         .build();
 
-    let timeout = TimeLimiterLayer::<Message>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(30))
         .build();
 
@@ -111,7 +111,7 @@ async fn producer_stack_compiles() {
         .exponential_backoff(Duration::from_millis(100))
         .build();
 
-    let timeout = TimeLimiterLayer::<PublishRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(5))
         .build();
 
@@ -132,7 +132,7 @@ async fn consumer_with_retry_predicate_compiles() {
         .exponential_backoff(Duration::from_secs(1))
         .build();
 
-    let timeout = TimeLimiterLayer::<Message>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(30))
         .build();
 

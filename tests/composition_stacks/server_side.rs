@@ -49,7 +49,7 @@ fn mock_handler() -> impl Service<HttpRequest, Response = HttpResponse, Error = 
 /// Server-side stack: RateLimiter + Bulkhead + Timeout
 #[tokio::test]
 async fn server_side_stack_compiles() {
-    let timeout = TimeLimiterLayer::<HttpRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(30))
         .build();
 
@@ -96,7 +96,7 @@ async fn bulkhead_tenant_isolation_compiles() {
         .max_wait_duration(Duration::from_secs(5))
         .build();
 
-    let timeout = TimeLimiterLayer::<HttpRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(30))
         .build();
 
@@ -109,7 +109,7 @@ async fn bulkhead_tenant_isolation_compiles() {
 /// Timeout only (prevent runaway requests)
 #[tokio::test]
 async fn timeout_only_compiles() {
-    let timeout = TimeLimiterLayer::<HttpRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(30))
         .cancel_running_future(true)
         .build();

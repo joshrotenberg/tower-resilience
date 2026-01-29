@@ -50,7 +50,7 @@ async fn standard_cache_stack_compiles() {
         .failure_rate_threshold(0.3) // Sensitive threshold for cache
         .build();
 
-    let timeout = TimeLimiterLayer::<CacheKey>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50)) // Fast timeout for cache
         .build();
 
@@ -69,7 +69,7 @@ async fn standard_cache_stack_compiles() {
 async fn cache_with_coalescing_compiles() {
     let coalesce = CoalesceLayer::new(|req: &CacheKey| req.clone());
 
-    let timeout = TimeLimiterLayer::<CacheKey>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(100))
         .build();
 
@@ -88,7 +88,7 @@ async fn cache_with_dynamic_fallback_compiles() {
         CacheValue(None)
     });
 
-    let timeout = TimeLimiterLayer::<CacheKey>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 

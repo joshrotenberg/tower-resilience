@@ -62,7 +62,7 @@ async fn standard_microservices_stack_compiles() {
         .fixed_backoff(Duration::from_millis(50))
         .build();
 
-    let timeout = TimeLimiterLayer::<GrpcRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(5))
         .build();
 
@@ -83,7 +83,7 @@ async fn microservices_with_adaptive_concurrency_compiles() {
 
     let adaptive = AdaptiveLimiterLayer::new(Vegas::builder().build());
 
-    let timeout = TimeLimiterLayer::<GrpcRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(5))
         .build();
 
@@ -98,7 +98,7 @@ async fn microservices_with_adaptive_concurrency_compiles() {
 /// Two-layer stack via ServiceBuilder
 #[tokio::test]
 async fn two_layer_servicebuilder_compiles() {
-    let timeout = TimeLimiterLayer::<GrpcRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(5))
         .build();
 

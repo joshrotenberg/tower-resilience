@@ -69,7 +69,7 @@ async fn minimal_stack_compiles() {
         .exponential_backoff(Duration::from_millis(100))
         .build();
 
-    let timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(10))
         .build();
 
@@ -85,7 +85,7 @@ async fn minimal_stack_compiles() {
 /// Standard stack: Total Timeout + Retry + CircuitBreaker + Per-attempt Timeout
 #[tokio::test]
 async fn standard_stack_compiles() {
-    let per_attempt_timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let per_attempt_timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(10))
         .build();
 
@@ -98,7 +98,7 @@ async fn standard_stack_compiles() {
         .exponential_backoff(Duration::from_millis(100))
         .build();
 
-    let total_timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let total_timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(30))
         .build();
 
@@ -118,7 +118,7 @@ async fn full_stack_with_fallback_compiles() {
         body: "Cached fallback response".to_string(),
     };
 
-    let per_attempt_timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let per_attempt_timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(10))
         .build();
 
@@ -132,7 +132,7 @@ async fn full_stack_with_fallback_compiles() {
         .exponential_backoff(Duration::from_millis(100))
         .build();
 
-    let total_timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let total_timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(30))
         .build();
 
@@ -157,7 +157,7 @@ async fn full_stack_with_fallback_compiles() {
 ///   own timeout, so a slow primary doesn't block the hedge from winning
 #[tokio::test]
 async fn stack_with_hedging_compiles() {
-    let per_attempt_timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let per_attempt_timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(10))
         .build();
 
@@ -175,7 +175,7 @@ async fn stack_with_hedging_compiles() {
         .exponential_backoff(Duration::from_millis(100))
         .build();
 
-    let total_timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let total_timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(30))
         .build();
 
