@@ -32,7 +32,7 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 
 ```toml
 [dependencies]
-tower-resilience = "0.4"
+tower-resilience = "0.5"
 tower = "0.5"
 ```
 
@@ -355,7 +355,7 @@ if let Some(db) = wrapper.get_healthy().await {
 
 **Note:** Health Check is not a Tower layer - it's a wrapper pattern for managing multiple resources with automatic failover.
 
-**Full examples:** [basic.rs](crates/tower-resilience-healthcheck/examples/basic.rs)
+**Full examples:** [healthcheck_basic.rs](crates/tower-resilience-healthcheck/examples/healthcheck_basic.rs)
 
 ### Coalesce
 
