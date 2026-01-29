@@ -100,8 +100,8 @@
 //!
 //! If your request or error types don't implement `Clone`, consider:
 //! - Wrapping them in `Arc` (e.g., `Arc<MyRequest>`)
-//! - Using a different resilience pattern like [`Retry`](tower_resilience_retry)
-//!   which doesn't require cloning requests
+//! - Using a different resilience pattern like Retry which doesn't require
+//!   cloning requests
 //!
 //! ```rust,compile_fail
 //! // This won't compile - String is Clone but Vec<u8> body might not be cheap to clone
