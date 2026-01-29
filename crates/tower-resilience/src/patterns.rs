@@ -485,7 +485,7 @@ pub mod time_limiter {
     //!
     //! # async fn example() {
     //! # let database_query = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
-    //! let time_limiter = TimeLimiterLayer::<()>::builder()
+    //! let time_limiter = TimeLimiterLayer::builder()
     //!     .timeout_duration(Duration::from_secs(5))
     //!     .cancel_running_future(true)
     //!     .on_timeout(|| {

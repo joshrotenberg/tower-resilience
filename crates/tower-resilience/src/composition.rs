@@ -904,7 +904,7 @@ pub mod advanced {
     //! # async fn example() {
     //! # let service = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
     //! let composed = ServiceBuilder::new()
-    //!     .layer(TimeLimiterLayer::<()>::builder()
+    //!     .layer(TimeLimiterLayer::builder()
     //!         .timeout_duration(Duration::from_secs(5))
     //!         .build())
     //!     .layer(RetryLayer::<(), MyError>::builder()
@@ -1002,7 +1002,7 @@ pub mod advanced {
     //! # let base_service = tower::service_fn(|req: Request| async { Ok::<_, MyError>(req) });
     //! // First 2 layers via ServiceBuilder
     //! let inner = ServiceBuilder::new()
-    //!     .layer(TimeLimiterLayer::<Request>::builder()
+    //!     .layer(TimeLimiterLayer::builder()
     //!         .timeout_duration(Duration::from_secs(5))
     //!         .build())
     //!     .layer(RetryLayer::<Request, MyError>::builder()
@@ -1047,7 +1047,7 @@ pub mod advanced {
     //!
     //! // Then use ServiceBuilder for remaining layers
     //! let service = ServiceBuilder::new()
-    //!     .layer(TimeLimiterLayer::<()>::builder()
+    //!     .layer(TimeLimiterLayer::builder()
     //!         .timeout_duration(Duration::from_secs(5))
     //!         .build())
     //!     .service(with_retry);
