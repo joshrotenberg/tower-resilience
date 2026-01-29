@@ -45,8 +45,8 @@ pub(crate) fn notify_triggers(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
     use std::sync::atomic::{AtomicU32, Ordering};
+    use std::sync::Arc;
     use tower_resilience_core::HealthTriggerable;
 
     struct MockTrigger {
