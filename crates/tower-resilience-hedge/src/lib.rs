@@ -22,8 +22,8 @@
 //! use tower_resilience_hedge::HedgeLayer;
 //! use std::time::Duration;
 //!
-//! // Fire a hedge request if primary takes > 100ms
-//! let layer = HedgeLayer::<(), String, std::io::Error>::builder()
+//! // No type parameters needed! Fire a hedge request if primary takes > 100ms
+//! let layer = HedgeLayer::builder()
 //!     .delay(Duration::from_millis(100))
 //!     .max_hedged_attempts(2)
 //!     .build();
@@ -37,8 +37,8 @@
 //! ```rust,no_run
 //! use tower_resilience_hedge::HedgeLayer;
 //!
-//! // Fire 3 requests immediately, return fastest
-//! let layer = HedgeLayer::<(), String, std::io::Error>::builder()
+//! // No type parameters needed! Fire 3 requests immediately, return fastest
+//! let layer = HedgeLayer::builder()
 //!     .no_delay()
 //!     .max_hedged_attempts(3)
 //!     .build();
@@ -68,8 +68,8 @@
 //!     Ok::<_, MyError>(format!("response: {}", req))
 //! });
 //!
-//! // Wrap with hedging - fire hedge after 50ms
-//! let hedge = HedgeLayer::<String, String, MyError>::builder()
+//! // Wrap with hedging - fire hedge after 50ms (no type parameters needed!)
+//! let hedge = HedgeLayer::builder()
 //!     .delay(Duration::from_millis(50))
 //!     .max_hedged_attempts(2)
 //!     .build();
@@ -124,14 +124,17 @@ use tower::Service;
 /// This service executes parallel redundant requests to reduce tail latency.
 /// It fires additional "hedge" requests after a configurable delay and returns
 /// whichever request completes first successfully.
-pub struct Hedge<S, Req, Res, E> {
+///
+/// The type parameter is just the inner service type - request, response, and
+/// error types are derived from the service's associated types.
+pub struct Hedge<S> {
     inner: S,
-    config: Arc<HedgeConfig<Req, Res, E>>,
+    config: Arc<HedgeConfig>,
 }
 
-impl<S, Req, Res, E> Hedge<S, Req, Res, E> {
+impl<S> Hedge<S> {
     /// Create a new Hedge service with the given configuration.
-    pub fn new(inner: S, config: HedgeConfig<Req, Res, E>) -> Self {
+    pub fn new(inner: S, config: HedgeConfig) -> Self {
         Self {
             inner,
             config: Arc::new(config),
@@ -139,7 +142,7 @@ impl<S, Req, Res, E> Hedge<S, Req, Res, E> {
     }
 }
 
-impl<S: Clone, Req, Res, E> Clone for Hedge<S, Req, Res, E> {
+impl<S: Clone> Clone for Hedge<S> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
@@ -148,16 +151,16 @@ impl<S: Clone, Req, Res, E> Clone for Hedge<S, Req, Res, E> {
     }
 }
 
-impl<S, Req, Res, E> Service<Req> for Hedge<S, Req, Res, E>
+impl<S, Req> Service<Req> for Hedge<S>
 where
-    S: Service<Req, Response = Res, Error = E> + Clone + Send + 'static,
+    S: Service<Req> + Clone + Send + 'static,
+    S::Response: Send + Sync + 'static,
+    S::Error: Clone + Send + Sync + 'static,
     S::Future: Send,
     Req: Clone + Send + Sync + 'static,
-    Res: Send + Sync + 'static,
-    E: Clone + Send + Sync + 'static,
 {
-    type Response = Res;
-    type Error = HedgeError<E>;
+    type Response = S::Response;
+    type Error = HedgeError<S::Error>;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
@@ -175,17 +178,17 @@ where
 }
 
 /// Execute the request with hedging strategy
-async fn execute_with_hedging<S, Req, Res, E>(
+async fn execute_with_hedging<S, Req>(
     service: S,
     req: Req,
-    config: Arc<HedgeConfig<Req, Res, E>>,
-) -> Result<Res, HedgeError<E>>
+    config: Arc<HedgeConfig>,
+) -> Result<S::Response, HedgeError<S::Error>>
 where
-    S: Service<Req, Response = Res, Error = E> + Clone + Send + 'static,
+    S: Service<Req> + Clone + Send + 'static,
+    S::Response: Send + 'static,
+    S::Error: Clone + Send + 'static,
     S::Future: Send,
     Req: Clone + Send + 'static,
-    Res: Send + 'static,
-    E: Clone + Send + 'static,
 {
     use tokio::sync::mpsc;
 
@@ -199,7 +202,7 @@ where
     });
 
     // Channel to collect results from all attempts
-    let (tx, mut rx) = mpsc::channel::<(usize, Result<Res, E>)>(max_attempts);
+    let (tx, mut rx) = mpsc::channel::<(usize, Result<S::Response, S::Error>)>(max_attempts);
 
     // Spawn primary request
     let mut service_clone = service.clone();
@@ -212,7 +215,7 @@ where
 
     // Track spawned hedge tasks
     let mut hedges_spawned: usize = 0;
-    let mut primary_error: Option<E> = None;
+    let mut primary_error: Option<S::Error> = None;
 
     // Get delay for first hedge
     let first_delay = config.delay.get_delay(1);
@@ -435,6 +438,7 @@ mod tests {
             }
         });
 
+        // No type parameters needed!
         let layer = HedgeLayer::builder()
             .delay(Duration::from_millis(100))
             .max_hedged_attempts(2)
@@ -471,7 +475,8 @@ mod tests {
             }
         });
 
-        let layer = HedgeLayer::<String, String, TestError>::builder()
+        // No type parameters needed!
+        let layer = HedgeLayer::builder()
             .no_delay()
             .max_hedged_attempts(3)
             .build();
@@ -510,6 +515,7 @@ mod tests {
             }
         });
 
+        // No type parameters needed!
         let layer = HedgeLayer::builder()
             .delay(Duration::from_millis(50))
             .max_hedged_attempts(2)
@@ -539,7 +545,8 @@ mod tests {
     async fn test_all_fail_returns_error() {
         let service = tower::service_fn(|_req: String| async move { Err::<String, _>(TestError) });
 
-        let layer = HedgeLayer::<String, String, TestError>::builder()
+        // No type parameters needed!
+        let layer = HedgeLayer::builder()
             .no_delay()
             .max_hedged_attempts(2)
             .build();

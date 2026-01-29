@@ -144,7 +144,7 @@ async fn main() {
         }
     });
 
-    let layer2 = HedgeLayer::<String, String, MyError>::builder()
+    let layer2 = HedgeLayer::builder()
         .name("parallel-hedge")
         .no_delay() // Fire all immediately
         .max_hedged_attempts(3)

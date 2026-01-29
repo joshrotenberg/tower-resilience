@@ -104,7 +104,7 @@ async fn test_all_attempts_fail() {
         }
     });
 
-    let layer = HedgeLayer::<String, String, TestError>::builder()
+    let layer = HedgeLayer::builder()
         .no_delay()
         .max_hedged_attempts(3)
         .build();
@@ -260,7 +260,7 @@ async fn test_error_preserved_in_all_failed() {
         Err::<String, _>(TestError::new("original error message"))
     });
 
-    let layer = HedgeLayer::<String, String, TestError>::builder()
+    let layer = HedgeLayer::builder()
         .no_delay()
         .max_hedged_attempts(2)
         .build();

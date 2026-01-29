@@ -549,7 +549,7 @@ fn bench_hedge_parallel_mode(c: &mut Criterion) {
 
     c.bench_function("hedge_parallel_mode", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = HedgeLayer::<TestRequest, TestResponse, TestError>::builder()
+            let layer = HedgeLayer::builder()
                 .no_delay()
                 .max_hedged_attempts(3)
                 .build();

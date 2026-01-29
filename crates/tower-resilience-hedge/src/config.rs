@@ -2,7 +2,6 @@
 
 use crate::events::HedgeEvent;
 use crate::layer::HedgeLayer;
-use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
 use tower_resilience_core::{EventListener, EventListeners};
@@ -36,7 +35,12 @@ impl Default for HedgeDelay {
 }
 
 /// Configuration for the hedging service.
-pub struct HedgeConfig<Req, Res, E> {
+///
+/// This configuration is type-agnostic - it doesn't depend on the request,
+/// response, or error types. Types are only constrained when the layer is
+/// applied to a service.
+#[derive(Clone)]
+pub struct HedgeConfig {
     /// Name for metrics/tracing.
     pub(crate) name: Option<String>,
     /// Maximum number of hedged attempts (including original).
@@ -45,34 +49,46 @@ pub struct HedgeConfig<Req, Res, E> {
     pub(crate) delay: HedgeDelay,
     /// Event listeners.
     pub(crate) listeners: EventListeners<HedgeEvent>,
-    /// Phantom data for type parameters.
-    pub(crate) _phantom: PhantomData<(Req, Res, E)>,
 }
 
-impl<Req, Res, E> Default for HedgeConfig<Req, Res, E> {
+impl Default for HedgeConfig {
     fn default() -> Self {
         Self {
             name: None,
             max_hedged_attempts: 2,
             delay: HedgeDelay::default(),
             listeners: EventListeners::default(),
-            _phantom: PhantomData,
         }
     }
 }
 
 /// Builder for [`HedgeConfig`].
-pub struct HedgeConfigBuilder<Req, Res, E> {
-    config: HedgeConfig<Req, Res, E>,
+///
+/// No type parameters needed - types are inferred when the layer is applied to a service.
+///
+/// # Example
+///
+/// ```rust
+/// use tower_resilience_hedge::HedgeLayer;
+/// use std::time::Duration;
+///
+/// // No type parameters needed!
+/// let layer = HedgeLayer::builder()
+///     .delay(Duration::from_millis(100))
+///     .max_hedged_attempts(3)
+///     .build();
+/// ```
+pub struct HedgeConfigBuilder {
+    config: HedgeConfig,
 }
 
-impl<Req, Res, E> Default for HedgeConfigBuilder<Req, Res, E> {
+impl Default for HedgeConfigBuilder {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<Req, Res, E> HedgeConfigBuilder<Req, Res, E> {
+impl HedgeConfigBuilder {
     /// Create a new builder with default settings.
     pub fn new() -> Self {
         Self {
@@ -95,8 +111,8 @@ impl<Req, Res, E> HedgeConfigBuilder<Req, Res, E> {
     /// ```rust
     /// use tower_resilience_hedge::HedgeLayer;
     ///
-    /// // Allow up to 3 parallel attempts
-    /// let layer = HedgeLayer::<(), String, std::io::Error>::builder()
+    /// // Allow up to 3 parallel attempts - no type parameters needed!
+    /// let layer = HedgeLayer::builder()
     ///     .max_hedged_attempts(3)
     ///     .build();
     /// ```
@@ -118,8 +134,8 @@ impl<Req, Res, E> HedgeConfigBuilder<Req, Res, E> {
     /// use tower_resilience_hedge::HedgeLayer;
     /// use std::time::Duration;
     ///
-    /// // Fire hedge after 100ms
-    /// let layer = HedgeLayer::<(), String, std::io::Error>::builder()
+    /// // Fire hedge after 100ms - no type parameters needed!
+    /// let layer = HedgeLayer::builder()
     ///     .delay(Duration::from_millis(100))
     ///     .build();
     /// ```
@@ -139,8 +155,8 @@ impl<Req, Res, E> HedgeConfigBuilder<Req, Res, E> {
     /// ```rust
     /// use tower_resilience_hedge::HedgeLayer;
     ///
-    /// // Fire 3 requests immediately
-    /// let layer = HedgeLayer::<(), String, std::io::Error>::builder()
+    /// // Fire 3 requests immediately - no type parameters needed!
+    /// let layer = HedgeLayer::builder()
     ///     .no_delay()
     ///     .max_hedged_attempts(3)
     ///     .build();
@@ -162,7 +178,7 @@ impl<Req, Res, E> HedgeConfigBuilder<Req, Res, E> {
     /// use std::time::Duration;
     ///
     /// // Increasing delays: 50ms, 100ms, 150ms...
-    /// let layer = HedgeLayer::<(), String, std::io::Error>::builder()
+    /// let layer = HedgeLayer::builder()
     ///     .delay_fn(|attempt| Duration::from_millis(50 * attempt as u64))
     ///     .max_hedged_attempts(3)
     ///     .build();
@@ -183,7 +199,7 @@ impl<Req, Res, E> HedgeConfigBuilder<Req, Res, E> {
     /// use tower_resilience_hedge::{HedgeLayer, HedgeEvent};
     /// use tower_resilience_core::FnListener;
     ///
-    /// let layer = HedgeLayer::<(), String, std::io::Error>::builder()
+    /// let layer = HedgeLayer::builder()
     ///     .on_event(FnListener::new(|event: &HedgeEvent| {
     ///         match event {
     ///             HedgeEvent::HedgeSucceeded { attempt, duration, .. } => {
@@ -203,7 +219,7 @@ impl<Req, Res, E> HedgeConfigBuilder<Req, Res, E> {
     }
 
     /// Build the [`HedgeLayer`].
-    pub fn build(self) -> HedgeLayer<Req, Res, E> {
+    pub fn build(self) -> HedgeLayer {
         HedgeLayer::from_config(self.config)
     }
 }

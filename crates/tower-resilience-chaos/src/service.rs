@@ -1,6 +1,6 @@
 //! Chaos service implementation.
 
-use crate::config::ChaosConfig;
+use crate::config::{ChaosConfig, ErrorInjector};
 use crate::events::ChaosEvent;
 use futures::future::BoxFuture;
 use rand::rngs::StdRng;
@@ -11,16 +11,20 @@ use std::time::{Duration, Instant};
 use tower_service::Service;
 
 /// A Tower service that injects chaos (errors and latency) into requests.
+///
+/// The type parameter `E` is the error injector type:
+/// - `Chaos<S, NoErrorInjection>` - latency-only chaos
+/// - `Chaos<S, CustomErrorFn<F>>` - custom error injection
 #[derive(Clone)]
-pub struct Chaos<S, Req, Err> {
+pub struct Chaos<S, E> {
     inner: S,
-    config: Arc<ChaosConfig<Req, Err>>,
+    config: Arc<ChaosConfig<E>>,
     rng: Arc<Mutex<StdRng>>,
 }
 
-impl<S, Req, Err> Chaos<S, Req, Err> {
+impl<S, E> Chaos<S, E> {
     /// Create a new chaos service.
-    pub(crate) fn new(inner: S, config: ChaosConfig<Req, Err>) -> Self {
+    pub(crate) fn new(inner: S, config: ChaosConfig<E>) -> Self {
         let rng = config.create_rng();
         Self {
             inner,
@@ -30,13 +34,14 @@ impl<S, Req, Err> Chaos<S, Req, Err> {
     }
 }
 
-impl<S, Req, Res, Err> Service<Req> for Chaos<S, Req, Err>
+impl<S, E, Req, Res, Err> Service<Req> for Chaos<S, E>
 where
     S: Service<Req, Response = Res, Error = Err> + Clone + Send + 'static,
     S::Future: Send + 'static,
     Req: Send + 'static,
     Res: Send + 'static,
     Err: Send + 'static,
+    E: ErrorInjector<Req, Err> + Clone + 'static,
 {
     type Response = Res;
     type Error = Err;
@@ -52,24 +57,23 @@ where
         let rng = Arc::clone(&self.rng);
 
         Box::pin(async move {
-            let mut should_inject_error = false;
             let mut should_inject_latency = false;
             let mut latency_duration = Duration::ZERO;
+            let mut error_roll: f64 = 1.0; // Default to no error injection
 
             // Determine what chaos to inject
             {
                 let mut rng = rng.lock().unwrap();
 
                 // Check if we should inject an error
-                if config.error_rate > 0.0 {
-                    let roll: f64 = rng.random();
-                    should_inject_error = roll < config.error_rate;
+                if config.error_injector.error_rate() > 0.0 {
+                    error_roll = rng.random();
                 }
 
-                // Check if we should inject latency
-                if config.latency_rate > 0.0 && !should_inject_error {
-                    let roll: f64 = rng.random();
-                    should_inject_latency = roll < config.latency_rate;
+                // Check if we should inject latency (only if not injecting error)
+                if config.latency_rate > 0.0 && error_roll >= config.error_injector.error_rate() {
+                    let latency_roll: f64 = rng.random();
+                    should_inject_latency = latency_roll < config.latency_rate;
 
                     if should_inject_latency {
                         let min_ms = config.min_latency.as_millis() as u64;
@@ -84,8 +88,8 @@ where
                 }
             }
 
-            // Inject error if determined
-            if should_inject_error {
+            // Check if error injection should happen
+            if let Some(err) = config.error_injector.inject_error(&req, error_roll) {
                 let event = ChaosEvent::ErrorInjected {
                     pattern_name: config.name.clone(),
                     timestamp: Instant::now(),
@@ -102,14 +106,7 @@ where
                 metrics::counter!("chaos.errors_injected", "layer" => config.name.clone())
                     .increment(1);
 
-                // Generate and return error
-                if let Some(ref error_fn) = config.error_fn {
-                    return Err(error_fn(&req));
-                } else {
-                    // If no error function provided, still try to call the service
-                    // This shouldn't happen in practice due to builder validation
-                    return inner.call(req).await;
-                }
+                return Err(err);
             }
 
             // Inject latency if determined
@@ -140,7 +137,7 @@ where
             }
 
             // Pass through (no chaos or after latency)
-            if !should_inject_error && !should_inject_latency {
+            if !should_inject_latency {
                 let event = ChaosEvent::PassedThrough {
                     pattern_name: config.name.clone(),
                     timestamp: Instant::now(),

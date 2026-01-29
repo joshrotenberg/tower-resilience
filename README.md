@@ -417,10 +417,11 @@ Inject failures and latency to test your resilience patterns:
 use tower_resilience_chaos::ChaosLayer;
 use std::time::Duration;
 
-let chaos = ChaosLayer::<String, std::io::Error>::builder()
+// Types inferred from closure signature - no type parameters needed!
+let chaos = ChaosLayer::builder()
     .name("test-chaos")
     .error_rate(0.1)                               // 10% of requests fail
-    .error_fn(|_req| std::io::Error::new(
+    .error_fn(|_req: &String| std::io::Error::new(
         std::io::ErrorKind::Other, "chaos!"
     ))
     .latency_rate(0.2)                             // 20% delayed

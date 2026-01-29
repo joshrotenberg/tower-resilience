@@ -13,11 +13,12 @@ async fn main() {
     println!("=========================\n");
 
     // Create a chaos layer that injects failures and latency
-    let chaos = ChaosLayer::<String, std::io::Error>::builder()
+    // Types are inferred from the error_fn closure signature
+    let chaos = ChaosLayer::builder()
         .name("test-chaos")
         .error_rate(0.3) // 30% of requests fail
-        .error_fn(|_req| std::io::Error::other("chaos error!"))
-        .latency_rate(0.2) // 20% of requests delayed
+        .error_fn(|_req: &String| std::io::Error::other("chaos error!"))
+        .latency_rate(0.2) // 20% of remaining requests delayed
         .min_latency(Duration::from_millis(50))
         .max_latency(Duration::from_millis(100))
         .on_error_injected(|| {
@@ -52,11 +53,11 @@ async fn main() {
             Ok(response) => {
                 successes += 1;
                 let elapsed = start.elapsed();
-                println!("✓ Request {}: {} ({:?})", i, response, elapsed);
+                println!("Request {}: {} ({:?})", i, response, elapsed);
             }
             Err(e) => {
                 failures += 1;
-                println!("✗ Request {}: {}", i, e);
+                println!("Request {}: {}", i, e);
             }
         }
     }

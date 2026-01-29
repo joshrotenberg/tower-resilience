@@ -21,19 +21,46 @@
 //!
 //! # Basic Example
 //!
+//! ## Latency-Only Chaos (no type parameters needed!)
+//!
 //! ```rust
 //! use tower::ServiceBuilder;
 //! use tower_resilience_chaos::ChaosLayer;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let chaos = ChaosLayer::<String, std::io::Error>::builder()
+//! // No type parameters required for latency-only chaos!
+//! let chaos = ChaosLayer::builder()
+//!     .name("api-chaos")
+//!     .latency_rate(0.2)  // 20% of requests delayed
+//!     .min_latency(Duration::from_millis(50))
+//!     .max_latency(Duration::from_millis(200))
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(chaos)
+//!     .service_fn(|req: String| async move {
+//!         Ok::<String, std::io::Error>(format!("Response to: {}", req))
+//!     });
+//! # }
+//! ```
+//!
+//! ## Error Injection (types inferred from closure)
+//!
+//! ```rust
+//! use tower::ServiceBuilder;
+//! use tower_resilience_chaos::ChaosLayer;
+//! use std::time::Duration;
+//!
+//! # async fn example() {
+//! // Types inferred from the error_fn closure signature
+//! let chaos = ChaosLayer::builder()
 //!     .name("api-chaos")
 //!     .error_rate(0.1)  // 10% of requests fail
-//!     .error_fn(|_req| {
+//!     .error_fn(|_req: &String| {
 //!         std::io::Error::new(std::io::ErrorKind::Other, "chaos error!")
 //!     })
-//!     .latency_rate(0.2)  // 20% of requests delayed
+//!     .latency_rate(0.2)  // 20% of remaining requests delayed
 //!     .min_latency(Duration::from_millis(50))
 //!     .max_latency(Duration::from_millis(200))
 //!     .build();
@@ -56,10 +83,11 @@
 //!
 //! # async fn example() {
 //! // Create a chaos layer that fails 60% of requests
-//! let chaos = ChaosLayer::<String, std::io::Error>::builder()
+//! // Types inferred from closure signature
+//! let chaos = ChaosLayer::builder()
 //!     .name("circuit-breaker-test")
 //!     .error_rate(0.6)
-//!     .error_fn(|_req| {
+//!     .error_fn(|_req: &String| {
 //!         std::io::Error::new(std::io::ErrorKind::Other, "simulated failure")
 //!     })
 //!     .build();
@@ -90,9 +118,9 @@
 //! use tower_resilience_chaos::ChaosLayer;
 //!
 //! # async fn example() {
-//! let chaos = ChaosLayer::<(), std::io::Error>::builder()
+//! let chaos = ChaosLayer::builder()
 //!     .error_rate(0.5)
-//!     .error_fn(|_req| {
+//!     .error_fn(|_req: &()| {
 //!         std::io::Error::new(std::io::ErrorKind::Other, "chaos")
 //!     })
 //!     .seed(42)  // Same seed = same sequence of failures
@@ -119,9 +147,9 @@
 //! let e = errors.clone();
 //! let l = latencies.clone();
 //!
-//! let chaos = ChaosLayer::<(), std::io::Error>::builder()
+//! let chaos = ChaosLayer::builder()
 //!     .error_rate(0.1)
-//!     .error_fn(|_req| {
+//!     .error_fn(|_req: &()| {
 //!         std::io::Error::new(std::io::ErrorKind::Other, "chaos")
 //!     })
 //!     .latency_rate(0.2)
@@ -141,14 +169,15 @@
 //!
 //! # Latency Injection Only
 //!
-//! Test timeout handling without errors:
+//! Test timeout handling without errors (no type parameters needed!):
 //!
 //! ```rust
 //! use tower_resilience_chaos::ChaosLayer;
 //! use std::time::Duration;
 //!
 //! # async fn example() {
-//! let chaos = ChaosLayer::<(), ()>::builder()
+//! // No type parameters required for latency-only chaos!
+//! let chaos = ChaosLayer::builder()
 //!     .latency_rate(0.5)  // 50% of requests delayed
 //!     .min_latency(Duration::from_millis(100))
 //!     .max_latency(Duration::from_millis(500))
@@ -163,7 +192,10 @@ pub mod events;
 pub mod layer;
 pub mod service;
 
-pub use config::{ChaosConfig, ChaosConfigBuilder};
+pub use config::{
+    ChaosConfig, ChaosConfigBuilder, ChaosConfigBuilderWithRate, CustomErrorFn, ErrorInjector,
+    NoErrorInjection,
+};
 pub use events::ChaosEvent;
 pub use layer::ChaosLayer;
 pub use service::Chaos;
@@ -178,7 +210,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_no_chaos_passes_through() {
-        let chaos = ChaosLayer::<String, ()>::builder().build();
+        // Latency-only chaos - no type parameters needed!
+        let chaos = ChaosLayer::builder().build();
 
         let mut service = chaos.layer(tower::service_fn(|req: String| async move {
             Ok::<String, ()>(format!("echo: {}", req))
@@ -197,9 +230,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_error_injection_with_seed() {
-        let chaos = ChaosLayer::<String, &'static str>::builder()
+        // Error injection - types inferred from closure
+        let chaos = ChaosLayer::builder()
             .error_rate(1.0) // Always fail
-            .error_fn(|_req| "chaos error")
+            .error_fn(|_req: &String| "chaos error")
             .seed(42)
             .build();
 
@@ -220,7 +254,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_latency_injection() {
-        let chaos = ChaosLayer::<String, ()>::builder()
+        // Latency-only chaos - no type parameters needed!
+        let chaos = ChaosLayer::builder()
             .latency_rate(1.0) // Always add latency
             .min_latency(Duration::from_millis(50))
             .max_latency(Duration::from_millis(50))
@@ -259,8 +294,8 @@ mod tests {
         let l = latency_count.clone();
         let p = pass_count.clone();
 
-        let chaos = ChaosLayer::<String, &'static str>::builder()
-            .error_rate(0.0)
+        // Latency-only chaos with event listeners - no type parameters needed!
+        let chaos = ChaosLayer::builder()
             .latency_rate(0.0)
             .on_error_injected(move || {
                 e.fetch_add(1, Ordering::SeqCst);
@@ -294,10 +329,11 @@ mod tests {
     #[tokio::test]
     async fn test_deterministic_behavior() {
         // Create two services with the same seed
+        // Types inferred from closure
         let make_service = || {
-            let chaos = ChaosLayer::<String, &'static str>::builder()
+            let chaos = ChaosLayer::builder()
                 .error_rate(0.5)
-                .error_fn(|_req| "error")
+                .error_fn(|_req: &String| "error")
                 .seed(123)
                 .build();
 

@@ -161,7 +161,7 @@ async fn stack_with_hedging_compiles() {
         .timeout_duration(Duration::from_secs(10))
         .build();
 
-    let hedge = HedgeLayer::<ApiRequest, ApiResponse, ApiError>::builder()
+    let hedge = HedgeLayer::builder()
         .delay(Duration::from_millis(50))
         .max_hedged_attempts(2)
         .build();

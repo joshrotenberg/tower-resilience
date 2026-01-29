@@ -55,7 +55,7 @@ fn mock_multi_region_client()
 /// Latency mode hedging: fire hedge after delay
 #[tokio::test]
 async fn latency_mode_hedging_compiles() {
-    let hedge = HedgeLayer::<LatencyCacheKey, LatencyCacheValue, LatencyCacheError>::builder()
+    let hedge = HedgeLayer::builder()
         .delay(Duration::from_millis(10)) // Fire hedge after 10ms
         .max_hedged_attempts(2)
         .build();
@@ -74,7 +74,7 @@ async fn latency_mode_hedging_compiles() {
 /// Parallel mode hedging: fire all requests immediately
 #[tokio::test]
 async fn parallel_mode_hedging_compiles() {
-    let hedge = HedgeLayer::<LatencyCacheKey, LatencyCacheValue, LatencyCacheError>::builder()
+    let hedge = HedgeLayer::builder()
         .no_delay() // Fire all requests immediately
         .max_hedged_attempts(3)
         .build();
@@ -93,7 +93,7 @@ async fn parallel_mode_hedging_compiles() {
 /// Dynamic delay hedging
 #[tokio::test]
 async fn dynamic_delay_hedging_compiles() {
-    let hedge = HedgeLayer::<LatencyCacheKey, LatencyCacheValue, LatencyCacheError>::builder()
+    let hedge = HedgeLayer::builder()
         .delay_fn(|attempt| Duration::from_millis(10 * (attempt as u64).pow(2)))
         .max_hedged_attempts(3)
         .build();

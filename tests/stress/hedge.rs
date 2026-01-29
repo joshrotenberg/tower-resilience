@@ -82,7 +82,7 @@ async fn stress_parallel_mode_high_volume() {
         }
     });
 
-    let layer = HedgeLayer::<u32, String, TestError>::builder()
+    let layer = HedgeLayer::builder()
         .no_delay()
         .max_hedged_attempts(3)
         .build();
@@ -232,7 +232,7 @@ async fn stress_all_attempts_fail() {
         }
     });
 
-    let layer = HedgeLayer::<u32, String, TestError>::builder()
+    let layer = HedgeLayer::builder()
         .no_delay()
         .max_hedged_attempts(3)
         .build();
