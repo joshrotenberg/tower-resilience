@@ -115,7 +115,7 @@
 //!
 //! ```rust
 //! use tower::{ServiceBuilder, ServiceExt};
-//! use tower_resilience_bulkhead::BulkheadLayer;
+//! use tower_resilience_bulkhead::{BulkheadLayer, BulkheadServiceError};
 //! use tower_resilience_core::ResilienceError;
 //! use std::time::Duration;
 //!
@@ -128,21 +128,22 @@
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
 //!     .service_fn(|req: String| async move {
-//!         Ok::<String, ResilienceError<String>>(format!("Processed: {}", req))
+//!         Ok::<String, String>(format!("Processed: {}", req))
 //!     });
 //!
-//! // Use ResilienceError to handle bulkhead errors
+//! // Convert BulkheadServiceError to ResilienceError for unified error handling
 //! match service.oneshot("request".to_string()).await {
 //!     Ok(response) => println!("Success: {}", response),
-//!     Err(e) if e.is_bulkhead_full() => {
-//!         println!("System at capacity - please try again later");
-//!         // Could return 503 Service Unavailable in HTTP context
-//!     }
-//!     Err(e) if e.is_timeout() => {
-//!         println!("Request queued too long - system busy");
-//!     }
 //!     Err(e) => {
-//!         println!("Service error: {:?}", e);
+//!         let resilience_err: ResilienceError<String> = e.into();
+//!         if resilience_err.is_bulkhead_full() {
+//!             println!("System at capacity - please try again later");
+//!             // Could return 503 Service Unavailable in HTTP context
+//!         } else if resilience_err.is_timeout() {
+//!             println!("Request queued too long - system busy");
+//!         } else {
+//!             println!("Service error: {:?}", resilience_err);
+//!         }
 //!     }
 //! }
 //! # Ok(())
@@ -153,7 +154,7 @@
 //!
 //! ```rust
 //! use tower::{ServiceBuilder, ServiceExt};
-//! use tower_resilience_bulkhead::BulkheadLayer;
+//! use tower_resilience_bulkhead::{BulkheadLayer, BulkheadServiceError};
 //! use tower_resilience_core::ResilienceError;
 //! use std::time::Duration;
 //! use std::sync::Arc;
@@ -169,18 +170,22 @@
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
 //!     .service_fn(|req: String| async move {
-//!         Ok::<String, ResilienceError<String>>(req)
+//!         Ok::<String, String>(req)
 //!     });
 //!
 //! let queue_clone = Arc::clone(&queue);
-//! let result = match service.oneshot("request".to_string()).await {
+//! let result: Result<String, ResilienceError<String>> = match service.oneshot("request".to_string()).await {
 //!     Ok(response) => Ok(response),
-//!     Err(e) if e.is_bulkhead_full() || e.is_timeout() => {
-//!         // Queue for background processing
-//!         queue_clone.lock().await.push("request".to_string());
-//!         Ok("Queued for processing".to_string())
+//!     Err(e) => {
+//!         let resilience_err: ResilienceError<String> = e.into();
+//!         if resilience_err.is_bulkhead_full() || resilience_err.is_timeout() {
+//!             // Queue for background processing
+//!             queue_clone.lock().await.push("request".to_string());
+//!             Ok("Queued for processing".to_string())
+//!         } else {
+//!             Err(resilience_err)
+//!         }
 //!     }
-//!     Err(e) => Err(e),
 //! };
 //! # Ok(())
 //! # }
