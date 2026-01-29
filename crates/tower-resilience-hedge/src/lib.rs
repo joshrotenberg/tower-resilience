@@ -102,14 +102,6 @@
 //! - Wrapping them in `Arc` (e.g., `Arc<MyRequest>`)
 //! - Using a different resilience pattern like Retry which doesn't require
 //!   cloning requests
-//!
-//! ```rust,compile_fail
-//! // This won't compile - String is Clone but Vec<u8> body might not be cheap to clone
-//! struct MyRequest {
-//!     path: String,
-//!     body: Vec<u8>,  // Consider Arc<[u8]> for large bodies
-//! }
-//! ```
 
 mod config;
 mod error;
