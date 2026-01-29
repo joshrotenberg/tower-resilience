@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.5.0...tower-resilience-v0.7.1) - 2026-01-29
+
+### Added
+
+- [**breaking**] unify all crates to workspace versioning at 0.7.0 ([#221](https://github.com/joshrotenberg/tower-resilience/pull/221))
+- integrate HealthCheck with CircuitBreaker for proactive circuit opening ([#214](https://github.com/joshrotenberg/tower-resilience/pull/214))
+- [**breaking**] remove type parameters from ChaosLayer and HedgeLayer ([#203](https://github.com/joshrotenberg/tower-resilience/pull/203)) ([#213](https://github.com/joshrotenberg/tower-resilience/pull/213))
+- [**breaking**] remove type parameter requirement from TimeLimiterLayer::builder() ([#212](https://github.com/joshrotenberg/tower-resilience/pull/212))
+- [**breaking**] simplify CircuitBreakerLayer API with trait-based classifiers ([#199](https://github.com/joshrotenberg/tower-resilience/pull/199))
+
+### Other
+
+- add feature flag documentation and standardize imports ([#223](https://github.com/joshrotenberg/tower-resilience/pull/223))
+- fix version references and example file path ([#218](https://github.com/joshrotenberg/tower-resilience/pull/218))
+- add comprehensive ResilienceError documentation for composed layers ([#217](https://github.com/joshrotenberg/tower-resilience/pull/217))
+- document preset configurations in README and lib.rs ([#216](https://github.com/joshrotenberg/tower-resilience/pull/216))
+- document Hedge Clone requirements for Req and E types ([#210](https://github.com/joshrotenberg/tower-resilience/pull/210))
+
 ## [0.5.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.4.0...tower-resilience-v0.5.0) - 2026-01-29
 
 ### Other

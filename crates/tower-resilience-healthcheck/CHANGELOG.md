@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-healthcheck-v0.1.3...tower-resilience-healthcheck-v0.7.1) - 2026-01-29
+
+### Added
+
+- [**breaking**] unify all crates to workspace versioning at 0.7.0 ([#221](https://github.com/joshrotenberg/tower-resilience/pull/221))
+- integrate HealthCheck with CircuitBreaker for proactive circuit opening ([#214](https://github.com/joshrotenberg/tower-resilience/pull/214))
+- [**breaking**] remove type parameters from ChaosLayer and HedgeLayer ([#203](https://github.com/joshrotenberg/tower-resilience/pull/203)) ([#213](https://github.com/joshrotenberg/tower-resilience/pull/213))
+
+### Fixed
+
+- add version to healthcheck path dependencies for publishing ([#224](https://github.com/joshrotenberg/tower-resilience/pull/224))
+
+### Other
+
+- add feature flag documentation and standardize imports ([#223](https://github.com/joshrotenberg/tower-resilience/pull/223))
+
 ## [0.1.3](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-healthcheck-v0.1.2...tower-resilience-healthcheck-v0.1.3) - 2026-01-29
 
 ### Other
