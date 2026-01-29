@@ -24,6 +24,30 @@ impl<Req, Res, E> FallbackLayer<Req, Res, E> {
     pub fn builder() -> FallbackConfigBuilder<Req, Res, E> {
         FallbackConfigBuilder::new()
     }
+
+    /// Creates a fallback layer that generates a value using a function.
+    ///
+    /// Unlike [`value`](Self::value), this doesn't require `Res: Clone` since
+    /// the function generates a fresh value for each fallback.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_fallback::FallbackLayer;
+    ///
+    /// # #[derive(Debug)]
+    /// # struct MyError;
+    /// # struct MyResponse { data: Vec<u8> }  // No Clone needed!
+    /// let layer = FallbackLayer::<String, MyResponse, MyError>::value_fn(|| {
+    ///     MyResponse { data: vec![0; 1024] }
+    /// });
+    /// ```
+    pub fn value_fn<F>(f: F) -> Self
+    where
+        F: Fn() -> Res + Send + Sync + 'static,
+    {
+        FallbackConfigBuilder::new().value_fn(f).build()
+    }
 }
 
 // Convenience constructors for common patterns
@@ -32,6 +56,9 @@ where
     Res: Clone,
 {
     /// Creates a fallback layer that returns a static value on failure.
+    ///
+    /// Note: This requires `Res: Clone`. If your response type doesn't implement
+    /// Clone, use [`value_fn`](Self::value_fn) instead.
     ///
     /// # Example
     ///
