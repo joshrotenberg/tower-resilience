@@ -234,8 +234,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     /// # Services with `Error = Infallible`
     ///
     /// For services that never return errors (e.g., those that encode errors in
-    /// the response body), you must provide a custom failure classifier that
-    /// inspects the response:
+    /// the response body), consider using [`classify_response`](Self::classify_response)
+    /// instead, which is simpler for this use case.
     ///
     /// ```rust
     /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
@@ -275,6 +275,64 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             event_listeners: self.event_listeners,
             name: self.name,
         }
+    }
+
+    /// Sets a response-based failure classifier.
+    ///
+    /// This is a convenience method for services where errors are encoded in the response
+    /// rather than returned as `Err`. This is common for:
+    /// - HTTP services that return error status codes as `Ok(Response)`
+    /// - gRPC services that encode status in the response
+    /// - MCP servers that return `JsonRpcResponse` with error fields
+    /// - Any service with `Error = Infallible`
+    ///
+    /// The classifier receives only the response (not the full `Result`), making it
+    /// simpler than [`failure_classifier`](Self::failure_classifier) for these use cases.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    /// use std::convert::Infallible;
+    ///
+    /// # struct Response { status_code: u16, error: Option<String> }
+    /// # impl Response {
+    /// #     fn status(&self) -> u16 { self.status_code }
+    /// #     fn is_error(&self) -> bool { self.error.is_some() }
+    /// # }
+    ///
+    /// // Classify based on HTTP status code
+    /// let layer = CircuitBreakerLayer::builder()
+    ///     .classify_response(|response: &Response| response.status() >= 500)
+    ///     .build();
+    ///
+    /// // Or check for error fields in the response
+    /// let layer = CircuitBreakerLayer::builder()
+    ///     .classify_response(|response: &Response| response.is_error())
+    ///     .build();
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// This classifier only inspects successful responses (`Ok`). If your service
+    /// can also return errors via `Err`, use [`failure_classifier`](Self::failure_classifier)
+    /// instead to handle both cases.
+    pub fn classify_response<F, Res>(
+        self,
+        classifier: F,
+    ) -> CircuitBreakerConfigBuilder<
+        FnClassifier<impl Fn(&Result<Res, std::convert::Infallible>) -> bool + Send + Sync>,
+    >
+    where
+        F: Fn(&Res) -> bool + Send + Sync + 'static,
+        Res: 'static,
+    {
+        self.failure_classifier(
+            move |result: &Result<Res, std::convert::Infallible>| match result {
+                Ok(response) => classifier(response),
+                Err(infallible) => match *infallible {},
+            },
+        )
     }
 
     /// Registers a callback when the circuit breaker transitions between states.

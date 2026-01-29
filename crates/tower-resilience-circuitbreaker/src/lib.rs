@@ -88,25 +88,27 @@
 //!
 //! ### Services with `Error = Infallible`
 //!
-//! For services that encode errors in the response body (e.g., HTTP services that
-//! return error status codes as `Ok`), provide a custom classifier:
+//! Many services encode errors in the response body rather than returning `Err`:
+//! - HTTP services returning error status codes as `Ok(Response)`
+//! - gRPC services with status codes in the response
+//! - MCP servers returning `JsonRpcResponse` with error fields
+//!
+//! Use `classify_response()` for these services:
 //!
 //! ```rust
 //! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
-//! use std::convert::Infallible;
 //!
 //! # struct Response { status_code: u16 }
 //! # impl Response { fn status(&self) -> u16 { self.status_code } }
 //!
+//! // Classify failures based on response content
 //! let layer = CircuitBreakerLayer::builder()
-//!     .failure_classifier(|result: &Result<Response, Infallible>| {
-//!         match result {
-//!             Ok(response) => response.status() >= 500,
-//!             Err(_) => unreachable!(),
-//!         }
-//!     })
+//!     .classify_response(|response: &Response| response.status() >= 500)
 //!     .build();
 //! ```
+//!
+//! This is simpler than `failure_classifier()` because you don't need to handle
+//! the `Err` case (which can never occur with `Error = Infallible`).
 //!
 //! ## Time-Based Sliding Window
 //!
