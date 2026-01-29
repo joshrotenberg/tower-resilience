@@ -73,6 +73,74 @@ impl BulkheadLayer {
         }
         crate::BulkheadConfigBuilder::new()
     }
+
+    // =========================================================================
+    // Presets
+    // =========================================================================
+
+    /// Preset: Small bulkhead for limited concurrency.
+    ///
+    /// Configuration:
+    /// - 10 maximum concurrent calls
+    /// - No wait timeout (rejects immediately when full)
+    ///
+    /// Use this for protecting resources with limited capacity, such as
+    /// database connection pools or external API rate limits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_bulkhead::BulkheadLayer;
+    ///
+    /// let layer = BulkheadLayer::small().build();
+    ///
+    /// // Or customize further
+    /// let layer = BulkheadLayer::small()
+    ///     .max_wait_duration(std::time::Duration::from_secs(5))
+    ///     .build();
+    /// ```
+    pub fn small() -> crate::BulkheadConfigBuilder {
+        Self::builder().max_concurrent_calls(10).reject_when_full()
+    }
+
+    /// Preset: Medium bulkhead for moderate concurrency.
+    ///
+    /// Configuration:
+    /// - 50 maximum concurrent calls
+    /// - No wait timeout (rejects immediately when full)
+    ///
+    /// A balanced configuration for typical service-to-service communication.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_bulkhead::BulkheadLayer;
+    ///
+    /// let layer = BulkheadLayer::medium().build();
+    /// ```
+    pub fn medium() -> crate::BulkheadConfigBuilder {
+        Self::builder().max_concurrent_calls(50).reject_when_full()
+    }
+
+    /// Preset: Large bulkhead for high concurrency.
+    ///
+    /// Configuration:
+    /// - 200 maximum concurrent calls
+    /// - No wait timeout (rejects immediately when full)
+    ///
+    /// Use this for high-throughput services that can handle many
+    /// concurrent requests.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_bulkhead::BulkheadLayer;
+    ///
+    /// let layer = BulkheadLayer::large().build();
+    /// ```
+    pub fn large() -> crate::BulkheadConfigBuilder {
+        Self::builder().max_concurrent_calls(200).reject_when_full()
+    }
 }
 
 impl<S> Layer<S> for BulkheadLayer {

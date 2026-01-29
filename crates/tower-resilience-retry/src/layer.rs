@@ -90,6 +90,90 @@ impl<Req, E> RetryLayer<Req, E> {
     pub fn builder() -> crate::RetryConfigBuilder<Req, E> {
         crate::RetryConfigBuilder::new()
     }
+
+    // =========================================================================
+    // Presets
+    // =========================================================================
+
+    /// Preset: Standard exponential backoff configuration.
+    ///
+    /// Configuration:
+    /// - 3 attempts (1 initial + 2 retries)
+    /// - 100ms initial backoff with exponential growth
+    ///
+    /// This is a balanced configuration suitable for most use cases.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_retry::RetryLayer;
+    ///
+    /// # #[derive(Debug, Clone)]
+    /// # struct MyError;
+    /// // Use as-is
+    /// let layer = RetryLayer::<(), MyError>::exponential_backoff().build();
+    ///
+    /// // Or customize further
+    /// let layer = RetryLayer::<(), MyError>::exponential_backoff()
+    ///     .max_attempts(5)  // Override default
+    ///     .build();
+    /// ```
+    pub fn exponential_backoff() -> crate::RetryConfigBuilder<Req, E> {
+        use std::time::Duration;
+        Self::builder()
+            .max_attempts(3)
+            .exponential_backoff(Duration::from_millis(100))
+    }
+
+    /// Preset: Aggressive retry configuration for latency-sensitive operations.
+    ///
+    /// Configuration:
+    /// - 5 attempts (1 initial + 4 retries)
+    /// - 50ms initial backoff with exponential growth
+    ///
+    /// Use this when quick recovery is important and the downstream service
+    /// can handle the additional load from retries.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_retry::RetryLayer;
+    ///
+    /// # #[derive(Debug, Clone)]
+    /// # struct MyError;
+    /// let layer = RetryLayer::<(), MyError>::aggressive().build();
+    /// ```
+    pub fn aggressive() -> crate::RetryConfigBuilder<Req, E> {
+        use std::time::Duration;
+        Self::builder()
+            .max_attempts(5)
+            .exponential_backoff(Duration::from_millis(50))
+    }
+
+    /// Preset: Conservative retry configuration for resource-constrained scenarios.
+    ///
+    /// Configuration:
+    /// - 2 attempts (1 initial + 1 retry)
+    /// - 500ms initial backoff with exponential growth
+    ///
+    /// Use this when you want to minimize retry overhead, such as when
+    /// calling services that are already under load or have strict rate limits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_retry::RetryLayer;
+    ///
+    /// # #[derive(Debug, Clone)]
+    /// # struct MyError;
+    /// let layer = RetryLayer::<(), MyError>::conservative().build();
+    /// ```
+    pub fn conservative() -> crate::RetryConfigBuilder<Req, E> {
+        use std::time::Duration;
+        Self::builder()
+            .max_attempts(2)
+            .exponential_backoff(Duration::from_millis(500))
+    }
 }
 
 impl<S, Req, E> Layer<S> for RetryLayer<Req, E>

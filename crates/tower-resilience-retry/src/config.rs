@@ -473,4 +473,28 @@ mod tests {
         let req = Req { retries: 10 };
         assert_eq!(source.get_max_attempts(&req), 10);
     }
+
+    #[test]
+    fn test_preset_exponential_backoff() {
+        let _layer = RetryLayer::<(), std::io::Error>::exponential_backoff().build();
+    }
+
+    #[test]
+    fn test_preset_aggressive() {
+        let _layer = RetryLayer::<(), std::io::Error>::aggressive().build();
+    }
+
+    #[test]
+    fn test_preset_conservative() {
+        let _layer = RetryLayer::<(), std::io::Error>::conservative().build();
+    }
+
+    #[test]
+    fn test_preset_with_customization() {
+        // Verify presets can be further customized
+        let _layer = RetryLayer::<(), std::io::Error>::exponential_backoff()
+            .max_attempts(10)
+            .name("custom")
+            .build();
+    }
 }
