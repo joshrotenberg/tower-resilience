@@ -11,32 +11,24 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::runtime::Runtime;
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
+use tower_resilience_bulkhead::{BulkheadLayer, BulkheadServiceError};
 
-/// Error type that can be converted from BulkheadError
+/// Error type for inner service
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 enum TestError {
-    Bulkhead(String),
     Service(String),
 }
 
 impl std::fmt::Display for TestError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TestError::Bulkhead(msg) => write!(f, "bulkhead: {}", msg),
             TestError::Service(msg) => write!(f, "service: {}", msg),
         }
     }
 }
 
 impl std::error::Error for TestError {}
-
-impl From<BulkheadError> for TestError {
-    fn from(e: BulkheadError) -> Self {
-        TestError::Bulkhead(e.to_string())
-    }
-}
 
 /// Test service that tracks concurrent executions
 #[derive(Clone)]
@@ -167,7 +159,8 @@ proptest! {
             for _ in 0..num_requests {
                 let mut svc = service.clone();
                 handles.push(tokio::spawn(async move {
-                    let _: Result<(), TestError> = svc.ready().await.unwrap().call(()).await;
+                    let _: Result<(), BulkheadServiceError<TestError>> =
+                        svc.ready().await.unwrap().call(()).await;
                 }));
             }
 
@@ -211,7 +204,8 @@ proptest! {
             for _ in 0..num_requests {
                 let mut svc = service.clone();
                 handles.push(tokio::spawn(async move {
-                    let _: Result<(), TestError> = svc.ready().await.unwrap().call(()).await;
+                    let _: Result<(), BulkheadServiceError<TestError>> =
+                        svc.ready().await.unwrap().call(()).await;
                 }));
             }
 

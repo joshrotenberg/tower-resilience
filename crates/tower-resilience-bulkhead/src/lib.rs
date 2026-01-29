@@ -255,7 +255,7 @@ pub mod layer;
 pub mod service;
 
 pub use config::{BulkheadConfig, BulkheadConfigBuilder};
-pub use error::{BulkheadError, Result};
+pub use error::{BulkheadError, BulkheadServiceError, Result};
 pub use events::BulkheadEvent;
 pub use layer::BulkheadLayer;
 pub use service::Bulkhead;

@@ -3,19 +3,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::BulkheadError;
-use tower_resilience_bulkhead::BulkheadLayer;
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer, BulkheadServiceError};
 
 #[derive(Debug)]
-enum TestError {
-    Bulkhead(BulkheadError),
-}
-
-impl From<BulkheadError> for TestError {
-    fn from(e: BulkheadError) -> Self {
-        TestError::Bulkhead(e)
-    }
-}
+struct TestError;
 
 #[tokio::test]
 async fn test_max_concurrent_calls_one() {
@@ -124,7 +115,7 @@ async fn test_max_concurrent_calls_zero() {
         .await;
     assert!(matches!(
         result,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 }
 
@@ -270,7 +261,7 @@ async fn test_config_timeout_some_vs_none() {
     let result_some = s3.ready().await.unwrap().call("second".to_string()).await;
     assert!(matches!(
         result_some,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 
     // None timeout should wait and succeed
@@ -478,7 +469,7 @@ async fn test_config_with_all_options() {
     let result = s3.ready().await.unwrap().call("third".to_string()).await;
     assert!(matches!(
         result,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 
     // Wait for initial calls to complete

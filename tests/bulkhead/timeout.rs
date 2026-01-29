@@ -3,19 +3,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::BulkheadError;
-use tower_resilience_bulkhead::BulkheadLayer;
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer, BulkheadServiceError};
 
 #[derive(Debug)]
-enum TestError {
-    Bulkhead(BulkheadError),
-}
-
-impl From<BulkheadError> for TestError {
-    fn from(e: BulkheadError) -> Self {
-        TestError::Bulkhead(e)
-    }
-}
+struct TestError;
 
 #[tokio::test]
 async fn test_zero_timeout() {
@@ -63,7 +54,7 @@ async fn test_zero_timeout() {
     assert!(result1.is_ok());
     assert!(matches!(
         result2,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 }
 
@@ -116,7 +107,7 @@ async fn test_very_short_timeout() {
     assert!(result1.is_ok());
     assert!(matches!(
         result2,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
     assert!(elapsed < Duration::from_millis(50)); // Should timeout quickly
 }
@@ -263,7 +254,7 @@ async fn test_timeout_precision() {
 
     assert!(matches!(
         result,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
     // Allow some margin for timing precision
     assert!(elapsed >= Duration::from_millis(90));
@@ -322,7 +313,7 @@ async fn test_multiple_timeouts() {
         let result = handle.await.unwrap();
         assert!(matches!(
             result,
-            Err(TestError::Bulkhead(BulkheadError::Timeout))
+            Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
         ));
     }
 
@@ -374,7 +365,7 @@ async fn test_timeout_then_success() {
     assert!(result1.is_ok());
     assert!(matches!(
         result2,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 
     // Now the bulkhead should be available again
@@ -438,7 +429,7 @@ async fn test_concurrent_timeouts() {
         .await;
     assert!(matches!(
         result3,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 }
 
@@ -515,7 +506,7 @@ async fn test_changing_timeout_behavior() {
     let result_short = s3.ready().await.unwrap().call("second".to_string()).await;
     assert!(matches!(
         result_short,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 
     // Long timeout should succeed (waits for first call to complete)

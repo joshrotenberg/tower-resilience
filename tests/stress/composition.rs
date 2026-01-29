@@ -5,29 +5,26 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt};
-use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
-use tower_resilience_circuitbreaker::{CircuitBreakerError, CircuitBreakerLayer};
+use tower_resilience_bulkhead::{BulkheadLayer, BulkheadServiceError};
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 
 use super::{ConcurrencyTracker, get_memory_usage_mb};
 
+/// Inner service error type - used as the base error for composition
+#[derive(Debug, Clone)]
+struct InnerError(String);
+
+impl std::fmt::Display for InnerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::error::Error for InnerError {}
+
+/// Error type for composition tests
 #[derive(Debug)]
-#[allow(dead_code)]
-enum TestError {
-    Bulkhead(BulkheadError),
-    Circuit(CircuitBreakerError<BulkheadError>),
-}
-
-impl From<BulkheadError> for TestError {
-    fn from(e: BulkheadError) -> Self {
-        TestError::Bulkhead(e)
-    }
-}
-
-impl From<CircuitBreakerError<BulkheadError>> for TestError {
-    fn from(e: CircuitBreakerError<BulkheadError>) -> Self {
-        TestError::Circuit(e)
-    }
-}
+struct TestError;
 
 /// Test: Circuit breaker + bulkhead composition
 #[tokio::test]
@@ -41,9 +38,7 @@ async fn stress_circuit_breaker_plus_bulkhead() {
         async move {
             counter.fetch_add(1, Ordering::Relaxed);
             if req.is_multiple_of(50) {
-                Err(BulkheadError::BulkheadFull {
-                    max_concurrent_calls: 20,
-                })
+                Err(InnerError("simulated failure".to_string()))
             } else {
                 Ok(format!("response-{}", req))
             }
@@ -52,10 +47,12 @@ async fn stress_circuit_breaker_plus_bulkhead() {
 
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(20).build();
 
-    let circuit_breaker = CircuitBreakerLayer::<String, BulkheadError>::builder()
-        .failure_rate_threshold(0.7)
-        .sliding_window_size(100)
-        .build();
+    // CircuitBreaker now wraps BulkheadServiceError<InnerError>
+    let circuit_breaker =
+        CircuitBreakerLayer::<String, BulkheadServiceError<InnerError>>::builder()
+            .failure_rate_threshold(0.7)
+            .sliding_window_size(100)
+            .build();
 
     // Compose: circuit breaker -> bulkhead -> service
     let service = circuit_breaker.layer(bulkhead.layer(svc));
@@ -165,7 +162,7 @@ async fn stress_two_layer_high_concurrency() {
 
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(100).build();
 
-    let circuit_breaker = CircuitBreakerLayer::<(), TestError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<(), BulkheadServiceError<TestError>>::builder()
         .failure_rate_threshold(0.9)
         .sliding_window_size(1000)
         .build();
@@ -207,7 +204,7 @@ async fn stress_composed_memory() {
 
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(100).build();
 
-    let circuit_breaker = CircuitBreakerLayer::<(), TestError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<(), BulkheadServiceError<TestError>>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(1000)
         .build();
@@ -251,7 +248,7 @@ async fn stress_composed_burst_traffic() {
 
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(50).build();
 
-    let circuit_breaker = CircuitBreakerLayer::<(), TestError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<(), BulkheadServiceError<TestError>>::builder()
         .failure_rate_threshold(0.9)
         .sliding_window_size(100)
         .build();
@@ -299,9 +296,7 @@ async fn stress_composed_stability() {
             counter.fetch_add(1, Ordering::Relaxed);
             // 10% failure rate
             if req.is_multiple_of(10) {
-                Err(TestError::Bulkhead(BulkheadError::BulkheadFull {
-                    max_concurrent_calls: 20,
-                }))
+                Err(InnerError("simulated failure".to_string()))
             } else {
                 Ok(())
             }
@@ -310,7 +305,7 @@ async fn stress_composed_stability() {
 
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(20).build();
 
-    let circuit_breaker = CircuitBreakerLayer::<(), TestError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::<(), BulkheadServiceError<InnerError>>::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
         .build();

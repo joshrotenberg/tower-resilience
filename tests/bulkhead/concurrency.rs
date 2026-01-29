@@ -5,19 +5,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::BulkheadError;
-use tower_resilience_bulkhead::BulkheadLayer;
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer, BulkheadServiceError};
 
 #[derive(Debug)]
-enum TestError {
-    Bulkhead(BulkheadError),
-}
-
-impl From<BulkheadError> for TestError {
-    fn from(e: BulkheadError) -> Self {
-        TestError::Bulkhead(e)
-    }
-}
+struct TestError;
 
 #[tokio::test]
 async fn high_concurrency_stress_test() {
@@ -141,7 +132,10 @@ async fn rejection_under_load_with_timeout() {
     for _ in 0..10 {
         let mut svc = service.clone();
         let result = svc.ready().await.unwrap().call(()).await;
-        if matches!(result, Err(TestError::Bulkhead(BulkheadError::Timeout))) {
+        if matches!(
+            result,
+            Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
+        ) {
             rejected += 1;
         }
     }
@@ -332,6 +326,6 @@ async fn zero_concurrent_immediately_rejects() {
 
     assert!(matches!(
         result,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 }

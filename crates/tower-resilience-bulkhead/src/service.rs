@@ -1,7 +1,7 @@
 //! Bulkhead service implementation.
 
 use crate::config::BulkheadConfig;
-use crate::error::BulkheadError;
+use crate::error::{BulkheadError, BulkheadServiceError};
 use crate::events::BulkheadEvent;
 use futures::future::BoxFuture;
 use std::sync::Arc;
@@ -38,15 +38,17 @@ where
     S: Service<Request> + Clone + Send + 'static,
     S::Future: Send + 'static,
     S::Response: Send + 'static,
-    S::Error: From<BulkheadError> + Send + 'static,
+    S::Error: Send + 'static,
     Request: Send + 'static,
 {
     type Response = S::Response;
-    type Error = S::Error;
+    type Error = BulkheadServiceError<S::Error>;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner.poll_ready(cx)
+        self.inner
+            .poll_ready(cx)
+            .map_err(BulkheadServiceError::Inner)
     }
 
     fn call(&mut self, request: Request) -> Self::Future {
@@ -199,7 +201,7 @@ where
                     .set(new_concurrent as f64);
             }
 
-            result
+            result.map_err(BulkheadServiceError::Inner)
         })
     }
 }
