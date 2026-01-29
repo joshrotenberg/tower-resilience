@@ -399,9 +399,10 @@ async fn test_chaos_injection_with_health_check() {
     );
 
     // Now wrap the endpoint's get_data call with chaos layer
-    let chaos_layer = ChaosLayer::<(), String>::builder()
+    // Types inferred from closure signature
+    let chaos_layer = ChaosLayer::builder()
         .error_rate(0.5) // 50% failure rate
-        .error_fn(|_req| "chaos error".to_string())
+        .error_fn(|_req: &()| "chaos error".to_string())
         .build();
 
     // Create a service from the endpoint

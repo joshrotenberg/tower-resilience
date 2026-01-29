@@ -136,7 +136,7 @@ async fn test_all_failed_event() {
     let service =
         service_fn(|_req: String| async move { Err::<String, _>(TestError::new("failed")) });
 
-    let layer = HedgeLayer::<String, String, TestError>::builder()
+    let layer = HedgeLayer::builder()
         .no_delay()
         .max_hedged_attempts(3)
         .on_event(FnListener::new(move |e: &HedgeEvent| {

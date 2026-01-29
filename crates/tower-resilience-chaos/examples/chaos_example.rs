@@ -37,10 +37,13 @@ async fn main() {
 }
 
 async fn basic_error_injection() {
-    let chaos = ChaosLayer::<String, std::io::Error>::builder()
+    // Types inferred from closure signature - no type parameters needed!
+    let chaos = ChaosLayer::builder()
         .name("error-injector")
         .error_rate(0.3) // 30% of requests fail
-        .error_fn(|_req| std::io::Error::new(std::io::ErrorKind::Other, "chaos-induced failure"))
+        .error_fn(|_req: &String| {
+            std::io::Error::new(std::io::ErrorKind::Other, "chaos-induced failure")
+        })
         .build();
 
     let svc = tower::service_fn(|req: String| async move {
@@ -63,11 +66,11 @@ async fn basic_error_injection() {
         {
             Ok(response) => {
                 successes += 1;
-                println!("  ✓ Success: {}", response);
+                println!("  Success: {}", response);
             }
             Err(e) => {
                 failures += 1;
-                println!("  ✗ Failed: {}", e);
+                println!("  Failed: {}", e);
             }
         }
     }
@@ -79,7 +82,8 @@ async fn basic_error_injection() {
 }
 
 async fn latency_injection() {
-    let chaos = ChaosLayer::<String, std::io::Error>::builder()
+    // Latency-only chaos - no type parameters needed!
+    let chaos = ChaosLayer::builder()
         .name("latency-injector")
         .latency_rate(0.5) // 50% of requests delayed
         .min_latency(Duration::from_millis(50))
@@ -108,16 +112,16 @@ async fn latency_injection() {
             Ok(response) => {
                 if elapsed.as_millis() > 40 {
                     println!(
-                        "  ⏱  {}ms (latency injected): {}",
+                        "  {}ms (latency injected): {}",
                         elapsed.as_millis(),
                         response
                     );
                 } else {
-                    println!("  ✓ {}ms (normal): {}", elapsed.as_millis(), response);
+                    println!("  {}ms (normal): {}", elapsed.as_millis(), response);
                 }
             }
             Err(e) => {
-                println!("  ✗ Failed: {}", e);
+                println!("  Failed: {}", e);
             }
         }
     }
@@ -128,10 +132,11 @@ async fn deterministic_chaos() {
 
     for run in 1..=2 {
         println!("  Run {}:", run);
-        let chaos = ChaosLayer::<String, std::io::Error>::builder()
+        // Types inferred from closure signature
+        let chaos = ChaosLayer::builder()
             .name("deterministic-chaos")
             .error_rate(0.5)
-            .error_fn(|_req| std::io::Error::new(std::io::ErrorKind::Other, "chaos"))
+            .error_fn(|_req: &String| std::io::Error::new(std::io::ErrorKind::Other, "chaos"))
             .seed(42) // Same seed = same results
             .build();
 
@@ -156,7 +161,7 @@ async fn deterministic_chaos() {
             "    {}",
             results
                 .iter()
-                .map(|&ok| if ok { "✓" } else { "✗" })
+                .map(|&ok| if ok { "ok" } else { "fail" })
                 .collect::<Vec<_>>()
                 .join(" ")
         );
@@ -174,10 +179,11 @@ async fn event_monitoring() {
     let l = latency_count.clone();
     let p = pass_count.clone();
 
-    let chaos = ChaosLayer::<String, std::io::Error>::builder()
+    // Types inferred from closure signature
+    let chaos = ChaosLayer::builder()
         .name("monitored-chaos")
         .error_rate(0.2)
-        .error_fn(|_req| std::io::Error::new(std::io::ErrorKind::Other, "chaos"))
+        .error_fn(|_req: &String| std::io::Error::new(std::io::ErrorKind::Other, "chaos"))
         .latency_rate(0.3)
         .min_latency(Duration::from_millis(10))
         .max_latency(Duration::from_millis(20))

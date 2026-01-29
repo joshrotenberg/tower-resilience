@@ -271,7 +271,7 @@ fn bench_hedge(c: &mut Criterion) {
 
     c.bench_function("hedge_primary_succeeds", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = HedgeLayer::<TestRequest, TestResponse, TestError>::builder()
+            let layer = HedgeLayer::builder()
                 .delay(Duration::from_millis(100))
                 .max_hedged_attempts(2)
                 .build();

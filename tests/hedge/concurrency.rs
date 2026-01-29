@@ -111,7 +111,7 @@ async fn test_parallel_mode_concurrent() {
         }
     });
 
-    let layer = HedgeLayer::<String, String, TestError>::builder()
+    let layer = HedgeLayer::builder()
         .no_delay()
         .max_hedged_attempts(3)
         .build();
@@ -214,7 +214,7 @@ async fn test_mixed_success_failure_concurrent() {
         }
     });
 
-    let layer = HedgeLayer::<String, String, TestError>::builder()
+    let layer = HedgeLayer::builder()
         .no_delay()
         .max_hedged_attempts(2)
         .build();

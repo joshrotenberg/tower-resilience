@@ -11,10 +11,11 @@ use tower_resilience_chaos::ChaosLayer;
 async fn chaos_error_injection_metrics() {
     init_recorder();
 
-    let layer = ChaosLayer::<u64, &'static str>::builder()
+    // Types inferred from closure signature
+    let layer = ChaosLayer::builder()
         .name("error_chaos")
         .error_rate(1.0)
-        .error_fn(|_req| "injected_error")
+        .error_fn(|_req: &u64| "injected_error")
         .build();
 
     let service = tower::service_fn(|_: u64| async { Ok::<_, &'static str>("success") });
@@ -34,7 +35,8 @@ async fn chaos_error_injection_metrics() {
 async fn chaos_latency_injection_metrics() {
     init_recorder();
 
-    let layer = ChaosLayer::<u64, &'static str>::builder()
+    // Latency-only chaos - no type parameters needed!
+    let layer = ChaosLayer::builder()
         .name("latency_chaos")
         .latency_rate(1.0)
         .min_latency(Duration::from_millis(10))
@@ -61,10 +63,10 @@ async fn chaos_latency_injection_metrics() {
 async fn chaos_passthrough_metrics() {
     init_recorder();
 
-    let layer = ChaosLayer::<u64, &'static str>::builder()
+    // Latency-only chaos with 0% rate - all pass through
+    let layer = ChaosLayer::builder()
         .name("passthrough_chaos")
-        .error_rate(0.0)
-        .error_fn(|_req| "error")
+        .latency_rate(0.0)
         .build();
 
     let service = tower::service_fn(|_: u64| async { Ok::<_, &'static str>("success") });

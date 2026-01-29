@@ -41,7 +41,7 @@ async fn test_parallel_mode_fires_all_immediately() {
         }
     });
 
-    let layer = HedgeLayer::<String, String, TestError>::builder()
+    let layer = HedgeLayer::builder()
         .no_delay() // Parallel mode
         .max_hedged_attempts(3)
         .build();
