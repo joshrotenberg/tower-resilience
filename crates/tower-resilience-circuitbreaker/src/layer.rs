@@ -120,6 +120,96 @@ impl CircuitBreakerLayer<DefaultClassifier> {
     pub fn builder() -> crate::CircuitBreakerConfigBuilder<DefaultClassifier> {
         crate::CircuitBreakerConfigBuilder::new()
     }
+
+    // =========================================================================
+    // Presets
+    // =========================================================================
+
+    /// Preset: Standard balanced circuit breaker configuration.
+    ///
+    /// Configuration:
+    /// - 50% failure rate threshold
+    /// - 100 call sliding window
+    /// - 30 second wait duration in open state
+    /// - 3 permitted calls in half-open state
+    ///
+    /// This is a balanced configuration suitable for most use cases.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// // Use as-is
+    /// let layer = CircuitBreakerLayer::standard().build();
+    ///
+    /// // Or customize further
+    /// let layer = CircuitBreakerLayer::standard()
+    ///     .name("my-service")
+    ///     .build();
+    /// ```
+    pub fn standard() -> crate::CircuitBreakerConfigBuilder<DefaultClassifier> {
+        use std::time::Duration;
+        Self::builder()
+            .failure_rate_threshold(0.5)
+            .sliding_window_size(100)
+            .wait_duration_in_open(Duration::from_secs(30))
+            .permitted_calls_in_half_open(3)
+    }
+
+    /// Preset: Fast-fail circuit breaker for latency-sensitive scenarios.
+    ///
+    /// Configuration:
+    /// - 25% failure rate threshold (opens quickly)
+    /// - 20 call sliding window (reacts faster to failures)
+    /// - 10 second wait duration in open state
+    /// - 1 permitted call in half-open state
+    ///
+    /// Use this when you want to fail fast and protect downstream services
+    /// from cascading failures. Good for latency-sensitive applications.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// let layer = CircuitBreakerLayer::fast_fail().build();
+    /// ```
+    pub fn fast_fail() -> crate::CircuitBreakerConfigBuilder<DefaultClassifier> {
+        use std::time::Duration;
+        Self::builder()
+            .failure_rate_threshold(0.25)
+            .sliding_window_size(20)
+            .wait_duration_in_open(Duration::from_secs(10))
+            .permitted_calls_in_half_open(1)
+    }
+
+    /// Preset: Tolerant circuit breaker for resilient scenarios.
+    ///
+    /// Configuration:
+    /// - 75% failure rate threshold (tolerates more failures)
+    /// - 200 call sliding window (smoother failure rate)
+    /// - 60 second wait duration in open state
+    /// - 5 permitted calls in half-open state
+    ///
+    /// Use this when you want to tolerate more failures before opening,
+    /// such as when calling services that occasionally have transient issues.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// let layer = CircuitBreakerLayer::tolerant().build();
+    /// ```
+    pub fn tolerant() -> crate::CircuitBreakerConfigBuilder<DefaultClassifier> {
+        use std::time::Duration;
+        Self::builder()
+            .failure_rate_threshold(0.75)
+            .sliding_window_size(200)
+            .wait_duration_in_open(Duration::from_secs(60))
+            .permitted_calls_in_half_open(5)
+    }
 }
 
 // Implement Layer<S> for DefaultClassifier - works with any service

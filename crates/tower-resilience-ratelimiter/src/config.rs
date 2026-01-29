@@ -326,4 +326,28 @@ mod tests {
             .build();
         // If this compiles and doesn't panic, the event listener registration works
     }
+
+    #[test]
+    fn test_preset_per_second() {
+        let _layer = RateLimiterLayer::per_second(100).build();
+    }
+
+    #[test]
+    fn test_preset_per_minute() {
+        let _layer = RateLimiterLayer::per_minute(1000).build();
+    }
+
+    #[test]
+    fn test_preset_burst() {
+        let _layer = RateLimiterLayer::burst(100, 50).build();
+    }
+
+    #[test]
+    fn test_preset_with_customization() {
+        // Verify presets can be further customized
+        let _layer = RateLimiterLayer::per_second(100)
+            .timeout_duration(Duration::from_secs(2))
+            .name("custom")
+            .build();
+    }
 }

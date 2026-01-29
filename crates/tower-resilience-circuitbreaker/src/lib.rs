@@ -1062,4 +1062,28 @@ mod tests {
         assert_eq!(metrics.failure_count, 1);
         assert!((metrics.failure_rate - 0.333).abs() < 0.01);
     }
+
+    #[test]
+    fn test_preset_standard() {
+        let _layer = CircuitBreakerLayer::standard().build();
+    }
+
+    #[test]
+    fn test_preset_fast_fail() {
+        let _layer = CircuitBreakerLayer::fast_fail().build();
+    }
+
+    #[test]
+    fn test_preset_tolerant() {
+        let _layer = CircuitBreakerLayer::tolerant().build();
+    }
+
+    #[test]
+    fn test_preset_with_customization() {
+        // Verify presets can be further customized
+        let _layer = CircuitBreakerLayer::standard()
+            .name("my-service")
+            .failure_rate_threshold(0.6)
+            .build();
+    }
 }

@@ -341,4 +341,28 @@ mod tests {
         };
         assert_eq!(event.event_type(), "call_failed");
     }
+
+    #[test]
+    fn test_preset_small() {
+        let _layer = BulkheadLayer::small().build();
+    }
+
+    #[test]
+    fn test_preset_medium() {
+        let _layer = BulkheadLayer::medium().build();
+    }
+
+    #[test]
+    fn test_preset_large() {
+        let _layer = BulkheadLayer::large().build();
+    }
+
+    #[test]
+    fn test_preset_with_customization() {
+        // Verify presets can be further customized
+        let _layer = BulkheadLayer::small()
+            .max_wait_duration(Duration::from_secs(5))
+            .name("custom")
+            .build();
+    }
 }
