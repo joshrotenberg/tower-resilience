@@ -489,23 +489,106 @@ let service = chaos.layer(my_service);
 
 ## Error Handling
 
-`ResilienceError<E>` provides a unified error type for composed layers:
+When composing multiple resilience layers, each layer has its own error type (e.g., `CircuitBreakerError`, `BulkheadError`). The `ResilienceError<E>` type unifies these into a single error type, eliminating boilerplate.
+
+### The Problem
+
+Without a unified error type, you'd need `From` implementations for every layer combination:
+
+```rust
+// Without ResilienceError: ~80 lines of boilerplate for 4 layers
+impl From<BulkheadError> for ServiceError { /* ... */ }
+impl From<CircuitBreakerError> for ServiceError { /* ... */ }
+impl From<RateLimiterError> for ServiceError { /* ... */ }
+impl From<TimeLimiterError> for ServiceError { /* ... */ }
+```
+
+### The Solution
+
+Use `ResilienceError<E>` as your service error type - all layer errors automatically convert:
 
 ```rust
 use tower_resilience_core::ResilienceError;
 
+// Your application error
+#[derive(Debug, Clone)]
+enum AppError {
+    DatabaseDown,
+    InvalidRequest,
+}
+
+// That's it! Zero From implementations needed
 type ServiceError = ResilienceError<AppError>;
-
-let service = ServiceBuilder::new()
-    .layer(timeout_layer)
-    .layer(circuit_breaker)
-    .layer(bulkhead)
-    .service(my_service);
-
-// Check error types
-if err.is_timeout() { /* ... */ }
-if err.is_rate_limited() { /* ... */ }
 ```
+
+### Pattern Matching
+
+Handle different failure modes explicitly:
+
+```rust
+use tower_resilience_core::ResilienceError;
+
+fn handle_error<E: std::fmt::Display>(error: ResilienceError<E>) {
+    match error {
+        ResilienceError::Timeout { layer } => {
+            eprintln!("Timeout in {}", layer);
+        }
+        ResilienceError::CircuitOpen { name } => {
+            eprintln!("Circuit breaker {:?} is open - fail fast", name);
+        }
+        ResilienceError::BulkheadFull { concurrent_calls, max_concurrent } => {
+            eprintln!("Bulkhead full: {}/{} - try again later", concurrent_calls, max_concurrent);
+        }
+        ResilienceError::RateLimited { retry_after } => {
+            if let Some(duration) = retry_after {
+                eprintln!("Rate limited, retry after {:?}", duration);
+            }
+        }
+        ResilienceError::Application(app_err) => {
+            eprintln!("Application error: {}", app_err);
+        }
+    }
+}
+```
+
+### Helper Methods
+
+Quickly check error categories:
+
+```rust
+if err.is_timeout() {
+    // Handle timeout from any layer (TimeLimiter or Bulkhead)
+}
+
+if err.is_circuit_open() {
+    // Circuit breaker is protecting the system
+}
+
+if err.is_rate_limited() {
+    // Backpressure - slow down
+}
+
+if err.is_application() {
+    // Get the underlying application error
+    if let Some(app_err) = err.application_error() {
+        // Handle app-specific error
+    }
+}
+```
+
+### When to Use
+
+**Use `ResilienceError<E>` when:**
+- Building new services with multiple resilience layers
+- You want zero boilerplate error handling
+- Standard error categorization is sufficient
+
+**Use manual `From` implementations when:**
+- You need very specific error semantics
+- Integrating with legacy error types
+- You need specialized error logging per layer
+
+See the [`tower_resilience_core::error`](https://docs.rs/tower-resilience-core/latest/tower_resilience_core/error/) module for full documentation.
 
 ## Pattern Composition
 

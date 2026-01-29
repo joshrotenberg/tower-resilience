@@ -176,6 +176,98 @@
 //! See [benchmarks] for detailed measurements.
 //!
 //! [benchmarks]: https://github.com/joshrotenberg/tower-resilience#performance
+//!
+//! # Error Handling
+//!
+//! When composing multiple resilience layers, each layer has its own error type.
+//! [`core::ResilienceError<E>`] unifies these into a single error type, eliminating
+//! boilerplate `From` implementations.
+//!
+//! ## Quick Setup
+//!
+//! ```rust
+//! use tower_resilience_core::ResilienceError;
+//!
+//! // Your application error
+//! #[derive(Debug, Clone)]
+//! enum AppError {
+//!     DatabaseDown,
+//!     InvalidRequest,
+//! }
+//!
+//! impl std::fmt::Display for AppError {
+//!     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//!         match self {
+//!             AppError::DatabaseDown => write!(f, "Database down"),
+//!             AppError::InvalidRequest => write!(f, "Invalid request"),
+//!         }
+//!     }
+//! }
+//!
+//! impl std::error::Error for AppError {}
+//!
+//! // Use ResilienceError as your service error type - zero From impls needed!
+//! type ServiceError = ResilienceError<AppError>;
+//! ```
+//!
+//! ## Pattern Matching
+//!
+//! ```rust
+//! use tower_resilience_core::ResilienceError;
+//!
+//! # #[derive(Debug)]
+//! # struct AppError;
+//! # impl std::fmt::Display for AppError {
+//! #     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }
+//! # }
+//! # impl std::error::Error for AppError {}
+//! fn handle_error(error: ResilienceError<AppError>) {
+//!     match error {
+//!         ResilienceError::Timeout { layer } => {
+//!             eprintln!("Timeout in {}", layer);
+//!         }
+//!         ResilienceError::CircuitOpen { name } => {
+//!             eprintln!("Circuit breaker {:?} is open", name);
+//!         }
+//!         ResilienceError::BulkheadFull { concurrent_calls, max_concurrent } => {
+//!             eprintln!("Bulkhead full: {}/{}", concurrent_calls, max_concurrent);
+//!         }
+//!         ResilienceError::RateLimited { retry_after } => {
+//!             eprintln!("Rate limited, retry after {:?}", retry_after);
+//!         }
+//!         ResilienceError::Application(app_err) => {
+//!             eprintln!("Application error: {}", app_err);
+//!         }
+//!     }
+//! }
+//! ```
+//!
+//! ## Helper Methods
+//!
+//! ```rust
+//! # use tower_resilience_core::ResilienceError;
+//! # #[derive(Debug)]
+//! # struct AppError;
+//! # impl std::fmt::Display for AppError {
+//! #     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }
+//! # }
+//! # impl std::error::Error for AppError {}
+//! # fn example(error: ResilienceError<AppError>) {
+//! // Quickly check error categories
+//! if error.is_timeout() {
+//!     // Handle timeout from TimeLimiter or Bulkhead
+//! } else if error.is_circuit_open() {
+//!     // Circuit breaker protecting the system
+//! } else if error.is_rate_limited() {
+//!     // Backpressure - slow down
+//! } else if error.is_application() {
+//!     // Extract the underlying application error
+//!     let app_err = error.application_error();
+//! }
+//! # }
+//! ```
+//!
+//! For complete documentation, see [`core::ResilienceError`].
 
 // Documentation modules
 pub mod composition;
