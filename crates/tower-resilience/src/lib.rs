@@ -11,6 +11,72 @@
 //! tower-resilience = { version = "0.4", features = ["circuitbreaker", "bulkhead"] }
 //! ```
 //!
+//! # Presets: Get Started Immediately
+//!
+//! Every pattern includes **preset configurations** with sensible defaults.
+//! Start immediately without tuning parameters - customize later when needed:
+//!
+//! ```rust,no_run
+//! # #[cfg(all(feature = "retry", feature = "circuitbreaker", feature = "ratelimiter", feature = "bulkhead"))]
+//! # {
+//! use tower_resilience::retry::RetryLayer;
+//! use tower_resilience::circuitbreaker::CircuitBreakerLayer;
+//! use tower_resilience::ratelimiter::RateLimiterLayer;
+//! use tower_resilience::bulkhead::BulkheadLayer;
+//!
+//! # #[derive(Debug, Clone)]
+//! # struct MyError;
+//! // Retry: 3 attempts with 100ms exponential backoff
+//! let retry = RetryLayer::<(), MyError>::exponential_backoff().build();
+//!
+//! // Circuit breaker: balanced defaults (50% threshold, 100 call window)
+//! let breaker = CircuitBreakerLayer::standard().build();
+//!
+//! // Rate limiter: 100 requests per second
+//! let limiter = RateLimiterLayer::per_second(100).build();
+//!
+//! // Bulkhead: 50 concurrent calls
+//! let bulkhead = BulkheadLayer::medium().build();
+//! # }
+//! ```
+//!
+//! ## Available Presets
+//!
+//! | Pattern | Presets |
+//! |---------|---------|
+//! | **Retry** | [`exponential_backoff()`], [`aggressive()`], [`conservative()`] |
+//! | **Circuit Breaker** | [`standard()`], [`fast_fail()`], [`tolerant()`] |
+//! | **Rate Limiter** | [`per_second(n)`], [`per_minute(n)`], [`burst(rate, size)`] |
+//! | **Bulkhead** | [`small()`], [`medium()`], [`large()`] |
+//!
+//! Presets return builders, so you can customize any setting:
+//!
+//! ```rust,no_run
+//! # #[cfg(feature = "circuitbreaker")]
+//! # {
+//! use tower_resilience::circuitbreaker::CircuitBreakerLayer;
+//! use std::time::Duration;
+//!
+//! let breaker = CircuitBreakerLayer::fast_fail()
+//!     .name("payment-api")
+//!     .wait_duration_in_open(Duration::from_secs(30))
+//!     .build();
+//! # }
+//! ```
+//!
+//! [`exponential_backoff()`]: retry::RetryLayer::exponential_backoff
+//! [`aggressive()`]: retry::RetryLayer::aggressive
+//! [`conservative()`]: retry::RetryLayer::conservative
+//! [`standard()`]: circuitbreaker::CircuitBreakerLayer::standard
+//! [`fast_fail()`]: circuitbreaker::CircuitBreakerLayer::fast_fail
+//! [`tolerant()`]: circuitbreaker::CircuitBreakerLayer::tolerant
+//! [`per_second(n)`]: ratelimiter::RateLimiterLayer::per_second
+//! [`per_minute(n)`]: ratelimiter::RateLimiterLayer::per_minute
+//! [`burst(rate, size)`]: ratelimiter::RateLimiterLayer::burst
+//! [`small()`]: bulkhead::BulkheadLayer::small
+//! [`medium()`]: bulkhead::BulkheadLayer::medium
+//! [`large()`]: bulkhead::BulkheadLayer::large
+//!
 //! # Resilience Patterns
 //!
 //! - **[Circuit Breaker]** - Prevents cascading failures by stopping calls to failing services
