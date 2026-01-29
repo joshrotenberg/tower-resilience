@@ -240,6 +240,10 @@ let layer = HedgeLayer::<(), String, MyError>::builder()
 let service = layer.layer(my_service);
 ```
 
+**Note:** Hedge requires `Req: Clone` (requests are cloned for parallel execution) and `E: Clone` (for error handling). If your types don't implement Clone, consider wrapping them in `Arc`.
+
+**Full examples:** [hedge.rs](examples/hedge.rs)
+
 ### Reconnect
 
 Automatically reconnect on connection failures with configurable backoff:

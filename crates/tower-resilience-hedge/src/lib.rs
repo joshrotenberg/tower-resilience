@@ -87,6 +87,21 @@
 //! When one request succeeds, all other in-flight requests are cancelled
 //! by dropping their futures. This relies on the inner service supporting
 //! cooperative cancellation.
+//!
+//! # Type Requirements
+//!
+//! Hedging has specific trait bounds that differ from other resilience patterns:
+//!
+//! - **`Req: Clone`** - Required because the request is cloned to send parallel
+//!   requests. Each hedge attempt needs its own copy of the request.
+//!
+//! - **`E: Clone`** - Required for error handling. When multiple attempts fail,
+//!   errors need to be collected and stored to return the final error.
+//!
+//! If your request or error types don't implement `Clone`, consider:
+//! - Wrapping them in `Arc` (e.g., `Arc<MyRequest>`)
+//! - Using a different resilience pattern like Retry which doesn't require
+//!   cloning requests
 
 mod config;
 mod error;

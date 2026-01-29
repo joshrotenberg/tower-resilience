@@ -2,6 +2,20 @@
 //!
 //! This example demonstrates hedging to reduce tail latency by
 //! firing parallel requests when the primary is slow.
+//!
+//! # Type Requirements
+//!
+//! Hedge has specific trait bounds that differ from other resilience patterns:
+//!
+//! - **`Req: Clone`** - Required because requests are cloned for parallel execution.
+//!   Each hedge attempt needs its own copy of the request.
+//!
+//! - **`E: Clone`** - Required for error handling across multiple attempts.
+//!   When collecting errors from parallel requests, errors must be clonable.
+//!
+//! If your request or error types don't implement Clone, consider wrapping them
+//! in `Arc<T>` instead.
+//!
 //! Run with: cargo run --example hedge
 
 use std::sync::Arc;
