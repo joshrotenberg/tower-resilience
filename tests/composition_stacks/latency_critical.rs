@@ -60,7 +60,7 @@ async fn latency_mode_hedging_compiles() {
         .max_hedged_attempts(2)
         .build();
 
-    let timeout = TimeLimiterLayer::<LatencyCacheKey>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(100)) // Tight deadline
         .build();
 
@@ -79,7 +79,7 @@ async fn parallel_mode_hedging_compiles() {
         .max_hedged_attempts(3)
         .build();
 
-    let timeout = TimeLimiterLayer::<LatencyCacheKey>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50)) // Very tight deadline
         .build();
 
@@ -98,7 +98,7 @@ async fn dynamic_delay_hedging_compiles() {
         .max_hedged_attempts(3)
         .build();
 
-    let timeout = TimeLimiterLayer::<LatencyCacheKey>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(200))
         .build();
 

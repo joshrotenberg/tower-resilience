@@ -36,7 +36,7 @@ async fn total_timeout_bounds_all_retries() {
         .max_attempts(10) // Would take 5s+ without total timeout
         .build();
 
-    let total_timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let total_timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(1)) // Only allows ~2 attempts
         .build();
 
@@ -142,7 +142,7 @@ async fn timeout_terminates_slow_service() {
         Ok::<_, ApiError>(ApiResponse::new("too slow"))
     });
 
-    let timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
@@ -169,7 +169,7 @@ async fn timeout_error_is_identifiable() {
         Ok::<_, ApiError>(ApiResponse::new("never reached"))
     });
 
-    let timeout = TimeLimiterLayer::<ApiRequest>::builder()
+    let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50))
         .build();
 
