@@ -40,7 +40,6 @@ impl<Req> Default for TimeoutSource<Req> {
 /// Configuration for the time limiter pattern.
 pub struct TimeLimiterConfig<Req> {
     pub(crate) timeout_source: TimeoutSource<Req>,
-    #[allow(dead_code)]
     pub(crate) cancel_running_future: bool,
     pub(crate) event_listeners: EventListeners<TimeLimiterEvent>,
     pub(crate) name: String,
@@ -60,7 +59,7 @@ impl<Req> TimeLimiterConfigBuilder<Req> {
     pub fn new() -> Self {
         Self {
             timeout_source: TimeoutSource::default(),
-            cancel_running_future: false,
+            cancel_running_future: true,
             event_listeners: EventListeners::new(),
             name: String::from("<unnamed>"),
             _phantom: PhantomData,
@@ -148,13 +147,13 @@ impl<Req> TimeLimiterConfigBuilder<Req> {
         self
     }
 
-    /// Sets whether to attempt to cancel the running future when a timeout occurs.
+    /// Sets whether to cancel the running future when a timeout occurs.
     ///
-    /// When true, the future will be dropped on timeout, potentially canceling
+    /// When true (the default), the future will be dropped on timeout, canceling
     /// ongoing work. When false, the future continues running in the background
     /// but its result is ignored.
     ///
-    /// Default: false
+    /// Default: true
     pub fn cancel_running_future(mut self, cancel: bool) -> Self {
         self.cancel_running_future = cancel;
         self

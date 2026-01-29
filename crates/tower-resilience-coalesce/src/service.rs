@@ -12,6 +12,12 @@ use std::task::{Context, Poll};
 use tokio::sync::broadcast;
 use tower_service::Service;
 
+#[cfg(feature = "metrics")]
+use metrics::{counter, describe_counter};
+
+#[cfg(feature = "tracing")]
+use tracing::debug;
+
 /// Error type for coalesced requests.
 #[derive(Debug)]
 pub enum CoalesceError<E> {
@@ -126,6 +132,14 @@ where
 {
     /// Create a new coalescing service.
     pub fn new(inner: S, config: Arc<CoalesceConfig<K, F>>) -> Self {
+        #[cfg(feature = "metrics")]
+        {
+            describe_counter!(
+                "coalesce_requests_total",
+                "Total number of requests processed by the coalesce layer"
+            );
+        }
+
         Self {
             inner,
             config,
@@ -170,12 +184,31 @@ where
     fn call(&mut self, request: Req) -> Self::Future {
         let key = (self.config.key_extractor)(&request);
 
+        #[cfg(any(feature = "metrics", feature = "tracing"))]
+        let name = self.config.name.as_deref().unwrap_or("<unnamed>");
+
         // Check if there's already an in-flight request for this key
         if let Some(receiver) = self.in_flight.try_join(key.clone()) {
             // Wait for the leader's result
+            #[cfg(feature = "metrics")]
+            {
+                counter!("coalesce_requests_total", "coalesce" => name.to_string(), "role" => "waiter").increment(1);
+            }
+
+            #[cfg(feature = "tracing")]
+            debug!(coalesce = %name, "Request coalesced as waiter");
+
             CoalesceFuture::Waiting { receiver }
         } else {
             // We're the leader, execute the request
+            #[cfg(feature = "metrics")]
+            {
+                counter!("coalesce_requests_total", "coalesce" => name.to_string(), "role" => "leader").increment(1);
+            }
+
+            #[cfg(feature = "tracing")]
+            debug!(coalesce = %name, "Request executing as leader");
+
             let future = self.inner.call(request);
             let in_flight = Arc::clone(&self.in_flight);
 

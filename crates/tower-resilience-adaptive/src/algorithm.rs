@@ -4,7 +4,7 @@
 //! concurrency limits based on observed latency and error rates.
 
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tower_resilience_core::aimd::{AimdConfig, AimdController};
 
 /// Trait for adaptive concurrency control algorithms.
@@ -187,9 +187,6 @@ pub struct Vegas {
     smoothing: f64,
     /// Smoothed RTT in nanoseconds
     smoothed_rtt_nanos: AtomicU64,
-    /// When the algorithm started (for warmup)
-    #[allow(dead_code)]
-    start_time: Instant,
     /// Number of samples collected
     sample_count: AtomicUsize,
     /// Minimum samples before adjusting
@@ -214,7 +211,6 @@ impl Vegas {
             beta,
             smoothing: 0.5,
             smoothed_rtt_nanos: AtomicU64::new(0),
-            start_time: Instant::now(),
             sample_count: AtomicUsize::new(0),
             min_samples: 10,
         }
