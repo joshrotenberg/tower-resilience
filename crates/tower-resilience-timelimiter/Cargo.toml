@@ -15,7 +15,7 @@ categories = ["asynchronous", "network-programming"]
 tower-resilience-core = { workspace = true }
 tower = { workspace = true }
 futures = { workspace = true }
-tokio = { workspace = true, features = ["time"] }
+tokio = { workspace = true, features = ["time", "rt", "sync", "macros"] }
 
 # Optional dependencies
 metrics = { workspace = true, optional = true }

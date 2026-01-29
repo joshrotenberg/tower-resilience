@@ -261,12 +261,39 @@ where
 
         // Extract timeout from request before moving it
         let timeout_duration = config.timeout_source.get_timeout(&req);
+        let cancel_on_timeout = config.cancel_running_future;
 
         Box::pin(async move {
             let start = Instant::now();
 
-            match timeout(timeout_duration, inner.call(req)).await {
-                Ok(Ok(response)) => {
+            // Use Option to represent timeout (None = timed out, Some = got result)
+            let result: Option<Result<S::Response, S::Error>> = if cancel_on_timeout {
+                // Default behavior: timeout cancels the future by dropping it
+                timeout(timeout_duration, inner.call(req)).await.ok()
+            } else {
+                // Non-cancelling behavior: spawn the future and let it continue on timeout
+                let (tx, rx) = tokio::sync::oneshot::channel();
+
+                tokio::spawn(async move {
+                    let result = inner.call(req).await;
+                    // Ignore send error - receiver may have been dropped on timeout
+                    let _ = tx.send(result);
+                });
+
+                tokio::select! {
+                    result = rx => {
+                        // Task completed - unwrap the channel result
+                        result.ok()
+                    }
+                    _ = tokio::time::sleep(timeout_duration) => {
+                        // Timeout fired, but the spawned task continues running
+                        None
+                    }
+                }
+            };
+
+            match result {
+                Some(Ok(response)) => {
                     let duration = start.elapsed();
                     config.event_listeners.emit(&TimeLimiterEvent::Success {
                         pattern_name: config.name.clone(),
@@ -290,7 +317,7 @@ where
 
                     Ok(response)
                 }
-                Ok(Err(err)) => {
+                Some(Err(err)) => {
                     let duration = start.elapsed();
                     config.event_listeners.emit(&TimeLimiterEvent::Error {
                         pattern_name: config.name.clone(),
@@ -314,7 +341,7 @@ where
 
                     Err(TimeLimiterError::Inner(err))
                 }
-                Err(_elapsed) => {
+                None => {
                     config.event_listeners.emit(&TimeLimiterEvent::Timeout {
                         pattern_name: config.name.clone(),
                         timestamp: Instant::now(),
