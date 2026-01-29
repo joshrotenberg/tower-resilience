@@ -9,10 +9,7 @@ pub struct CoalesceConfig<K, F> {
     pub(crate) key_extractor: F,
     /// Optional name for metrics/tracing.
     /// Only used when `metrics` or `tracing` features are enabled.
-    #[cfg_attr(
-        not(any(feature = "metrics", feature = "tracing")),
-        allow(dead_code)
-    )]
+    #[cfg_attr(not(any(feature = "metrics", feature = "tracing")), allow(dead_code))]
     pub(crate) name: Option<String>,
     /// Marker for the key type.
     pub(crate) _key: PhantomData<K>,
