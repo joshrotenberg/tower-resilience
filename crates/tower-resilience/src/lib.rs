@@ -8,7 +8,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! tower-resilience = { version = "0.5", features = ["circuitbreaker", "bulkhead"] }
+//! tower-resilience = { version = "0.7", features = ["circuitbreaker", "bulkhead"] }
 //! ```
 //!
 //! # Presets: Get Started Immediately
