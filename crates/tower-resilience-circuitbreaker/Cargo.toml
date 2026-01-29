@@ -25,9 +25,13 @@ serde = { workspace = true, optional = true }
 
 [features]
 default = []
+# Enable Prometheus metrics (state transitions, call counts, latency histograms)
 metrics = ["dep:metrics", "dep:metrics-util"]
+# Enable distributed tracing via the tracing crate
 tracing = ["dep:tracing"]
+# Enable serde serialization for circuit breaker state
 serde = ["dep:serde"]
+# Allow health checks to control circuit state (used with healthcheck crate)
 health-integration = ["tower-resilience-core/health-integration"]
 
 [dev-dependencies]

@@ -32,23 +32,39 @@ tower-resilience-coalesce = { version = "0.7.0", path = "../tower-resilience-coa
 
 [features]
 default = []
-# Individual patterns
+
+# Resilience patterns - enable the ones you need
+# Circuit breaker: prevent cascading failures by stopping calls to failing services
 circuitbreaker = ["dep:tower-resilience-circuitbreaker"]
+# Bulkhead: isolate resources with concurrency limits
 bulkhead = ["dep:tower-resilience-bulkhead"]
+# Time limiter: enforce timeouts with cancellation support
 timelimiter = ["dep:tower-resilience-timelimiter"]
+# Cache: response memoization to reduce load
 cache = ["dep:tower-resilience-cache"]
+# Retry: automatic retries with exponential backoff and jitter
 retry = ["dep:tower-resilience-retry"]
+# Rate limiter: control request rate with fixed or sliding windows
 ratelimiter = ["dep:tower-resilience-ratelimiter"]
+# Reconnect: automatic reconnection with configurable backoff
 reconnect = ["dep:tower-resilience-reconnect"]
+# Health check: proactive health monitoring with resource selection
 healthcheck = ["dep:tower-resilience-healthcheck"]
+# Fallback: provide alternative responses when services fail
 fallback = ["dep:tower-resilience-fallback"]
+# Hedge: reduce tail latency by racing parallel requests
 hedge = ["dep:tower-resilience-hedge"]
+# Executor: delegate processing to dedicated thread pools
 executor = ["dep:tower-resilience-executor"]
+# Adaptive: dynamic concurrency limiting (AIMD/Vegas algorithms)
 adaptive = ["dep:tower-resilience-adaptive"]
+# Coalesce: deduplicate concurrent identical requests (singleflight)
 coalesce = ["dep:tower-resilience-coalesce"]
-# Enable all patterns
+
+# Enable all patterns at once
 full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry", "ratelimiter", "reconnect", "healthcheck", "fallback", "hedge", "executor", "adaptive", "coalesce"]
-# Health check and circuit breaker integration
+
+# Integration: health checks can proactively open/close circuit breakers
 health-circuitbreaker = [
     "healthcheck",
     "circuitbreaker",

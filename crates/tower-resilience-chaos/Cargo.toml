@@ -27,5 +27,7 @@ tokio = { workspace = true, features = ["rt", "macros", "rt-multi-thread"] }
 
 [features]
 default = []
+# Enable distributed tracing via the tracing crate
 tracing = ["dep:tracing"]
+# Enable Prometheus metrics (injected errors, latency additions)
 metrics = ["dep:metrics"]

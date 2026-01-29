@@ -22,7 +22,11 @@ tower-layer = "0.3"
 
 [features]
 default = []
+# Enable random selection strategy for load balancing across healthy resources
 random = ["dep:rand"]
+# Enable distributed tracing support (placeholder for future implementation)
 tracing = []
+# Enable health-triggered control of other patterns (e.g., circuit breakers)
 triggers = ["dep:tower-resilience-core", "tower-resilience-core/health-integration"]
+# Enable all optional features
 full = ["random", "tracing"]

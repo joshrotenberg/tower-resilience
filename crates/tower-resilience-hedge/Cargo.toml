@@ -12,7 +12,9 @@ categories = ["asynchronous", "network-programming"]
 
 [features]
 default = []
+# Enable Prometheus metrics (hedge attempts, winner source, latency)
 metrics = ["dep:metrics"]
+# Enable distributed tracing via the tracing crate
 tracing = ["dep:tracing"]
 
 [dependencies]
