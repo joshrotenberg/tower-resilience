@@ -7,21 +7,18 @@ pub type RetryPredicate<E> = Arc<dyn Fn(&E) -> bool + Send + Sync>;
 
 /// Policy for retry behavior.
 ///
-/// This policy combines the interval function (backoff strategy),
-/// maximum attempts, and retry predicate (which errors to retry).
+/// This policy combines the interval function (backoff strategy)
+/// and retry predicate (which errors to retry). Maximum attempts
+/// are configured separately via `MaxAttemptsSource` in the config.
 pub struct RetryPolicy<E> {
-    /// Default max attempts (may be overridden per-request via MaxAttemptsSource)
-    #[allow(dead_code)]
-    pub(crate) max_attempts: usize,
     pub(crate) interval_fn: Arc<dyn IntervalFunction>,
     pub(crate) retry_predicate: Option<RetryPredicate<E>>,
 }
 
 impl<E> RetryPolicy<E> {
     /// Creates a new retry policy.
-    pub fn new(max_attempts: usize, interval_fn: Arc<dyn IntervalFunction>) -> Self {
+    pub fn new(interval_fn: Arc<dyn IntervalFunction>) -> Self {
         Self {
-            max_attempts,
             interval_fn,
             retry_predicate: None,
         }
@@ -63,7 +60,7 @@ mod tests {
 
     #[test]
     fn test_retry_all_by_default() {
-        let policy = RetryPolicy::new(3, Arc::new(FixedInterval::new(Duration::from_secs(1))));
+        let policy = RetryPolicy::new(Arc::new(FixedInterval::new(Duration::from_secs(1))));
 
         let error = TestError { retryable: false };
         assert!(policy.should_retry(&error));
@@ -71,7 +68,7 @@ mod tests {
 
     #[test]
     fn test_retry_predicate() {
-        let policy = RetryPolicy::new(3, Arc::new(FixedInterval::new(Duration::from_secs(1))))
+        let policy = RetryPolicy::new(Arc::new(FixedInterval::new(Duration::from_secs(1))))
             .with_retry_predicate(|e: &TestError| e.retryable);
 
         assert!(policy.should_retry(&TestError { retryable: true }));
@@ -81,7 +78,7 @@ mod tests {
     #[test]
     fn test_backoff_computation() {
         let policy: RetryPolicy<TestError> =
-            RetryPolicy::new(3, Arc::new(FixedInterval::new(Duration::from_secs(2))));
+            RetryPolicy::new(Arc::new(FixedInterval::new(Duration::from_secs(2))));
 
         assert_eq!(policy.next_backoff(0), Duration::from_secs(2));
         assert_eq!(policy.next_backoff(1), Duration::from_secs(2));

@@ -399,13 +399,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
             .interval_fn
             .unwrap_or_else(|| Arc::new(ExponentialBackoff::new(Duration::from_millis(100))));
 
-        // Use a default max_attempts for the policy (will be overridden per-request if dynamic)
-        let default_max_attempts = match &self.max_attempts_source {
-            MaxAttemptsSource::Fixed(n) => *n,
-            MaxAttemptsSource::Dynamic(_) => 3, // Default for policy, actual comes from request
-        };
-
-        let mut policy = RetryPolicy::new(default_max_attempts, interval_fn);
+        let mut policy = RetryPolicy::new(interval_fn);
         if let Some(predicate) = self.retry_predicate {
             policy.retry_predicate = Some(predicate);
         }
