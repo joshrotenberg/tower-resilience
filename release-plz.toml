@@ -5,6 +5,8 @@ git_release_enable = true
 git_tag_enable = true
 # Validate semantic versioning
 semver_check = true
+# Release all crates together to keep versions in sync
+release_always = true
 
 # Generate separate changelogs for each crate
 [[package]]
