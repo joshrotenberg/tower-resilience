@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_ratelimiter::{RateLimiterError, RateLimiterLayer, WindowType};
+use tower_resilience_ratelimiter::{RateLimiterLayer, RateLimiterServiceError, WindowType};
 
 #[tokio::main]
 async fn main() {
@@ -68,7 +68,7 @@ async fn demo_fixed_window() {
     for i in 1..=8 {
         match svc.ready().await.unwrap().call(()).await {
             Ok(_) => println!("   Request {}: permitted", i),
-            Err(RateLimiterError::RateLimitExceeded) => println!("   Request {}: rejected", i),
+            Err(RateLimiterServiceError::RateLimited) => println!("   Request {}: rejected", i),
         }
     }
 
@@ -110,7 +110,7 @@ async fn demo_sliding_log() {
     for i in 1..=8 {
         match svc.ready().await.unwrap().call(()).await {
             Ok(_) => println!("   Request {}: permitted", i),
-            Err(RateLimiterError::RateLimitExceeded) => println!("   Request {}: rejected", i),
+            Err(RateLimiterServiceError::RateLimited) => println!("   Request {}: rejected", i),
         }
     }
 
@@ -152,7 +152,7 @@ async fn demo_sliding_counter() {
     for i in 1..=8 {
         match svc.ready().await.unwrap().call(()).await {
             Ok(_) => println!("   Request {}: permitted", i),
-            Err(RateLimiterError::RateLimitExceeded) => println!("   Request {}: rejected", i),
+            Err(RateLimiterServiceError::RateLimited) => println!("   Request {}: rejected", i),
         }
     }
 

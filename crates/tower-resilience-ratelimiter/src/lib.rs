@@ -219,7 +219,7 @@ mod layer;
 mod limiter;
 
 pub use config::{RateLimiterConfig, RateLimiterConfigBuilder, WindowType};
-pub use error::RateLimiterError;
+pub use error::{RateLimiterError, RateLimiterServiceError};
 pub use events::RateLimiterEvent;
 pub use layer::RateLimiterLayer;
 
@@ -293,16 +293,17 @@ impl<S, Req> Service<Req> for RateLimiter<S>
 where
     S: Service<Req> + Clone + Send + 'static,
     S::Future: Send + 'static,
+    S::Error: Send + 'static,
     Req: Send + 'static,
 {
     type Response = S::Response;
-    type Error = RateLimiterError;
+    type Error = RateLimiterServiceError<S::Error>;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner
             .poll_ready(cx)
-            .map_err(|_| RateLimiterError::RateLimitExceeded)
+            .map_err(RateLimiterServiceError::Inner)
     }
 
     fn call(&mut self, req: Req) -> Self::Future {
@@ -346,7 +347,7 @@ where
                     inner
                         .call(req)
                         .await
-                        .map_err(|_| RateLimiterError::RateLimitExceeded)
+                        .map_err(RateLimiterServiceError::Inner)
                 }
                 Err(()) => {
                     // Rate limited
@@ -369,7 +370,7 @@ where
                         "Rate limit exceeded - permit rejected"
                     );
 
-                    Err(RateLimiterError::RateLimitExceeded)
+                    Err(RateLimiterServiceError::RateLimited)
                 }
             }
         })
@@ -455,7 +456,7 @@ mod tests {
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
-            RateLimiterError::RateLimitExceeded
+            RateLimiterServiceError::RateLimited
         ));
     }
 

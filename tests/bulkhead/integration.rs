@@ -5,26 +5,12 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::BulkheadError;
-use tower_resilience_bulkhead::BulkheadLayer;
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer, BulkheadServiceError};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 enum TestError {
-    Bulkhead(BulkheadError),
-    #[allow(dead_code)]
     Io(std::io::Error),
-}
-
-impl From<BulkheadError> for TestError {
-    fn from(e: BulkheadError) -> Self {
-        TestError::Bulkhead(e)
-    }
-}
-
-impl From<std::io::Error> for TestError {
-    fn from(e: std::io::Error) -> Self {
-        TestError::Io(e)
-    }
 }
 
 #[tokio::test]
@@ -94,7 +80,7 @@ async fn test_bulkhead_rejects_when_full_with_timeout() {
     let result = svc3.ready().await.unwrap().call(()).await;
     assert!(matches!(
         result,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 
     // Clean up

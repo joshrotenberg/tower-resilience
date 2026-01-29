@@ -318,3 +318,41 @@ impl<E> ResilienceError<E> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Debug, Clone)]
+    struct TestError;
+
+    impl fmt::Display for TestError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "test error")
+        }
+    }
+
+    impl std::error::Error for TestError {}
+
+    /// Compile-time assertion that ResilienceError is Send + Sync + 'static
+    /// when the inner error type is Send + Sync + 'static.
+    /// This is required for compatibility with tower's BoxError.
+    const _: () = {
+        const fn assert_send_sync_static<T: Send + Sync + 'static>() {}
+        assert_send_sync_static::<ResilienceError<TestError>>();
+    };
+
+    #[test]
+    fn test_into_box_error() {
+        let err: ResilienceError<TestError> = ResilienceError::Timeout { layer: "test" };
+        let boxed: Box<dyn std::error::Error + Send + Sync> = Box::new(err);
+        assert!(boxed.to_string().contains("Timeout"));
+    }
+
+    #[test]
+    fn test_application_error_into_box_error() {
+        let err: ResilienceError<TestError> = ResilienceError::Application(TestError);
+        let boxed: Box<dyn std::error::Error + Send + Sync> = Box::new(err);
+        assert!(boxed.to_string().contains("test error"));
+    }
+}

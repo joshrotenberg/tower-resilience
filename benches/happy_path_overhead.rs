@@ -4,7 +4,7 @@ use std::hint::black_box;
 use std::time::Duration;
 use tower::{Layer, Service, ServiceBuilder, ServiceExt};
 use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd};
-use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
+use tower_resilience_bulkhead::{BulkheadLayer, BulkheadServiceError};
 use tower_resilience_cache::CacheLayer;
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_coalesce::CoalesceLayer;
@@ -31,12 +31,6 @@ impl std::fmt::Display for TestError {
 }
 
 impl std::error::Error for TestError {}
-
-impl From<BulkheadError> for TestError {
-    fn from(_: BulkheadError) -> Self {
-        TestError
-    }
-}
 
 // Baseline service that just passes through
 #[derive(Clone)]
@@ -318,9 +312,12 @@ fn bench_composition_simple(c: &mut Criterion) {
 
     c.bench_function("composition_circuit_breaker_and_bulkhead", |b| {
         b.to_async(&runtime).iter(|| async {
-            let cb_layer = CircuitBreakerLayer::<TestResponse, TestError>::builder()
-                .failure_rate_threshold(0.5)
-                .build();
+            // CircuitBreaker wraps BulkheadServiceError<TestError> since Bulkhead now
+            // returns BulkheadServiceError<S::Error> instead of S::Error
+            let cb_layer =
+                CircuitBreakerLayer::<TestResponse, BulkheadServiceError<TestError>>::builder()
+                    .failure_rate_threshold(0.5)
+                    .build();
             let bh_config = BulkheadLayer::builder().max_concurrent_calls(100).build();
 
             let mut service = cb_layer.layer(

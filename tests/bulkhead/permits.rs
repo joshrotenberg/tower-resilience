@@ -3,19 +3,11 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_bulkhead::BulkheadError;
-use tower_resilience_bulkhead::BulkheadLayer;
+use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer, BulkheadServiceError};
 
 #[derive(Debug)]
 enum TestError {
-    Bulkhead(BulkheadError),
     Other(()),
-}
-
-impl From<BulkheadError> for TestError {
-    fn from(e: BulkheadError) -> Self {
-        TestError::Bulkhead(e)
-    }
 }
 
 #[tokio::test]
@@ -99,7 +91,10 @@ async fn test_permits_released_after_error() {
     // First call fails
     let mut s1 = service.clone();
     let r1 = s1.ready().await.unwrap().call("first".to_string()).await;
-    assert!(matches!(r1, Err(TestError::Other(_))));
+    assert!(matches!(
+        r1,
+        Err(BulkheadServiceError::Inner(TestError::Other(_)))
+    ));
 
     // Permit should be released, second call should succeed
     let mut s2 = service.clone();
@@ -224,7 +219,7 @@ async fn test_permits_not_leaked_on_timeout() {
     let r2 = s2.ready().await.unwrap().call("second".to_string()).await;
     assert!(matches!(
         r2,
-        Err(TestError::Bulkhead(BulkheadError::Timeout))
+        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
     ));
 
     // Wait for first call to complete
