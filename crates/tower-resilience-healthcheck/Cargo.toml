@@ -10,12 +10,12 @@ rust-version.workspace = true
 [dependencies]
 tokio = { version = "1.0", features = ["rt", "time", "sync"] }
 rand = { version = "0.9", optional = true }
-tower-resilience-core = { path = "../tower-resilience-core", optional = true }
+tower-resilience-core = { version = "0.7.0", path = "../tower-resilience-core", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
 wiremock = "0.6"
-tower-resilience-chaos = { path = "../tower-resilience-chaos" }
+tower-resilience-chaos = { version = "0.7.0", path = "../tower-resilience-chaos" }
 reqwest = "0.13"
 tower = "0.5"
 tower-layer = "0.3"
