@@ -21,6 +21,7 @@ metrics = { workspace = true, optional = true }
 default = []
 tracing = ["dep:tracing"]
 metrics = ["dep:metrics"]
+health-integration = []
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }

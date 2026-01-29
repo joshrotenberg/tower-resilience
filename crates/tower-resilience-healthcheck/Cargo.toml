@@ -10,6 +10,7 @@ rust-version = "1.75"
 [dependencies]
 tokio = { version = "1.0", features = ["rt", "time", "sync"] }
 rand = { version = "0.9", optional = true }
+tower-resilience-core = { path = "../tower-resilience-core", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
@@ -23,4 +24,5 @@ tower-layer = "0.3"
 default = []
 random = ["dep:rand"]
 tracing = []
+triggers = ["dep:tower-resilience-core", "tower-resilience-core/health-integration"]
 full = ["random", "tracing"]

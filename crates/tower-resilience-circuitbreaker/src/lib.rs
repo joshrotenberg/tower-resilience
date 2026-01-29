@@ -317,6 +317,8 @@ pub mod classifier;
 mod config;
 mod error;
 mod events;
+#[cfg(feature = "health-integration")]
+mod health_integration;
 mod layer;
 
 pub(crate) type FallbackFn<Req, Res, Err> =
@@ -384,9 +386,9 @@ pub fn circuit_breaker_builder() -> CircuitBreakerConfigBuilder<DefaultClassifie
 /// - `C`: The failure classifier type (e.g., `DefaultClassifier` or `FnClassifier<F>`)
 pub struct CircuitBreaker<S, C> {
     inner: S,
-    circuit: Arc<Mutex<Circuit>>,
+    pub(crate) circuit: Arc<Mutex<Circuit>>,
     state_atomic: Arc<std::sync::atomic::AtomicU8>,
-    config: Arc<CircuitBreakerConfig<C>>,
+    pub(crate) config: Arc<CircuitBreakerConfig<C>>,
 }
 
 impl<S, C> CircuitBreaker<S, C> {
@@ -618,9 +620,9 @@ where
 /// `Service<Req>` with fallback behavior when the circuit is open.
 pub struct CircuitBreakerWithFallback<S, C, Req, Res, Err> {
     inner: S,
-    circuit: Arc<Mutex<Circuit>>,
+    pub(crate) circuit: Arc<Mutex<Circuit>>,
     state_atomic: Arc<std::sync::atomic::AtomicU8>,
-    config: Arc<CircuitBreakerConfig<C>>,
+    pub(crate) config: Arc<CircuitBreakerConfig<C>>,
     fallback: SharedFallback<Req, Res, Err>,
     _phantom: std::marker::PhantomData<(Req, Res, Err)>,
 }

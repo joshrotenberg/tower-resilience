@@ -28,6 +28,7 @@ default = []
 metrics = ["dep:metrics", "dep:metrics-util"]
 tracing = ["dep:tracing"]
 serde = ["dep:serde"]
+health-integration = ["tower-resilience-core/health-integration"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }

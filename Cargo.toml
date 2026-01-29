@@ -44,6 +44,10 @@ harness = false
 name = "comprehensive_benchmarks"
 harness = false
 
+[[example]]
+name = "healthcheck_circuitbreaker"
+required-features = []
+
 [workspace]
 resolver = "2"
 members = [
