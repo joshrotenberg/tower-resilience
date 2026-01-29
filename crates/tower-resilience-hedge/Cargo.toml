@@ -1,6 +1,6 @@
 [package]
 name = "tower-resilience-hedge"
-version = "0.1.3"
+version = "0.1.4"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -16,7 +16,7 @@ metrics = ["dep:metrics"]
 tracing = ["dep:tracing"]
 
 [dependencies]
-tower-resilience-core = { version = "0.5.2", path = "../tower-resilience-core" }
+tower-resilience-core = { version = "0.6.0", path = "../tower-resilience-core" }
 tower = { workspace = true }
 tower-layer = { workspace = true }
 tower-service = { workspace = true }
