@@ -966,7 +966,7 @@ pub mod advanced {
     //!     .build()
     //!     .layer(base_service);
     //!
-    //! let with_circuit_breaker = CircuitBreakerLayer::<Request, MyError>::builder()
+    //! let with_circuit_breaker = CircuitBreakerLayer::builder()
     //!     .failure_rate_threshold(0.5)
     //!     .build()
     //!     .layer(with_retry);

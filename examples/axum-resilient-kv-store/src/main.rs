@@ -28,8 +28,8 @@ use std::{
     time::Duration,
 };
 use tokio::net::TcpListener;
-use tower::{Service, ServiceExt};
-use tower_resilience_circuitbreaker::{CircuitBreaker, CircuitBreakerLayer};
+use tower::{Layer, Service, ServiceExt};
+use tower_resilience_circuitbreaker::{CircuitBreaker, CircuitBreakerLayer, DefaultClassifier};
 
 /// Database request
 #[derive(Clone, Debug)]
@@ -101,7 +101,7 @@ impl tower::Service<DbRequest> for DatabaseService {
     }
 }
 
-type DbService = CircuitBreaker<DatabaseService, DbRequest, DbResponse, DbError>;
+type DbService = CircuitBreaker<DatabaseService, DefaultClassifier>;
 
 #[derive(Clone)]
 struct AppState {

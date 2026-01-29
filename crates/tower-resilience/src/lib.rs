@@ -77,7 +77,7 @@
 //! # async fn example() {
 //! # let http_client = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
 //! // Build a resilient HTTP client
-//! let circuit_breaker = CircuitBreakerLayer::<(), MyError>::builder()
+//! let circuit_breaker = CircuitBreakerLayer::builder()
 //!     .name("api-client")
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_size(100)
@@ -91,7 +91,7 @@
 //!
 //! // Compose manually for reliability
 //! let resilient_client = retry.layer(http_client);
-//! let resilient_client = circuit_breaker.layer::<_, ()>(resilient_client);
+//! let resilient_client = circuit_breaker.layer(resilient_client);
 //! # }
 //! # }
 //! ```

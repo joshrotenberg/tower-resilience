@@ -4,7 +4,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio::time::sleep;
-use tower::Service;
+use tower::{Layer, Service};
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_circuitbreaker::CircuitState;
 
@@ -21,7 +21,7 @@ async fn multiple_event_listeners() {
 
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(5)
@@ -68,7 +68,7 @@ async fn failure_classifier_all_success() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
     // Classifier that treats all results as success (even errors)
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -92,7 +92,7 @@ async fn failure_classifier_all_failure() {
     let service = tower::service_fn(|_req: ()| async { Ok::<(), &str>(()) });
 
     // Classifier that treats all results as failure (even successes)
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -121,7 +121,7 @@ async fn slow_call_exactly_at_threshold() {
     let slow_call_count = Arc::new(AtomicUsize::new(0));
     let sc = Arc::clone(&slow_call_count);
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.5)
         .sliding_window_size(10)
@@ -152,7 +152,7 @@ async fn slow_call_very_fast_calls() {
     let slow_call_count = Arc::new(AtomicUsize::new(0));
     let sc = Arc::clone(&slow_call_count);
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .slow_call_duration_threshold(Duration::from_secs(10))
         .slow_call_rate_threshold(0.5)
         .sliding_window_size(100)
@@ -195,7 +195,7 @@ async fn failure_classifier_mixed_error_types() {
     });
 
     // Only count "internal_error" as failures
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.4)
         .sliding_window_size(12)
         .minimum_number_of_calls(12)
@@ -247,7 +247,7 @@ async fn all_event_types_emitted() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(5)
@@ -306,7 +306,7 @@ async fn all_event_types_emitted() {
 async fn sliding_window_size_one() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(1)
         .minimum_number_of_calls(1)
@@ -337,7 +337,7 @@ async fn half_open_one_permitted_call() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(5)

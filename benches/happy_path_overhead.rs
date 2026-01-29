@@ -4,7 +4,7 @@ use std::hint::black_box;
 use std::time::Duration;
 use tower::{Layer, Service, ServiceBuilder, ServiceExt};
 use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd};
-use tower_resilience_bulkhead::{BulkheadLayer, BulkheadServiceError};
+use tower_resilience_bulkhead::BulkheadLayer;
 use tower_resilience_cache::CacheLayer;
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_coalesce::CoalesceLayer;
@@ -75,7 +75,7 @@ fn bench_circuit_breaker(c: &mut Criterion) {
 
     c.bench_function("circuitbreaker_closed", |b| {
         b.to_async(&runtime).iter(|| async {
-            let layer = CircuitBreakerLayer::<TestResponse, TestError>::builder()
+            let layer = CircuitBreakerLayer::builder()
                 .failure_rate_threshold(0.5)
                 .sliding_window_size(100)
                 .build();
@@ -314,10 +314,9 @@ fn bench_composition_simple(c: &mut Criterion) {
         b.to_async(&runtime).iter(|| async {
             // CircuitBreaker wraps BulkheadServiceError<TestError> since Bulkhead now
             // returns BulkheadServiceError<S::Error> instead of S::Error
-            let cb_layer =
-                CircuitBreakerLayer::<TestResponse, BulkheadServiceError<TestError>>::builder()
-                    .failure_rate_threshold(0.5)
-                    .build();
+            let cb_layer = CircuitBreakerLayer::builder()
+                .failure_rate_threshold(0.5)
+                .build();
             let bh_config = BulkheadLayer::builder().max_concurrent_calls(100).build();
 
             let mut service = cb_layer.layer(

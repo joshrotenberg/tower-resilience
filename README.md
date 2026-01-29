@@ -37,7 +37,7 @@ tower = "0.5"
 ```
 
 ```rust
-use tower::ServiceBuilder;
+use tower::{Layer, ServiceBuilder};
 use tower_resilience::prelude::*;
 
 let circuit_breaker = CircuitBreakerLayer::builder()
@@ -45,14 +45,12 @@ let circuit_breaker = CircuitBreakerLayer::builder()
     .build();
 
 let service = ServiceBuilder::new()
-    .layer(circuit_breaker.for_request::<()>())
+    .layer(circuit_breaker)
     .layer(BulkheadLayer::builder()
         .max_concurrent_calls(10)
         .build())
     .service(my_service);
 ```
-
-> **Note:** Use `for_request::<T>()` with the request type `T` your service handles so the circuit breaker can plug into `ServiceBuilder`. The `layer.layer(service)` method still works when you need direct control over the service value.
 
 ## Examples
 
@@ -61,10 +59,11 @@ let service = ServiceBuilder::new()
 Prevent cascading failures by opening the circuit when error rate exceeds threshold:
 
 ```rust
+use tower::Layer;
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use std::time::Duration;
 
-let layer = CircuitBreakerLayer::<String, ()>::builder()
+let layer = CircuitBreakerLayer::builder()
     .name("api-circuit")
     .failure_rate_threshold(0.5)          // Open at 50% failure rate
     .sliding_window_size(100)              // Track last 100 calls
@@ -444,7 +443,7 @@ type ServiceError = ResilienceError<AppError>;
 
 let service = ServiceBuilder::new()
     .layer(timeout_layer)
-    .layer(circuit_breaker.for_request::<()>())
+    .layer(circuit_breaker)
     .layer(bulkhead)
     .service(my_service);
 
@@ -463,7 +462,7 @@ use tower::ServiceBuilder;
 // Client-side: timeout -> circuit breaker -> retry
 let client = ServiceBuilder::new()
     .layer(timeout_layer)
-    .layer(circuit_breaker_layer.for_request::<()>())
+    .layer(circuit_breaker_layer)
     .layer(retry_layer)
     .service(http_client);
 

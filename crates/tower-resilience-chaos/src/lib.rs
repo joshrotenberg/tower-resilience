@@ -65,7 +65,7 @@
 //!     .build();
 //!
 //! // Wrap with a circuit breaker
-//! let circuit_breaker = CircuitBreakerLayer::<String, std::io::Error>::builder()
+//! let circuit_breaker = CircuitBreakerLayer::builder()
 //!     .name("test-breaker")
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_size(10)

@@ -89,7 +89,7 @@ async fn standard_stack_compiles() {
         .timeout_duration(Duration::from_secs(10))
         .build();
 
-    let circuit_breaker = CircuitBreakerLayer::<ApiRequest, ApiError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .build();
 
@@ -106,7 +106,7 @@ async fn standard_stack_compiles() {
 
     // Manual composition (recommended for 3+ layers)
     let with_timeout = per_attempt_timeout.layer(http_client);
-    let with_cb = circuit_breaker.layer::<_, ApiRequest>(with_timeout);
+    let with_cb = circuit_breaker.layer(with_timeout);
     let with_retry = retry.layer(with_cb);
     let _service = total_timeout.layer(with_retry);
 }
@@ -122,7 +122,7 @@ async fn full_stack_with_fallback_compiles() {
         .timeout_duration(Duration::from_secs(10))
         .build();
 
-    let circuit_breaker = CircuitBreakerLayer::<ApiRequest, ApiError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .wait_duration_in_open(Duration::from_secs(30))
         .build();
@@ -142,7 +142,7 @@ async fn full_stack_with_fallback_compiles() {
 
     // Manual composition
     let with_timeout = per_attempt_timeout.layer(http_client);
-    let with_cb = circuit_breaker.layer::<_, ApiRequest>(with_timeout);
+    let with_cb = circuit_breaker.layer(with_timeout);
     let with_retry = retry.layer(with_cb);
     let with_total_timeout = total_timeout.layer(with_retry);
     let _service = fallback.layer(with_total_timeout);
@@ -166,7 +166,7 @@ async fn stack_with_hedging_compiles() {
         .max_hedged_attempts(2)
         .build();
 
-    let circuit_breaker = CircuitBreakerLayer::<ApiRequest, ApiError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .build();
 
@@ -189,7 +189,7 @@ async fn stack_with_hedging_compiles() {
     // 5. Total timeout bounds everything
     let with_timeout = per_attempt_timeout.layer(http_client);
     let with_hedge = hedge.layer(with_timeout);
-    let with_cb = circuit_breaker.layer::<_, ApiRequest>(with_hedge);
+    let with_cb = circuit_breaker.layer(with_hedge);
     let with_retry = retry.layer(with_cb);
     let _service = total_timeout.layer(with_retry);
 }

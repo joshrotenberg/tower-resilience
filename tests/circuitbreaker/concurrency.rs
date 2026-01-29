@@ -3,7 +3,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 use std::time::Duration;
-use tower::Service;
+use tower::{Layer, Service};
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_circuitbreaker::CircuitState;
 
@@ -18,7 +18,7 @@ async fn concurrent_calls_closed_circuit() {
         async { Ok::<_, String>("success") }
     });
 
-    let layer = CircuitBreakerLayer::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(200)
         .minimum_number_of_calls(50)
@@ -26,9 +26,8 @@ async fn concurrent_calls_closed_circuit() {
         .name("concurrent-closed")
         .build();
 
-    let cb: Arc<
-        tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, (), &str, String>>,
-    > = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let cb: Arc<tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, _>>> =
+        Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
 
     // Spawn 100 concurrent tasks
     let mut handles = vec![];
@@ -58,7 +57,7 @@ async fn concurrent_calls_closed_circuit() {
 async fn concurrent_calls_open_circuit() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -120,7 +119,7 @@ async fn state_transition_during_concurrent_calls() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -129,9 +128,8 @@ async fn state_transition_during_concurrent_calls() {
         .name("transition-concurrent")
         .build();
 
-    let cb: Arc<
-        tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str>>,
-    > = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let cb: Arc<tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, _>>> =
+        Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
 
     // Spawn tasks that will cause state transitions
     let mut handles = vec![];
@@ -168,7 +166,7 @@ async fn state_transition_during_concurrent_calls() {
 async fn atomic_state_read_consistency() {
     let service = tower::service_fn(|_req: ()| async { Ok::<_, String>("success") });
 
-    let layer = CircuitBreakerLayer::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -176,9 +174,8 @@ async fn atomic_state_read_consistency() {
         .name("atomic-state")
         .build();
 
-    let cb: Arc<
-        tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, (), &str, String>>,
-    > = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let cb: Arc<tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, _>>> =
+        Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
 
     // Read state from multiple tasks concurrently
     let mut handles = vec![];
@@ -222,7 +219,7 @@ async fn concurrent_success_failure_recording() {
         }
     });
 
-    let layer = CircuitBreakerLayer::<&str, &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.7)
         .sliding_window_size(100)
         .minimum_number_of_calls(50)
@@ -230,9 +227,8 @@ async fn concurrent_success_failure_recording() {
         .name("concurrent-recording")
         .build();
 
-    let cb: Arc<
-        tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, (), &str, &str>>,
-    > = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
+    let cb: Arc<tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, _>>> =
+        Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
 
     let mut handles = vec![];
     for _ in 0..100 {
@@ -258,7 +254,7 @@ async fn concurrent_success_failure_recording() {
 async fn concurrent_half_open_calls() {
     let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
 
-    let layer = CircuitBreakerLayer::<(), &str>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
@@ -267,8 +263,7 @@ async fn concurrent_half_open_calls() {
         .name("concurrent-halfopen")
         .build();
 
-    let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, (), (), &str> =
-        layer.layer(service);
+    let mut cb = layer.layer(service);
 
     // Trip the circuit
     for _ in 0..5 {
@@ -312,7 +307,7 @@ async fn concurrent_service_clones() {
         async { Ok::<_, String>("success") }
     });
 
-    let layer = CircuitBreakerLayer::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
         .minimum_number_of_calls(50)
@@ -355,7 +350,7 @@ async fn concurrent_metrics_inspection() {
         Ok::<_, String>("success")
     });
 
-    let layer = CircuitBreakerLayer::<&str, String>::builder()
+    let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
         .minimum_number_of_calls(10)

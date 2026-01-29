@@ -3,7 +3,7 @@
 use super::helpers::*;
 use serial_test::serial;
 use std::time::Duration;
-use tower::{Service, ServiceExt};
+use tower::{Layer, Service, ServiceExt};
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 
 #[tokio::test]

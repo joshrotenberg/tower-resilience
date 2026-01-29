@@ -217,7 +217,7 @@ async fn scenario_circuit_breaker() {
     });
 
     // Circuit breaker to fail fast
-    let circuit_breaker = CircuitBreakerLayer::<Response, ClientError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(4)
         .minimum_number_of_calls(2)
@@ -314,7 +314,7 @@ async fn scenario_full_stack() {
     // Client resilience stack: Cache -> Circuit Breaker -> Retry
     // Note: Complex multi-layer stacks can hit trait bound limitations
     // In practice, layers can be applied at different architectural points
-    let circuit_breaker_layer = CircuitBreakerLayer::<Response, ClientError>::builder()
+    let circuit_breaker_layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.6)
         .sliding_window_size(6)
         .minimum_number_of_calls(3)
@@ -350,7 +350,7 @@ async fn scenario_full_stack() {
                 .build(),
         )
         // 2. Circuit breaker - fail fast when downstream is degraded
-        .layer(circuit_breaker_layer.for_request::<Request>())
+        .layer(circuit_breaker_layer)
         // 3. Retry - Handle transient failures
         .layer(
             RetryLayer::<Request, ClientError>::builder()

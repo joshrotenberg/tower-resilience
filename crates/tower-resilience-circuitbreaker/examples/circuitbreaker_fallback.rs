@@ -11,7 +11,7 @@
 use futures::future::BoxFuture;
 use std::sync::Arc;
 use std::time::Duration;
-use tower::{Service, ServiceExt};
+use tower::{Layer, Service, ServiceExt};
 use tower_resilience_circuitbreaker::{CircuitBreakerLayer, CircuitState};
 
 #[derive(Debug, Clone)]
@@ -92,7 +92,7 @@ async fn demo_static_fallback() {
 
     let service = FlakyService::new();
 
-    let circuit_breaker = CircuitBreakerLayer::<String, ServiceError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .name("static-fallback-demo")
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
@@ -139,7 +139,7 @@ async fn demo_cached_fallback() {
 
     let service = FlakyService::new();
 
-    let circuit_breaker = CircuitBreakerLayer::<String, ServiceError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .name("cache-fallback-demo")
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
@@ -186,7 +186,7 @@ async fn demo_degraded_fallback() {
 
     let service = FlakyService::new();
 
-    let circuit_breaker = CircuitBreakerLayer::<String, ServiceError>::builder()
+    let circuit_breaker = CircuitBreakerLayer::builder()
         .name("degraded-fallback-demo")
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
