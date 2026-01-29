@@ -48,6 +48,13 @@ adaptive = ["dep:tower-resilience-adaptive"]
 coalesce = ["dep:tower-resilience-coalesce"]
 # Enable all patterns
 full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry", "ratelimiter", "reconnect", "healthcheck", "fallback", "hedge", "executor", "adaptive", "coalesce"]
+# Health check and circuit breaker integration
+health-circuitbreaker = [
+    "healthcheck",
+    "circuitbreaker",
+    "tower-resilience-healthcheck/triggers",
+    "tower-resilience-circuitbreaker/health-integration"
+]
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }

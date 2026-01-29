@@ -8,6 +8,9 @@ use crate::HealthStatus;
 #[cfg(feature = "tracing")]
 use std::sync::Arc;
 
+#[cfg(feature = "triggers")]
+use tower_resilience_core::SharedHealthTrigger;
+
 /// Type alias for health change callback
 #[cfg(feature = "tracing")]
 type HealthChangeCallback = Arc<dyn Fn(&str, HealthStatus, HealthStatus) + Send + Sync>;
@@ -43,6 +46,10 @@ pub struct HealthCheckConfig {
 
     #[cfg(feature = "tracing")]
     pub(crate) on_check_failed: Option<CheckFailedCallback>,
+
+    /// Health triggers to notify on status changes
+    #[cfg(feature = "triggers")]
+    pub(crate) triggers: Vec<SharedHealthTrigger>,
 }
 
 impl Default for HealthCheckConfig {
@@ -58,6 +65,8 @@ impl Default for HealthCheckConfig {
             on_health_change: None,
             #[cfg(feature = "tracing")]
             on_check_failed: None,
+            #[cfg(feature = "triggers")]
+            triggers: Vec::new(),
         }
     }
 }
@@ -95,7 +104,6 @@ impl HealthCheckConfig {
 }
 
 /// Builder for `HealthCheckConfig`.
-#[derive(Default)]
 pub struct HealthCheckConfigBuilder {
     interval: Option<Duration>,
     initial_delay: Option<Duration>,
@@ -107,6 +115,28 @@ pub struct HealthCheckConfigBuilder {
     on_health_change: Option<HealthChangeCallback>,
     #[cfg(feature = "tracing")]
     on_check_failed: Option<CheckFailedCallback>,
+    #[cfg(feature = "triggers")]
+    triggers: Vec<SharedHealthTrigger>,
+}
+
+#[allow(clippy::derivable_impls)]
+impl Default for HealthCheckConfigBuilder {
+    fn default() -> Self {
+        Self {
+            interval: None,
+            initial_delay: None,
+            timeout: None,
+            success_threshold: None,
+            failure_threshold: None,
+            selection_strategy: None,
+            #[cfg(feature = "tracing")]
+            on_health_change: None,
+            #[cfg(feature = "tracing")]
+            on_check_failed: None,
+            #[cfg(feature = "triggers")]
+            triggers: Vec::new(),
+        }
+    }
 }
 
 impl HealthCheckConfigBuilder {
@@ -182,6 +212,30 @@ impl HealthCheckConfigBuilder {
         self
     }
 
+    /// Add a health trigger to notify on status changes.
+    ///
+    /// When the health status of a resource changes, all registered triggers
+    /// will be notified. This enables proactive control of circuit breakers
+    /// and other resilience patterns based on health check results.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use tower_resilience_healthcheck::HealthCheckConfig;
+    /// use tower_resilience_circuitbreaker::CircuitBreaker;
+    /// use std::sync::Arc;
+    ///
+    /// let circuit_breaker = Arc::new(/* ... */);
+    /// let config = HealthCheckConfig::builder()
+    ///     .with_trigger(circuit_breaker)
+    ///     .build();
+    /// ```
+    #[cfg(feature = "triggers")]
+    pub fn with_trigger(mut self, trigger: SharedHealthTrigger) -> Self {
+        self.triggers.push(trigger);
+        self
+    }
+
     /// Build the configuration.
     pub fn build(self) -> HealthCheckConfig {
         let default = HealthCheckConfig::default();
@@ -198,6 +252,8 @@ impl HealthCheckConfigBuilder {
             on_health_change: self.on_health_change,
             #[cfg(feature = "tracing")]
             on_check_failed: self.on_check_failed,
+            #[cfg(feature = "triggers")]
+            triggers: self.triggers,
         }
     }
 }

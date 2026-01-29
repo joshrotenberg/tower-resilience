@@ -51,6 +51,8 @@ mod checker;
 mod config;
 mod context;
 mod selector;
+#[cfg(feature = "triggers")]
+pub(crate) mod triggers;
 mod wrapper;
 
 pub use checker::HealthChecker;

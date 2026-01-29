@@ -115,6 +115,9 @@ where
                     #[cfg(feature = "tracing")]
                     let ctx_name = ctx.name.clone();
 
+                    #[cfg(feature = "triggers")]
+                    let triggers = config.triggers.clone();
+
                     let handle = tokio::spawn(async move {
                         // Perform health check with timeout
                         let check_result =
@@ -141,8 +144,8 @@ where
                             .as_millis() as u64;
                         ctx_clone.set_last_check(now);
 
-                        // Get old status for event callback
-                        #[cfg(feature = "tracing")]
+                        // Get old status for event callback and triggers
+                        #[cfg(any(feature = "tracing", feature = "triggers"))]
                         let old_status = ctx_clone.status();
 
                         // Update consecutive counters and status based on check result
@@ -168,14 +171,25 @@ where
                             }
                         }
 
+                        // Get new status for callbacks
+                        #[cfg(any(feature = "tracing", feature = "triggers"))]
+                        let new_status = ctx_clone.status();
+
                         // Emit health change event if status changed
                         #[cfg(feature = "tracing")]
                         {
-                            let new_status = ctx_clone.status();
                             if old_status != new_status {
                                 if let Some(ref callback) = on_health_change {
                                     callback(&ctx_clone.name, old_status, new_status);
                                 }
+                            }
+                        }
+
+                        // Notify triggers if status changed
+                        #[cfg(feature = "triggers")]
+                        {
+                            if old_status != new_status {
+                                crate::triggers::notify_triggers(&triggers, old_status, new_status);
                             }
                         }
                     });
@@ -364,6 +378,32 @@ where
     /// Set the full configuration.
     pub fn with_config(mut self, config: HealthCheckConfig) -> Self {
         self.config = config;
+        self
+    }
+
+    /// Add a health trigger to notify on status changes.
+    ///
+    /// When the health status of a resource changes, all registered triggers
+    /// will be notified. This enables proactive control of circuit breakers
+    /// and other resilience patterns based on health check results.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use tower_resilience_healthcheck::HealthCheckWrapper;
+    /// use tower_resilience_circuitbreaker::CircuitBreaker;
+    /// use std::sync::Arc;
+    ///
+    /// let circuit_breaker = Arc::new(/* ... */);
+    /// let wrapper = HealthCheckWrapper::builder()
+    ///     .with_context("api".to_string(), "api")
+    ///     .with_checker(/* ... */)
+    ///     .with_trigger(circuit_breaker)
+    ///     .build();
+    /// ```
+    #[cfg(feature = "triggers")]
+    pub fn with_trigger(mut self, trigger: tower_resilience_core::SharedHealthTrigger) -> Self {
+        self.config.triggers.push(trigger);
         self
     }
 
