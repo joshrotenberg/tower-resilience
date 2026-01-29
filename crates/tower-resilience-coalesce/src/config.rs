@@ -8,7 +8,6 @@ pub struct CoalesceConfig<K, F> {
     /// Function to extract a key from a request.
     pub(crate) key_extractor: F,
     /// Optional name for metrics/tracing.
-    #[allow(dead_code)]
     pub(crate) name: Option<String>,
     /// Marker for the key type.
     pub(crate) _key: PhantomData<K>,
