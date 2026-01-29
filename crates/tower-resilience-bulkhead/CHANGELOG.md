@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-bulkhead-v0.5.2...tower-resilience-bulkhead-v0.6.0) - 2026-01-29
+
+### Added
+
+- [**breaking**] use composite error types for Bulkhead and RateLimiter ([#194](https://github.com/joshrotenberg/tower-resilience/pull/194))
+
+### Other
+
+- [**breaking**] change BulkheadLayer::max_wait_duration to accept Duration ([#193](https://github.com/joshrotenberg/tower-resilience/pull/193))
+
 ## [0.5.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-bulkhead-v0.5.1...tower-resilience-bulkhead-v0.5.2) - 2026-01-02
 
 ### Fixed

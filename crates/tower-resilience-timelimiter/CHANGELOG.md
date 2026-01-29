@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-timelimiter-v0.4.2...tower-resilience-timelimiter-v0.5.0) - 2026-01-29
+
+### Other
+
+- [**breaking**] change BulkheadLayer::max_wait_duration to accept Duration ([#193](https://github.com/joshrotenberg/tower-resilience/pull/193))
+
 ## [0.4.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-timelimiter-v0.4.1...tower-resilience-timelimiter-v0.4.2) - 2026-01-02
 
 ### Fixed

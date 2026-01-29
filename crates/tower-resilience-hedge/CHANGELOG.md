@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-hedge-v0.1.3...tower-resilience-hedge-v0.1.4) - 2026-01-29
+
+### Other
+
+- updated the following local packages: tower-resilience-core
+
 ## [0.1.3](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-hedge-v0.1.2...tower-resilience-hedge-v0.1.3) - 2026-01-02
 
 ### Other
