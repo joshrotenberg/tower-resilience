@@ -162,6 +162,9 @@ use std::sync::Once;
 #[cfg(feature = "metrics")]
 static METRICS_INIT: Once = Once::new();
 
+/// Function that produces a fallback value (no Clone required).
+pub type ValueFn<Res> = Arc<dyn Fn() -> Res + Send + Sync>;
+
 /// Function that computes a fallback response from an error.
 pub type FromErrorFn<Res, E> = Arc<dyn Fn(&E) -> Res + Send + Sync>;
 
@@ -179,6 +182,9 @@ pub type ExceptionFn<E> = Arc<dyn Fn(E) -> E + Send + Sync>;
 pub enum FallbackStrategy<Req, Res, E> {
     /// Return a static value (cloned for each fallback).
     Value(Res),
+
+    /// Generate a value using a function (no Clone required).
+    ValueFn(ValueFn<Res>),
 
     /// Compute a response from the error.
     FromError(FromErrorFn<Res, E>),
@@ -201,6 +207,7 @@ where
     fn clone(&self) -> Self {
         match self {
             Self::Value(v) => Self::Value(v.clone()),
+            Self::ValueFn(f) => Self::ValueFn(Arc::clone(f)),
             Self::FromError(f) => Self::FromError(Arc::clone(f)),
             Self::FromRequestError(f) => Self::FromRequestError(Arc::clone(f)),
             Self::Service(s) => Self::Service(Arc::clone(s)),
@@ -358,6 +365,28 @@ where
                             config.event_listeners.emit(&event);
 
                             Ok(v.clone())
+                        }
+
+                        FallbackStrategy::ValueFn(f) => {
+                            let response = f();
+
+                            #[cfg(feature = "metrics")]
+                            counter!(
+                                "fallback_calls_total",
+                                "fallback" => config.name.clone(),
+                                "result" => "applied",
+                                "strategy" => "value_fn"
+                            )
+                            .increment(1);
+
+                            let event = FallbackEvent::Applied {
+                                pattern_name: config.name.clone(),
+                                timestamp: Instant::now(),
+                                strategy: "value_fn",
+                            };
+                            config.event_listeners.emit(&event);
+
+                            Ok(response)
                         }
 
                         FallbackStrategy::FromError(f) => {

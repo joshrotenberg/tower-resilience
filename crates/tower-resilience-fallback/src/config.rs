@@ -43,11 +43,39 @@ impl<Req, Res, E> FallbackConfigBuilder<Req, Res, E> {
     }
 
     /// Sets a static fallback value.
+    ///
+    /// Note: This requires `Res: Clone`. If your response type doesn't implement
+    /// Clone, use [`value_fn`](Self::value_fn) instead.
     pub fn value(mut self, value: Res) -> Self
     where
         Res: Clone,
     {
         self.strategy = Some(FallbackStrategy::Value(value));
+        self
+    }
+
+    /// Sets a fallback value generator function.
+    ///
+    /// Unlike [`value`](Self::value), this doesn't require `Res: Clone` since
+    /// the function generates a fresh value for each fallback.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_fallback::FallbackLayer;
+    ///
+    /// # #[derive(Debug)]
+    /// # struct MyError;
+    /// # struct MyResponse { data: Vec<u8> }  // No Clone!
+    /// let layer: FallbackLayer<String, MyResponse, MyError> = FallbackLayer::builder()
+    ///     .value_fn(|| MyResponse { data: vec![0; 1024] })
+    ///     .build();
+    /// ```
+    pub fn value_fn<F>(mut self, f: F) -> Self
+    where
+        F: Fn() -> Res + Send + Sync + 'static,
+    {
+        self.strategy = Some(FallbackStrategy::ValueFn(std::sync::Arc::new(f)));
         self
     }
 
@@ -115,10 +143,7 @@ impl<Req, Res, E> FallbackConfigBuilder<Req, Res, E> {
     /// # Panics
     ///
     /// Panics if no fallback strategy was configured.
-    pub fn build(self) -> crate::FallbackLayer<Req, Res, E>
-    where
-        Res: Clone,
-    {
+    pub fn build(self) -> crate::FallbackLayer<Req, Res, E> {
         let config = FallbackConfig {
             name: self.name,
             strategy: self.strategy.expect("fallback strategy must be set"),
