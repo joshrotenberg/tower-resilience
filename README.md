@@ -52,6 +52,56 @@ let service = ServiceBuilder::new()
     .service(my_service);
 ```
 
+## Presets: Get Started in One Line
+
+Every pattern includes **preset configurations** with sensible defaults. Start immediately without tuning parameters - customize later when you need to:
+
+```rust
+use tower_resilience_retry::RetryLayer;
+use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_ratelimiter::RateLimiterLayer;
+use tower_resilience_bulkhead::BulkheadLayer;
+
+// Retry with exponential backoff (3 attempts, 100ms base)
+let retry = RetryLayer::<(), MyError>::exponential_backoff().build();
+
+// Circuit breaker with balanced defaults
+let breaker = CircuitBreakerLayer::standard().build();
+
+// Rate limit to 100 requests per second
+let limiter = RateLimiterLayer::per_second(100).build();
+
+// Limit to 50 concurrent requests
+let bulkhead = BulkheadLayer::medium().build();
+```
+
+### Available Presets
+
+| Pattern | Presets | Description |
+|---------|---------|-------------|
+| **Retry** | `exponential_backoff()` | 3 attempts, 100ms base - balanced default |
+| | `aggressive()` | 5 attempts, 50ms base - fast recovery |
+| | `conservative()` | 2 attempts, 500ms base - minimal overhead |
+| **Circuit Breaker** | `standard()` | 50% threshold, 100 calls - balanced |
+| | `fast_fail()` | 25% threshold, 20 calls - fail fast |
+| | `tolerant()` | 75% threshold, 200 calls - high tolerance |
+| **Rate Limiter** | `per_second(n)` | n requests per second |
+| | `per_minute(n)` | n requests per minute |
+| | `burst(rate, size)` | Sustained rate with burst capacity |
+| **Bulkhead** | `small()` | 10 concurrent calls |
+| | `medium()` | 50 concurrent calls |
+| | `large()` | 200 concurrent calls |
+
+Presets return builders, so you can customize any setting:
+
+```rust
+// Start with a preset, override what you need
+let breaker = CircuitBreakerLayer::fast_fail()
+    .name("payment-api")           // Add observability
+    .wait_duration_in_open(Duration::from_secs(30))  // Custom recovery time
+    .build();
+```
+
 ## Examples
 
 ### Circuit Breaker
