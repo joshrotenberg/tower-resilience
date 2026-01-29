@@ -205,11 +205,20 @@ mod events;
 mod layer;
 
 /// A Tower service that applies timeout limiting to an inner service.
-#[derive(Clone)]
 pub struct TimeLimiter<S, Req> {
     inner: S,
     config: Arc<TimeLimiterConfig<Req>>,
     _phantom: PhantomData<Req>,
+}
+
+impl<S: Clone, Req> Clone for TimeLimiter<S, Req> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            config: Arc::clone(&self.config),
+            _phantom: PhantomData,
+        }
+    }
 }
 
 impl<S, Req> TimeLimiter<S, Req> {
