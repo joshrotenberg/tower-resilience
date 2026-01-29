@@ -27,5 +27,7 @@ tower = { workspace = true, features = ["util"] }
 
 [features]
 default = []
+# Enable Prometheus metrics (timeouts, successful completions, latency)
 metrics = ["dep:metrics", "tower-resilience-core/metrics"]
+# Enable distributed tracing via the tracing crate
 tracing = ["dep:tracing", "tower-resilience-core/tracing"]

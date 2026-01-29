@@ -19,8 +19,11 @@ metrics = { workspace = true, optional = true }
 
 [features]
 default = []
+# Enable distributed tracing via the tracing crate
 tracing = ["dep:tracing"]
+# Enable Prometheus metrics support
 metrics = ["dep:metrics"]
+# Enable HealthTriggerable trait for health-based pattern control
 health-integration = []
 
 [dev-dependencies]

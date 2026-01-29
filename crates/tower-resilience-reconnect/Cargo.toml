@@ -30,5 +30,7 @@ tokio-test = "0.4"
 
 [features]
 default = []
+# Enable Prometheus metrics (reconnection attempts, state transitions)
 metrics = ["dep:metrics", "tower-resilience-core/metrics"]
+# Enable distributed tracing via the tracing crate
 tracing = ["dep:tracing", "tower-resilience-core/tracing"]

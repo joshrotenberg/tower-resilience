@@ -57,10 +57,10 @@ let service = ServiceBuilder::new()
 Every pattern includes **preset configurations** with sensible defaults. Start immediately without tuning parameters - customize later when you need to:
 
 ```rust
-use tower_resilience_retry::RetryLayer;
-use tower_resilience_circuitbreaker::CircuitBreakerLayer;
-use tower_resilience_ratelimiter::RateLimiterLayer;
-use tower_resilience_bulkhead::BulkheadLayer;
+use tower_resilience::retry::RetryLayer;
+use tower_resilience::circuitbreaker::CircuitBreakerLayer;
+use tower_resilience::ratelimiter::RateLimiterLayer;
+use tower_resilience::bulkhead::BulkheadLayer;
 
 // Retry with exponential backoff (3 attempts, 100ms base)
 let retry = RetryLayer::<(), MyError>::exponential_backoff().build();
@@ -110,7 +110,7 @@ Prevent cascading failures by opening the circuit when error rate exceeds thresh
 
 ```rust
 use tower::Layer;
-use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience::circuitbreaker::CircuitBreakerLayer;
 use std::time::Duration;
 
 let layer = CircuitBreakerLayer::builder()
@@ -133,7 +133,7 @@ let service = layer.layer(my_service);
 Limit concurrent requests to prevent resource exhaustion:
 
 ```rust
-use tower_resilience_bulkhead::BulkheadLayer;
+use tower_resilience::bulkhead::BulkheadLayer;
 use std::time::Duration;
 
 let layer = BulkheadLayer::builder()
@@ -158,7 +158,7 @@ let service = layer.layer(my_service);
 Enforce timeouts on operations with configurable cancellation:
 
 ```rust
-use tower_resilience_timelimiter::TimeLimiterLayer;
+use tower_resilience::timelimiter::TimeLimiterLayer;
 use std::time::Duration;
 
 let layer = TimeLimiterLayer::builder()
@@ -179,7 +179,7 @@ let service = layer.layer(my_service);
 Retry failed requests with exponential backoff and jitter:
 
 ```rust
-use tower_resilience_retry::RetryLayer;
+use tower_resilience::retry::RetryLayer;
 use std::time::Duration;
 
 let layer = RetryLayer::<(), MyError>::builder()
@@ -203,7 +203,7 @@ let service = layer.layer(my_service);
 Control request rate to protect downstream services:
 
 ```rust
-use tower_resilience_ratelimiter::RateLimiterLayer;
+use tower_resilience::ratelimiter::RateLimiterLayer;
 use std::time::Duration;
 
 let layer = RateLimiterLayer::builder()
@@ -225,7 +225,7 @@ let service = layer.layer(my_service);
 Cache responses to reduce load on expensive operations:
 
 ```rust
-use tower_resilience_cache::{CacheLayer, EvictionPolicy};
+use tower_resilience::cache::{CacheLayer, EvictionPolicy};
 use std::time::Duration;
 
 let layer = CacheLayer::builder()
@@ -247,7 +247,7 @@ let service = layer.layer(my_service);
 Provide fallback responses when the primary service fails:
 
 ```rust
-use tower_resilience_fallback::FallbackLayer;
+use tower_resilience::fallback::FallbackLayer;
 
 // Return a static fallback value on error
 let layer = FallbackLayer::<Request, Response, MyError>::value(
@@ -272,7 +272,7 @@ let service = layer.layer(primary_service);
 Reduce tail latency by firing backup requests after a delay:
 
 ```rust
-use tower_resilience_hedge::HedgeLayer;
+use tower_resilience::hedge::HedgeLayer;
 use std::time::Duration;
 
 // Fire a hedge request if primary takes > 100ms
@@ -299,7 +299,7 @@ let service = layer.layer(my_service);
 Automatically reconnect on connection failures with configurable backoff:
 
 ```rust
-use tower_resilience_reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
+use tower_resilience::reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
 use std::time::Duration;
 
 let layer = ReconnectLayer::new(
@@ -327,7 +327,7 @@ let service = layer.layer(my_service);
 Proactive health monitoring with intelligent resource selection:
 
 ```rust
-use tower_resilience_healthcheck::{HealthCheckWrapper, HealthStatus, SelectionStrategy};
+use tower_resilience::healthcheck::{HealthCheckWrapper, HealthStatus, SelectionStrategy};
 use std::time::Duration;
 
 // Create wrapper with multiple resources
@@ -362,7 +362,7 @@ if let Some(db) = wrapper.get_healthy().await {
 Deduplicate concurrent identical requests (singleflight pattern):
 
 ```rust
-use tower_resilience_coalesce::CoalesceLayer;
+use tower_resilience::coalesce::CoalesceLayer;
 use tower::ServiceBuilder;
 
 // Coalesce by request ID - concurrent requests for same ID share one execution
@@ -391,7 +391,7 @@ Use cases:
 Delegate request processing to dedicated executors for parallel execution:
 
 ```rust
-use tower_resilience_executor::ExecutorLayer;
+use tower_resilience::executor::ExecutorLayer;
 use tower::ServiceBuilder;
 
 // Use a dedicated runtime for CPU-heavy work
@@ -421,7 +421,7 @@ Use cases:
 Dynamically adjust concurrency limits based on observed latency and error rates:
 
 ```rust
-use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd, Vegas};
+use tower_resilience::adaptive::{AdaptiveLimiterLayer, Aimd, Vegas};
 use tower::ServiceBuilder;
 use std::time::Duration;
 
@@ -464,7 +464,7 @@ Use cases:
 Inject failures and latency to test your resilience patterns:
 
 ```rust
-use tower_resilience_chaos::ChaosLayer;
+use tower_resilience::chaos::ChaosLayer;
 use std::time::Duration;
 
 // Types inferred from closure signature - no type parameters needed!
@@ -508,7 +508,7 @@ impl From<TimeLimiterError> for ServiceError { /* ... */ }
 Use `ResilienceError<E>` as your service error type - all layer errors automatically convert:
 
 ```rust
-use tower_resilience_core::ResilienceError;
+use tower_resilience::core::ResilienceError;
 
 // Your application error
 #[derive(Debug, Clone)]
@@ -526,7 +526,7 @@ type ServiceError = ResilienceError<AppError>;
 Handle different failure modes explicitly:
 
 ```rust
-use tower_resilience_core::ResilienceError;
+use tower_resilience::core::ResilienceError;
 
 fn handle_error<E: std::fmt::Display>(error: ResilienceError<E>) {
     match error {
