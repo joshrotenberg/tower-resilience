@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.7.0...tower-resilience-retry-v0.7.1) - 2026-02-03
+
+### Other
+
+- add feature flag documentation and standardize imports ([#223](https://github.com/joshrotenberg/tower-resilience/pull/223))
+
 ## [0.6.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.5.2...tower-resilience-retry-v0.6.0) - 2026-01-29
 
 ### Other

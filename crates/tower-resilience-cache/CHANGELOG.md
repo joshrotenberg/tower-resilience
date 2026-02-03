@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.7.0...tower-resilience-cache-v0.7.1) - 2026-02-03
+
+### Added
+
+- *(cache)* add SharedCacheLayer for sharing cache across layer() calls ([#226](https://github.com/joshrotenberg/tower-resilience/pull/226))
+
+### Other
+
+- add feature flag documentation and standardize imports ([#223](https://github.com/joshrotenberg/tower-resilience/pull/223))
+
 ## [0.4.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.3.10...tower-resilience-cache-v0.4.0) - 2026-01-29
 
 ### Other
