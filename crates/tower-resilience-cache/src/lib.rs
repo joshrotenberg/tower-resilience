@@ -44,6 +44,7 @@ mod error;
 mod events;
 mod eviction;
 mod layer;
+mod shared_layer;
 mod store;
 
 pub use config::{CacheConfig, CacheConfigBuilder, KeyExtractor};
@@ -51,6 +52,7 @@ pub use error::CacheError;
 pub use events::CacheEvent;
 pub use eviction::EvictionPolicy;
 pub use layer::CacheLayer;
+pub use shared_layer::{SharedCacheConfigBuilder, SharedCacheLayer};
 
 use futures::future::BoxFuture;
 use std::hash::Hash;
@@ -102,6 +104,32 @@ where
             config.ttl,
             config.eviction_policy,
         )));
+        Self {
+            inner,
+            config,
+            store,
+        }
+    }
+
+    /// Creates a new `Cache` wrapping the given service with a pre-existing store.
+    ///
+    /// This is used by [`SharedCacheLayer`] to share the same cache store across
+    /// multiple services.
+    pub(crate) fn with_store(
+        inner: S,
+        config: Arc<CacheConfig<Req, K>>,
+        store: Arc<Mutex<CacheStore<K, Resp>>>,
+    ) -> Self {
+        #[cfg(feature = "metrics")]
+        {
+            describe_counter!(
+                "cache_requests_total",
+                "Total number of cache requests (hits and misses)"
+            );
+            describe_counter!("cache_evictions_total", "Total number of cache evictions");
+            describe_gauge!("cache_size", "Current number of entries in the cache");
+        }
+
         Self {
             inner,
             config,
