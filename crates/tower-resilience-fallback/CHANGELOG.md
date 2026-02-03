@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-fallback-v0.1.4...tower-resilience-fallback-v0.7.1) - 2026-01-29
+
+### Added
+
+- [**breaking**] unify all crates to workspace versioning at 0.7.0 ([#221](https://github.com/joshrotenberg/tower-resilience/pull/221))
+
+### Fixed
+
+- add value_fn() to FallbackLayer for non-Clone response types ([#209](https://github.com/joshrotenberg/tower-resilience/pull/209))
+
+### Other
+
+- add feature flag documentation and standardize imports ([#223](https://github.com/joshrotenberg/tower-resilience/pull/223))
+
 ## [0.1.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-fallback-v0.1.3...tower-resilience-fallback-v0.1.4) - 2026-01-29
 
 ### Other
