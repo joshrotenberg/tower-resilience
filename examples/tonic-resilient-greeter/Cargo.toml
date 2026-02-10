@@ -30,7 +30,7 @@ tower-resilience-ratelimiter = { path = "../../crates/tower-resilience-ratelimit
 # Utilities
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-rand = "0.9"
+rand = "0.10"
 
 [build-dependencies]
 tonic-prost-build = "0.14"
