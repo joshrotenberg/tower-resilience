@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-ratelimiter-v0.7.1...tower-resilience-ratelimiter-v0.8.0) - 2026-03-05
+
+### Added
+
+- *(ratelimiter)* add opt-in backpressure mode ([#230](https://github.com/joshrotenberg/tower-resilience/pull/230))
+
 ## [0.7.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-ratelimiter-v0.7.0...tower-resilience-ratelimiter-v0.7.1) - 2026-01-29
 
 ### Other
