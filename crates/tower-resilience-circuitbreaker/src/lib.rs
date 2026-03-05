@@ -291,6 +291,7 @@
 use crate::circuit::Circuit;
 use crate::classifier::FailureClassifier;
 use futures::future::BoxFuture;
+use futures::Future;
 #[cfg(feature = "metrics")]
 use metrics::{counter, describe_counter, describe_gauge, describe_histogram};
 use std::sync::Arc;
@@ -389,6 +390,8 @@ pub struct CircuitBreaker<S, C> {
     pub(crate) circuit: Arc<Mutex<Circuit>>,
     state_atomic: Arc<std::sync::atomic::AtomicU8>,
     pub(crate) config: Arc<CircuitBreakerConfig<C>>,
+    /// Sleep future for backpressure mode wake-ups.
+    sleep: Option<std::pin::Pin<Box<tokio::time::Sleep>>>,
 }
 
 impl<S, C> CircuitBreaker<S, C> {
@@ -402,6 +405,7 @@ impl<S, C> CircuitBreaker<S, C> {
             )))),
             state_atomic,
             config,
+            sleep: None,
         }
     }
 
@@ -450,6 +454,7 @@ impl<S, C> CircuitBreaker<S, C> {
             config: self.config,
             fallback: Arc::new(fallback),
             _phantom: std::marker::PhantomData,
+            sleep: None,
         }
     }
 
@@ -533,6 +538,7 @@ where
             circuit: Arc::clone(&self.circuit),
             state_atomic: Arc::clone(&self.state_atomic),
             config: Arc::clone(&self.config),
+            sleep: None,
         }
     }
 }
@@ -551,9 +557,53 @@ where
     type Future = BoxFuture<'static, Result<S::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner
-            .poll_ready(cx)
-            .map_err(CircuitBreakerError::Inner)
+        // Check inner service readiness first
+        match self.inner.poll_ready(cx) {
+            Poll::Pending => return Poll::Pending,
+            Poll::Ready(Err(e)) => return Poll::Ready(Err(CircuitBreakerError::Inner(e))),
+            Poll::Ready(Ok(())) => {}
+        }
+
+        if !self.config.backpressure {
+            return Poll::Ready(Ok(()));
+        }
+
+        // Backpressure mode: check circuit state in poll_ready
+
+        // If we have a pending sleep, poll it first
+        if let Some(sleep) = self.sleep.as_mut() {
+            match sleep.as_mut().poll(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(()) => {
+                    self.sleep = None;
+                    // Fall through to re-check circuit state
+                }
+            }
+        }
+
+        // Try to lock the circuit mutex synchronously
+        let circuit = match self.circuit.try_lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                // Mutex contended; set a short sleep and return Pending
+                let sleep = tokio::time::sleep(std::time::Duration::from_millis(1));
+                let mut pinned = Box::pin(sleep);
+                let _ = pinned.as_mut().poll(cx);
+                self.sleep = Some(pinned);
+                return Poll::Pending;
+            }
+        };
+
+        match circuit.check_permitted(&self.config) {
+            Ok(()) => Poll::Ready(Ok(())),
+            Err(wait) => {
+                let sleep = tokio::time::sleep(wait);
+                let mut pinned = Box::pin(sleep);
+                let _ = pinned.as_mut().poll(cx);
+                self.sleep = Some(pinned);
+                Poll::Pending
+            }
+        }
     }
 
     fn call(&mut self, req: Req) -> Self::Future {
@@ -625,6 +675,8 @@ pub struct CircuitBreakerWithFallback<S, C, Req, Res, Err> {
     pub(crate) config: Arc<CircuitBreakerConfig<C>>,
     fallback: SharedFallback<Req, Res, Err>,
     _phantom: std::marker::PhantomData<(Req, Res, Err)>,
+    /// Sleep future for backpressure mode wake-ups.
+    sleep: Option<std::pin::Pin<Box<tokio::time::Sleep>>>,
 }
 
 impl<S, C, Req, Res, Err> CircuitBreakerWithFallback<S, C, Req, Res, Err> {
@@ -699,6 +751,7 @@ where
             config: Arc::clone(&self.config),
             fallback: Arc::clone(&self.fallback),
             _phantom: std::marker::PhantomData,
+            sleep: None,
         }
     }
 }
@@ -717,9 +770,48 @@ where
     type Future = BoxFuture<'static, Result<Res, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner
-            .poll_ready(cx)
-            .map_err(CircuitBreakerError::Inner)
+        // Check inner service readiness first
+        match self.inner.poll_ready(cx) {
+            Poll::Pending => return Poll::Pending,
+            Poll::Ready(Err(e)) => return Poll::Ready(Err(CircuitBreakerError::Inner(e))),
+            Poll::Ready(Ok(())) => {}
+        }
+
+        if !self.config.backpressure {
+            return Poll::Ready(Ok(()));
+        }
+
+        // Backpressure mode: check circuit state in poll_ready
+        if let Some(sleep) = self.sleep.as_mut() {
+            match sleep.as_mut().poll(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(()) => {
+                    self.sleep = None;
+                }
+            }
+        }
+
+        let circuit = match self.circuit.try_lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                let sleep = tokio::time::sleep(std::time::Duration::from_millis(1));
+                let mut pinned = Box::pin(sleep);
+                let _ = pinned.as_mut().poll(cx);
+                self.sleep = Some(pinned);
+                return Poll::Pending;
+            }
+        };
+
+        match circuit.check_permitted(&self.config) {
+            Ok(()) => Poll::Ready(Ok(())),
+            Err(wait) => {
+                let sleep = tokio::time::sleep(wait);
+                let mut pinned = Box::pin(sleep);
+                let _ = pinned.as_mut().poll(cx);
+                self.sleep = Some(pinned);
+                Poll::Pending
+            }
+        }
     }
 
     fn call(&mut self, req: Req) -> Self::Future {
@@ -808,6 +900,7 @@ mod tests {
             slow_call_rate_threshold: 1.0,
             event_listeners: EventListeners::new(),
             name: "test".into(),
+            backpressure: false,
         }
     }
 
@@ -917,6 +1010,7 @@ mod tests {
                 listeners
             },
             name: "test".into(),
+            backpressure: false,
         };
 
         let mut circuit = Circuit::new();
@@ -970,6 +1064,7 @@ mod tests {
                 listeners
             },
             name: "test".into(),
+            backpressure: false,
         };
 
         let mut circuit = Circuit::new();
@@ -1085,5 +1180,121 @@ mod tests {
             .name("my-service")
             .failure_rate_threshold(0.6)
             .build();
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_allows_requests_when_closed() {
+        use tower::{Service, ServiceExt};
+
+        let call_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let cc = Arc::clone(&call_count);
+
+        let service = tower::service_fn(move |req: String| {
+            let cc = Arc::clone(&cc);
+            async move {
+                cc.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                Ok::<_, std::io::Error>(format!("Response: {}", req))
+            }
+        });
+
+        let layer = CircuitBreakerLayer::builder()
+            .failure_rate_threshold(0.5)
+            .sliding_window_size(10)
+            .minimum_number_of_calls(10)
+            .backpressure()
+            .build();
+
+        let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
+
+        for i in 0..5 {
+            let result = service
+                .ready()
+                .await
+                .unwrap()
+                .call(format!("req-{}", i))
+                .await;
+            assert!(result.is_ok());
+        }
+
+        assert_eq!(call_count.load(std::sync::atomic::Ordering::SeqCst), 5);
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_waits_when_open() {
+        use tower::{Service, ServiceExt};
+
+        let service =
+            tower::service_fn(|_req: String| async move { Ok::<_, String>("ok".to_string()) });
+
+        let layer = CircuitBreakerLayer::builder()
+            .failure_rate_threshold(0.5)
+            .sliding_window_size(2)
+            .minimum_number_of_calls(2)
+            .wait_duration_in_open(Duration::from_millis(100))
+            .permitted_calls_in_half_open(1)
+            .backpressure()
+            .build();
+
+        let mut service = layer.layer_fn(service);
+
+        // Record 2 failures to open the circuit
+        {
+            let mut circuit = service.circuit.lock().await;
+            circuit.record_failure(&service.config, Duration::from_millis(10));
+            circuit.record_failure(&service.config, Duration::from_millis(10));
+        }
+
+        assert_eq!(service.state().await, CircuitState::Open);
+
+        // In backpressure mode, ready() should wait until the circuit transitions
+        let start = std::time::Instant::now();
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call("test".to_string())
+            .await;
+        let elapsed = start.elapsed();
+
+        // Should have waited for the open duration
+        assert!(elapsed >= Duration::from_millis(90));
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_events_still_fire() {
+        use tower::{Service, ServiceExt};
+
+        let permitted_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let rejected_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+
+        let pc = Arc::clone(&permitted_count);
+        let rc = Arc::clone(&rejected_count);
+
+        let service =
+            tower::service_fn(
+                |_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) },
+            );
+
+        let layer = CircuitBreakerLayer::builder()
+            .failure_rate_threshold(0.5)
+            .sliding_window_size(100)
+            .backpressure()
+            .on_call_permitted(move |_state| {
+                pc.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            })
+            .on_call_rejected(move || {
+                rc.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            })
+            .build();
+
+        let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
+
+        for _ in 0..3 {
+            let _ = service.ready().await.unwrap().call("x".to_string()).await;
+        }
+
+        assert_eq!(permitted_count.load(std::sync::atomic::Ordering::SeqCst), 3);
+        assert_eq!(rejected_count.load(std::sync::atomic::Ordering::SeqCst), 0);
     }
 }

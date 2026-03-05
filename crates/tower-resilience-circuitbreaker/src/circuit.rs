@@ -391,6 +391,35 @@ impl Circuit {
         }
     }
 
+    /// Read-only check of whether a call would be permitted.
+    ///
+    /// Returns `Ok(())` if a call would likely succeed, or `Err(duration)` with
+    /// the suggested wait time before retrying.
+    ///
+    /// Unlike `try_acquire`, this does not mutate state or emit events.
+    pub fn check_permitted<C>(&self, config: &CircuitBreakerConfig<C>) -> Result<(), Duration> {
+        match self.state {
+            CircuitState::Closed => Ok(()),
+            CircuitState::Open => {
+                let elapsed = self.last_state_change.elapsed();
+                if elapsed >= config.wait_duration_in_open {
+                    // Wait has elapsed; try_acquire will transition to HalfOpen
+                    Ok(())
+                } else {
+                    Err(config.wait_duration_in_open - elapsed)
+                }
+            }
+            CircuitState::HalfOpen => {
+                if self.success_count + self.failure_count < config.permitted_calls_in_half_open {
+                    Ok(())
+                } else {
+                    // Half-open slots full; wait for resolution
+                    Err(config.wait_duration_in_open)
+                }
+            }
+        }
+    }
+
     pub fn force_open<C>(&mut self, config: &CircuitBreakerConfig<C>) {
         self.transition_to(CircuitState::Open, config);
     }

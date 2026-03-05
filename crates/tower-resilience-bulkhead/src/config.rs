@@ -11,6 +11,8 @@ pub struct BulkheadConfig {
     pub(crate) max_concurrent_calls: usize,
     /// Maximum time to wait for a permit.
     pub(crate) max_wait_duration: Option<Duration>,
+    /// Whether backpressure mode is enabled.
+    pub(crate) backpressure: bool,
     /// Name of this bulkhead instance.
     pub(crate) name: String,
     /// Event listeners.
@@ -21,6 +23,7 @@ pub struct BulkheadConfig {
 pub struct BulkheadConfigBuilder {
     max_concurrent_calls: usize,
     max_wait_duration: Option<Duration>,
+    backpressure: bool,
     name: String,
     event_listeners: EventListeners<BulkheadEvent>,
 }
@@ -31,6 +34,7 @@ impl BulkheadConfigBuilder {
         Self {
             max_concurrent_calls: 25,
             max_wait_duration: None,
+            backpressure: false,
             name: "bulkhead".to_string(),
             event_listeners: EventListeners::new(),
         }
@@ -88,6 +92,37 @@ impl BulkheadConfigBuilder {
     /// where users want a concurrency limiter that rejects rather than queues.
     pub fn reject_when_full(mut self) -> Self {
         self.max_wait_duration = Some(Duration::ZERO);
+        self
+    }
+
+    /// Enables backpressure mode.
+    ///
+    /// In backpressure mode, the bulkhead acquires a semaphore permit in `poll_ready()`
+    /// rather than in `call()`. When all permits are in use, `poll_ready()` returns
+    /// `Poll::Pending` instead of allowing the request through and returning a
+    /// `BulkheadFull` or `Timeout` error.
+    ///
+    /// This integrates with Tower's load balancing, buffer layers, and the standard
+    /// `service.ready().await` pattern.
+    ///
+    /// When backpressure mode is enabled:
+    /// - `max_wait_duration` is ignored (the service waits indefinitely; callers control
+    ///   timeout externally)
+    /// - `BulkheadError::BulkheadFull` and `BulkheadError::Timeout` are never returned
+    ///
+    /// Default: `false` (rejection mode)
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_bulkhead::BulkheadLayer;
+    ///
+    /// let layer = BulkheadLayer::builder()
+    ///     .max_concurrent_calls(10)
+    ///     .backpressure()
+    ///     .build();
+    /// ```
+    pub fn backpressure(mut self) -> Self {
+        self.backpressure = true;
         self
     }
 
@@ -264,6 +299,7 @@ impl BulkheadConfigBuilder {
         let config = BulkheadConfig {
             max_concurrent_calls: self.max_concurrent_calls,
             max_wait_duration: self.max_wait_duration,
+            backpressure: self.backpressure,
             name: self.name,
             event_listeners: self.event_listeners,
         };
