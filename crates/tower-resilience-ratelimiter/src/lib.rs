@@ -225,6 +225,8 @@ pub use layer::RateLimiterLayer;
 
 use crate::limiter::SharedRateLimiter;
 use futures::future::BoxFuture;
+use futures::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Instant;
@@ -240,10 +242,26 @@ use tracing::{debug, warn};
 ///
 /// This service wraps an inner service and limits the rate at which
 /// requests can be processed according to the configured policy.
+///
+/// # Backpressure mode
+///
+/// By default, the rate limiter applies limits in `call()` and returns
+/// `RateLimiterServiceError::RateLimited` when permits are exhausted (rejection mode).
+///
+/// When [backpressure mode](RateLimiterConfigBuilder::backpressure) is enabled,
+/// limits are applied in `poll_ready()` instead: the service returns `Poll::Pending`
+/// when no permits are available, causing callers to wait naturally via
+/// `service.ready().await`. This integrates with Tower's load balancing and buffer
+/// layers. In this mode, `RateLimiterServiceError::RateLimited` is never returned
+/// and `timeout_duration` is ignored.
 pub struct RateLimiter<S> {
     inner: S,
     config: Arc<RateLimiterConfig>,
     limiter: SharedRateLimiter,
+    /// Sleep future for backpressure mode wake-ups.
+    sleep: Option<Pin<Box<tokio::time::Sleep>>>,
+    /// Whether a permit has been acquired in `poll_ready` (backpressure mode only).
+    permit_acquired: bool,
 }
 
 impl<S> RateLimiter<S> {
@@ -272,6 +290,8 @@ impl<S> RateLimiter<S> {
             inner,
             config,
             limiter,
+            sleep: None,
+            permit_acquired: false,
         }
     }
 }
@@ -285,6 +305,8 @@ where
             inner: self.inner.clone(),
             config: Arc::clone(&self.config),
             limiter: self.limiter.clone(),
+            sleep: None,
+            permit_acquired: false,
         }
     }
 }
@@ -301,21 +323,89 @@ where
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner
-            .poll_ready(cx)
-            .map_err(RateLimiterServiceError::Inner)
+        // Check inner service readiness first
+        match self.inner.poll_ready(cx) {
+            Poll::Pending => return Poll::Pending,
+            Poll::Ready(Err(e)) => return Poll::Ready(Err(RateLimiterServiceError::Inner(e))),
+            Poll::Ready(Ok(())) => {}
+        }
+
+        if !self.config.backpressure {
+            return Poll::Ready(Ok(()));
+        }
+
+        // Backpressure mode: acquire permit in poll_ready
+        if self.permit_acquired {
+            return Poll::Ready(Ok(()));
+        }
+
+        // If we have a pending sleep, poll it first
+        if let Some(sleep) = self.sleep.as_mut() {
+            match sleep.as_mut().poll(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(()) => {
+                    self.sleep = None;
+                    // Fall through to retry acquire
+                }
+            }
+        }
+
+        match self.limiter.try_acquire_now() {
+            Ok(()) => {
+                self.permit_acquired = true;
+                Poll::Ready(Ok(()))
+            }
+            Err(wait_duration) => {
+                let sleep = tokio::time::sleep(wait_duration);
+                let mut pinned = Box::pin(sleep);
+                // Register the waker so we get polled again when the sleep completes
+                let _ = pinned.as_mut().poll(cx);
+                self.sleep = Some(pinned);
+                Poll::Pending
+            }
+        }
     }
 
     fn call(&mut self, req: Req) -> Self::Future {
+        if self.permit_acquired {
+            // Backpressure mode: permit already acquired in poll_ready
+            self.permit_acquired = false;
+            let config = Arc::clone(&self.config);
+            let mut inner = self.inner.clone();
+
+            let event = RateLimiterEvent::PermitAcquired {
+                pattern_name: config.name.clone(),
+                timestamp: Instant::now(),
+                wait_duration: std::time::Duration::ZERO,
+            };
+            config.event_listeners.emit(&event);
+
+            #[cfg(feature = "metrics")]
+            {
+                counter!("ratelimiter_calls_total", "ratelimiter" => config.name.clone(), "result" => "permitted").increment(1);
+                histogram!("ratelimiter_wait_duration_seconds", "ratelimiter" => config.name.clone())
+                    .record(0.0);
+            }
+
+            #[cfg(feature = "tracing")]
+            debug!(ratelimiter = %config.name, "Permit acquired via backpressure");
+
+            return Box::pin(async move {
+                inner
+                    .call(req)
+                    .await
+                    .map_err(RateLimiterServiceError::Inner)
+            });
+        }
+
+        // Rejection mode: acquire permit in call
         let limiter = self.limiter.clone();
         let config = Arc::clone(&self.config);
         let mut inner = self.inner.clone();
 
         Box::pin(async move {
-            // Try to acquire a permit
             match limiter.acquire().await {
                 Ok(wait_duration) => {
-                    // Permit acquired
                     let event = RateLimiterEvent::PermitAcquired {
                         pattern_name: config.name.clone(),
                         timestamp: Instant::now(),
@@ -343,14 +433,12 @@ where
                         }
                     }
 
-                    // Process the request
                     inner
                         .call(req)
                         .await
                         .map_err(RateLimiterServiceError::Inner)
                 }
                 Err(()) => {
-                    // Rate limited
                     let event = RateLimiterEvent::PermitRejected {
                         pattern_name: config.name.clone(),
                         timestamp: Instant::now(),
@@ -574,5 +662,165 @@ mod tests {
 
         assert!(result.is_ok());
         assert!(elapsed >= Duration::from_millis(45)); // Should have waited
+    }
+
+    // ==================== Backpressure Mode Tests ====================
+
+    #[tokio::test]
+    async fn test_backpressure_allows_requests_within_limit() {
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let cc = Arc::clone(&call_count);
+
+        let service = service_fn(move |req: String| {
+            let cc = Arc::clone(&cc);
+            async move {
+                cc.fetch_add(1, Ordering::SeqCst);
+                Ok::<_, std::io::Error>(format!("Response: {}", req))
+            }
+        });
+
+        let layer = RateLimiterLayer::builder()
+            .limit_for_period(10)
+            .refresh_period(Duration::from_secs(1))
+            .backpressure()
+            .build();
+
+        let mut service = layer.layer(service);
+
+        for _ in 0..10 {
+            let result = service
+                .ready()
+                .await
+                .unwrap()
+                .call("test".to_string())
+                .await;
+            assert!(result.is_ok());
+        }
+
+        assert_eq!(call_count.load(Ordering::SeqCst), 10);
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_waits_instead_of_rejecting() {
+        let service =
+            service_fn(|_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) });
+
+        let layer = RateLimiterLayer::builder()
+            .limit_for_period(1)
+            .refresh_period(Duration::from_millis(50))
+            .backpressure()
+            .build();
+
+        let mut service = layer.layer(service);
+
+        // First request succeeds immediately
+        assert!(service
+            .ready()
+            .await
+            .unwrap()
+            .call("1".to_string())
+            .await
+            .is_ok());
+
+        // Second request should wait (not error) and eventually succeed
+        let start = std::time::Instant::now();
+        let result = service.ready().await.unwrap().call("2".to_string()).await;
+        let elapsed = start.elapsed();
+
+        assert!(result.is_ok());
+        assert!(elapsed >= Duration::from_millis(40));
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_never_returns_rate_limited() {
+        let service =
+            service_fn(|_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) });
+
+        let layer = RateLimiterLayer::builder()
+            .limit_for_period(1)
+            .refresh_period(Duration::from_millis(50))
+            .backpressure()
+            .build();
+
+        let mut service = layer.layer(service);
+
+        // Make several requests; none should return RateLimited
+        for _ in 0..5 {
+            let result = service.ready().await.unwrap().call("x".to_string()).await;
+            assert!(result.is_ok());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_events_fire_permit_acquired() {
+        let acquired_count = Arc::new(AtomicUsize::new(0));
+        let rejected_count = Arc::new(AtomicUsize::new(0));
+
+        let ac = Arc::clone(&acquired_count);
+        let rc = Arc::clone(&rejected_count);
+
+        let service =
+            service_fn(|_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) });
+
+        let layer = RateLimiterLayer::builder()
+            .limit_for_period(1)
+            .refresh_period(Duration::from_millis(50))
+            .backpressure()
+            .on_permit_acquired(move |_| {
+                ac.fetch_add(1, Ordering::SeqCst);
+            })
+            .on_permit_rejected(move |_| {
+                rc.fetch_add(1, Ordering::SeqCst);
+            })
+            .build();
+
+        let mut service = layer.layer(service);
+
+        for _ in 0..3 {
+            let _ = service.ready().await.unwrap().call("x".to_string()).await;
+        }
+
+        assert_eq!(acquired_count.load(Ordering::SeqCst), 3);
+        assert_eq!(rejected_count.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_with_sliding_log() {
+        let service =
+            service_fn(|_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) });
+
+        let layer = RateLimiterLayer::builder()
+            .limit_for_period(2)
+            .refresh_period(Duration::from_millis(50))
+            .window_type(WindowType::SlidingLog)
+            .backpressure()
+            .build();
+
+        let mut service = layer.layer(service);
+
+        for _ in 0..4 {
+            let result = service.ready().await.unwrap().call("x".to_string()).await;
+            assert!(result.is_ok());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_with_sliding_counter() {
+        let service =
+            service_fn(|_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) });
+
+        let layer = RateLimiterLayer::builder()
+            .limit_for_period(2)
+            .refresh_period(Duration::from_millis(50))
+            .window_type(WindowType::SlidingCounter)
+            .backpressure()
+            .build();
+
+        let mut service = layer.layer(service);
+
+        for _ in 0..4 {
+            let result = service.ready().await.unwrap().call("x".to_string()).await;
+            assert!(result.is_ok());
+        }
     }
 }
