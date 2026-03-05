@@ -87,6 +87,7 @@ mod tests {
             slow_call_rate_threshold: 1.0,
             event_listeners: EventListeners::new(),
             name: "test".into(),
+            backpressure: false,
         }
     }
 

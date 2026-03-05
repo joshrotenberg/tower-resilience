@@ -271,6 +271,7 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
     use std::time::Duration;
+    use tower::{Service, ServiceExt};
 
     #[test]
     fn test_config_builder_defaults() {
@@ -364,5 +365,126 @@ mod tests {
             .max_wait_duration(Duration::from_secs(5))
             .name("custom")
             .build();
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_allows_requests_within_limit() {
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let cc = Arc::clone(&call_count);
+
+        let service = tower::service_fn(move |req: String| {
+            let cc = Arc::clone(&cc);
+            async move {
+                cc.fetch_add(1, Ordering::SeqCst);
+                Ok::<_, std::io::Error>(format!("Response: {}", req))
+            }
+        });
+
+        let layer = BulkheadLayer::builder()
+            .max_concurrent_calls(5)
+            .backpressure()
+            .build();
+
+        let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
+
+        for i in 0..5 {
+            let result = service
+                .ready()
+                .await
+                .unwrap()
+                .call(format!("req-{}", i))
+                .await;
+            assert!(result.is_ok());
+        }
+
+        assert_eq!(call_count.load(Ordering::SeqCst), 5);
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_waits_instead_of_rejecting() {
+        let service = tower::service_fn(|_req: String| async move {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            Ok::<_, std::io::Error>("ok".to_string())
+        });
+
+        let layer = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .backpressure()
+            .build();
+
+        let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
+
+        // First request: acquire permit via ready(), then call
+        let mut svc = service.ready().await.unwrap().clone();
+        let handle = tokio::spawn(async move { svc.call("1".to_string()).await });
+
+        // Give the first call time to start
+        tokio::time::sleep(Duration::from_millis(10)).await;
+
+        // Second request should wait in poll_ready (not error)
+        let start = std::time::Instant::now();
+        let result = service.ready().await.unwrap().call("2".to_string()).await;
+        let elapsed = start.elapsed();
+
+        assert!(result.is_ok());
+        // Should have waited for the first call to release its permit
+        assert!(elapsed >= Duration::from_millis(30));
+
+        let _ = handle.await;
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_never_returns_bulkhead_full() {
+        let service =
+            tower::service_fn(
+                |_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) },
+            );
+
+        let layer = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .backpressure()
+            .build();
+
+        let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
+
+        // Make several requests; none should return BulkheadFull or Timeout
+        for _ in 0..5 {
+            let result = service.ready().await.unwrap().call("x".to_string()).await;
+            assert!(result.is_ok());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_backpressure_events_fire_call_permitted() {
+        let permitted_count = Arc::new(AtomicUsize::new(0));
+        let rejected_count = Arc::new(AtomicUsize::new(0));
+
+        let pc = Arc::clone(&permitted_count);
+        let rc = Arc::clone(&rejected_count);
+
+        let service =
+            tower::service_fn(
+                |_req: String| async move { Ok::<_, std::io::Error>("ok".to_string()) },
+            );
+
+        let layer = BulkheadLayer::builder()
+            .max_concurrent_calls(5)
+            .backpressure()
+            .on_call_permitted(move |_| {
+                pc.fetch_add(1, Ordering::SeqCst);
+            })
+            .on_call_rejected(move |_| {
+                rc.fetch_add(1, Ordering::SeqCst);
+            })
+            .build();
+
+        let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
+
+        for _ in 0..3 {
+            let _ = service.ready().await.unwrap().call("x".to_string()).await;
+        }
+
+        assert_eq!(permitted_count.load(Ordering::SeqCst), 3);
+        assert_eq!(rejected_count.load(Ordering::SeqCst), 0);
     }
 }

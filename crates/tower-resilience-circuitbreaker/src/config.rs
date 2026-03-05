@@ -32,6 +32,7 @@ pub struct CircuitBreakerConfig<C> {
     pub(crate) slow_call_rate_threshold: f64,
     pub(crate) event_listeners: EventListeners<CircuitBreakerEvent>,
     pub(crate) name: String,
+    pub(crate) backpressure: bool,
 }
 
 /// Builder for configuring and constructing a circuit breaker.
@@ -81,6 +82,7 @@ pub struct CircuitBreakerConfigBuilder<C = DefaultClassifier> {
     slow_call_rate_threshold: f64,
     event_listeners: EventListeners<CircuitBreakerEvent>,
     name: String,
+    backpressure: bool,
 }
 
 impl Default for CircuitBreakerConfigBuilder<DefaultClassifier> {
@@ -108,6 +110,7 @@ impl CircuitBreakerConfigBuilder<DefaultClassifier> {
             slow_call_rate_threshold: 1.0,
             event_listeners: EventListeners::new(),
             name: String::from("<unnamed>"),
+            backpressure: false,
         }
     }
 }
@@ -204,6 +207,36 @@ impl<C> CircuitBreakerConfigBuilder<C> {
         self
     }
 
+    /// Enables backpressure mode.
+    ///
+    /// In backpressure mode, the circuit breaker checks circuit state in `poll_ready()`
+    /// rather than in `call()`. When the circuit is open, `poll_ready()` returns
+    /// `Poll::Pending` and wakes the caller after `wait_duration_in_open` elapses,
+    /// instead of returning `CircuitBreakerError::OpenCircuit`.
+    ///
+    /// This integrates with Tower's load balancing, buffer layers, and the standard
+    /// `service.ready().await` pattern.
+    ///
+    /// When backpressure mode is enabled:
+    /// - `CircuitBreakerError::OpenCircuit` is never returned
+    /// - Callers naturally wait for the circuit to transition to half-open
+    ///
+    /// Default: `false` (rejection mode)
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// let layer = CircuitBreakerLayer::builder()
+    ///     .failure_rate_threshold(0.5)
+    ///     .backpressure()
+    ///     .build();
+    /// ```
+    pub fn backpressure(mut self) -> Self {
+        self.backpressure = true;
+        self
+    }
+
     /// Sets a custom failure classifier function.
     ///
     /// The classifier determines which results should be counted as failures
@@ -274,6 +307,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             slow_call_rate_threshold: self.slow_call_rate_threshold,
             event_listeners: self.event_listeners,
             name: self.name,
+            backpressure: self.backpressure,
         }
     }
 
@@ -609,6 +643,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             slow_call_rate_threshold: self.slow_call_rate_threshold,
             event_listeners: self.event_listeners,
             name: self.name,
+            backpressure: self.backpressure,
         };
 
         crate::layer::CircuitBreakerLayer::new(config)
