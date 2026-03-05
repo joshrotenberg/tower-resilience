@@ -59,6 +59,7 @@ pub struct RateLimiterConfig {
     pub(crate) refresh_period: Duration,
     pub(crate) timeout_duration: Duration,
     pub(crate) window_type: WindowType,
+    pub(crate) backpressure: bool,
     pub(crate) event_listeners: EventListeners<RateLimiterEvent>,
     pub(crate) name: String,
 }
@@ -69,6 +70,7 @@ pub struct RateLimiterConfigBuilder {
     refresh_period: Duration,
     timeout_duration: Duration,
     window_type: WindowType,
+    backpressure: bool,
     event_listeners: EventListeners<RateLimiterEvent>,
     name: String,
 }
@@ -94,6 +96,7 @@ impl RateLimiterConfigBuilder {
             refresh_period: Duration::from_secs(1),
             timeout_duration: Duration::from_millis(100),
             window_type: WindowType::default(),
+            backpressure: false,
             event_listeners: EventListeners::new(),
             name: "<unnamed>".to_string(),
         }
@@ -129,6 +132,40 @@ impl RateLimiterConfigBuilder {
     /// Sets the name for this rate limiter instance (used in events).
     pub fn name<S: Into<String>>(mut self, name: S) -> Self {
         self.name = name.into();
+        self
+    }
+
+    /// Enables backpressure mode.
+    ///
+    /// In backpressure mode, the rate limiter applies limits in `poll_ready()` rather
+    /// than in `call()`. When no permits are available, `poll_ready()` returns
+    /// `Poll::Pending` instead of allowing the request through and returning a
+    /// `RateLimited` error.
+    ///
+    /// This integrates with Tower's load balancing, buffer layers, and the standard
+    /// `service.ready().await` pattern -- making it ideal for client-side rate limiting
+    /// against external APIs.
+    ///
+    /// When backpressure mode is enabled:
+    /// - `timeout_duration` is ignored (the service waits indefinitely; callers control
+    ///   timeout externally)
+    /// - `RateLimiterServiceError::RateLimited` is never returned
+    ///
+    /// Default: `false` (rejection mode)
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// use tower_resilience_ratelimiter::RateLimiterLayer;
+    /// use std::time::Duration;
+    ///
+    /// let limiter = RateLimiterLayer::builder()
+    ///     .limit_for_period(100)
+    ///     .refresh_period(Duration::from_secs(1))
+    ///     .backpressure()
+    ///     .build();
+    /// ```
+    pub fn backpressure(mut self) -> Self {
+        self.backpressure = true;
         self
     }
 
@@ -288,6 +325,7 @@ impl RateLimiterConfigBuilder {
             refresh_period: self.refresh_period,
             timeout_duration: self.timeout_duration,
             window_type: self.window_type,
+            backpressure: self.backpressure,
             event_listeners: self.event_listeners,
             name: self.name,
         };

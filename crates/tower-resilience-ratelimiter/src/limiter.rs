@@ -59,6 +59,26 @@ impl FixedWindowState {
         }
     }
 
+    /// Attempts to acquire a permit without timeout enforcement.
+    ///
+    /// Returns `Duration::ZERO` if a permit was consumed, or the wait duration
+    /// until a permit will be available.
+    fn try_acquire_no_timeout(&mut self) -> Duration {
+        let now = Instant::now();
+
+        if now.duration_since(self.period_start) >= self.refresh_period {
+            self.refresh(now);
+        }
+
+        if self.available_permits > 0 {
+            self.available_permits -= 1;
+            return Duration::ZERO;
+        }
+
+        self.refresh_period
+            .saturating_sub(now.duration_since(self.period_start))
+    }
+
     fn refresh(&mut self, now: Instant) {
         self.available_permits = self.limit_for_period;
         self.period_start = now;
@@ -128,6 +148,33 @@ impl SlidingLogState {
         }
     }
 
+    /// Attempts to acquire a permit without timeout enforcement.
+    fn try_acquire_no_timeout(&mut self) -> Duration {
+        let now = Instant::now();
+
+        while let Some(&timestamp) = self.request_log.front() {
+            if now.duration_since(timestamp) >= self.window_duration {
+                self.request_log.pop_front();
+            } else {
+                break;
+            }
+        }
+
+        if self.request_log.len() < self.limit_for_period {
+            self.request_log.push_back(now);
+            return Duration::ZERO;
+        }
+
+        if let Some(&oldest) = self.request_log.front() {
+            oldest
+                .checked_add(self.window_duration)
+                .map(|expiry| expiry.saturating_duration_since(now))
+                .unwrap_or(Duration::ZERO)
+        } else {
+            Duration::ZERO
+        }
+    }
+
     fn available_permits(&self) -> usize {
         self.limit_for_period.saturating_sub(self.request_log.len())
     }
@@ -190,6 +237,27 @@ impl SlidingCounterState {
         } else {
             Ok(time_until_slot)
         }
+    }
+
+    /// Attempts to acquire a permit without timeout enforcement.
+    fn try_acquire_no_timeout(&mut self) -> Duration {
+        let now = Instant::now();
+        self.maybe_rotate_bucket(now);
+
+        let elapsed = now.duration_since(self.bucket_start);
+        let elapsed_ratio = elapsed.as_secs_f64() / self.bucket_duration.as_secs_f64();
+        let elapsed_ratio = elapsed_ratio.clamp(0.0, 1.0);
+
+        let previous_weight = 1.0 - elapsed_ratio;
+        let weighted_count =
+            (self.previous_count as f64 * previous_weight) + self.current_count as f64;
+
+        if weighted_count < self.limit_for_period as f64 {
+            self.current_count += 1;
+            return Duration::ZERO;
+        }
+
+        self.estimate_wait_time(elapsed_ratio)
     }
 
     fn maybe_rotate_bucket(&mut self, now: Instant) {
@@ -305,6 +373,14 @@ impl RateLimiterStateInner {
         }
     }
 
+    fn try_acquire_no_timeout(&mut self) -> Duration {
+        match self {
+            Self::Fixed(state) => state.try_acquire_no_timeout(),
+            Self::SlidingLog(state) => state.try_acquire_no_timeout(),
+            Self::SlidingCounter(state) => state.try_acquire_no_timeout(),
+        }
+    }
+
     fn available_permits(&self) -> usize {
         match self {
             Self::Fixed(state) => state.available_permits(),
@@ -365,6 +441,20 @@ impl SharedRateLimiter {
                 // Timeout would be exceeded
                 Err(())
             }
+        }
+    }
+
+    /// Attempts to acquire a permit immediately without waiting or timeout.
+    ///
+    /// Returns `Ok(())` if a permit was consumed, or `Err(wait_duration)` indicating
+    /// how long to wait before retrying.
+    pub(crate) fn try_acquire_now(&self) -> Result<(), Duration> {
+        let mut state = self.state.lock().unwrap();
+        let wait = state.try_acquire_no_timeout();
+        if wait == Duration::ZERO {
+            Ok(())
+        } else {
+            Err(wait)
         }
     }
 
@@ -604,5 +694,84 @@ mod tests {
 
         assert!(limiter.acquire().await.is_ok());
         assert_eq!(limiter.available_permits(), 0);
+    }
+
+    // ==================== try_acquire_no_timeout Tests ====================
+
+    #[test]
+    fn test_fixed_try_acquire_no_timeout_returns_zero_when_available() {
+        let mut state =
+            FixedWindowState::new(2, Duration::from_secs(1), Duration::from_millis(100));
+        assert_eq!(state.try_acquire_no_timeout(), Duration::ZERO);
+        assert_eq!(state.available_permits(), 1);
+    }
+
+    #[test]
+    fn test_fixed_try_acquire_no_timeout_returns_wait_when_exhausted() {
+        let mut state =
+            FixedWindowState::new(1, Duration::from_secs(1), Duration::from_millis(100));
+        assert_eq!(state.try_acquire_no_timeout(), Duration::ZERO);
+        let wait = state.try_acquire_no_timeout();
+        assert!(wait > Duration::ZERO);
+    }
+
+    #[test]
+    fn test_sliding_log_try_acquire_no_timeout_returns_zero_when_available() {
+        let mut state = SlidingLogState::new(2, Duration::from_secs(1), Duration::from_millis(100));
+        assert_eq!(state.try_acquire_no_timeout(), Duration::ZERO);
+        assert_eq!(state.available_permits(), 1);
+    }
+
+    #[test]
+    fn test_sliding_log_try_acquire_no_timeout_returns_wait_when_exhausted() {
+        let mut state = SlidingLogState::new(1, Duration::from_secs(1), Duration::from_millis(100));
+        assert_eq!(state.try_acquire_no_timeout(), Duration::ZERO);
+        let wait = state.try_acquire_no_timeout();
+        assert!(wait > Duration::ZERO);
+    }
+
+    #[test]
+    fn test_sliding_counter_try_acquire_no_timeout_returns_zero_when_available() {
+        let mut state =
+            SlidingCounterState::new(2, Duration::from_secs(1), Duration::from_millis(100));
+        assert_eq!(state.try_acquire_no_timeout(), Duration::ZERO);
+        assert_eq!(state.available_permits(), 1);
+    }
+
+    #[test]
+    fn test_sliding_counter_try_acquire_no_timeout_returns_wait_when_exhausted() {
+        let mut state =
+            SlidingCounterState::new(1, Duration::from_secs(1), Duration::from_millis(100));
+        assert_eq!(state.try_acquire_no_timeout(), Duration::ZERO);
+        let wait = state.try_acquire_no_timeout();
+        assert!(wait > Duration::ZERO);
+    }
+
+    // ==================== try_acquire_now Tests ====================
+
+    #[test]
+    fn test_try_acquire_now_ok_when_available() {
+        let limiter = SharedRateLimiter::new(
+            WindowType::Fixed,
+            2,
+            Duration::from_secs(1),
+            Duration::from_millis(100),
+        );
+        assert!(limiter.try_acquire_now().is_ok());
+        assert_eq!(limiter.available_permits(), 1);
+    }
+
+    #[test]
+    fn test_try_acquire_now_err_when_exhausted() {
+        let limiter = SharedRateLimiter::new(
+            WindowType::Fixed,
+            1,
+            Duration::from_secs(1),
+            Duration::from_millis(100),
+        );
+        assert!(limiter.try_acquire_now().is_ok());
+        let result = limiter.try_acquire_now();
+        assert!(result.is_err());
+        assert!(result.unwrap_err() > Duration::ZERO);
     }
 }
