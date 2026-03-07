@@ -28,7 +28,7 @@
 //! # struct MyError;
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create retry layer with exponential backoff
-//! let retry_layer = RetryLayer::<String, MyError>::builder()
+//! let retry_layer = RetryLayer::<String, String, MyError>::builder()
 //!     .max_attempts(5)
 //!     .exponential_backoff(Duration::from_millis(100))
 //!     .on_retry(|attempt, delay| {
@@ -65,7 +65,7 @@
 //! # struct MyError;
 //! # async fn example() {
 //! // Idempotent requests can retry more aggressively
-//! let retry_layer = RetryLayer::<MyRequest, MyError>::builder()
+//! let retry_layer = RetryLayer::<MyRequest, (), MyError>::builder()
 //!     .max_attempts_fn(|req: &MyRequest| {
 //!         if req.is_idempotent { 5 } else { 1 }
 //!     })
@@ -92,7 +92,7 @@
 //! # }
 //! # impl std::error::Error for MyError {}
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let retry_layer = RetryLayer::<String, MyError>::builder()
+//! let retry_layer = RetryLayer::<String, String, MyError>::builder()
 //!     .max_attempts(3)
 //!     .exponential_backoff(Duration::from_millis(100))
 //!     .build();
@@ -131,7 +131,7 @@
 //! let cache = Arc::new(std::sync::RwLock::new(HashMap::new()));
 //! cache.write().unwrap().insert("key", "cached value");
 //!
-//! let retry_layer = RetryLayer::<String, MyError>::builder()
+//! let retry_layer = RetryLayer::<String, String, MyError>::builder()
 //!     .max_attempts(3)
 //!     .exponential_backoff(Duration::from_millis(50))
 //!     .build();
@@ -168,7 +168,7 @@ pub use budget::{AimdBudget, RetryBudget, RetryBudgetBuilder, TokenBucketBudget}
 pub use config::{MaxAttemptsSource, RetryConfig, RetryConfigBuilder};
 pub use events::RetryEvent;
 pub use layer::RetryLayer;
-pub use policy::{RetryPolicy, RetryPredicate};
+pub use policy::{ResponsePredicate, RetryPolicy, RetryPredicate};
 
 use futures::future::BoxFuture;
 use std::marker::PhantomData;
@@ -187,15 +187,19 @@ use tracing::{debug, info, warn};
 ///
 /// This service wraps an inner service and automatically retries requests
 /// that fail, according to the configured retry policy and backoff strategy.
-pub struct Retry<S, Req, E> {
+pub struct Retry<S, Req, Res, E> {
     inner: S,
-    config: Arc<RetryConfig<Req, E>>,
+    config: Arc<RetryConfig<Req, Res, E>>,
     _phantom: PhantomData<Req>,
 }
 
-impl<S, Req, E> Retry<S, Req, E> {
+impl<S, Req, Res, E> Retry<S, Req, Res, E> {
     /// Creates a new `Retry` service wrapping the given service.
-    pub fn new(inner: S, config: Arc<RetryConfig<Req, E>>, _phantom: PhantomData<Req>) -> Self {
+    pub fn new(
+        inner: S,
+        config: Arc<RetryConfig<Req, Res, E>>,
+        _phantom: PhantomData<Req>,
+    ) -> Self {
         #[cfg(feature = "metrics")]
         {
             describe_counter!(
@@ -217,7 +221,7 @@ impl<S, Req, E> Retry<S, Req, E> {
     }
 }
 
-impl<S, Req, E> Clone for Retry<S, Req, E>
+impl<S, Req, Res, E> Clone for Retry<S, Req, Res, E>
 where
     S: Clone,
 {
@@ -230,15 +234,15 @@ where
     }
 }
 
-impl<S, Req, E> Service<Req> for Retry<S, Req, E>
+impl<S, Req, Res, E> Service<Req> for Retry<S, Req, Res, E>
 where
-    S: Service<Req, Error = E> + Clone + Send + 'static,
+    S: Service<Req, Response = Res, Error = E> + Clone + Send + 'static,
     S::Future: Send + 'static,
     Req: Clone + Send + 'static,
+    Res: Send + 'static,
     E: Clone + Send + 'static,
-    S::Response: Send + 'static,
 {
-    type Response = S::Response;
+    type Response = Res;
     type Error = E;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -261,6 +265,73 @@ where
 
                 match result {
                     Ok(response) => {
+                        // Check if the response should be retried
+                        if config.policy.should_retry_response(&response) {
+                            // Treat as a retryable failure
+                            if attempt + 1 >= max_attempts {
+                                #[cfg(feature = "metrics")]
+                                {
+                                    counter!("retry_calls_total", "retry" => config.name.clone(), "result" => "exhausted").increment(1);
+                                }
+
+                                #[cfg(feature = "tracing")]
+                                warn!(retry = %config.name, attempts = attempt + 1, max_attempts = max_attempts, "Retry attempts exhausted (response predicate)");
+
+                                let event = RetryEvent::Error {
+                                    pattern_name: config.name.clone(),
+                                    timestamp: Instant::now(),
+                                    attempts: attempt + 1,
+                                };
+                                config.event_listeners.emit(&event);
+                                return Ok(response);
+                            }
+
+                            // Check retry budget if configured
+                            if let Some(ref budget) = config.budget {
+                                if !budget.try_withdraw() {
+                                    #[cfg(feature = "metrics")]
+                                    {
+                                        counter!("retry_calls_total", "retry" => config.name.clone(), "result" => "budget_exhausted").increment(1);
+                                    }
+
+                                    #[cfg(feature = "tracing")]
+                                    warn!(retry = %config.name, attempt = attempt + 1, "Retry budget exhausted (response predicate)");
+
+                                    let event = RetryEvent::BudgetExhausted {
+                                        pattern_name: config.name.clone(),
+                                        timestamp: Instant::now(),
+                                        attempt: attempt + 1,
+                                    };
+                                    config.event_listeners.emit(&event);
+                                    return Ok(response);
+                                }
+                            }
+
+                            // Calculate backoff and retry
+                            let delay = config.policy.next_backoff(attempt);
+
+                            #[cfg(feature = "metrics")]
+                            {
+                                counter!("retry_attempts_total", "retry" => config.name.clone())
+                                    .increment(1);
+                            }
+
+                            #[cfg(feature = "tracing")]
+                            debug!(retry = %config.name, attempt = attempt + 1, delay_ms = delay.as_millis(), "Retrying after response predicate match");
+
+                            let event = RetryEvent::Retry {
+                                pattern_name: config.name.clone(),
+                                timestamp: Instant::now(),
+                                attempt,
+                                delay,
+                            };
+                            config.event_listeners.emit(&event);
+
+                            tokio::time::sleep(delay).await;
+                            attempt += 1;
+                            continue;
+                        }
+
                         // Success - deposit to budget if configured
                         if let Some(ref budget) = config.budget {
                             budget.deposit();
@@ -408,7 +479,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<String, TestError>::builder()
+        let layer = RetryLayer::<String, String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
@@ -444,7 +515,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<String, TestError>::builder()
+        let layer = RetryLayer::<String, String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
@@ -476,7 +547,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<String, TestError>::builder()
+        let layer = RetryLayer::<String, String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .build();
@@ -507,7 +578,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<String, TestError>::builder()
+        let layer = RetryLayer::<String, String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .retry_on(|_: &TestError| false) // Never retry
@@ -549,7 +620,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<String, TestError>::builder()
+        let layer = RetryLayer::<String, String, TestError>::builder()
             .max_attempts(3)
             .fixed_backoff(Duration::from_millis(10))
             .on_retry(move |_, _| {
@@ -596,7 +667,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<String, TestError>::builder()
+        let layer = RetryLayer::<String, String, TestError>::builder()
             .max_attempts(5)
             .fixed_backoff(Duration::from_millis(1))
             .budget(budget)
@@ -660,7 +731,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<Request, TestError>::builder()
+        let layer = RetryLayer::<Request, String, TestError>::builder()
             .max_attempts_fn(|req: &Request| if req.is_idempotent { 5 } else { 1 })
             .fixed_backoff(Duration::from_millis(1))
             .build();
@@ -715,7 +786,7 @@ mod tests {
             }
         });
 
-        let layer = RetryLayer::<Request, TestError>::builder()
+        let layer = RetryLayer::<Request, String, TestError>::builder()
             .max_attempts_fn(|req: &Request| req.max_retries)
             .fixed_backoff(Duration::from_millis(1))
             .build();

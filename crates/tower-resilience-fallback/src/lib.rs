@@ -219,6 +219,12 @@ where
 /// Predicate to determine if an error should trigger the fallback.
 pub type HandlePredicate<E> = Arc<dyn Fn(&E) -> bool + Send + Sync>;
 
+/// Predicate to determine if a successful response should trigger the fallback.
+///
+/// When this predicate returns `true`, the response is treated as if the service
+/// had failed, and the fallback strategy is applied.
+pub type HandleResponsePredicate<Res> = Arc<dyn Fn(&Res) -> bool + Send + Sync>;
+
 /// A Tower service that provides fallback responses when the inner service fails.
 ///
 /// See the [module-level documentation](crate) for usage examples.
@@ -284,6 +290,130 @@ where
 
             match result {
                 Ok(response) => {
+                    // Check if the response should trigger fallback
+                    let should_handle_response = config
+                        .handle_response_predicate
+                        .as_ref()
+                        .map(|p| p(&response))
+                        .unwrap_or(false);
+
+                    if should_handle_response {
+                        #[cfg(feature = "tracing")]
+                        tracing::debug!(
+                            fallback = %config.name,
+                            "Response matches predicate, applying fallback"
+                        );
+
+                        // Emit failed attempt event
+                        let event = FallbackEvent::FailedAttempt {
+                            pattern_name: config.name.clone(),
+                            timestamp: Instant::now(),
+                        };
+                        config.event_listeners.emit(&event);
+
+                        // Apply fallback strategy (only strategies that don't need an error)
+                        match &config.strategy {
+                            FallbackStrategy::Value(v) => {
+                                #[cfg(feature = "metrics")]
+                                counter!(
+                                    "fallback_calls_total",
+                                    "fallback" => config.name.clone(),
+                                    "result" => "applied",
+                                    "strategy" => "value"
+                                )
+                                .increment(1);
+
+                                let event = FallbackEvent::Applied {
+                                    pattern_name: config.name.clone(),
+                                    timestamp: Instant::now(),
+                                    strategy: "value",
+                                };
+                                config.event_listeners.emit(&event);
+
+                                return Ok(v.clone());
+                            }
+
+                            FallbackStrategy::ValueFn(f) => {
+                                let fallback_response = f();
+
+                                #[cfg(feature = "metrics")]
+                                counter!(
+                                    "fallback_calls_total",
+                                    "fallback" => config.name.clone(),
+                                    "result" => "applied",
+                                    "strategy" => "value_fn"
+                                )
+                                .increment(1);
+
+                                let event = FallbackEvent::Applied {
+                                    pattern_name: config.name.clone(),
+                                    timestamp: Instant::now(),
+                                    strategy: "value_fn",
+                                };
+                                config.event_listeners.emit(&event);
+
+                                return Ok(fallback_response);
+                            }
+
+                            FallbackStrategy::Service(backup) => {
+                                #[cfg(feature = "tracing")]
+                                tracing::debug!(fallback = %config.name, "Calling backup service (response predicate)");
+
+                                match backup(req_clone).await {
+                                    Ok(backup_response) => {
+                                        #[cfg(feature = "metrics")]
+                                        counter!(
+                                            "fallback_calls_total",
+                                            "fallback" => config.name.clone(),
+                                            "result" => "applied",
+                                            "strategy" => "service"
+                                        )
+                                        .increment(1);
+
+                                        let event = FallbackEvent::Applied {
+                                            pattern_name: config.name.clone(),
+                                            timestamp: Instant::now(),
+                                            strategy: "service",
+                                        };
+                                        config.event_listeners.emit(&event);
+
+                                        return Ok(backup_response);
+                                    }
+                                    Err(backup_error) => {
+                                        #[cfg(feature = "tracing")]
+                                        tracing::warn!(
+                                            fallback = %config.name,
+                                            "Backup service failed (response predicate)"
+                                        );
+
+                                        #[cfg(feature = "metrics")]
+                                        counter!(
+                                            "fallback_calls_total",
+                                            "fallback" => config.name.clone(),
+                                            "result" => "failed",
+                                            "strategy" => "service"
+                                        )
+                                        .increment(1);
+
+                                        let event = FallbackEvent::Failed {
+                                            pattern_name: config.name.clone(),
+                                            timestamp: Instant::now(),
+                                        };
+                                        config.event_listeners.emit(&event);
+
+                                        return Err(FallbackError::FallbackFailed(backup_error));
+                                    }
+                                }
+                            }
+
+                            // FromError, FromRequestError, Exception need an error which we
+                            // don't have — return the original response unchanged.
+                            _ => {
+                                return Ok(response);
+                            }
+                        }
+                    }
+
                     #[cfg(feature = "tracing")]
                     tracing::debug!(fallback = %config.name, "Inner service succeeded");
 

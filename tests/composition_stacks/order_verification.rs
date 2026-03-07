@@ -32,7 +32,7 @@ async fn total_timeout_bounds_all_retries() {
         }
     });
 
-    let retry = RetryLayer::<ApiRequest, ApiError>::builder()
+    let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(10) // Would take 5s+ without total timeout
         .build();
 
@@ -79,7 +79,7 @@ async fn without_timeout_retries_continue() {
         }
     });
 
-    let retry = RetryLayer::<ApiRequest, ApiError>::builder()
+    let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(5)
         .build();
 
@@ -116,7 +116,7 @@ async fn retry_recovers_from_transient_failures() {
         }
     });
 
-    let retry = RetryLayer::<ApiRequest, ApiError>::builder()
+    let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(5)
         .build();
 

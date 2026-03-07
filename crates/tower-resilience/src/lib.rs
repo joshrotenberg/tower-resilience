@@ -27,7 +27,7 @@
 //! # #[derive(Debug, Clone)]
 //! # struct MyError;
 //! // Retry: 3 attempts with 100ms exponential backoff
-//! let retry = RetryLayer::<(), MyError>::exponential_backoff().build();
+//! let retry = RetryLayer::<(), (), MyError>::exponential_backoff().build();
 //!
 //! // Circuit breaker: balanced defaults (50% threshold, 100 call window)
 //! let breaker = CircuitBreakerLayer::standard().build();
@@ -149,7 +149,7 @@
 //!     .sliding_window_size(100)
 //!     .build();
 //!
-//! let retry = RetryLayer::<(), MyError>::builder()
+//! let retry = RetryLayer::<(), (), MyError>::builder()
 //!     .name("api-retry")
 //!     .max_attempts(3)
 //!     .exponential_backoff(Duration::from_millis(100))

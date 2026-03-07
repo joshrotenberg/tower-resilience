@@ -20,7 +20,7 @@ use tower::Layer;
 /// # #[derive(Debug, Clone)]
 /// # struct MyError;
 /// # async fn example() {
-/// let retry_layer = RetryLayer::<String, MyError>::builder()
+/// let retry_layer = RetryLayer::<String, String, MyError>::builder()
 ///     .max_attempts(5)
 ///     .exponential_backoff(Duration::from_millis(100))
 ///     .build();
@@ -51,7 +51,7 @@ use tower::Layer;
 /// # struct MyError;
 /// # async fn example() {
 /// // Idempotent requests can retry more, non-idempotent get 1 attempt
-/// let retry_layer = RetryLayer::<MyRequest, MyError>::builder()
+/// let retry_layer = RetryLayer::<MyRequest, String, MyError>::builder()
 ///     .max_attempts_fn(|req: &MyRequest| {
 ///         if req.is_idempotent { 5 } else { 1 }
 ///     })
@@ -60,13 +60,13 @@ use tower::Layer;
 /// # }
 /// ```
 #[derive(Clone)]
-pub struct RetryLayer<Req, E> {
-    config: Arc<RetryConfig<Req, E>>,
+pub struct RetryLayer<Req, Res, E> {
+    config: Arc<RetryConfig<Req, Res, E>>,
 }
 
-impl<Req, E> RetryLayer<Req, E> {
+impl<Req, Res, E> RetryLayer<Req, Res, E> {
     /// Creates a new `RetryLayer` with the given configuration.
-    pub fn new(config: RetryConfig<Req, E>) -> Self {
+    pub fn new(config: RetryConfig<Req, Res, E>) -> Self {
         Self {
             config: Arc::new(config),
         }
@@ -82,12 +82,12 @@ impl<Req, E> RetryLayer<Req, E> {
     ///
     /// # #[derive(Debug, Clone)]
     /// # struct MyError;
-    /// let layer = RetryLayer::<(), MyError>::builder()
+    /// let layer = RetryLayer::<(), (), MyError>::builder()
     ///     .max_attempts(5)
     ///     .exponential_backoff(Duration::from_millis(100))
     ///     .build();
     /// ```
-    pub fn builder() -> crate::RetryConfigBuilder<Req, E> {
+    pub fn builder() -> crate::RetryConfigBuilder<Req, Res, E> {
         crate::RetryConfigBuilder::new()
     }
 
@@ -111,14 +111,14 @@ impl<Req, E> RetryLayer<Req, E> {
     /// # #[derive(Debug, Clone)]
     /// # struct MyError;
     /// // Use as-is
-    /// let layer = RetryLayer::<(), MyError>::exponential_backoff().build();
+    /// let layer = RetryLayer::<(), (), MyError>::exponential_backoff().build();
     ///
     /// // Or customize further
-    /// let layer = RetryLayer::<(), MyError>::exponential_backoff()
+    /// let layer = RetryLayer::<(), (), MyError>::exponential_backoff()
     ///     .max_attempts(5)  // Override default
     ///     .build();
     /// ```
-    pub fn exponential_backoff() -> crate::RetryConfigBuilder<Req, E> {
+    pub fn exponential_backoff() -> crate::RetryConfigBuilder<Req, Res, E> {
         use std::time::Duration;
         Self::builder()
             .max_attempts(3)
@@ -141,9 +141,9 @@ impl<Req, E> RetryLayer<Req, E> {
     ///
     /// # #[derive(Debug, Clone)]
     /// # struct MyError;
-    /// let layer = RetryLayer::<(), MyError>::aggressive().build();
+    /// let layer = RetryLayer::<(), (), MyError>::aggressive().build();
     /// ```
-    pub fn aggressive() -> crate::RetryConfigBuilder<Req, E> {
+    pub fn aggressive() -> crate::RetryConfigBuilder<Req, Res, E> {
         use std::time::Duration;
         Self::builder()
             .max_attempts(5)
@@ -166,9 +166,9 @@ impl<Req, E> RetryLayer<Req, E> {
     ///
     /// # #[derive(Debug, Clone)]
     /// # struct MyError;
-    /// let layer = RetryLayer::<(), MyError>::conservative().build();
+    /// let layer = RetryLayer::<(), (), MyError>::conservative().build();
     /// ```
-    pub fn conservative() -> crate::RetryConfigBuilder<Req, E> {
+    pub fn conservative() -> crate::RetryConfigBuilder<Req, Res, E> {
         use std::time::Duration;
         Self::builder()
             .max_attempts(2)
@@ -176,12 +176,8 @@ impl<Req, E> RetryLayer<Req, E> {
     }
 }
 
-impl<S, Req, E> Layer<S> for RetryLayer<Req, E>
-where
-    E: Clone,
-    Req: 'static,
-{
-    type Service = Retry<S, Req, E>;
+impl<S, Req, Res, E> Layer<S> for RetryLayer<Req, Res, E> {
+    type Service = Retry<S, Req, Res, E>;
 
     fn layer(&self, service: S) -> Self::Service {
         Retry::new(service, Arc::clone(&self.config), PhantomData)

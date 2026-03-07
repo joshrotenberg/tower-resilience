@@ -52,7 +52,7 @@ proptest! {
                 }
             });
 
-            let layer = RetryLayer::<(), TestError>::builder()
+            let layer = RetryLayer::<(), (), TestError>::builder()
                 .max_attempts(max_attempts)
                 .fixed_backoff(Duration::from_millis(1))
                 .build();
@@ -103,7 +103,7 @@ proptest! {
                 }
             });
 
-            let layer = RetryLayer::<(), TestError>::builder()
+            let layer = RetryLayer::<(), (), TestError>::builder()
                 .max_attempts(max_attempts)
                 .fixed_backoff(Duration::from_millis(1))
                 .build();
@@ -143,7 +143,7 @@ proptest! {
                 }
             });
 
-            let layer = RetryLayer::<(), TestError>::builder()
+            let layer = RetryLayer::<(), (), TestError>::builder()
                 .max_attempts(max_attempts)
                 .fixed_backoff(Duration::from_millis(1))
                 .retry_on(|err: &TestError| {
@@ -199,7 +199,7 @@ proptest! {
                 }
             });
 
-            let layer = RetryLayer::<usize, TestError>::builder()
+            let layer = RetryLayer::<usize, usize, TestError>::builder()
                 .max_attempts(max_attempts)
                 .fixed_backoff(Duration::from_millis(1))
                 .build();
@@ -249,7 +249,7 @@ proptest! {
                 }
             });
 
-            let layer = RetryLayer::<(), TestError>::builder()
+            let layer = RetryLayer::<(), (), TestError>::builder()
                 .max_attempts(max_attempts)
                 .fixed_backoff(Duration::from_millis(1))
                 .build();
