@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-reconnect-v0.8.0...tower-resilience-reconnect-v0.8.1) - 2026-03-07
+
+### Other
+
+- release v0.8.0 ([#234](https://github.com/joshrotenberg/tower-resilience/pull/234))
+
 ## [0.8.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-reconnect-v0.7.1...tower-resilience-reconnect-v0.8.0) - 2026-03-05
 
 ### Other
