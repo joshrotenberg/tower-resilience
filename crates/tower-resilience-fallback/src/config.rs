@@ -1,6 +1,6 @@
 //! Configuration for the fallback service.
 
-use crate::{FallbackEvent, FallbackStrategy, HandlePredicate};
+use crate::{FallbackEvent, FallbackStrategy, HandlePredicate, HandleResponsePredicate};
 use tower_resilience_core::{EventListeners, FnListener};
 
 /// Configuration for the fallback service.
@@ -8,6 +8,7 @@ pub struct FallbackConfig<Req, Res, E> {
     pub(crate) name: String,
     pub(crate) strategy: FallbackStrategy<Req, Res, E>,
     pub(crate) handle_predicate: Option<HandlePredicate<E>>,
+    pub(crate) handle_response_predicate: Option<HandleResponsePredicate<Res>>,
     pub(crate) event_listeners: EventListeners<FallbackEvent>,
 }
 
@@ -16,6 +17,7 @@ pub struct FallbackConfigBuilder<Req, Res, E> {
     name: String,
     strategy: Option<FallbackStrategy<Req, Res, E>>,
     handle_predicate: Option<HandlePredicate<E>>,
+    handle_response_predicate: Option<HandleResponsePredicate<Res>>,
     event_listeners: EventListeners<FallbackEvent>,
 }
 
@@ -32,6 +34,7 @@ impl<Req, Res, E> FallbackConfigBuilder<Req, Res, E> {
             name: "fallback".to_string(),
             strategy: None,
             handle_predicate: None,
+            handle_response_predicate: None,
             event_listeners: EventListeners::new(),
         }
     }
@@ -129,6 +132,42 @@ impl<Req, Res, E> FallbackConfigBuilder<Req, Res, E> {
         self
     }
 
+    /// Trigger fallback for successful responses matching this predicate.
+    ///
+    /// When this predicate returns `true` for a response, the fallback strategy
+    /// is applied as if the service had returned an error. This is useful when
+    /// errors are encoded inside successful responses, such as:
+    /// - JSON-RPC error codes in the response body
+    /// - HTTP 200 responses containing error payloads
+    /// - Responses indicating degraded or stale data
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_fallback::FallbackLayer;
+    ///
+    /// #[derive(Debug, Clone)]
+    /// struct MyError;
+    ///
+    /// #[derive(Clone)]
+    /// struct ApiResponse {
+    ///     is_stale: bool,
+    ///     data: String,
+    /// }
+    ///
+    /// let layer: FallbackLayer<String, ApiResponse, MyError> = FallbackLayer::builder()
+    ///     .value_fn(|| ApiResponse { is_stale: false, data: "default".to_string() })
+    ///     .handle_response(|resp: &ApiResponse| resp.is_stale)
+    ///     .build();
+    /// ```
+    pub fn handle_response<F>(mut self, predicate: F) -> Self
+    where
+        F: Fn(&Res) -> bool + Send + Sync + 'static,
+    {
+        self.handle_response_predicate = Some(std::sync::Arc::new(predicate));
+        self
+    }
+
     /// Adds an event listener.
     pub fn on_event<F>(mut self, listener: F) -> Self
     where
@@ -148,6 +187,7 @@ impl<Req, Res, E> FallbackConfigBuilder<Req, Res, E> {
             name: self.name,
             strategy: self.strategy.expect("fallback strategy must be set"),
             handle_predicate: self.handle_predicate,
+            handle_response_predicate: self.handle_response_predicate,
             event_listeners: self.event_listeners,
         };
         crate::FallbackLayer::new(config)

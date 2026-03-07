@@ -64,7 +64,7 @@ fn mock_http_client() -> impl Service<ApiRequest, Response = ApiResponse, Error 
 /// Minimal stack: Timeout + Retry
 #[tokio::test]
 async fn minimal_stack_compiles() {
-    let retry = RetryLayer::<ApiRequest, ApiError>::builder()
+    let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(3)
         .exponential_backoff(Duration::from_millis(100))
         .build();
@@ -93,7 +93,7 @@ async fn standard_stack_compiles() {
         .failure_rate_threshold(0.5)
         .build();
 
-    let retry = RetryLayer::<ApiRequest, ApiError>::builder()
+    let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(3)
         .exponential_backoff(Duration::from_millis(100))
         .build();
@@ -127,7 +127,7 @@ async fn full_stack_with_fallback_compiles() {
         .wait_duration_in_open(Duration::from_secs(30))
         .build();
 
-    let retry = RetryLayer::<ApiRequest, ApiError>::builder()
+    let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(3)
         .exponential_backoff(Duration::from_millis(100))
         .build();
@@ -170,7 +170,7 @@ async fn stack_with_hedging_compiles() {
         .failure_rate_threshold(0.5)
         .build();
 
-    let retry = RetryLayer::<ApiRequest, ApiError>::builder()
+    let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(3)
         .exponential_backoff(Duration::from_millis(100))
         .build();

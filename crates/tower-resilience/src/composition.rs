@@ -833,7 +833,7 @@ pub mod error_types {
     //! // impl From<BulkheadError> for ServiceError { /* ... */ }
     //! // impl From<CircuitBreakerError> for ServiceError { /* ... */ }
     //!
-    //! let retry = RetryLayer::<(), ServiceError>::builder()
+    //! let retry = RetryLayer::<(), (), ServiceError>::builder()
     //!     .max_attempts(3)
     //!     .retry_on(|err| matches!(err, ServiceError::Network(_)))
     //!     .build();
@@ -867,7 +867,7 @@ pub mod error_types {
     //! # async fn example() {
     //! # let db_service = tower::service_fn(|_req: ()| async { Ok::<_, DatabaseError>(()) });
     //! let service = ServiceBuilder::new()
-    //!     .layer(RetryLayer::<(), AppError>::builder()
+    //!     .layer(RetryLayer::<(), (), AppError>::builder()
     //!         .max_attempts(3)
     //!         .build())
     //!     .map_err(|err: DatabaseError| AppError::from(err))
@@ -907,7 +907,7 @@ pub mod advanced {
     //!     .layer(TimeLimiterLayer::builder()
     //!         .timeout_duration(Duration::from_secs(5))
     //!         .build())
-    //!     .layer(RetryLayer::<(), MyError>::builder()
+    //!     .layer(RetryLayer::<(), (), MyError>::builder()
     //!         .max_attempts(3)
     //!         .exponential_backoff(Duration::from_millis(100))
     //!         .build())
@@ -961,7 +961,7 @@ pub mod advanced {
     //! # async fn example() {
     //! # let base_service = tower::service_fn(|req: Request| async { Ok::<_, MyError>(req) });
     //! // Build layers inside-out manually
-    //! let with_retry = RetryLayer::<Request, MyError>::builder()
+    //! let with_retry = RetryLayer::<Request, Request, MyError>::builder()
     //!     .max_attempts(3)
     //!     .build()
     //!     .layer(base_service);
@@ -1005,7 +1005,7 @@ pub mod advanced {
     //!     .layer(TimeLimiterLayer::builder()
     //!         .timeout_duration(Duration::from_secs(5))
     //!         .build())
-    //!     .layer(RetryLayer::<Request, MyError>::builder()
+    //!     .layer(RetryLayer::<Request, Request, MyError>::builder()
     //!         .max_attempts(3)
     //!         .build())
     //!     .service(base_service);
@@ -1038,7 +1038,7 @@ pub mod advanced {
     //! # async fn example() {
     //! # let base_service = tower::service_fn(|_req: ()| async { Ok::<_, MyError>(()) });
     //! // Build retry layer first
-    //! let retry_layer = RetryLayer::<(), MyError>::builder()
+    //! let retry_layer = RetryLayer::<(), (), MyError>::builder()
     //!     .max_attempts(3)
     //!     .build();
     //!

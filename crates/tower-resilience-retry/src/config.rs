@@ -1,7 +1,7 @@
 use crate::backoff::{ExponentialBackoff, FixedInterval, IntervalFunction};
 use crate::budget::RetryBudget;
 use crate::events::RetryEvent;
-use crate::policy::{RetryPolicy, RetryPredicate};
+use crate::policy::{ResponsePredicate, RetryPolicy, RetryPredicate};
 use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::Duration;
@@ -39,8 +39,8 @@ impl<Req> Default for MaxAttemptsSource<Req> {
 }
 
 /// Configuration for the retry middleware.
-pub struct RetryConfig<Req, E> {
-    pub(crate) policy: RetryPolicy<E>,
+pub struct RetryConfig<Req, Res, E> {
+    pub(crate) policy: RetryPolicy<Res, E>,
     pub(crate) max_attempts_source: MaxAttemptsSource<Req>,
     pub(crate) event_listeners: EventListeners<RetryEvent>,
     pub(crate) name: String,
@@ -48,23 +48,24 @@ pub struct RetryConfig<Req, E> {
 }
 
 /// Builder for [`RetryConfig`].
-pub struct RetryConfigBuilder<Req, E> {
+pub struct RetryConfigBuilder<Req, Res, E> {
     max_attempts_source: MaxAttemptsSource<Req>,
     interval_fn: Option<Arc<dyn IntervalFunction>>,
     retry_predicate: Option<RetryPredicate<E>>,
+    response_predicate: Option<ResponsePredicate<Res>>,
     event_listeners: EventListeners<RetryEvent>,
     name: String,
     budget: Option<Arc<dyn RetryBudget>>,
-    _phantom: PhantomData<Req>,
+    _phantom: PhantomData<(Req, Res)>,
 }
 
-impl<Req, E> Default for RetryConfigBuilder<Req, E> {
+impl<Req, Res, E> Default for RetryConfigBuilder<Req, Res, E> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<Req, E> RetryConfigBuilder<Req, E> {
+impl<Req, Res, E> RetryConfigBuilder<Req, Res, E> {
     /// Creates a new builder with defaults.
     ///
     /// Defaults:
@@ -77,6 +78,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
             max_attempts_source: MaxAttemptsSource::default(),
             interval_fn: None,
             retry_predicate: None,
+            response_predicate: None,
             event_listeners: EventListeners::new(),
             name: "<unnamed>".to_string(),
             budget: None,
@@ -120,7 +122,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
     /// #[derive(Debug, Clone)]
     /// struct MyError;
     ///
-    /// let layer = RetryLayer::<MyRequest, MyError>::builder()
+    /// let layer = RetryLayer::<MyRequest, (), MyError>::builder()
     ///     .max_attempts_fn(|req: &MyRequest| {
     ///         if req.is_idempotent { 5 } else { 1 }
     ///     })
@@ -165,6 +167,49 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
         self
     }
 
+    /// Sets a predicate to determine which successful responses should be retried.
+    ///
+    /// When this predicate returns `true` for a response, the response is treated
+    /// as a retryable failure — consuming a budget token, applying backoff, and
+    /// re-sending the request.
+    ///
+    /// This is useful when errors are encoded inside successful responses, such as:
+    /// - JSON-RPC error codes in the response body
+    /// - gRPC status codes in the response
+    /// - HTTP 200 responses containing error payloads
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_retry::RetryLayer;
+    /// use std::time::Duration;
+    ///
+    /// #[derive(Clone)]
+    /// struct JsonRpcResponse {
+    ///     error_code: Option<i32>,
+    ///     // ... other fields
+    /// }
+    ///
+    /// #[derive(Debug, Clone)]
+    /// struct MyError;
+    ///
+    /// let layer = RetryLayer::<String, JsonRpcResponse, MyError>::builder()
+    ///     .max_attempts(3)
+    ///     .exponential_backoff(Duration::from_millis(100))
+    ///     .retry_on_response(|resp: &JsonRpcResponse| {
+    ///         // Retry on transient JSON-RPC errors
+    ///         matches!(resp.error_code, Some(code) if (-32099..=-32000).contains(&code))
+    ///     })
+    ///     .build();
+    /// ```
+    pub fn retry_on_response<F>(mut self, predicate: F) -> Self
+    where
+        F: Fn(&Res) -> bool + Send + Sync + 'static,
+    {
+        self.response_predicate = Some(Arc::new(predicate));
+        self
+    }
+
     /// Sets the name for this retry instance (used in events).
     pub fn name<S: Into<String>>(mut self, name: S) -> Self {
         self.name = name.into();
@@ -190,7 +235,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
     ///     .max_tokens(100)
     ///     .build();
     ///
-    /// let layer = RetryLayer::<(), std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), (), std::io::Error>::builder()
     ///     .max_attempts(5)
     ///     .exponential_backoff(Duration::from_millis(100))
     ///     .budget(budget)
@@ -216,7 +261,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
     /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
-    /// let layer = RetryLayer::<(), std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), (), std::io::Error>::builder()
     ///     .max_attempts(5)
     ///     .on_budget_exhausted(|attempt| {
     ///         println!("Retry {} skipped - budget exhausted", attempt);
@@ -251,7 +296,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
     /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
-    /// let layer = RetryLayer::<(), std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), (), std::io::Error>::builder()
     ///     .max_attempts(5)
     ///     .exponential_backoff(Duration::from_millis(100))
     ///     .on_retry(|attempt, delay| {
@@ -290,7 +335,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
     /// use tower_resilience_retry::RetryLayer;
     /// use std::time::Duration;
     ///
-    /// let layer = RetryLayer::<(), std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), (), std::io::Error>::builder()
     ///     .max_attempts(3)
     ///     .on_success(|attempts| {
     ///         if attempts == 1 {
@@ -333,7 +378,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
     /// let failure_count = Arc::new(AtomicUsize::new(0));
     /// let counter = Arc::clone(&failure_count);
     ///
-    /// let layer = RetryLayer::<(), std::io::Error>::builder()
+    /// let layer = RetryLayer::<(), (), std::io::Error>::builder()
     ///     .max_attempts(3)
     ///     .on_error(move |attempts| {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
@@ -370,7 +415,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
     /// use std::time::Duration;
     /// use std::io::{Error, ErrorKind};
     ///
-    /// let layer = RetryLayer::<(), Error>::builder()
+    /// let layer = RetryLayer::<(), (), Error>::builder()
     ///     .max_attempts(3)
     ///     .retry_on(|err| {
     ///         // Only retry transient errors
@@ -394,7 +439,7 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
     }
 
     /// Builds the retry layer.
-    pub fn build(self) -> crate::RetryLayer<Req, E> {
+    pub fn build(self) -> crate::RetryLayer<Req, Res, E> {
         let interval_fn = self
             .interval_fn
             .unwrap_or_else(|| Arc::new(ExponentialBackoff::new(Duration::from_millis(100))));
@@ -402,6 +447,9 @@ impl<Req, E> RetryConfigBuilder<Req, E> {
         let mut policy = RetryPolicy::new(interval_fn);
         if let Some(predicate) = self.retry_predicate {
             policy.retry_predicate = Some(predicate);
+        }
+        if let Some(predicate) = self.response_predicate {
+            policy.response_predicate = Some(predicate);
         }
 
         let config = RetryConfig {
@@ -423,12 +471,12 @@ mod tests {
 
     #[test]
     fn test_builder_defaults() {
-        let _layer = RetryLayer::<(), std::io::Error>::builder().build();
+        let _layer = RetryLayer::<(), (), std::io::Error>::builder().build();
     }
 
     #[test]
     fn test_builder_custom_values() {
-        let _layer = RetryLayer::<(), std::io::Error>::builder()
+        let _layer = RetryLayer::<(), (), std::io::Error>::builder()
             .max_attempts(5)
             .fixed_backoff(Duration::from_secs(2))
             .name("test-retry")
@@ -437,7 +485,7 @@ mod tests {
 
     #[test]
     fn test_event_listeners() {
-        let _layer = RetryLayer::<(), std::io::Error>::builder()
+        let _layer = RetryLayer::<(), (), std::io::Error>::builder()
             .on_retry(|_, _| {})
             .on_success(|_| {})
             .build();
@@ -450,7 +498,7 @@ mod tests {
             is_idempotent: bool,
         }
 
-        let _layer = RetryLayer::<MyRequest, std::io::Error>::builder()
+        let _layer = RetryLayer::<MyRequest, (), std::io::Error>::builder()
             .max_attempts_fn(|req: &MyRequest| if req.is_idempotent { 5 } else { 1 })
             .build();
     }
@@ -476,23 +524,23 @@ mod tests {
 
     #[test]
     fn test_preset_exponential_backoff() {
-        let _layer = RetryLayer::<(), std::io::Error>::exponential_backoff().build();
+        let _layer = RetryLayer::<(), (), std::io::Error>::exponential_backoff().build();
     }
 
     #[test]
     fn test_preset_aggressive() {
-        let _layer = RetryLayer::<(), std::io::Error>::aggressive().build();
+        let _layer = RetryLayer::<(), (), std::io::Error>::aggressive().build();
     }
 
     #[test]
     fn test_preset_conservative() {
-        let _layer = RetryLayer::<(), std::io::Error>::conservative().build();
+        let _layer = RetryLayer::<(), (), std::io::Error>::conservative().build();
     }
 
     #[test]
     fn test_preset_with_customization() {
         // Verify presets can be further customized
-        let _layer = RetryLayer::<(), std::io::Error>::exponential_backoff()
+        let _layer = RetryLayer::<(), (), std::io::Error>::exponential_backoff()
             .max_attempts(10)
             .name("custom")
             .build();

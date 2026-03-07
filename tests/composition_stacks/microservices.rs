@@ -57,7 +57,7 @@ async fn standard_microservices_stack_compiles() {
         .slow_call_duration_threshold(Duration::from_secs(2))
         .build();
 
-    let retry = RetryLayer::<GrpcRequest, ServiceError>::builder()
+    let retry = RetryLayer::<GrpcRequest, GrpcResponse, ServiceError>::builder()
         .max_attempts(2)
         .fixed_backoff(Duration::from_millis(50))
         .build();
@@ -77,7 +77,7 @@ async fn standard_microservices_stack_compiles() {
 /// Microservices stack with adaptive concurrency
 #[tokio::test]
 async fn microservices_with_adaptive_concurrency_compiles() {
-    let retry = RetryLayer::<GrpcRequest, ServiceError>::builder()
+    let retry = RetryLayer::<GrpcRequest, GrpcResponse, ServiceError>::builder()
         .max_attempts(2)
         .build();
 
@@ -102,7 +102,7 @@ async fn two_layer_servicebuilder_compiles() {
         .timeout_duration(Duration::from_secs(5))
         .build();
 
-    let retry = RetryLayer::<GrpcRequest, ServiceError>::builder()
+    let retry = RetryLayer::<GrpcRequest, GrpcResponse, ServiceError>::builder()
         .max_attempts(2)
         .build();
 

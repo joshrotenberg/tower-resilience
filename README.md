@@ -63,7 +63,7 @@ use tower_resilience::ratelimiter::RateLimiterLayer;
 use tower_resilience::bulkhead::BulkheadLayer;
 
 // Retry with exponential backoff (3 attempts, 100ms base)
-let retry = RetryLayer::<(), MyError>::exponential_backoff().build();
+let retry = RetryLayer::<(), (), MyError>::exponential_backoff().build();
 
 // Circuit breaker with balanced defaults
 let breaker = CircuitBreakerLayer::standard().build();
@@ -182,7 +182,7 @@ Retry failed requests with exponential backoff and jitter:
 use tower_resilience::retry::RetryLayer;
 use std::time::Duration;
 
-let layer = RetryLayer::<(), MyError>::builder()
+let layer = RetryLayer::<(), (), MyError>::builder()
     .max_attempts(5)
     .exponential_backoff(Duration::from_millis(100))
     .on_retry(|attempt, delay| {

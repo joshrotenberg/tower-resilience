@@ -84,7 +84,7 @@ async fn consumer_stack_compiles() {
         .wait_duration_in_open(Duration::from_secs(60))
         .build();
 
-    let retry = RetryLayer::<Message, MessageError>::builder()
+    let retry = RetryLayer::<Message, ProcessResult, MessageError>::builder()
         .max_attempts(5)
         .exponential_backoff(Duration::from_secs(1))
         .build();
@@ -106,7 +106,7 @@ async fn consumer_stack_compiles() {
 async fn producer_stack_compiles() {
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(50).build();
 
-    let retry = RetryLayer::<PublishRequest, MessageError>::builder()
+    let retry = RetryLayer::<PublishRequest, PublishResult, MessageError>::builder()
         .max_attempts(3)
         .exponential_backoff(Duration::from_millis(100))
         .build();
@@ -126,7 +126,7 @@ async fn producer_stack_compiles() {
 /// Consumer with retry predicate
 #[tokio::test]
 async fn consumer_with_retry_predicate_compiles() {
-    let retry = RetryLayer::<Message, MessageError>::builder()
+    let retry = RetryLayer::<Message, ProcessResult, MessageError>::builder()
         .max_attempts(3)
         .retry_on(|e: &MessageError| e.retriable)
         .exponential_backoff(Duration::from_secs(1))

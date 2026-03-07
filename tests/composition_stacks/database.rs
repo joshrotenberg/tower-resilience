@@ -70,7 +70,7 @@ async fn standard_database_stack_compiles() {
         .max_concurrent_calls(20) // Match connection pool size
         .build();
 
-    let retry = RetryLayer::<Query, DbError>::builder()
+    let retry = RetryLayer::<Query, QueryResult, DbError>::builder()
         .max_attempts(2)
         .retry_on(|e: &DbError| e.is_transient())
         .build();
@@ -116,7 +116,7 @@ async fn two_layer_servicebuilder_compiles() {
         .timeout_duration(Duration::from_secs(5))
         .build();
 
-    let retry = RetryLayer::<Query, DbError>::builder()
+    let retry = RetryLayer::<Query, QueryResult, DbError>::builder()
         .max_attempts(2)
         .build();
 
