@@ -13,22 +13,22 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 
 ## Resilience Patterns
 
-- **Adaptive Concurrency** - Dynamic concurrency limiting using AIMD or Vegas algorithms
-- **Bulkhead** - Isolates resources to prevent system-wide failures
-- **Cache** - Response memoization to reduce load
-- **Chaos** - Inject failures and latency for testing resilience (development/testing only)
-- **Circuit Breaker** - Prevents cascading failures by stopping calls to failing services
-- **Coalesce** - Deduplicates concurrent identical requests (singleflight pattern)
-- **Executor** - Delegates request processing to dedicated executors for parallelism
-- **Fallback** - Graceful degradation when services fail
-- **Hedge** - Reduces tail latency by racing redundant requests
-- **Health Check** - Proactive health monitoring with intelligent resource selection
-- **Outlier Detection** - Fleet-aware instance ejection based on consecutive error tracking
-- **Rate Limiter** - Controls request rate with fixed or sliding window algorithms
-- **Reconnect** - Automatic reconnection with configurable backoff strategies
-- **Retry** - Intelligent retry with exponential backoff, jitter, and retry budgets
-- **Router** - Weighted traffic routing for canary deployments and progressive rollout
-- **Time Limiter** - Advanced timeout handling with cancellation support
+- **[Adaptive Concurrency](#adaptive-concurrency)** - Dynamic concurrency limiting using AIMD or Vegas algorithms
+- **[Bulkhead](#bulkhead)** - Isolates resources to prevent system-wide failures
+- **[Cache](#cache)** - Response memoization to reduce load
+- **[Chaos](#chaos-testing-only)** - Inject failures and latency for testing resilience (development/testing only)
+- **[Circuit Breaker](#circuit-breaker)** - Prevents cascading failures by stopping calls to failing services
+- **[Coalesce](#coalesce)** - Deduplicates concurrent identical requests (singleflight pattern)
+- **[Executor](#executor)** - Delegates request processing to dedicated executors for parallelism
+- **[Fallback](#fallback)** - Graceful degradation when services fail
+- **[Hedge](#hedge)** - Reduces tail latency by racing redundant requests
+- **[Health Check](#health-check)** - Proactive health monitoring with intelligent resource selection
+- **[Outlier Detection](#outlier-detection)** - Fleet-aware instance ejection based on consecutive error tracking
+- **[Rate Limiter](#rate-limiter)** - Controls request rate with fixed or sliding window algorithms
+- **[Reconnect](#reconnect)** - Automatic reconnection with configurable backoff strategies
+- **[Retry](#retry)** - Intelligent retry with exponential backoff, jitter, and retry budgets
+- **[Router](#router)** - Weighted traffic routing for canary deployments and progressive rollout
+- **[Time Limiter](#time-limiter)** - Advanced timeout handling with cancellation support
 
 ## Quick Start
 
