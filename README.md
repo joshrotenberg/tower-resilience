@@ -27,6 +27,7 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 - **Adaptive Concurrency** - Dynamic concurrency limiting using AIMD or Vegas algorithms
 - **Coalesce** - Deduplicates concurrent identical requests (singleflight pattern)
 - **Outlier Detection** - Fleet-aware instance ejection based on consecutive error tracking
+- **Router** - Weighted traffic routing for canary deployments and progressive rollout
 - **Chaos** - Inject failures and latency for testing resilience (development/testing only)
 
 ## Quick Start
