@@ -235,6 +235,9 @@
 //!         ResilienceError::RateLimited { retry_after } => {
 //!             eprintln!("Rate limited, retry after {:?}", retry_after);
 //!         }
+//!         ResilienceError::InstanceEjected { name } => {
+//!             eprintln!("Instance '{}' ejected by outlier detection", name);
+//!         }
 //!         ResilienceError::Application(app_err) => {
 //!             eprintln!("Application error: {}", app_err);
 //!         }
@@ -318,3 +321,6 @@ pub use tower_resilience_adaptive as adaptive;
 
 #[cfg(feature = "coalesce")]
 pub use tower_resilience_coalesce as coalesce;
+
+#[cfg(feature = "outlier")]
+pub use tower_resilience_outlier as outlier;
