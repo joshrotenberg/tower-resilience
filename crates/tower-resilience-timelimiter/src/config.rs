@@ -377,4 +377,29 @@ mod tests {
         };
         assert_eq!(timeout.get_timeout(&req), Duration::from_secs(30));
     }
+
+    #[test]
+    fn test_preset_fast() {
+        let _layer = TimeLimiterLayer::fast().build();
+    }
+
+    #[test]
+    fn test_preset_standard() {
+        let _layer = TimeLimiterLayer::standard().build();
+    }
+
+    #[test]
+    fn test_preset_slow() {
+        let _layer = TimeLimiterLayer::slow().build();
+    }
+
+    #[test]
+    fn test_preset_streaming() {
+        let _layer = TimeLimiterLayer::streaming().build();
+    }
+
+    #[test]
+    fn test_preset_customization() {
+        let _layer = TimeLimiterLayer::fast().name("custom-timeout").build();
+    }
 }

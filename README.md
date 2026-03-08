@@ -63,6 +63,8 @@ use tower_resilience::retry::RetryLayer;
 use tower_resilience::circuitbreaker::CircuitBreakerLayer;
 use tower_resilience::ratelimiter::RateLimiterLayer;
 use tower_resilience::bulkhead::BulkheadLayer;
+use tower_resilience::timelimiter::TimeLimiterLayer;
+use tower_resilience::hedge::HedgeLayer;
 
 // Retry with exponential backoff (3 attempts, 100ms base)
 let retry = RetryLayer::<(), (), MyError>::exponential_backoff().build();
@@ -75,6 +77,12 @@ let limiter = RateLimiterLayer::per_second(100).build();
 
 // Limit to 50 concurrent requests
 let bulkhead = BulkheadLayer::medium().build();
+
+// 5 second timeout with cancellation
+let timeout = TimeLimiterLayer::standard().build();
+
+// Reduce tail latency with hedged requests
+let hedge = HedgeLayer::standard();
 ```
 
 ### Available Presets
@@ -93,6 +101,13 @@ let bulkhead = BulkheadLayer::medium().build();
 | **Bulkhead** | `small()` | 10 concurrent calls |
 | | `medium()` | 50 concurrent calls |
 | | `large()` | 200 concurrent calls |
+| **Time Limiter** | `fast()` | 1s timeout, cancel on timeout |
+| | `standard()` | 5s timeout, cancel on timeout |
+| | `slow()` | 30s timeout, cancel on timeout |
+| | `streaming()` | 60s timeout, no cancellation |
+| **Hedge** | `conservative()` | 500ms delay, 2 attempts |
+| | `standard()` | 100ms delay, 3 attempts |
+| | `aggressive()` | 50ms delay, 5 attempts |
 
 Presets return builders, so you can customize any setting:
 

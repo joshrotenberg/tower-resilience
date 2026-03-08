@@ -6,6 +6,28 @@
 //! - Event system for observability (onSuccess, onError, onTimeout)
 //! - Metrics integration
 //!
+//! ## Presets
+//!
+//! ```rust
+//! use tower_resilience_timelimiter::TimeLimiterLayer;
+//!
+//! let fast = TimeLimiterLayer::fast().build();        // 1s, cancel on timeout
+//! let standard = TimeLimiterLayer::standard().build(); // 5s, cancel on timeout
+//! let slow = TimeLimiterLayer::slow().build();         // 30s, cancel on timeout
+//! let stream = TimeLimiterLayer::streaming().build();  // 60s, no cancellation
+//! ```
+//!
+//! Presets return builders, so you can customize further:
+//!
+//! ```rust
+//! use tower_resilience_timelimiter::TimeLimiterLayer;
+//!
+//! let layer = TimeLimiterLayer::fast()
+//!     .name("api-timeout")
+//!     .on_timeout(|| eprintln!("Request timed out!"))
+//!     .build();
+//! ```
+//!
 //! ## Basic Example (Fixed Timeout - No Type Parameters!)
 //!
 //! ```rust
