@@ -29,6 +29,7 @@ tower-resilience-hedge = { version = "0.8.0", path = "../tower-resilience-hedge"
 tower-resilience-executor = { version = "0.8.0", path = "../tower-resilience-executor", optional = true }
 tower-resilience-adaptive = { version = "0.8.0", path = "../tower-resilience-adaptive", optional = true }
 tower-resilience-coalesce = { version = "0.8.0", path = "../tower-resilience-coalesce", optional = true }
+tower-resilience-outlier = { version = "0.8.0", path = "../tower-resilience-outlier", optional = true }
 
 [features]
 default = []
@@ -60,9 +61,11 @@ executor = ["dep:tower-resilience-executor"]
 adaptive = ["dep:tower-resilience-adaptive"]
 # Coalesce: deduplicate concurrent identical requests (singleflight)
 coalesce = ["dep:tower-resilience-coalesce"]
+# Outlier detection: fleet-aware instance ejection based on health tracking
+outlier = ["dep:tower-resilience-outlier"]
 
 # Enable all patterns at once
-full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry", "ratelimiter", "reconnect", "healthcheck", "fallback", "hedge", "executor", "adaptive", "coalesce"]
+full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry", "ratelimiter", "reconnect", "healthcheck", "fallback", "hedge", "executor", "adaptive", "coalesce", "outlier"]
 
 # Integration: health checks can proactively open/close circuit breakers
 health-circuitbreaker = [

@@ -80,6 +80,9 @@
 //!         ResilienceError::RateLimited { retry_after } => {
 //!             eprintln!("Rate limited, retry after {:?}", retry_after);
 //!         }
+//!         ResilienceError::InstanceEjected { name } => {
+//!             eprintln!("Instance '{}' ejected by outlier detection", name);
+//!         }
 //!         ResilienceError::Application(app_err) => {
 //!             eprintln!("Application error: {}", app_err);
 //!         }
@@ -218,6 +221,12 @@ pub enum ResilienceError<E> {
         retry_after: Option<Duration>,
     },
 
+    /// An instance was ejected by outlier detection.
+    InstanceEjected {
+        /// The name of the ejected instance
+        name: String,
+    },
+
     /// The underlying application service returned an error.
     Application(E),
 }
@@ -241,6 +250,9 @@ where
                 Some(d) => write!(f, "Rate limited, retry after {:?}", d),
                 None => write!(f, "Rate limited"),
             },
+            ResilienceError::InstanceEjected { name } => {
+                write!(f, "Instance '{}' ejected by outlier detection", name)
+            }
             ResilienceError::Application(e) => write!(f, "Application error: {}", e),
         }
     }
@@ -271,6 +283,11 @@ impl<E> ResilienceError<E> {
     /// Returns `true` if this is a rate limiter error.
     pub fn is_rate_limited(&self) -> bool {
         matches!(self, ResilienceError::RateLimited { .. })
+    }
+
+    /// Returns `true` if this is an instance ejection error from outlier detection.
+    pub fn is_instance_ejected(&self) -> bool {
+        matches!(self, ResilienceError::InstanceEjected { .. })
     }
 
     /// Returns `true` if this is an application error.
@@ -314,6 +331,7 @@ impl<E> ResilienceError<E> {
             ResilienceError::RateLimited { retry_after } => {
                 ResilienceError::RateLimited { retry_after }
             }
+            ResilienceError::InstanceEjected { name } => ResilienceError::InstanceEjected { name },
             ResilienceError::Application(e) => ResilienceError::Application(f(e)),
         }
     }
