@@ -269,8 +269,7 @@ mod tests {
             statuses
                 .iter()
                 .enumerate()
-                .filter(|(_, s)| s.is_healthy())
-                .next_back()
+                .rfind(|(_, s)| s.is_healthy())
                 .map(|(i, _)| i)
         });
 

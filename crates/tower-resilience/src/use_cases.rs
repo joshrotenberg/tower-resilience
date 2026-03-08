@@ -2,7 +2,6 @@
 //!
 //! Real-world scenarios and recommendations for applying resilience patterns.
 
-/// Database client use cases
 pub mod database {
     //! # Database Clients
     //!
@@ -26,7 +25,6 @@ pub mod database {
     //! ```
 }
 
-/// Message queue use cases
 pub mod message_queue {
     //! # Message Queue Workers
     //!
@@ -48,7 +46,6 @@ pub mod message_queue {
     //! ```
 }
 
-/// Microservices use cases
 pub mod microservices {
     //! # Microservices
     //!
@@ -68,7 +65,6 @@ pub mod microservices {
     //! ```
 }
 
-/// Background job use cases
 pub mod background_jobs {
     //! # Background Jobs
     //!

@@ -20,7 +20,6 @@
 //! - [Coalesce](coalesce) - Deduplicate concurrent identical requests (singleflight)
 //! - [Outlier Detection](outlier_detection) - Fleet-aware instance ejection based on health tracking
 
-/// Circuit Breaker pattern guide
 pub mod circuit_breaker {
     //! # Circuit Breaker
     //!
@@ -92,7 +91,6 @@ pub mod circuit_breaker {
     //! ```
 }
 
-/// Health Check pattern guide
 pub mod healthcheck {
     //! # Health Check
     //!
@@ -262,7 +260,6 @@ pub mod healthcheck {
     //! ```
 }
 
-/// Reconnect pattern guide
 pub mod reconnect {
     //! # Reconnect
     //!
@@ -354,7 +351,6 @@ pub mod reconnect {
     //! ```
 }
 
-/// Bulkhead pattern guide
 pub mod bulkhead {
     //! # Bulkhead
     //!
@@ -428,7 +424,6 @@ pub mod bulkhead {
     //! ```
 }
 
-/// Time Limiter pattern guide
 pub mod time_limiter {
     //! # Time Limiter
     //!
@@ -502,7 +497,6 @@ pub mod time_limiter {
     //! ```
 }
 
-/// Retry pattern guide
 pub mod retry {
     //! # Retry
     //!
@@ -582,7 +576,6 @@ pub mod retry {
     //! ```
 }
 
-/// Rate Limiter pattern guide
 pub mod rate_limiter {
     //! # Rate Limiter
     //!
@@ -654,7 +647,6 @@ pub mod rate_limiter {
     //! ```
 }
 
-/// Cache pattern guide
 pub mod cache {
     //! # Cache
     //!
@@ -731,7 +723,6 @@ pub mod cache {
     //! ```
 }
 
-/// Fallback pattern guide
 pub mod fallback {
     //! # Fallback
     //!
@@ -911,7 +902,6 @@ pub mod fallback {
     //! ```
 }
 
-/// Executor pattern guide
 pub mod executor {
     //! # Executor
     //!
@@ -1006,7 +996,6 @@ pub mod executor {
     //! ```
 }
 
-/// Hedge pattern guide
 pub mod hedge {
     //! # Hedge
     //!
@@ -1225,7 +1214,6 @@ pub mod hedge {
     //! ```
 }
 
-/// Adaptive Concurrency pattern guide
 pub mod adaptive {
     //! # Adaptive Concurrency
     //!
@@ -1388,7 +1376,6 @@ pub mod adaptive {
     //! ```
 }
 
-/// Coalesce pattern guide
 pub mod coalesce {
     //! # Coalesce (Singleflight)
     //!

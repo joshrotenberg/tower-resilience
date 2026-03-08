@@ -358,7 +358,7 @@ mod tests {
         let mut wrapped2 = shared_layer.layer(service2);
 
         // First call on service1 - cache miss
-        let response1 = (&mut wrapped1)
+        let response1 = wrapped1
             .ready()
             .await
             .unwrap()
@@ -369,7 +369,7 @@ mod tests {
         assert_eq!(call_count.load(Ordering::SeqCst), 1);
 
         // Call on service2 with same key - should be cache HIT (shared store!)
-        let response2 = (&mut wrapped2)
+        let response2 = wrapped2
             .ready()
             .await
             .unwrap()
@@ -417,7 +417,7 @@ mod tests {
         let mut wrapped2 = layer.layer(service2);
 
         // First call on service1 - cache miss
-        (&mut wrapped1)
+        wrapped1
             .ready()
             .await
             .unwrap()
@@ -427,7 +427,7 @@ mod tests {
         assert_eq!(call_count.load(Ordering::SeqCst), 1);
 
         // Call on service2 with same key - ALSO a cache miss (separate stores!)
-        (&mut wrapped2)
+        wrapped2
             .ready()
             .await
             .unwrap()
