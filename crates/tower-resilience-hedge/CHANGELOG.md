@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-hedge-v0.9.1...tower-resilience-hedge-v0.9.2) - 2026-03-08
+
+### Added
+
+- *(timelimiter,hedge)* add preset configurations ([#269](https://github.com/joshrotenberg/tower-resilience/pull/269))
+
 ## [0.7.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-hedge-v0.1.4...tower-resilience-hedge-v0.7.1) - 2026-01-29
 
 ### Added
