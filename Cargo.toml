@@ -8,7 +8,7 @@ publish = false
 metrics = []
 
 [dependencies]
-tower-resilience-core = { version = "0.8.0", path = "crates/tower-resilience-core" }
+tower-resilience-core = { version = "0.8.0", path = "crates/tower-resilience-core", features = ["layer"] }
 tower-resilience-circuitbreaker = { path = "crates/tower-resilience-circuitbreaker", features = ["metrics", "tracing"] }
 tower-resilience-bulkhead = { path = "crates/tower-resilience-bulkhead", features = ["metrics"] }
 tower-resilience-cache = { path = "crates/tower-resilience-cache", features = ["metrics"] }

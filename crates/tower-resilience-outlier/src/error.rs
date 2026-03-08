@@ -90,3 +90,13 @@ impl<E> From<OutlierDetectionServiceError<E>> for ResilienceError<E> {
         }
     }
 }
+
+// Flattening conversion for idempotent .unified() composition.
+impl<E> From<OutlierDetectionServiceError<ResilienceError<E>>> for ResilienceError<E> {
+    fn from(err: OutlierDetectionServiceError<ResilienceError<E>>) -> Self {
+        match err {
+            OutlierDetectionServiceError::OutlierDetection(e) => e.into(),
+            OutlierDetectionServiceError::Inner(re) => re,
+        }
+    }
+}

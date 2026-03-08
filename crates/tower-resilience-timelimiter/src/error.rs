@@ -57,6 +57,18 @@ impl<E> From<TimeLimiterError<E>> for ResilienceError<E> {
     }
 }
 
+// Flattening conversion for idempotent .unified() composition.
+impl<E> From<TimeLimiterError<ResilienceError<E>>> for ResilienceError<E> {
+    fn from(err: TimeLimiterError<ResilienceError<E>>) -> Self {
+        match err {
+            TimeLimiterError::Timeout => ResilienceError::Timeout {
+                layer: "time_limiter",
+            },
+            TimeLimiterError::Inner(re) => re,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
