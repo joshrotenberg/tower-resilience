@@ -3,6 +3,7 @@
 use crate::config::{FixedTimeout, TimeLimiterConfig};
 use crate::TimeLimiter;
 use std::sync::Arc;
+use std::time::Duration;
 use tower::layer::Layer;
 
 /// A Tower layer that applies time limiting to a service.
@@ -107,6 +108,112 @@ impl TimeLimiterLayer<FixedTimeout> {
     /// ```
     pub fn builder() -> crate::TimeLimiterConfigBuilder<FixedTimeout> {
         crate::TimeLimiterConfigBuilder::new()
+    }
+
+    /// Preset: Fast timeout for latency-sensitive API calls.
+    ///
+    /// Configuration:
+    /// - 1 second timeout
+    /// - Cancel running future on timeout
+    ///
+    /// Use this for API responses where fast failure is preferred
+    /// over waiting for slow backends.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_timelimiter::TimeLimiterLayer;
+    ///
+    /// // Use as-is
+    /// let layer = TimeLimiterLayer::fast().build();
+    ///
+    /// // Or customize further
+    /// let layer = TimeLimiterLayer::fast()
+    ///     .name("api-timeout")
+    ///     .build();
+    /// ```
+    pub fn fast() -> crate::TimeLimiterConfigBuilder<FixedTimeout> {
+        Self::builder().timeout_duration(Duration::from_secs(1))
+    }
+
+    /// Preset: Standard timeout for general-purpose use.
+    ///
+    /// Configuration:
+    /// - 5 second timeout
+    /// - Cancel running future on timeout
+    ///
+    /// A balanced configuration suitable for most use cases.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_timelimiter::TimeLimiterLayer;
+    ///
+    /// // Use as-is
+    /// let layer = TimeLimiterLayer::standard().build();
+    ///
+    /// // Or customize further
+    /// let layer = TimeLimiterLayer::standard()
+    ///     .name("default-timeout")
+    ///     .build();
+    /// ```
+    pub fn standard() -> crate::TimeLimiterConfigBuilder<FixedTimeout> {
+        Self::builder().timeout_duration(Duration::from_secs(5))
+    }
+
+    /// Preset: Slow timeout for background jobs and batch operations.
+    ///
+    /// Configuration:
+    /// - 30 second timeout
+    /// - Cancel running future on timeout
+    ///
+    /// Use this for operations that are expected to take longer,
+    /// such as batch processing, report generation, or bulk imports.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_timelimiter::TimeLimiterLayer;
+    ///
+    /// // Use as-is
+    /// let layer = TimeLimiterLayer::slow().build();
+    ///
+    /// // Or customize further
+    /// let layer = TimeLimiterLayer::slow()
+    ///     .name("batch-timeout")
+    ///     .build();
+    /// ```
+    pub fn slow() -> crate::TimeLimiterConfigBuilder<FixedTimeout> {
+        Self::builder().timeout_duration(Duration::from_secs(30))
+    }
+
+    /// Preset: Long timeout for streaming and long-poll scenarios.
+    ///
+    /// Configuration:
+    /// - 60 second timeout
+    /// - Does NOT cancel running future on timeout
+    ///
+    /// Use this for streaming responses, long-polling, or WebSocket
+    /// connections where you want the background work to continue
+    /// even after the timeout fires.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_timelimiter::TimeLimiterLayer;
+    ///
+    /// // Use as-is
+    /// let layer = TimeLimiterLayer::streaming().build();
+    ///
+    /// // Or customize further
+    /// let layer = TimeLimiterLayer::streaming()
+    ///     .name("stream-timeout")
+    ///     .build();
+    /// ```
+    pub fn streaming() -> crate::TimeLimiterConfigBuilder<FixedTimeout> {
+        Self::builder()
+            .timeout_duration(Duration::from_secs(60))
+            .cancel_running_future(false)
     }
 }
 

@@ -561,4 +561,19 @@ mod tests {
             .await;
         assert!(matches!(result, Err(HedgeError::AllAttemptsFailed(_))));
     }
+
+    #[test]
+    fn test_preset_conservative() {
+        let _layer = HedgeLayer::conservative();
+    }
+
+    #[test]
+    fn test_preset_standard() {
+        let _layer = HedgeLayer::standard();
+    }
+
+    #[test]
+    fn test_preset_aggressive() {
+        let _layer = HedgeLayer::aggressive();
+    }
 }

@@ -48,6 +48,8 @@
 //! | **Circuit Breaker** | [`standard()`], [`fast_fail()`], [`tolerant()`] |
 //! | **Rate Limiter** | [`per_second(n)`], [`per_minute(n)`], [`burst(rate, size)`] |
 //! | **Bulkhead** | [`small()`], [`medium()`], [`large()`] |
+//! | **Time Limiter** | [`fast()`], [`standard()`][tl_standard], [`slow()`], [`streaming()`] |
+//! | **Hedge** | [`conservative()`][h_conservative], [`standard()`][h_standard], [`aggressive()`][h_aggressive] |
 //!
 //! Presets return builders, so you can customize any setting:
 //!
@@ -76,6 +78,13 @@
 //! [`small()`]: bulkhead::BulkheadLayer::small
 //! [`medium()`]: bulkhead::BulkheadLayer::medium
 //! [`large()`]: bulkhead::BulkheadLayer::large
+//! [`fast()`]: timelimiter::TimeLimiterLayer::fast
+//! [tl_standard]: timelimiter::TimeLimiterLayer::standard
+//! [`slow()`]: timelimiter::TimeLimiterLayer::slow
+//! [`streaming()`]: timelimiter::TimeLimiterLayer::streaming
+//! [h_conservative]: hedge::HedgeLayer::conservative
+//! [h_standard]: hedge::HedgeLayer::standard
+//! [h_aggressive]: hedge::HedgeLayer::aggressive
 //!
 //! # Resilience Patterns
 //!

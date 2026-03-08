@@ -47,6 +47,83 @@ impl HedgeLayer {
         Self::builder().delay(delay).build()
     }
 
+    /// Preset: Conservative hedging for cost-sensitive scenarios.
+    ///
+    /// Configuration:
+    /// - 500ms delay before hedge
+    /// - 2 total attempts (1 original + 1 hedge)
+    ///
+    /// Use this when you want to reduce tail latency but need to
+    /// minimize extra resource usage and duplicate requests.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_hedge::HedgeLayer;
+    ///
+    /// // Use as-is
+    /// let layer = HedgeLayer::conservative();
+    ///
+    /// // Or customize via builder
+    /// let layer = HedgeLayer::builder()
+    ///     .delay(std::time::Duration::from_millis(500))
+    ///     .max_hedged_attempts(2)
+    ///     .name("my-hedge")
+    ///     .build();
+    /// ```
+    pub fn conservative() -> Self {
+        Self::builder()
+            .delay(Duration::from_millis(500))
+            .max_hedged_attempts(2)
+            .build()
+    }
+
+    /// Preset: Standard hedging for general-purpose use.
+    ///
+    /// Configuration:
+    /// - 100ms delay before hedge
+    /// - 3 total attempts (1 original + 2 hedges)
+    ///
+    /// A balanced configuration that provides good tail latency
+    /// reduction without excessive resource usage.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_hedge::HedgeLayer;
+    ///
+    /// let layer = HedgeLayer::standard();
+    /// ```
+    pub fn standard() -> Self {
+        Self::builder()
+            .delay(Duration::from_millis(100))
+            .max_hedged_attempts(3)
+            .build()
+    }
+
+    /// Preset: Aggressive hedging for latency-critical scenarios.
+    ///
+    /// Configuration:
+    /// - 50ms delay before hedge
+    /// - 5 total attempts (1 original + 4 hedges)
+    ///
+    /// Use this when latency is the top priority and you can afford
+    /// the additional backend load from duplicate requests.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tower_resilience_hedge::HedgeLayer;
+    ///
+    /// let layer = HedgeLayer::aggressive();
+    /// ```
+    pub fn aggressive() -> Self {
+        Self::builder()
+            .delay(Duration::from_millis(50))
+            .max_hedged_attempts(5)
+            .build()
+    }
+
     /// Create a builder for configuring the hedge layer.
     ///
     /// # Example
