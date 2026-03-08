@@ -471,6 +471,20 @@ pub mod time_limiter {
     //! ❌ **Same timeout everywhere**: Different operations need different limits
     //! ✅ Configure per-endpoint or per-operation
     //!
+    //! ## Presets
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "timelimiter")]
+    //! # {
+    //! use tower_resilience::timelimiter::TimeLimiterLayer;
+    //!
+    //! let fast = TimeLimiterLayer::fast().build();        // 1s, cancel on timeout
+    //! let standard = TimeLimiterLayer::standard().build(); // 5s, cancel on timeout
+    //! let slow = TimeLimiterLayer::slow().build();         // 30s, cancel on timeout
+    //! let stream = TimeLimiterLayer::streaming().build();  // 60s, no cancellation
+    //! # }
+    //! ```
+    //!
     //! ## Example
     //!
     //! ```rust,no_run
@@ -1087,6 +1101,19 @@ pub mod hedge {
     //!
     //! ❌ **Hedging already-optimized endpoints**: Diminishing returns
     //! ✅ Target high-variance latency endpoints where hedging provides value
+    //!
+    //! ## Presets
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "hedge")]
+    //! # {
+    //! use tower_resilience::hedge::HedgeLayer;
+    //!
+    //! let conservative = HedgeLayer::conservative(); // 500ms delay, 2 attempts
+    //! let standard = HedgeLayer::standard();         // 100ms delay, 3 attempts
+    //! let aggressive = HedgeLayer::aggressive();     // 50ms delay, 5 attempts
+    //! # }
+    //! ```
     //!
     //! ## Example: Latency Mode
     //!

@@ -11,6 +11,16 @@
 //! - Operations are idempotent and safe to retry
 //! - You can trade increased resource usage for lower latency
 //!
+//! # Presets
+//!
+//! ```rust
+//! use tower_resilience_hedge::HedgeLayer;
+//!
+//! let conservative = HedgeLayer::conservative(); // 500ms delay, 2 attempts
+//! let standard = HedgeLayer::standard();         // 100ms delay, 3 attempts
+//! let aggressive = HedgeLayer::aggressive();     // 50ms delay, 5 attempts
+//! ```
+//!
 //! # Modes
 //!
 //! ## Latency Mode (delay > 0)
