@@ -28,9 +28,8 @@ async fn basic_request_processing() {
 
 #[tokio::test]
 async fn error_propagation() {
-    let svc = tower::service_fn(|_req: ()| async move {
-        Err::<(), _>(std::io::Error::other("boom"))
-    });
+    let svc =
+        tower::service_fn(|_req: ()| async move { Err::<(), _>(std::io::Error::other("boom")) });
 
     let mut svc = ServiceBuilder::new()
         .layer(ExecutorLayer::current())
