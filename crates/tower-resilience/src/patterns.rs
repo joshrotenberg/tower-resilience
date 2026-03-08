@@ -18,6 +18,7 @@
 //! - [Executor](executor) - Delegate request processing to dedicated executors
 //! - [Adaptive Concurrency](adaptive) - Dynamic concurrency limiting with AIMD/Vegas
 //! - [Coalesce](coalesce) - Deduplicate concurrent identical requests (singleflight)
+//! - [Outlier Detection](outlier_detection) - Fleet-aware instance ejection based on health tracking
 
 /// Circuit Breaker pattern guide
 pub mod circuit_breaker {
@@ -1575,4 +1576,112 @@ pub mod coalesce {
     //! - **Singleflight** (Go's `golang.org/x/sync/singleflight`)
     //! - **Request deduplication**
     //! - **Request collapsing**
+}
+
+/// Outlier Detection pattern guide
+pub mod outlier_detection {
+    //! # Outlier Detection
+    //!
+    //! Tracks per-instance health on live traffic and ejects unhealthy instances from a fleet.
+    //! Complementary to circuit breaker -- outlier detection is fleet-aware and catches
+    //! hard-down instances immediately via consecutive error counting.
+    //!
+    //! ## When to Use
+    //!
+    //! - **Fleet of backends**: Multiple instances behind a load balancer
+    //! - **Hard failures**: Instances that crash or become unreachable
+    //! - **Partial outages**: Some instances down while others are healthy
+    //! - **Dynamic backends**: Instances added/removed at runtime
+    //!
+    //! ## When NOT to Use
+    //!
+    //! - **Single backend**: Use circuit breaker instead
+    //! - **Gradual degradation**: Circuit breaker with failure rate threshold is better
+    //! - **Rate-based issues**: Rate limiter is more appropriate
+    //!
+    //! ## How It Differs from Circuit Breaker
+    //!
+    //! | | Circuit Breaker | Outlier Detection |
+    //! |---|---|---|
+    //! | **Trigger** | Failure *rate* over sliding window | *Consecutive* errors |
+    //! | **Scope** | Per-service, isolated | Fleet-aware (`max_ejection_percent`) |
+    //! | **Detection speed** | Needs `minimum_calls` first | Catches hard-down immediately |
+    //! | **Recovery** | Half-open state with probes | Time-based with exponential backoff |
+    //! | **Use case** | Gradual degradation | Hard failures, instance health |
+    //!
+    //! ## Key Concepts
+    //!
+    //! - **`OutlierDetector`**: Shared fleet state. Tracks which instances are ejected and
+    //!   enforces `max_ejection_percent` to prevent cascading ejections.
+    //! - **`EjectionStrategy`**: Determines when to eject. `ConsecutiveErrors` ejects after
+    //!   N errors in a row. The trait is extensible for future strategies.
+    //! - **Backpressure mode** (default): `poll_ready` returns `Pending` for ejected instances,
+    //!   causing Tower load balancers to route around them naturally.
+    //! - **Error mode** (opt-in): `call` returns `OutlierDetectionError::Ejected`.
+    //! - **Recovery**: Automatic after `base_ejection_duration * 2^(ejection_count - 1)`.
+    //!
+    //! ## Trade-offs
+    //!
+    //! | Advantage | Disadvantage |
+    //! |-----------|--------------|
+    //! | Catches hard failures fast | False positives from transient errors |
+    //! | Fleet-aware ejection cap | Shared state requires coordination |
+    //! | Integrates with load balancers | No gradual failure rate detection |
+    //! | Exponential backoff on re-ejection | Timer-based recovery (no probing) |
+    //!
+    //! ## Example
+    //!
+    //! ```rust
+    //! # #[cfg(feature = "outlier")]
+    //! # {
+    //! use tower_resilience::outlier::{OutlierDetectionLayer, OutlierDetector};
+    //! use tower::{ServiceBuilder, service_fn};
+    //! use std::time::Duration;
+    //!
+    //! let detector = OutlierDetector::new()
+    //!     .max_ejection_percent(50)
+    //!     .base_ejection_duration(Duration::from_secs(30))
+    //!     .max_ejection_duration(Duration::from_secs(300));
+    //!
+    //! // Register instances with consecutive error thresholds
+    //! detector.register("backend-1", 5);
+    //! detector.register("backend-2", 5);
+    //! detector.register("backend-3", 5);
+    //!
+    //! // Create per-instance layers sharing the same detector
+    //! let layer = OutlierDetectionLayer::builder()
+    //!     .detector(detector.clone())
+    //!     .instance_name("backend-1")
+    //!     .build();
+    //!
+    //! let service = ServiceBuilder::new()
+    //!     .layer(layer)
+    //!     .service(service_fn(|req: String| async move { Ok::<_, std::io::Error>(req) }));
+    //! # }
+    //! ```
+    //!
+    //! ## Composition
+    //!
+    //! Outlier detection is typically the **outermost** layer so it observes errors
+    //! after all other middleware has had a chance to handle them:
+    //!
+    //! ```text
+    //! Request -> [Outlier Detection] -> [Circuit Breaker] -> [Timeout] -> [Retry] -> Service
+    //! ```
+    //!
+    //! ## Anti-patterns
+    //!
+    //! - **Threshold of 1**: A single error ejects the instance. Too aggressive for most
+    //!   workloads -- transient errors will cause unnecessary ejections.
+    //! - **No ejection cap**: Without `max_ejection_percent`, a fleet-wide issue can eject
+    //!   all instances simultaneously. Always set a cap (50% is a good default).
+    //! - **Using with single backend**: Outlier detection with one instance just adds
+    //!   overhead. Use circuit breaker instead.
+    //!
+    //! ## Prior Art
+    //!
+    //! - **Envoy**: [Outlier detection](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/outlier)
+    //!   with consecutive errors, success rate, and failure percentage strategies
+    //! - **Istio**: Exposes outlier detection via DestinationRule
+    //! - **Linkerd**: Failure accrual
 }

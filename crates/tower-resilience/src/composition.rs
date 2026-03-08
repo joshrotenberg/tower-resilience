@@ -90,6 +90,7 @@ pub mod selection {
     //! | **Hedge** | Reduce tail latency | Idempotent reads, P99 matters | Expensive operations |
     //! | **Cache** | Reduce load, improve latency | High read:write ratio | Frequently changing data |
     //! | **Adaptive** | Auto-tune concurrency | Unknown optimal limits | Known fixed capacity |
+    //! | **Outlier** | Eject unhealthy instances | Fleet of backends, hard failures | Single backend |
     //!
     //! ## Decision Flowchart
     //!
@@ -105,6 +106,8 @@ pub mod selection {
     //! │   ├─► Can hang indefinitely? ───────────► Add TimeLimiter
     //! │   │
     //! │   ├─► Can be completely down? ──────────► Add CircuitBreaker
+    //! │   │
+    //! │   ├─► Fleet of backends? ─────────────► Add OutlierDetection
     //! │   │
     //! │   ├─► Has rate limits? ─────────────────► Add RateLimiter (client-side)
     //! │   │

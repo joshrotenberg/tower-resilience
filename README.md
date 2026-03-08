@@ -26,6 +26,7 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 - **Executor** - Delegates request processing to dedicated executors for parallelism
 - **Adaptive Concurrency** - Dynamic concurrency limiting using AIMD or Vegas algorithms
 - **Coalesce** - Deduplicates concurrent identical requests (singleflight pattern)
+- **Outlier Detection** - Fleet-aware instance ejection based on consecutive error tracking
 - **Chaos** - Inject failures and latency for testing resilience (development/testing only)
 
 ## Quick Start
@@ -458,6 +459,40 @@ Use cases:
 - **Load shedding**: Automatically reduces load when backends struggle
 
 **Full examples:** [adaptive.rs](examples/adaptive.rs)
+
+### Outlier Detection
+
+Fleet-aware instance ejection that tracks per-instance health and routes around unhealthy backends:
+
+```rust
+use tower_resilience::outlier::{OutlierDetectionLayer, OutlierDetector};
+use tower::{ServiceBuilder, service_fn};
+use std::time::Duration;
+
+// Shared detector coordinates ejection across all instances
+let detector = OutlierDetector::new()
+    .max_ejection_percent(50)
+    .base_ejection_duration(Duration::from_secs(30));
+
+// Register instances (eject after 5 consecutive errors)
+detector.register("backend-1", 5);
+detector.register("backend-2", 5);
+
+// Per-instance layers share the detector
+let layer = OutlierDetectionLayer::builder()
+    .detector(detector.clone())
+    .instance_name("backend-1")
+    .build();
+
+let service = ServiceBuilder::new()
+    .layer(layer)
+    .service(service_fn(|req: String| async move { Ok::<_, std::io::Error>(req) }));
+```
+
+Key features:
+- **Backpressure mode** (default): `poll_ready` returns `Pending` for ejected instances, integrating naturally with Tower load balancers
+- **Fleet protection**: `max_ejection_percent` prevents cascading ejections
+- **Exponential backoff**: Repeatedly-ejected instances stay out longer
 
 ### Chaos (Testing Only)
 

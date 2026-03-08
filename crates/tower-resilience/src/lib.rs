@@ -92,6 +92,7 @@
 //! - **[Executor]** - Delegates request processing to dedicated executors
 //! - **[Adaptive]** - Dynamic concurrency limiting using AIMD or Vegas algorithms
 //! - **[Coalesce]** - Deduplicates concurrent identical requests (singleflight)
+//! - **[Outlier Detection]** - Fleet-aware instance ejection based on health tracking
 //!
 //! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
@@ -106,6 +107,7 @@
 //! [Executor]: https://docs.rs/tower-resilience-executor
 //! [Adaptive]: https://docs.rs/tower-resilience-adaptive
 //! [Coalesce]: https://docs.rs/tower-resilience-coalesce
+//! [Outlier Detection]: https://docs.rs/tower-resilience-outlier
 //!
 //! # Documentation Guides
 //!
