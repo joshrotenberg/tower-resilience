@@ -289,7 +289,6 @@
 //! - `circuitbreaker_health_check.rs` - Health check endpoints and monitoring
 
 use crate::circuit::Circuit;
-use crate::classifier::FailureClassifier;
 use futures::future::BoxFuture;
 use futures::Future;
 #[cfg(feature = "metrics")]
@@ -304,14 +303,11 @@ use tower::Service;
 use tracing::debug;
 
 pub use circuit::{CircuitMetrics, CircuitState};
-pub use classifier::{
-    DefaultClassifier, FailureClassifier as FailureClassifierTrait, FnClassifier,
-};
+pub use classifier::{DefaultClassifier, FailureClassifier, FnClassifier};
 pub use config::{CircuitBreakerConfig, CircuitBreakerConfigBuilder, SlidingWindowType};
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
-#[allow(deprecated)]
-pub use layer::{CircuitBreakerLayer, CircuitBreakerRequestLayer};
+pub use layer::CircuitBreakerLayer;
 
 mod circuit;
 pub mod classifier;
