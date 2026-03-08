@@ -2,8 +2,6 @@
 //!
 //! This module provides comprehensive guidance on metrics, tracing, and monitoring
 //! for all resilience patterns.
-
-/// Metrics documentation
 pub mod metrics {
     //! # Metrics Guide
     //!
@@ -134,7 +132,6 @@ pub mod metrics {
     //! ```
 }
 
-/// Tracing documentation
 pub mod tracing_guide {
     //! # Tracing Guide
     //!
@@ -156,7 +153,6 @@ pub mod tracing_guide {
     //! ```
 }
 
-/// Event system documentation
 pub mod events {
     //! # Event System Guide
     //!

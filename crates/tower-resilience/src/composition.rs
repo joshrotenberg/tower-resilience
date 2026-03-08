@@ -26,7 +26,6 @@
 //! Use Health Check to **select** healthy resources, then apply Tower layers to the
 //! selected resource for request-level resilience.
 
-/// Pattern selection guide - how to choose the right patterns
 pub mod selection {
     //! # Pattern Selection Guide
     //!
@@ -130,7 +129,6 @@ pub mod selection {
     //! ```
 }
 
-/// Progressive stacks for different service types
 pub mod stacks {
     //! # Progressive Stacks by Service Type
     //!
@@ -349,7 +347,6 @@ pub mod stacks {
     //! ```
 }
 
-/// Common composition patterns
 pub mod patterns {
     //! # Composition Patterns
     //!
@@ -456,7 +453,6 @@ pub mod patterns {
     //! ```
 }
 
-/// Layer ordering guide
 pub mod ordering {
     //! # Layer Ordering
     //!
@@ -575,7 +571,6 @@ pub mod ordering {
     //! ```
 }
 
-/// Common anti-patterns to avoid
 pub mod anti_patterns {
     //! # Common Anti-Patterns
     //!
@@ -748,7 +743,6 @@ pub mod anti_patterns {
     //! ```
 }
 
-/// Error type integration strategies
 pub mod error_types {
     //! # Error Type Integration
     //!
@@ -877,7 +871,6 @@ pub mod error_types {
     //! ```
 }
 
-/// Advanced composition techniques
 pub mod advanced {
     //! # Advanced Composition
     //!
@@ -1070,7 +1063,6 @@ pub mod advanced {
     //! [`examples/message_queue_worker.rs`]: https://github.com/joshrotenberg/tower-resilience/blob/main/examples/message_queue_worker.rs
 }
 
-/// References and further reading
 pub mod references {
     //! # References
     //!
