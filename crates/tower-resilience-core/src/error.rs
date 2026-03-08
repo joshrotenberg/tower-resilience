@@ -264,6 +264,34 @@ impl<E> std::error::Error for ResilienceError<E> where E: std::error::Error {}
 // by the individual crates (bulkhead, circuitbreaker, etc.) to avoid
 // circular dependencies.
 
+/// Trait for converting service errors into [`ResilienceError<E>`].
+///
+/// This is used by [`ResilienceErrorLayer`](crate::error_layer::ResilienceErrorLayer)
+/// to convert each layer's error type into the unified `ResilienceError<E>`.
+///
+/// A blanket implementation is provided for any type that implements
+/// `Into<ResilienceError<E>>`, which covers all tower-resilience service error types.
+///
+/// You typically don't need to implement this trait directly.
+pub trait IntoResilienceError<E> {
+    /// Convert this error into a `ResilienceError<E>`.
+    fn into_resilience_error(self) -> ResilienceError<E>;
+}
+
+/// Blanket implementation: any type with `Into<ResilienceError<E>>` gets this for free.
+///
+/// This covers:
+/// - `ResilienceError<E>` (identity, via `From<T> for T`)
+/// - All service error types like `BulkheadServiceError<E>`, `CircuitBreakerError<E>`, etc.
+impl<T, E> IntoResilienceError<E> for T
+where
+    T: Into<ResilienceError<E>>,
+{
+    fn into_resilience_error(self) -> ResilienceError<E> {
+        self.into()
+    }
+}
+
 impl<E> ResilienceError<E> {
     /// Returns `true` if this is a timeout error.
     pub fn is_timeout(&self) -> bool {

@@ -110,6 +110,18 @@ impl<E> From<RateLimiterServiceError<E>> for ResilienceError<E> {
     }
 }
 
+// Flattening conversion for idempotent .unified() composition.
+impl<E> From<RateLimiterServiceError<ResilienceError<E>>> for ResilienceError<E> {
+    fn from(err: RateLimiterServiceError<ResilienceError<E>>) -> Self {
+        match err {
+            RateLimiterServiceError::RateLimited => {
+                ResilienceError::RateLimited { retry_after: None }
+            }
+            RateLimiterServiceError::Inner(re) => re,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

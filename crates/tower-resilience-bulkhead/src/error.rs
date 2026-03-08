@@ -126,6 +126,18 @@ impl<E> From<BulkheadServiceError<E>> for ResilienceError<E> {
     }
 }
 
+// Flattening conversion: when inner error is already ResilienceError<E>,
+// pass it through instead of double-wrapping in Application(ResilienceError<E>).
+// This enables idempotent .unified() composition across multiple layers.
+impl<E> From<BulkheadServiceError<ResilienceError<E>>> for ResilienceError<E> {
+    fn from(err: BulkheadServiceError<ResilienceError<E>>) -> Self {
+        match err {
+            BulkheadServiceError::Bulkhead(e) => e.into(),
+            BulkheadServiceError::Inner(re) => re,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

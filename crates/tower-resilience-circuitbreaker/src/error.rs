@@ -43,3 +43,13 @@ impl<E> From<CircuitBreakerError<E>> for ResilienceError<E> {
         }
     }
 }
+
+// Flattening conversion for idempotent .unified() composition.
+impl<E> From<CircuitBreakerError<ResilienceError<E>>> for ResilienceError<E> {
+    fn from(err: CircuitBreakerError<ResilienceError<E>>) -> Self {
+        match err {
+            CircuitBreakerError::OpenCircuit => ResilienceError::CircuitOpen { name: None },
+            CircuitBreakerError::Inner(re) => re,
+        }
+    }
+}

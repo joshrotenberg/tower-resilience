@@ -14,12 +14,18 @@ pub mod classifier;
 pub mod error;
 pub mod events;
 
+#[cfg(feature = "layer")]
+pub mod error_layer;
+
 #[cfg(feature = "health-integration")]
 pub mod health_integration;
 
 pub use aimd::{AimdConfig, AimdController};
 pub use classifier::{DefaultClassifier, FailureClassifier, FnClassifier};
-pub use error::ResilienceError;
+pub use error::{IntoResilienceError, ResilienceError};
+
+#[cfg(feature = "layer")]
+pub use error_layer::{ResilienceErrorLayer, ResilienceErrorService, UnifiedErrors};
 pub use events::{EventListener, EventListeners, FnListener, ResilienceEvent};
 
 #[cfg(feature = "health-integration")]

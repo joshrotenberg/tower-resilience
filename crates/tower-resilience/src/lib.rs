@@ -326,3 +326,9 @@ pub use tower_resilience_coalesce as coalesce;
 
 #[cfg(feature = "outlier")]
 pub use tower_resilience_outlier as outlier;
+
+// Re-export unified error layer types
+#[cfg(feature = "layer")]
+pub use tower_resilience_core::{
+    IntoResilienceError, ResilienceErrorLayer, ResilienceErrorService, UnifiedErrors,
+};
