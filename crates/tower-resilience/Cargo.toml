@@ -30,6 +30,7 @@ tower-resilience-executor = { version = "0.8.0", path = "../tower-resilience-exe
 tower-resilience-adaptive = { version = "0.8.0", path = "../tower-resilience-adaptive", optional = true }
 tower-resilience-coalesce = { version = "0.8.0", path = "../tower-resilience-coalesce", optional = true }
 tower-resilience-outlier = { version = "0.8.0", path = "../tower-resilience-outlier", optional = true }
+tower-resilience-router = { version = "0.8.0", path = "../tower-resilience-router", optional = true }
 
 [features]
 default = []
@@ -63,11 +64,13 @@ adaptive = ["dep:tower-resilience-adaptive"]
 coalesce = ["dep:tower-resilience-coalesce"]
 # Outlier detection: fleet-aware instance ejection based on health tracking
 outlier = ["dep:tower-resilience-outlier"]
+# Router: weighted traffic routing for canary deployments and progressive rollout
+router = ["dep:tower-resilience-router"]
 # Unified error layer: compose multiple resilience layers with a single error type
 layer = ["tower-resilience-core/layer"]
 
 # Enable all patterns at once
-full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry", "ratelimiter", "reconnect", "healthcheck", "fallback", "hedge", "executor", "adaptive", "coalesce", "outlier", "layer"]
+full = ["circuitbreaker", "bulkhead", "timelimiter", "cache", "retry", "ratelimiter", "reconnect", "healthcheck", "fallback", "hedge", "executor", "adaptive", "coalesce", "outlier", "router", "layer"]
 
 # Integration: health checks can proactively open/close circuit breakers
 health-circuitbreaker = [
