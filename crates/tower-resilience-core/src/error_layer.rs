@@ -223,9 +223,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_unified_extension_trait() {
-        let svc = tower::service_fn(|req: String| async move {
-            Ok::<_, ResilienceError<TestAppError>>(req)
-        });
+        let svc =
+            tower::service_fn(
+                |req: String| async move { Ok::<_, ResilienceError<TestAppError>>(req) },
+            );
 
         let layer = Identity::new().unified::<TestAppError>();
         let mut svc = layer.layer(svc);

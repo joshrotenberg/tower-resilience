@@ -1,8 +1,8 @@
 //! Integration tests for ResilienceErrorLayer and unified error composition.
 
 use std::fmt;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tower::{Service, ServiceBuilder, ServiceExt};
 use tower_resilience_bulkhead::BulkheadLayer;
@@ -24,9 +24,7 @@ impl std::error::Error for AppError {}
 
 #[tokio::test]
 async fn test_single_layer_unified() {
-    let svc = tower::service_fn(|req: String| async move {
-        Ok::<_, AppError>(req.to_uppercase())
-    });
+    let svc = tower::service_fn(|req: String| async move { Ok::<_, AppError>(req.to_uppercase()) });
 
     let bulkhead = BulkheadLayer::builder().max_concurrent_calls(10).build();
     let layer = ResilienceErrorLayer::<_, AppError>::new(bulkhead);
@@ -115,9 +113,7 @@ async fn test_circuit_breaker_error_converts() {
 
 #[tokio::test]
 async fn test_two_layers_stacked() {
-    let svc = tower::service_fn(|req: String| async move {
-        Ok::<_, AppError>(req.to_uppercase())
-    });
+    let svc = tower::service_fn(|req: String| async move { Ok::<_, AppError>(req.to_uppercase()) });
 
     let bulkhead = ResilienceErrorLayer::<_, AppError>::new(
         BulkheadLayer::builder().max_concurrent_calls(50).build(),
@@ -129,10 +125,7 @@ async fn test_two_layers_stacked() {
             .build(),
     );
 
-    let mut svc = ServiceBuilder::new()
-        .layer(cb)
-        .layer(bulkhead)
-        .service(svc);
+    let mut svc = ServiceBuilder::new().layer(cb).layer(bulkhead).service(svc);
 
     let resp: Result<String, _> = svc.ready().await.unwrap().call("hello".into()).await;
     assert_eq!(resp.unwrap(), "HELLO");
@@ -140,9 +133,7 @@ async fn test_two_layers_stacked() {
 
 #[tokio::test]
 async fn test_three_layers_stacked() {
-    let svc = tower::service_fn(|req: String| async move {
-        Ok::<_, AppError>(req.to_uppercase())
-    });
+    let svc = tower::service_fn(|req: String| async move { Ok::<_, AppError>(req.to_uppercase()) });
 
     let rl = ResilienceErrorLayer::<_, AppError>::new(
         RateLimiterLayer::builder()
@@ -173,9 +164,7 @@ async fn test_three_layers_stacked() {
 async fn test_unified_extension_trait() {
     use tower_resilience_core::UnifiedErrors;
 
-    let svc = tower::service_fn(|req: String| async move {
-        Ok::<_, AppError>(req.to_uppercase())
-    });
+    let svc = tower::service_fn(|req: String| async move { Ok::<_, AppError>(req.to_uppercase()) });
 
     let mut svc = ServiceBuilder::new()
         .layer(
@@ -221,8 +210,9 @@ async fn test_error_display_distinguishes_failure_modes() {
     };
     assert!(timeout_err.to_string().contains("Timeout"));
 
-    let circuit_err: ResilienceError<AppError> =
-        ResilienceError::CircuitOpen { name: Some("api".into()) };
+    let circuit_err: ResilienceError<AppError> = ResilienceError::CircuitOpen {
+        name: Some("api".into()),
+    };
     assert!(circuit_err.to_string().contains("Circuit breaker"));
     assert!(circuit_err.to_string().contains("api"));
 
@@ -232,8 +222,7 @@ async fn test_error_display_distinguishes_failure_modes() {
     };
     assert!(bulkhead_err.to_string().contains("Bulkhead full"));
 
-    let rate_err: ResilienceError<AppError> =
-        ResilienceError::RateLimited { retry_after: None };
+    let rate_err: ResilienceError<AppError> = ResilienceError::RateLimited { retry_after: None };
     assert!(rate_err.to_string().contains("Rate limited"));
 
     let ejected_err: ResilienceError<AppError> = ResilienceError::InstanceEjected {
