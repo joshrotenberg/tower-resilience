@@ -39,11 +39,11 @@ pub enum RetryEvent {
 impl ResilienceEvent for RetryEvent {
     fn event_type(&self) -> &'static str {
         match self {
-            RetryEvent::Retry { .. } => "Retry",
-            RetryEvent::Success { .. } => "Success",
-            RetryEvent::Error { .. } => "Error",
-            RetryEvent::IgnoredError { .. } => "IgnoredError",
-            RetryEvent::BudgetExhausted { .. } => "BudgetExhausted",
+            RetryEvent::Retry { .. } => "retry",
+            RetryEvent::Success { .. } => "success",
+            RetryEvent::Error { .. } => "error",
+            RetryEvent::IgnoredError { .. } => "ignored_error",
+            RetryEvent::BudgetExhausted { .. } => "budget_exhausted",
         }
     }
 
@@ -81,26 +81,26 @@ mod tests {
             attempt: 1,
             delay: Duration::from_secs(1),
         };
-        assert_eq!(retry.event_type(), "Retry");
+        assert_eq!(retry.event_type(), "retry");
 
         let success = RetryEvent::Success {
             pattern_name: "test".to_string(),
             timestamp: now,
             attempts: 2,
         };
-        assert_eq!(success.event_type(), "Success");
+        assert_eq!(success.event_type(), "success");
 
         let error = RetryEvent::Error {
             pattern_name: "test".to_string(),
             timestamp: now,
             attempts: 3,
         };
-        assert_eq!(error.event_type(), "Error");
+        assert_eq!(error.event_type(), "error");
 
         let ignored = RetryEvent::IgnoredError {
             pattern_name: "test".to_string(),
             timestamp: now,
         };
-        assert_eq!(ignored.event_type(), "IgnoredError");
+        assert_eq!(ignored.event_type(), "ignored_error");
     }
 }

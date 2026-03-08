@@ -10,6 +10,7 @@
 //! - Health integration traits for proactive resilience
 
 pub mod aimd;
+pub mod classifier;
 pub mod error;
 pub mod events;
 
@@ -17,6 +18,7 @@ pub mod events;
 pub mod health_integration;
 
 pub use aimd::{AimdConfig, AimdController};
+pub use classifier::{DefaultClassifier, FailureClassifier, FnClassifier};
 pub use error::ResilienceError;
 pub use events::{EventListener, EventListeners, FnListener, ResilienceEvent};
 
