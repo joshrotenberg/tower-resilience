@@ -8,7 +8,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! tower-resilience = { version = "0.7", features = ["circuitbreaker", "bulkhead"] }
+//! tower-resilience = { version = "0.9", features = ["circuitbreaker", "bulkhead"] }
 //! ```
 //!
 //! # Presets: Get Started Immediately
@@ -331,6 +331,9 @@ pub use tower_resilience_outlier as outlier;
 
 #[cfg(feature = "router")]
 pub use tower_resilience_router as router;
+
+#[cfg(feature = "chaos")]
+pub use tower_resilience_chaos as chaos;
 
 // Re-export unified error layer types
 #[cfg(feature = "layer")]

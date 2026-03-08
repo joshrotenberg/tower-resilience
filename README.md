@@ -33,7 +33,7 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 
 ```toml
 [dependencies]
-tower-resilience = "0.7"
+tower-resilience = "0.9"
 tower = "0.5"
 ```
 
@@ -493,6 +493,43 @@ Key features:
 - **Backpressure mode** (default): `poll_ready` returns `Pending` for ejected instances, integrating naturally with Tower load balancers
 - **Fleet protection**: `max_ejection_percent` prevents cascading ejections
 - **Exponential backoff**: Repeatedly-ejected instances stay out longer
+
+### Router
+
+Weighted traffic routing for canary deployments and progressive rollout:
+
+```rust
+use tower::util::BoxService;
+use tower_resilience::router::WeightedRouter;
+
+// Route 90% to stable, 10% to canary
+let svc_v1: BoxService<String, String, MyError> =
+    BoxService::new(tower::service_fn(|req: String| async move {
+        Ok(format!("v1: {}", req))
+    }));
+let svc_v2: BoxService<String, String, MyError> =
+    BoxService::new(tower::service_fn(|req: String| async move {
+        Ok(format!("v2: {}", req))
+    }));
+
+let router = WeightedRouter::builder()
+    .name("canary-deploy")
+    .route(svc_v1, 90)
+    .route(svc_v2, 10)
+    .on_request_routed(|idx, weight| {
+        println!("Routed to backend {} (weight: {})", idx, weight);
+    })
+    .build();
+```
+
+Key features:
+- **Deterministic** (default): Atomic counter for exact, repeatable distribution
+- **Random**: Probabilistic selection for high-volume statistical distribution
+- **Composable**: Wrap each backend with circuit breakers, bulkheads, etc.
+
+**Note:** Router is a standalone `Service`, not a `Layer`. Use `BoxService` to type-erase different backend implementations.
+
+**Full examples:** [router.rs](examples/router.rs)
 
 ### Chaos (Testing Only)
 
