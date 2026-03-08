@@ -187,9 +187,13 @@
 //! # }
 //! ```
 
+/// Configuration types for chaos injection.
 pub mod config;
+/// Event types emitted by chaos injection.
 pub mod events;
+/// Tower `Layer` implementation for chaos injection.
 pub mod layer;
+/// Tower `Service` implementation for chaos injection.
 pub mod service;
 
 pub use config::{

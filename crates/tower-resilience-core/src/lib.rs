@@ -9,14 +9,20 @@
 //! - AIMD controller for congestion control
 //! - Health integration traits for proactive resilience
 
+/// AIMD (Additive Increase / Multiplicative Decrease) controller.
 pub mod aimd;
+/// Failure classification traits and default implementations.
 pub mod classifier;
+/// Common error types for resilience patterns.
 pub mod error;
+/// Event system for resilience pattern observability.
 pub mod events;
 
+/// Unified error layer for composing resilience middleware.
 #[cfg(feature = "layer")]
 pub mod error_layer;
 
+/// Health integration traits for proactive resilience.
 #[cfg(feature = "health-integration")]
 pub mod health_integration;
 
