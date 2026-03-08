@@ -78,9 +78,13 @@
 //! //     .build();
 //! ```
 
+/// Configuration and builder types for the weighted router.
 pub mod config;
+/// Error types for routing failures.
 pub mod error;
+/// Event types emitted when requests are routed.
 pub mod events;
+/// Backend selection strategies (deterministic, random).
 pub mod selection;
 
 pub use config::WeightedRouterBuilder;

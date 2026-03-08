@@ -310,6 +310,7 @@ pub use events::CircuitBreakerEvent;
 pub use layer::CircuitBreakerLayer;
 
 mod circuit;
+/// Custom failure classifiers for circuit breaker evaluation.
 pub mod classifier;
 mod config;
 mod error;

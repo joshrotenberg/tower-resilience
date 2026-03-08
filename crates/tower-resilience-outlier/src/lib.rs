@@ -60,12 +60,19 @@
 //!     .build();
 //! ```
 
+/// Configuration types for outlier detection.
 pub mod config;
+/// Shared fleet-level outlier detector state.
 pub mod detector;
+/// Error types for outlier detection.
 pub mod error;
+/// Event types emitted by outlier detection.
 pub mod events;
+/// Tower `Layer` implementation for outlier detection.
 pub mod layer;
+/// Tower `Service` implementation for outlier detection.
 pub mod service;
+/// Ejection strategies (e.g., consecutive errors).
 pub mod strategy;
 
 pub use config::{OutlierDetectionConfig, OutlierDetectionConfigBuilder};

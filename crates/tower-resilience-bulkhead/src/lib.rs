@@ -253,10 +253,15 @@
 //! # }
 //! ```
 
+/// Configuration types for the bulkhead pattern.
 pub mod config;
+/// Error types for bulkhead rejections.
 pub mod error;
+/// Event types emitted by the bulkhead.
 pub mod events;
+/// Tower `Layer` implementation for the bulkhead.
 pub mod layer;
+/// Tower `Service` implementation for the bulkhead.
 pub mod service;
 
 pub use config::{BulkheadConfig, BulkheadConfigBuilder};
