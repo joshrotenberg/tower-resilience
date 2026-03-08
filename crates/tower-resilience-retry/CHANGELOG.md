@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.9.0...tower-resilience-retry-v0.9.1) - 2026-03-08
+
+### Other
+
+- add integration tests for healthcheck and executor ([#265](https://github.com/joshrotenberg/tower-resilience/pull/265))
+
 ## [0.7.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.7.0...tower-resilience-retry-v0.7.1) - 2026-01-29
 
 ### Other
