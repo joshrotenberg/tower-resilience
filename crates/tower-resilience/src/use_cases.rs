@@ -8,6 +8,7 @@ pub mod database {
     //!
     //! ```text
     //! Read Replicas (Multiple Instances)
+    //! ├─ Outlier detection for replica health
     //! ├─ Health Check wrapper for automatic failover
     //! ├─ Reconnect for dropped connections
     //! ├─ Circuit breaker per replica
@@ -53,6 +54,7 @@ pub mod microservices {
     //!
     //! ```text
     //! Service-to-Service
+    //! ├─ Outlier detection for fleet health (multiple instances)
     //! ├─ Circuit breaker per dependency
     //! ├─ Retry for transient errors
     //! ├─ Timeout for tail latency
