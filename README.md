@@ -13,22 +13,22 @@ Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Re
 
 ## Resilience Patterns
 
-- **Circuit Breaker** - Prevents cascading failures by stopping calls to failing services
-- **Bulkhead** - Isolates resources to prevent system-wide failures  
-- **Time Limiter** - Advanced timeout handling with cancellation support
-- **Retry** - Intelligent retry with exponential backoff, jitter, and retry budgets
-- **Rate Limiter** - Controls request rate with fixed or sliding window algorithms
+- **Adaptive Concurrency** - Dynamic concurrency limiting using AIMD or Vegas algorithms
+- **Bulkhead** - Isolates resources to prevent system-wide failures
 - **Cache** - Response memoization to reduce load
+- **Chaos** - Inject failures and latency for testing resilience (development/testing only)
+- **Circuit Breaker** - Prevents cascading failures by stopping calls to failing services
+- **Coalesce** - Deduplicates concurrent identical requests (singleflight pattern)
+- **Executor** - Delegates request processing to dedicated executors for parallelism
 - **Fallback** - Graceful degradation when services fail
 - **Hedge** - Reduces tail latency by racing redundant requests
-- **Reconnect** - Automatic reconnection with configurable backoff strategies
 - **Health Check** - Proactive health monitoring with intelligent resource selection
-- **Executor** - Delegates request processing to dedicated executors for parallelism
-- **Adaptive Concurrency** - Dynamic concurrency limiting using AIMD or Vegas algorithms
-- **Coalesce** - Deduplicates concurrent identical requests (singleflight pattern)
 - **Outlier Detection** - Fleet-aware instance ejection based on consecutive error tracking
+- **Rate Limiter** - Controls request rate with fixed or sliding window algorithms
+- **Reconnect** - Automatic reconnection with configurable backoff strategies
+- **Retry** - Intelligent retry with exponential backoff, jitter, and retry budgets
 - **Router** - Weighted traffic routing for canary deployments and progressive rollout
-- **Chaos** - Inject failures and latency for testing resilience (development/testing only)
+- **Time Limiter** - Advanced timeout handling with cancellation support
 
 ## Quick Start
 
@@ -89,25 +89,25 @@ let hedge = HedgeLayer::standard();
 
 | Pattern | Presets | Description |
 |---------|---------|-------------|
-| **Retry** | `exponential_backoff()` | 3 attempts, 100ms base - balanced default |
-| | `aggressive()` | 5 attempts, 50ms base - fast recovery |
-| | `conservative()` | 2 attempts, 500ms base - minimal overhead |
-| **Circuit Breaker** | `standard()` | 50% threshold, 100 calls - balanced |
-| | `fast_fail()` | 25% threshold, 20 calls - fail fast |
-| | `tolerant()` | 75% threshold, 200 calls - high tolerance |
-| **Rate Limiter** | `per_second(n)` | n requests per second |
-| | `per_minute(n)` | n requests per minute |
-| | `burst(rate, size)` | Sustained rate with burst capacity |
 | **Bulkhead** | `small()` | 10 concurrent calls |
 | | `medium()` | 50 concurrent calls |
 | | `large()` | 200 concurrent calls |
+| **Circuit Breaker** | `standard()` | 50% threshold, 100 calls - balanced |
+| | `fast_fail()` | 25% threshold, 20 calls - fail fast |
+| | `tolerant()` | 75% threshold, 200 calls - high tolerance |
+| **Hedge** | `conservative()` | 500ms delay, 2 attempts |
+| | `standard()` | 100ms delay, 3 attempts |
+| | `aggressive()` | 50ms delay, 5 attempts |
+| **Rate Limiter** | `per_second(n)` | n requests per second |
+| | `per_minute(n)` | n requests per minute |
+| | `burst(rate, size)` | Sustained rate with burst capacity |
+| **Retry** | `exponential_backoff()` | 3 attempts, 100ms base - balanced default |
+| | `aggressive()` | 5 attempts, 50ms base - fast recovery |
+| | `conservative()` | 2 attempts, 500ms base - minimal overhead |
 | **Time Limiter** | `fast()` | 1s timeout, cancel on timeout |
 | | `standard()` | 5s timeout, cancel on timeout |
 | | `slow()` | 30s timeout, cancel on timeout |
 | | `streaming()` | 60s timeout, no cancellation |
-| **Hedge** | `conservative()` | 500ms delay, 2 attempts |
-| | `standard()` | 100ms delay, 3 attempts |
-| | `aggressive()` | 50ms delay, 5 attempts |
 
 Presets return builders, so you can customize any setting:
 
@@ -121,29 +121,48 @@ let breaker = CircuitBreakerLayer::fast_fail()
 
 ## Examples
 
-### Circuit Breaker
+### Adaptive Concurrency
 
-Prevent cascading failures by opening the circuit when error rate exceeds threshold:
+Dynamically adjust concurrency limits based on observed latency and error rates:
 
 ```rust
-use tower::Layer;
-use tower_resilience::circuitbreaker::CircuitBreakerLayer;
+use tower_resilience::adaptive::{AdaptiveLimiterLayer, Aimd, Vegas};
+use tower::ServiceBuilder;
 use std::time::Duration;
 
-let layer = CircuitBreakerLayer::builder()
-    .name("api-circuit")
-    .failure_rate_threshold(0.5)          // Open at 50% failure rate
-    .sliding_window_size(100)              // Track last 100 calls
-    .wait_duration_in_open(Duration::from_secs(60))  // Stay open 60s
-    .on_state_transition(|from, to| {
-        println!("Circuit breaker: {:?} -> {:?}", from, to);
-    })
-    .build();
+// AIMD: Classic TCP-style congestion control
+// Increases limit on success, decreases on failure/high latency
+let layer = AdaptiveLimiterLayer::new(
+    Aimd::builder()
+        .initial_limit(10)
+        .min_limit(1)
+        .max_limit(100)
+        .increase_by(1)                           // Add 1 on success
+        .decrease_factor(0.5)                     // Halve on failure
+        .latency_threshold(Duration::from_millis(100))
+        .build()
+);
 
-let service = layer.layer(my_service);
+// Vegas: More stable, uses RTT to estimate queue depth
+let layer = AdaptiveLimiterLayer::new(
+    Vegas::builder()
+        .initial_limit(10)
+        .alpha(3)    // Increase when queue < 3
+        .beta(6)     // Decrease when queue > 6
+        .build()
+);
+
+let service = ServiceBuilder::new()
+    .layer(layer)
+    .service(my_service);
 ```
 
-**Full examples:** [circuitbreaker.rs](examples/circuitbreaker.rs) | [circuitbreaker_fallback.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_fallback.rs) | [circuitbreaker_health_check.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_health_check.rs)
+Use cases:
+- **Auto-tuning**: No manual concurrency limit configuration needed
+- **Variable backends**: Adapts to changing downstream capacity
+- **Load shedding**: Automatically reduces load when backends struggle
+
+**Full examples:** [adaptive.rs](examples/adaptive.rs)
 
 ### Bulkhead
 
@@ -170,73 +189,6 @@ let service = layer.layer(my_service);
 
 **Full examples:** [bulkhead.rs](examples/bulkhead.rs) | [bulkhead_advanced.rs](crates/tower-resilience-bulkhead/examples/bulkhead_advanced.rs)
 
-### Time Limiter
-
-Enforce timeouts on operations with configurable cancellation:
-
-```rust
-use tower_resilience::timelimiter::TimeLimiterLayer;
-use std::time::Duration;
-
-let layer = TimeLimiterLayer::builder()
-    .timeout_duration(Duration::from_secs(30))
-    .cancel_running_future(true)  // Cancel on timeout
-    .on_timeout(|| {
-        println!("Operation timed out!");
-    })
-    .build();
-
-let service = layer.layer(my_service);
-```
-
-**Full examples:** [timelimiter.rs](examples/timelimiter.rs) | [timelimiter_example.rs](crates/tower-resilience-timelimiter/examples/timelimiter_example.rs)
-
-### Retry
-
-Retry failed requests with exponential backoff and jitter:
-
-```rust
-use tower_resilience::retry::RetryLayer;
-use std::time::Duration;
-
-let layer = RetryLayer::<(), (), MyError>::builder()
-    .max_attempts(5)
-    .exponential_backoff(Duration::from_millis(100))
-    .on_retry(|attempt, delay| {
-        println!("Retrying (attempt {}, delay {:?})", attempt, delay);
-    })
-    .on_success(|attempts| {
-        println!("Success after {} attempts", attempts);
-    })
-    .build();
-
-let service = layer.layer(my_service);
-```
-
-**Full examples:** [retry.rs](examples/retry.rs) | [retry_example.rs](crates/tower-resilience-retry/examples/retry_example.rs)
-
-### Rate Limiter
-
-Control request rate to protect downstream services:
-
-```rust
-use tower_resilience::ratelimiter::RateLimiterLayer;
-use std::time::Duration;
-
-let layer = RateLimiterLayer::builder()
-    .limit_for_period(100)                      // 100 requests
-    .refresh_period(Duration::from_secs(1))     // per second
-    .timeout_duration(Duration::from_millis(500))  // Wait up to 500ms
-    .on_permit_acquired(|wait| {
-        println!("Request permitted (waited {:?})", wait);
-    })
-    .build();
-
-let service = layer.layer(my_service);
-```
-
-**Full examples:** [ratelimiter.rs](examples/ratelimiter.rs) | [ratelimiter_example.rs](crates/tower-resilience-ratelimiter/examples/ratelimiter_example.rs)
-
 ### Cache
 
 Cache responses to reduce load on expensive operations:
@@ -259,120 +211,57 @@ let service = layer.layer(my_service);
 
 **Full examples:** [cache.rs](examples/cache.rs) | [cache_example.rs](crates/tower-resilience-cache/examples/cache_example.rs)
 
-### Fallback
+### Chaos (Testing Only)
 
-Provide fallback responses when the primary service fails:
-
-```rust
-use tower_resilience::fallback::FallbackLayer;
-
-// Return a static fallback value on error
-let layer = FallbackLayer::<Request, Response, MyError>::value(
-    Response::default()
-);
-
-// Or compute fallback from the error
-let layer = FallbackLayer::<Request, Response, MyError>::from_error(|err| {
-    Response::error_response(err)
-});
-
-// Or use a backup service
-let layer = FallbackLayer::<Request, Response, MyError>::service(|req| async {
-    backup_service.call(req).await
-});
-
-let service = layer.layer(primary_service);
-```
-
-### Hedge
-
-Reduce tail latency by firing backup requests after a delay:
+Inject failures and latency to test your resilience patterns:
 
 ```rust
-use tower_resilience::hedge::HedgeLayer;
+use tower_resilience::chaos::ChaosLayer;
 use std::time::Duration;
 
-// Fire a hedge request if primary takes > 100ms
-let layer = HedgeLayer::builder()
-    .delay(Duration::from_millis(100))
-    .max_hedged_attempts(2)
+// Types inferred from closure signature - no type parameters needed!
+let chaos = ChaosLayer::builder()
+    .name("test-chaos")
+    .error_rate(0.1)                               // 10% of requests fail
+    .error_fn(|_req: &String| std::io::Error::new(
+        std::io::ErrorKind::Other, "chaos!"
+    ))
+    .latency_rate(0.2)                             // 20% delayed
+    .min_latency(Duration::from_millis(50))
+    .max_latency(Duration::from_millis(200))
+    .seed(42)                                      // Deterministic chaos
     .build();
 
-// Or fire all requests in parallel (no delay)
-let layer = HedgeLayer::<(), String, MyError>::builder()
-    .no_delay()
-    .max_hedged_attempts(3)
-    .build();
-
-let service = layer.layer(my_service);
+let service = chaos.layer(my_service);
 ```
 
-**Note:** Hedge requires `Req: Clone` (requests are cloned for parallel execution) and `E: Clone` (for error handling). If your types don't implement Clone, consider wrapping them in `Arc`.
+**WARNING**: Only use in development/testing environments. Never in production.
 
-**Full examples:** [hedge.rs](examples/hedge.rs)
+**Full examples:** [chaos.rs](examples/chaos.rs) | [chaos_example.rs](crates/tower-resilience-chaos/examples/chaos_example.rs)
 
-### Reconnect
+### Circuit Breaker
 
-Automatically reconnect on connection failures with configurable backoff:
-
-```rust
-use tower_resilience::reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
-use std::time::Duration;
-
-let layer = ReconnectLayer::new(
-    ReconnectConfig::builder()
-        .policy(ReconnectPolicy::exponential(
-            Duration::from_millis(100),  // Start at 100ms
-            Duration::from_secs(5),       // Max 5 seconds
-        ))
-        .max_attempts(10)
-        .retry_on_reconnect(true)         // Retry request after reconnecting
-        .connection_errors_only()          // Only reconnect on connection errors
-        .on_state_change(|from, to| {
-            println!("Connection: {:?} -> {:?}", from, to);
-        })
-        .build()
-);
-
-let service = layer.layer(my_service);
-```
-
-**Full examples:** [reconnect.rs](examples/reconnect.rs) | [reconnect_basic.rs](crates/tower-resilience-reconnect/examples/reconnect_basic.rs) | [reconnect_custom_policy.rs](crates/tower-resilience-reconnect/examples/reconnect_custom_policy.rs)
-
-### Health Check
-
-Proactive health monitoring with intelligent resource selection:
+Prevent cascading failures by opening the circuit when error rate exceeds threshold:
 
 ```rust
-use tower_resilience::healthcheck::{HealthCheckWrapper, HealthStatus, SelectionStrategy};
+use tower::Layer;
+use tower_resilience::circuitbreaker::CircuitBreakerLayer;
 use std::time::Duration;
 
-// Create wrapper with multiple resources
-let wrapper = HealthCheckWrapper::builder()
-    .with_context(primary_db, "primary")
-    .with_context(secondary_db, "secondary")
-    .with_checker(|db| async move {
-        match db.ping().await {
-            Ok(_) => HealthStatus::Healthy,
-            Err(_) => HealthStatus::Unhealthy,
-        }
+let layer = CircuitBreakerLayer::builder()
+    .name("api-circuit")
+    .failure_rate_threshold(0.5)          // Open at 50% failure rate
+    .sliding_window_size(100)              // Track last 100 calls
+    .wait_duration_in_open(Duration::from_secs(60))  // Stay open 60s
+    .on_state_transition(|from, to| {
+        println!("Circuit breaker: {:?} -> {:?}", from, to);
     })
-    .with_interval(Duration::from_secs(5))
-    .with_selection_strategy(SelectionStrategy::RoundRobin)
     .build();
 
-// Start background health checking
-wrapper.start().await;
-
-// Get a healthy resource
-if let Some(db) = wrapper.get_healthy().await {
-    // Use healthy database
-}
+let service = layer.layer(my_service);
 ```
 
-**Note:** Health Check is not a Tower layer - it's a wrapper pattern for managing multiple resources with automatic failover.
-
-**Full examples:** [healthcheck_basic.rs](crates/tower-resilience-healthcheck/examples/healthcheck_basic.rs)
+**Full examples:** [circuitbreaker.rs](examples/circuitbreaker.rs) | [circuitbreaker_fallback.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_fallback.rs) | [circuitbreaker_health_check.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_health_check.rs)
 
 ### Coalesce
 
@@ -433,48 +322,92 @@ Use cases:
 - **Runtime isolation**: Process requests on a dedicated runtime
 - **Thread pool delegation**: Use specific thread pools for certain workloads
 
-### Adaptive Concurrency
+### Fallback
 
-Dynamically adjust concurrency limits based on observed latency and error rates:
+Provide fallback responses when the primary service fails:
 
 ```rust
-use tower_resilience::adaptive::{AdaptiveLimiterLayer, Aimd, Vegas};
-use tower::ServiceBuilder;
-use std::time::Duration;
+use tower_resilience::fallback::FallbackLayer;
 
-// AIMD: Classic TCP-style congestion control
-// Increases limit on success, decreases on failure/high latency
-let layer = AdaptiveLimiterLayer::new(
-    Aimd::builder()
-        .initial_limit(10)
-        .min_limit(1)
-        .max_limit(100)
-        .increase_by(1)                           // Add 1 on success
-        .decrease_factor(0.5)                     // Halve on failure
-        .latency_threshold(Duration::from_millis(100))
-        .build()
+// Return a static fallback value on error
+let layer = FallbackLayer::<Request, Response, MyError>::value(
+    Response::default()
 );
 
-// Vegas: More stable, uses RTT to estimate queue depth
-let layer = AdaptiveLimiterLayer::new(
-    Vegas::builder()
-        .initial_limit(10)
-        .alpha(3)    // Increase when queue < 3
-        .beta(6)     // Decrease when queue > 6
-        .build()
-);
+// Or compute fallback from the error
+let layer = FallbackLayer::<Request, Response, MyError>::from_error(|err| {
+    Response::error_response(err)
+});
 
-let service = ServiceBuilder::new()
-    .layer(layer)
-    .service(my_service);
+// Or use a backup service
+let layer = FallbackLayer::<Request, Response, MyError>::service(|req| async {
+    backup_service.call(req).await
+});
+
+let service = layer.layer(primary_service);
 ```
 
-Use cases:
-- **Auto-tuning**: No manual concurrency limit configuration needed
-- **Variable backends**: Adapts to changing downstream capacity
-- **Load shedding**: Automatically reduces load when backends struggle
+### Hedge
 
-**Full examples:** [adaptive.rs](examples/adaptive.rs)
+Reduce tail latency by firing backup requests after a delay:
+
+```rust
+use tower_resilience::hedge::HedgeLayer;
+use std::time::Duration;
+
+// Fire a hedge request if primary takes > 100ms
+let layer = HedgeLayer::builder()
+    .delay(Duration::from_millis(100))
+    .max_hedged_attempts(2)
+    .build();
+
+// Or fire all requests in parallel (no delay)
+let layer = HedgeLayer::<(), String, MyError>::builder()
+    .no_delay()
+    .max_hedged_attempts(3)
+    .build();
+
+let service = layer.layer(my_service);
+```
+
+**Note:** Hedge requires `Req: Clone` (requests are cloned for parallel execution) and `E: Clone` (for error handling). If your types don't implement Clone, consider wrapping them in `Arc`.
+
+**Full examples:** [hedge.rs](examples/hedge.rs)
+
+### Health Check
+
+Proactive health monitoring with intelligent resource selection:
+
+```rust
+use tower_resilience::healthcheck::{HealthCheckWrapper, HealthStatus, SelectionStrategy};
+use std::time::Duration;
+
+// Create wrapper with multiple resources
+let wrapper = HealthCheckWrapper::builder()
+    .with_context(primary_db, "primary")
+    .with_context(secondary_db, "secondary")
+    .with_checker(|db| async move {
+        match db.ping().await {
+            Ok(_) => HealthStatus::Healthy,
+            Err(_) => HealthStatus::Unhealthy,
+        }
+    })
+    .with_interval(Duration::from_secs(5))
+    .with_selection_strategy(SelectionStrategy::RoundRobin)
+    .build();
+
+// Start background health checking
+wrapper.start().await;
+
+// Get a healthy resource
+if let Some(db) = wrapper.get_healthy().await {
+    // Use healthy database
+}
+```
+
+**Note:** Health Check is not a Tower layer - it's a wrapper pattern for managing multiple resources with automatic failover.
+
+**Full examples:** [healthcheck_basic.rs](crates/tower-resilience-healthcheck/examples/healthcheck_basic.rs)
 
 ### Outlier Detection
 
@@ -509,6 +442,80 @@ Key features:
 - **Backpressure mode** (default): `poll_ready` returns `Pending` for ejected instances, integrating naturally with Tower load balancers
 - **Fleet protection**: `max_ejection_percent` prevents cascading ejections
 - **Exponential backoff**: Repeatedly-ejected instances stay out longer
+
+### Rate Limiter
+
+Control request rate to protect downstream services:
+
+```rust
+use tower_resilience::ratelimiter::RateLimiterLayer;
+use std::time::Duration;
+
+let layer = RateLimiterLayer::builder()
+    .limit_for_period(100)                      // 100 requests
+    .refresh_period(Duration::from_secs(1))     // per second
+    .timeout_duration(Duration::from_millis(500))  // Wait up to 500ms
+    .on_permit_acquired(|wait| {
+        println!("Request permitted (waited {:?})", wait);
+    })
+    .build();
+
+let service = layer.layer(my_service);
+```
+
+**Full examples:** [ratelimiter.rs](examples/ratelimiter.rs) | [ratelimiter_example.rs](crates/tower-resilience-ratelimiter/examples/ratelimiter_example.rs)
+
+### Reconnect
+
+Automatically reconnect on connection failures with configurable backoff:
+
+```rust
+use tower_resilience::reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
+use std::time::Duration;
+
+let layer = ReconnectLayer::new(
+    ReconnectConfig::builder()
+        .policy(ReconnectPolicy::exponential(
+            Duration::from_millis(100),  // Start at 100ms
+            Duration::from_secs(5),       // Max 5 seconds
+        ))
+        .max_attempts(10)
+        .retry_on_reconnect(true)         // Retry request after reconnecting
+        .connection_errors_only()          // Only reconnect on connection errors
+        .on_state_change(|from, to| {
+            println!("Connection: {:?} -> {:?}", from, to);
+        })
+        .build()
+);
+
+let service = layer.layer(my_service);
+```
+
+**Full examples:** [reconnect.rs](examples/reconnect.rs) | [reconnect_basic.rs](crates/tower-resilience-reconnect/examples/reconnect_basic.rs) | [reconnect_custom_policy.rs](crates/tower-resilience-reconnect/examples/reconnect_custom_policy.rs)
+
+### Retry
+
+Retry failed requests with exponential backoff and jitter:
+
+```rust
+use tower_resilience::retry::RetryLayer;
+use std::time::Duration;
+
+let layer = RetryLayer::<(), (), MyError>::builder()
+    .max_attempts(5)
+    .exponential_backoff(Duration::from_millis(100))
+    .on_retry(|attempt, delay| {
+        println!("Retrying (attempt {}, delay {:?})", attempt, delay);
+    })
+    .on_success(|attempts| {
+        println!("Success after {} attempts", attempts);
+    })
+    .build();
+
+let service = layer.layer(my_service);
+```
+
+**Full examples:** [retry.rs](examples/retry.rs) | [retry_example.rs](crates/tower-resilience-retry/examples/retry_example.rs)
 
 ### Router
 
@@ -547,33 +554,26 @@ Key features:
 
 **Full examples:** [router.rs](examples/router.rs)
 
-### Chaos (Testing Only)
+### Time Limiter
 
-Inject failures and latency to test your resilience patterns:
+Enforce timeouts on operations with configurable cancellation:
 
 ```rust
-use tower_resilience::chaos::ChaosLayer;
+use tower_resilience::timelimiter::TimeLimiterLayer;
 use std::time::Duration;
 
-// Types inferred from closure signature - no type parameters needed!
-let chaos = ChaosLayer::builder()
-    .name("test-chaos")
-    .error_rate(0.1)                               // 10% of requests fail
-    .error_fn(|_req: &String| std::io::Error::new(
-        std::io::ErrorKind::Other, "chaos!"
-    ))
-    .latency_rate(0.2)                             // 20% delayed
-    .min_latency(Duration::from_millis(50))
-    .max_latency(Duration::from_millis(200))
-    .seed(42)                                      // Deterministic chaos
+let layer = TimeLimiterLayer::builder()
+    .timeout_duration(Duration::from_secs(30))
+    .cancel_running_future(true)  // Cancel on timeout
+    .on_timeout(|| {
+        println!("Operation timed out!");
+    })
     .build();
 
-let service = chaos.layer(my_service);
+let service = layer.layer(my_service);
 ```
 
-**WARNING**: Only use in development/testing environments. Never in production.
-
-**Full examples:** [chaos.rs](examples/chaos.rs) | [chaos_example.rs](crates/tower-resilience-chaos/examples/chaos_example.rs)
+**Full examples:** [timelimiter.rs](examples/timelimiter.rs) | [timelimiter_example.rs](crates/tower-resilience-timelimiter/examples/timelimiter_example.rs)
 
 ## Error Handling
 

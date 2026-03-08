@@ -44,12 +44,12 @@
 //!
 //! | Pattern | Presets |
 //! |---------|---------|
-//! | **Retry** | [`exponential_backoff()`], [`aggressive()`], [`conservative()`] |
-//! | **Circuit Breaker** | [`standard()`], [`fast_fail()`], [`tolerant()`] |
-//! | **Rate Limiter** | [`per_second(n)`], [`per_minute(n)`], [`burst(rate, size)`] |
 //! | **Bulkhead** | [`small()`], [`medium()`], [`large()`] |
-//! | **Time Limiter** | [`fast()`], [`standard()`][tl_standard], [`slow()`], [`streaming()`] |
+//! | **Circuit Breaker** | [`standard()`], [`fast_fail()`], [`tolerant()`] |
 //! | **Hedge** | [`conservative()`][h_conservative], [`standard()`][h_standard], [`aggressive()`][h_aggressive] |
+//! | **Rate Limiter** | [`per_second(n)`], [`per_minute(n)`], [`burst(rate, size)`] |
+//! | **Retry** | [`exponential_backoff()`], [`aggressive()`], [`conservative()`] |
+//! | **Time Limiter** | [`fast()`], [`standard()`][tl_standard], [`slow()`], [`streaming()`] |
 //!
 //! Presets return builders, so you can customize any setting:
 //!
@@ -66,59 +66,59 @@
 //! # }
 //! ```
 //!
-//! [`exponential_backoff()`]: retry::RetryLayer::exponential_backoff
-//! [`aggressive()`]: retry::RetryLayer::aggressive
-//! [`conservative()`]: retry::RetryLayer::conservative
-//! [`standard()`]: circuitbreaker::CircuitBreakerLayer::standard
-//! [`fast_fail()`]: circuitbreaker::CircuitBreakerLayer::fast_fail
-//! [`tolerant()`]: circuitbreaker::CircuitBreakerLayer::tolerant
-//! [`per_second(n)`]: ratelimiter::RateLimiterLayer::per_second
-//! [`per_minute(n)`]: ratelimiter::RateLimiterLayer::per_minute
-//! [`burst(rate, size)`]: ratelimiter::RateLimiterLayer::burst
 //! [`small()`]: bulkhead::BulkheadLayer::small
 //! [`medium()`]: bulkhead::BulkheadLayer::medium
 //! [`large()`]: bulkhead::BulkheadLayer::large
+//! [`standard()`]: circuitbreaker::CircuitBreakerLayer::standard
+//! [`fast_fail()`]: circuitbreaker::CircuitBreakerLayer::fast_fail
+//! [`tolerant()`]: circuitbreaker::CircuitBreakerLayer::tolerant
+//! [h_conservative]: hedge::HedgeLayer::conservative
+//! [h_standard]: hedge::HedgeLayer::standard
+//! [h_aggressive]: hedge::HedgeLayer::aggressive
+//! [`per_second(n)`]: ratelimiter::RateLimiterLayer::per_second
+//! [`per_minute(n)`]: ratelimiter::RateLimiterLayer::per_minute
+//! [`burst(rate, size)`]: ratelimiter::RateLimiterLayer::burst
+//! [`exponential_backoff()`]: retry::RetryLayer::exponential_backoff
+//! [`aggressive()`]: retry::RetryLayer::aggressive
+//! [`conservative()`]: retry::RetryLayer::conservative
 //! [`fast()`]: timelimiter::TimeLimiterLayer::fast
 //! [tl_standard]: timelimiter::TimeLimiterLayer::standard
 //! [`slow()`]: timelimiter::TimeLimiterLayer::slow
 //! [`streaming()`]: timelimiter::TimeLimiterLayer::streaming
-//! [h_conservative]: hedge::HedgeLayer::conservative
-//! [h_standard]: hedge::HedgeLayer::standard
-//! [h_aggressive]: hedge::HedgeLayer::aggressive
 //!
 //! # Resilience Patterns
 //!
-//! - **[Circuit Breaker]** - Prevents cascading failures by stopping calls to failing services
+//! - **[Adaptive]** - Dynamic concurrency limiting using AIMD or Vegas algorithms
 //! - **[Bulkhead]** - Isolates resources to prevent system-wide failures
-//! - **[Time Limiter]** - Advanced timeout handling with cancellation support
-//! - **[Retry]** - Intelligent retry with exponential backoff and jitter
-//! - **[Rate Limiter]** - Controls request rate to protect services
 //! - **[Cache]** - Response memoization to reduce load
-//! - **[Reconnect]** - Automatic reconnection with configurable backoff strategies
-//! - **[Health Check]** - Proactive health monitoring with intelligent resource selection
+//! - **[Circuit Breaker]** - Prevents cascading failures by stopping calls to failing services
+//! - **[Coalesce]** - Deduplicates concurrent identical requests (singleflight)
+//! - **[Executor]** - Delegates request processing to dedicated executors
 //! - **[Fallback]** - Provides alternative responses when services fail
 //! - **[Hedge]** - Reduces tail latency by firing parallel requests
-//! - **[Executor]** - Delegates request processing to dedicated executors
-//! - **[Adaptive]** - Dynamic concurrency limiting using AIMD or Vegas algorithms
-//! - **[Coalesce]** - Deduplicates concurrent identical requests (singleflight)
+//! - **[Health Check]** - Proactive health monitoring with intelligent resource selection
 //! - **[Outlier Detection]** - Fleet-aware instance ejection based on health tracking
+//! - **[Rate Limiter]** - Controls request rate to protect services
+//! - **[Reconnect]** - Automatic reconnection with configurable backoff strategies
+//! - **[Retry]** - Intelligent retry with exponential backoff and jitter
 //! - **[Router]** - Weighted traffic routing for canary deployments and progressive rollout
+//! - **[Time Limiter]** - Advanced timeout handling with cancellation support
 //!
-//! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
+//! [Adaptive]: https://docs.rs/tower-resilience-adaptive
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
-//! [Time Limiter]: https://docs.rs/tower-resilience-timelimiter
-//! [Retry]: https://docs.rs/tower-resilience-retry
-//! [Rate Limiter]: https://docs.rs/tower-resilience-ratelimiter
 //! [Cache]: https://docs.rs/tower-resilience-cache
-//! [Reconnect]: https://docs.rs/tower-resilience-reconnect
-//! [Health Check]: https://docs.rs/tower-resilience-healthcheck
+//! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
+//! [Coalesce]: https://docs.rs/tower-resilience-coalesce
+//! [Executor]: https://docs.rs/tower-resilience-executor
 //! [Fallback]: https://docs.rs/tower-resilience-fallback
 //! [Hedge]: https://docs.rs/tower-resilience-hedge
-//! [Executor]: https://docs.rs/tower-resilience-executor
-//! [Adaptive]: https://docs.rs/tower-resilience-adaptive
-//! [Coalesce]: https://docs.rs/tower-resilience-coalesce
+//! [Health Check]: https://docs.rs/tower-resilience-healthcheck
 //! [Outlier Detection]: https://docs.rs/tower-resilience-outlier
+//! [Rate Limiter]: https://docs.rs/tower-resilience-ratelimiter
+//! [Reconnect]: https://docs.rs/tower-resilience-reconnect
+//! [Retry]: https://docs.rs/tower-resilience-retry
 //! [Router]: https://docs.rs/tower-resilience-router
+//! [Time Limiter]: https://docs.rs/tower-resilience-timelimiter
 //!
 //! # Documentation Guides
 //!
@@ -295,30 +295,27 @@ pub mod use_cases;
 // Re-export core (always available)
 pub use tower_resilience_core as core;
 
-// Re-export patterns based on features
-#[cfg(feature = "circuitbreaker")]
-pub use tower_resilience_circuitbreaker as circuitbreaker;
+// Re-export patterns based on features (alphabetical)
+#[cfg(feature = "adaptive")]
+pub use tower_resilience_adaptive as adaptive;
 
 #[cfg(feature = "bulkhead")]
 pub use tower_resilience_bulkhead as bulkhead;
 
-#[cfg(feature = "timelimiter")]
-pub use tower_resilience_timelimiter as timelimiter;
-
 #[cfg(feature = "cache")]
 pub use tower_resilience_cache as cache;
 
-#[cfg(feature = "retry")]
-pub use tower_resilience_retry as retry;
+#[cfg(feature = "chaos")]
+pub use tower_resilience_chaos as chaos;
 
-#[cfg(feature = "ratelimiter")]
-pub use tower_resilience_ratelimiter as ratelimiter;
+#[cfg(feature = "circuitbreaker")]
+pub use tower_resilience_circuitbreaker as circuitbreaker;
 
-#[cfg(feature = "reconnect")]
-pub use tower_resilience_reconnect as reconnect;
+#[cfg(feature = "coalesce")]
+pub use tower_resilience_coalesce as coalesce;
 
-#[cfg(feature = "healthcheck")]
-pub use tower_resilience_healthcheck as healthcheck;
+#[cfg(feature = "executor")]
+pub use tower_resilience_executor as executor;
 
 #[cfg(feature = "fallback")]
 pub use tower_resilience_fallback as fallback;
@@ -326,23 +323,26 @@ pub use tower_resilience_fallback as fallback;
 #[cfg(feature = "hedge")]
 pub use tower_resilience_hedge as hedge;
 
-#[cfg(feature = "executor")]
-pub use tower_resilience_executor as executor;
-
-#[cfg(feature = "adaptive")]
-pub use tower_resilience_adaptive as adaptive;
-
-#[cfg(feature = "coalesce")]
-pub use tower_resilience_coalesce as coalesce;
+#[cfg(feature = "healthcheck")]
+pub use tower_resilience_healthcheck as healthcheck;
 
 #[cfg(feature = "outlier")]
 pub use tower_resilience_outlier as outlier;
 
+#[cfg(feature = "ratelimiter")]
+pub use tower_resilience_ratelimiter as ratelimiter;
+
+#[cfg(feature = "reconnect")]
+pub use tower_resilience_reconnect as reconnect;
+
+#[cfg(feature = "retry")]
+pub use tower_resilience_retry as retry;
+
 #[cfg(feature = "router")]
 pub use tower_resilience_router as router;
 
-#[cfg(feature = "chaos")]
-pub use tower_resilience_chaos as chaos;
+#[cfg(feature = "timelimiter")]
+pub use tower_resilience_timelimiter as timelimiter;
 
 // Re-export unified error layer types
 #[cfg(feature = "layer")]
