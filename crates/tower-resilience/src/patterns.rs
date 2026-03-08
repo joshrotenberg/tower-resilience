@@ -19,6 +19,7 @@
 //! - [Adaptive Concurrency](adaptive) - Dynamic concurrency limiting with AIMD/Vegas
 //! - [Coalesce](coalesce) - Deduplicate concurrent identical requests (singleflight)
 //! - [Outlier Detection](outlier_detection) - Fleet-aware instance ejection based on health tracking
+//! - [Router](router) - Weighted traffic routing for canary deployments
 
 pub mod circuit_breaker {
     //! # Circuit Breaker
@@ -1671,4 +1672,73 @@ pub mod outlier_detection {
     //!   with consecutive errors, success rate, and failure percentage strategies
     //! - **Istio**: Exposes outlier detection via DestinationRule
     //! - **Linkerd**: Failure accrual
+}
+
+pub mod router {
+    //! # Weighted Router
+    //!
+    //! Distributes requests across multiple backend services based on configured weights.
+    //! Designed for canary deployments, progressive rollouts, and controlled traffic splitting.
+    //!
+    //! ## When to Use
+    //!
+    //! - **Canary deployments**: Route 5-10% of traffic to a new service version
+    //! - **Progressive rollout**: Gradually shift traffic from old to new version
+    //! - **A/B testing**: Split traffic between variants (same request/response types)
+    //! - **Blue-green deployment**: Switch traffic between environments
+    //!
+    //! ## Key Difference from Load Balancing
+    //!
+    //! `WeightedRouter` is **traffic control**, not load distribution. It provides
+    //! explicit, deterministic traffic splitting where you control exactly how much
+    //! traffic each backend receives. This is distinct from `tower::balance` which
+    //! distributes load across equivalent backends.
+    //!
+    //! ## Selection Strategies
+    //!
+    //! - **Deterministic** (default): Atomic counter for predictable, repeatable distribution.
+    //!   Best for canary deployments where you want exact traffic ratios and debuggability.
+    //! - **Random**: Per-request weighted random selection. Better for high-volume
+    //!   statistical distribution, but shows variance at low traffic.
+    //!
+    //! ## Readiness
+    //!
+    //! All backends must be ready before the router accepts requests. This is the
+    //! simplest and most predictable contract. Pair each backend with a circuit
+    //! breaker so that failing backends resolve readiness quickly.
+    //!
+    //! ## Type Constraint
+    //!
+    //! All backends must share the same `Request`, `Response`, and `Error` types.
+    //! For canary deployments (same service, different version), this is natural.
+    //! When using `service_fn` with different closures, use `BoxService` to erase
+    //! the concrete types.
+    //!
+    //! ## Composition
+    //!
+    //! Put resilience middleware **inside** each backend, not around the router:
+    //!
+    //! ```text
+    //! WeightedRouter
+    //!   |-- Backend A (90%) -> [Circuit Breaker] -> [Timeout] -> Service v1
+    //!   |-- Backend B (10%) -> [Circuit Breaker] -> [Timeout] -> Service v2
+    //! ```
+    //!
+    //! This lets each backend fail independently. If the canary's circuit breaker
+    //! opens, only canary traffic is affected.
+    //!
+    //! ## Anti-patterns
+    //!
+    //! - **Wrapping the router in a circuit breaker**: This treats all backends as
+    //!   one unit. Put circuit breakers inside each backend instead.
+    //! - **Random selection at low traffic**: With 10% canary and 20 req/min, random
+    //!   selection could send 3+ consecutive requests to the canary. Use deterministic.
+    //! - **Heterogeneous service types**: If backends have different request/response
+    //!   types, you need an adaptation layer. The router assumes homogeneous types.
+    //!
+    //! ## Prior Art
+    //!
+    //! - **Envoy**: Weighted clusters with traffic shifting for canary deployments
+    //! - **Istio**: VirtualService with weighted routing rules
+    //! - **Linkerd**: Traffic split via TrafficSplit CRD
 }

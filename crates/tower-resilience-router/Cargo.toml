@@ -1,0 +1,32 @@
+[package]
+name = "tower-resilience-router"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+readme = "../../README.md"
+description = "Weighted traffic routing for Tower services - canary deployments and progressive rollout"
+categories = ["asynchronous", "network-programming"]
+keywords = ["tower", "resilience", "routing", "canary", "middleware"]
+
+[dependencies]
+tower-resilience-core = { workspace = true }
+tower-service = { workspace = true }
+tokio = { workspace = true }
+
+# Optional dependencies
+tracing = { workspace = true, optional = true }
+metrics = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros", "rt-multi-thread"] }
+tower = { workspace = true }
+
+[features]
+default = []
+# Enable distributed tracing via the tracing crate
+tracing = ["dep:tracing"]
+# Enable Prometheus metrics (routed requests per backend, selection counts)
+metrics = ["dep:metrics"]

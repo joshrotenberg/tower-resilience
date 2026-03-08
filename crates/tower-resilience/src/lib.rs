@@ -93,6 +93,7 @@
 //! - **[Adaptive]** - Dynamic concurrency limiting using AIMD or Vegas algorithms
 //! - **[Coalesce]** - Deduplicates concurrent identical requests (singleflight)
 //! - **[Outlier Detection]** - Fleet-aware instance ejection based on health tracking
+//! - **[Router]** - Weighted traffic routing for canary deployments and progressive rollout
 //!
 //! [Circuit Breaker]: https://docs.rs/tower-resilience-circuitbreaker
 //! [Bulkhead]: https://docs.rs/tower-resilience-bulkhead
@@ -108,6 +109,7 @@
 //! [Adaptive]: https://docs.rs/tower-resilience-adaptive
 //! [Coalesce]: https://docs.rs/tower-resilience-coalesce
 //! [Outlier Detection]: https://docs.rs/tower-resilience-outlier
+//! [Router]: https://docs.rs/tower-resilience-router
 //!
 //! # Documentation Guides
 //!
@@ -326,6 +328,9 @@ pub use tower_resilience_coalesce as coalesce;
 
 #[cfg(feature = "outlier")]
 pub use tower_resilience_outlier as outlier;
+
+#[cfg(feature = "router")]
+pub use tower_resilience_router as router;
 
 // Re-export unified error layer types
 #[cfg(feature = "layer")]
