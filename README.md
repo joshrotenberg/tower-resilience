@@ -7,10 +7,6 @@
 
 A comprehensive resilience and fault-tolerance toolkit for [Tower](https://github.com/tower-rs/tower) services, inspired by [Resilience4j](https://resilience4j.readme.io/).
 
-## About
-
-Resilience patterns for [Tower](https://docs.rs/tower) services, inspired by [Resilience4j](https://resilience4j.readme.io/). Includes circuit breaker, bulkhead, retry with backoff, rate limiting, and more.
-
 ## Resilience Patterns
 
 - **[Adaptive Concurrency](#adaptive-concurrency)** - Dynamic concurrency limiting using AIMD or Vegas algorithms
