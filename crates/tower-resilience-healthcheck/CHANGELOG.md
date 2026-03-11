@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-healthcheck-v0.9.1...tower-resilience-healthcheck-v0.9.2) - 2026-03-11
+
+### Other
+
+- release v0.9.2 ([#270](https://github.com/joshrotenberg/tower-resilience/pull/270))
+
 ## [0.8.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-healthcheck-v0.7.1...tower-resilience-healthcheck-v0.8.0) - 2026-03-05
 
 ### Other
