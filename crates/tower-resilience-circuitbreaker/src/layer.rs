@@ -1,7 +1,9 @@
+use crate::circuit::Circuit;
 use crate::classifier::{DefaultClassifier, FnClassifier};
 use crate::config::CircuitBreakerConfig;
 use crate::CircuitBreaker;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tower::Layer;
 
 /// A Tower Layer that applies circuit breaker behavior to an inner service.
@@ -55,9 +57,23 @@ use tower::Layer;
 ///     .layer(layer)
 ///     .service(service_fn(|req: String| async move { Ok::<_, Error>(req) }));
 /// ```
+/// Shared circuit state created by `build_with_handle()`.
+///
+/// When present, all services produced by this layer share the same circuit
+/// state, and the external [`CircuitBreakerHandle`](crate::CircuitBreakerHandle)
+/// can observe it.
+#[derive(Clone)]
+pub(crate) struct SharedCircuit {
+    pub(crate) circuit: Arc<Mutex<Circuit>>,
+    pub(crate) state_atomic: Arc<std::sync::atomic::AtomicU8>,
+}
+
 #[derive(Clone)]
 pub struct CircuitBreakerLayer<C = DefaultClassifier> {
     config: Arc<CircuitBreakerConfig<C>>,
+    /// Pre-created shared state (set by `build_with_handle()`).
+    /// When `Some`, all services produced by this layer share this state.
+    pub(crate) shared: Option<SharedCircuit>,
 }
 
 impl<C> CircuitBreakerLayer<C> {
@@ -65,6 +81,32 @@ impl<C> CircuitBreakerLayer<C> {
     pub(crate) fn new(config: impl Into<Arc<CircuitBreakerConfig<C>>>) -> Self {
         Self {
             config: config.into(),
+            shared: None,
+        }
+    }
+
+    /// Creates a new `CircuitBreakerLayer` with pre-created shared state.
+    pub(crate) fn new_with_shared(
+        config: impl Into<Arc<CircuitBreakerConfig<C>>>,
+        shared: SharedCircuit,
+    ) -> Self {
+        Self {
+            config: config.into(),
+            shared: Some(shared),
+        }
+    }
+
+    /// Creates a service from this layer, using shared state if available.
+    fn make_service<S>(&self, service: S) -> CircuitBreaker<S, C> {
+        if let Some(shared) = &self.shared {
+            CircuitBreaker::from_shared(
+                service,
+                Arc::clone(&shared.circuit),
+                Arc::clone(&shared.state_atomic),
+                Arc::clone(&self.config),
+            )
+        } else {
+            CircuitBreaker::new(service, Arc::clone(&self.config))
         }
     }
 
@@ -94,7 +136,7 @@ impl<C> CircuitBreakerLayer<C> {
     where
         C: Clone,
     {
-        CircuitBreaker::new(service, Arc::clone(&self.config))
+        self.make_service(service)
     }
 }
 
@@ -217,7 +259,7 @@ impl<S> Layer<S> for CircuitBreakerLayer<DefaultClassifier> {
     type Service = CircuitBreaker<S, DefaultClassifier>;
 
     fn layer(&self, service: S) -> Self::Service {
-        CircuitBreaker::new(service, Arc::clone(&self.config))
+        self.make_service(service)
     }
 }
 
@@ -226,6 +268,6 @@ impl<S, F> Layer<S> for CircuitBreakerLayer<FnClassifier<F>> {
     type Service = CircuitBreaker<S, FnClassifier<F>>;
 
     fn layer(&self, service: S) -> Self::Service {
-        CircuitBreaker::new(service, Arc::clone(&self.config))
+        self.make_service(service)
     }
 }
