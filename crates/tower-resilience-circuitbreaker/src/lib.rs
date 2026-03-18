@@ -307,6 +307,7 @@ pub use classifier::{DefaultClassifier, FailureClassifier, FnClassifier};
 pub use config::{CircuitBreakerConfig, CircuitBreakerConfigBuilder, SlidingWindowType};
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
+pub use handle::CircuitBreakerHandle;
 pub use layer::CircuitBreakerLayer;
 
 mod circuit;
@@ -315,6 +316,7 @@ pub mod classifier;
 mod config;
 mod error;
 mod events;
+mod handle;
 #[cfg(feature = "health-integration")]
 mod health_integration;
 mod layer;
@@ -400,6 +402,26 @@ impl<S, C> CircuitBreaker<S, C> {
             circuit: Arc::new(Mutex::new(Circuit::new_with_atomic(Arc::clone(
                 &state_atomic,
             )))),
+            state_atomic,
+            config,
+            sleep: None,
+        }
+    }
+
+    /// Creates a new `CircuitBreaker` using pre-created shared state.
+    ///
+    /// Used by `CircuitBreakerLayer` when built with `build_with_handle()` so that
+    /// all services produced by the layer share the same circuit state, and the
+    /// external handle can observe it.
+    pub(crate) fn from_shared(
+        inner: S,
+        circuit: Arc<Mutex<Circuit>>,
+        state_atomic: Arc<std::sync::atomic::AtomicU8>,
+        config: Arc<CircuitBreakerConfig<C>>,
+    ) -> Self {
+        Self {
+            inner,
+            circuit,
             state_atomic,
             config,
             sleep: None,

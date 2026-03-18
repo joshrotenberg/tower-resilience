@@ -1,7 +1,15 @@
+use std::sync::atomic::AtomicU8;
+use std::sync::Arc;
+use std::time::Duration;
+
+use tokio::sync::Mutex;
+use tower_resilience_core::EventListeners;
+
+use crate::circuit::{Circuit, CircuitState};
 use crate::classifier::{DefaultClassifier, FnClassifier};
 use crate::events::CircuitBreakerEvent;
-use std::time::Duration;
-use tower_resilience_core::EventListeners;
+use crate::handle::CircuitBreakerHandle;
+use crate::layer::SharedCircuit;
 
 /// Type of sliding window used for tracking calls.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -621,6 +629,58 @@ impl<C> CircuitBreakerConfigBuilder<C> {
 
     /// Builds the configuration and returns a CircuitBreakerLayer.
     pub fn build(self) -> crate::layer::CircuitBreakerLayer<C> {
+        let config = self.into_config();
+        crate::layer::CircuitBreakerLayer::new(config)
+    }
+
+    /// Builds the configuration, returning both a layer and an observable handle.
+    ///
+    /// All services produced by the returned layer share the same circuit state,
+    /// and the handle can observe that state from outside the service.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// let (layer, handle) = CircuitBreakerLayer::builder()
+    ///     .failure_rate_threshold(0.5)
+    ///     .build_with_handle();
+    ///
+    /// // Apply the layer normally...
+    ///
+    /// // Query state from the handle:
+    /// assert_eq!(handle.health_status(), "healthy");
+    /// ```
+    pub fn build_with_handle(
+        self,
+    ) -> (
+        crate::layer::CircuitBreakerLayer<C>,
+        CircuitBreakerHandle<C>,
+    ) {
+        let config = Arc::new(self.into_config());
+        let state_atomic = Arc::new(AtomicU8::new(CircuitState::Closed as u8));
+        let circuit = Arc::new(Mutex::new(Circuit::new_with_atomic(Arc::clone(
+            &state_atomic,
+        ))));
+
+        let shared = SharedCircuit {
+            circuit: Arc::clone(&circuit),
+            state_atomic: Arc::clone(&state_atomic),
+        };
+
+        let handle = CircuitBreakerHandle {
+            circuit,
+            state_atomic,
+            config: Arc::clone(&config),
+        };
+
+        let layer = crate::layer::CircuitBreakerLayer::new_with_shared(config, shared);
+
+        (layer, handle)
+    }
+
+    fn into_config(self) -> CircuitBreakerConfig<C> {
         // Validate time-based window configuration
         if self.sliding_window_type == SlidingWindowType::TimeBased
             && self.sliding_window_duration.is_none()
@@ -628,7 +688,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             panic!("sliding_window_duration must be set when using TimeBased sliding window");
         }
 
-        let config = CircuitBreakerConfig {
+        CircuitBreakerConfig {
             failure_rate_threshold: self.failure_rate_threshold,
             sliding_window_type: self.sliding_window_type,
             sliding_window_size: self.sliding_window_size,
@@ -644,8 +704,6 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             event_listeners: self.event_listeners,
             name: self.name,
             backpressure: self.backpressure,
-        };
-
-        crate::layer::CircuitBreakerLayer::new(config)
+        }
     }
 }
