@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-bulkhead-v0.9.2...tower-resilience-bulkhead-v0.9.3) - 2026-03-18
+
+### Added
+
+- add observable state handles for RateLimiter and Bulkhead ([#279](https://github.com/joshrotenberg/tower-resilience/pull/279))
+
 ## [0.9.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-bulkhead-v0.9.1...tower-resilience-bulkhead-v0.9.2) - 2026-03-08
 
 ### Added

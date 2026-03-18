@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.9.2...tower-resilience-circuitbreaker-v0.9.3) - 2026-03-18
+
+### Added
+
+- add CircuitBreakerHandle for observable circuit state ([#276](https://github.com/joshrotenberg/tower-resilience/pull/276))
+
 ## [0.9.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.9.1...tower-resilience-circuitbreaker-v0.9.2) - 2026-03-08
 
 ### Added
