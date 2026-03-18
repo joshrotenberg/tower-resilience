@@ -2,6 +2,8 @@
 
 use crate::config::BulkheadConfig;
 use crate::service::Bulkhead;
+use std::sync::Arc;
+use tokio::sync::Semaphore;
 use tower::Layer;
 
 #[cfg(feature = "metrics")]
@@ -15,13 +17,18 @@ static METRICS_INIT: Once = Once::new();
 /// Layer that applies bulkhead concurrency limiting.
 #[derive(Clone)]
 pub struct BulkheadLayer {
-    config: BulkheadConfig,
+    pub(crate) config: BulkheadConfig,
+    /// Pre-created shared state (set by `build_with_handle()`).
+    pub(crate) shared: Option<(Arc<Semaphore>, Arc<BulkheadConfig>)>,
 }
 
 impl BulkheadLayer {
     /// Creates a new bulkhead layer with the given configuration.
     pub fn new(config: BulkheadConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            shared: None,
+        }
     }
 
     /// Creates a new builder for configuring a bulkhead layer.
@@ -147,6 +154,10 @@ impl<S> Layer<S> for BulkheadLayer {
     type Service = Bulkhead<S>;
 
     fn layer(&self, service: S) -> Self::Service {
-        Bulkhead::new(service, self.config.clone())
+        if let Some((semaphore, config)) = &self.shared {
+            Bulkhead::from_shared(service, Arc::clone(semaphore), Arc::clone(config))
+        } else {
+            Bulkhead::new(service, self.config.clone())
+        }
     }
 }

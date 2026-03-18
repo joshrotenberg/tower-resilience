@@ -296,14 +296,54 @@ impl BulkheadConfigBuilder {
 
     /// Builds the configuration and returns a BulkheadLayer.
     pub fn build(self) -> crate::layer::BulkheadLayer {
-        let config = BulkheadConfig {
+        let config = self.into_config();
+        crate::layer::BulkheadLayer::new(config)
+    }
+
+    /// Builds the configuration, returning both a layer and an observable handle.
+    ///
+    /// All services produced by the returned layer share the same semaphore,
+    /// and the handle can observe concurrency state from outside the service.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_bulkhead::BulkheadLayer;
+    ///
+    /// let (layer, handle) = BulkheadLayer::builder()
+    ///     .max_concurrent_calls(10)
+    ///     .build_with_handle();
+    ///
+    /// assert_eq!(handle.max_concurrent(), 10);
+    /// assert_eq!(handle.active_calls(), 0);
+    /// ```
+    pub fn build_with_handle(self) -> (crate::layer::BulkheadLayer, crate::handle::BulkheadHandle) {
+        let config = self.into_config();
+        let config = std::sync::Arc::new(config);
+        let semaphore =
+            std::sync::Arc::new(tokio::sync::Semaphore::new(config.max_concurrent_calls));
+
+        let handle = crate::handle::BulkheadHandle {
+            semaphore: std::sync::Arc::clone(&semaphore),
+            config: std::sync::Arc::clone(&config),
+        };
+
+        let layer = crate::layer::BulkheadLayer {
+            config: (*config).clone(),
+            shared: Some((semaphore, config)),
+        };
+
+        (layer, handle)
+    }
+
+    fn into_config(self) -> BulkheadConfig {
+        BulkheadConfig {
             max_concurrent_calls: self.max_concurrent_calls,
             max_wait_duration: self.max_wait_duration,
             backpressure: self.backpressure,
             name: self.name,
             event_listeners: self.event_listeners,
-        };
-        crate::layer::BulkheadLayer::new(config)
+        }
     }
 }
 

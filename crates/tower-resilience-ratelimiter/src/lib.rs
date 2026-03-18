@@ -215,12 +215,14 @@
 mod config;
 mod error;
 mod events;
+mod handle;
 mod layer;
 mod limiter;
 
 pub use config::{RateLimiterConfig, RateLimiterConfigBuilder, WindowType};
 pub use error::{RateLimiterError, RateLimiterServiceError};
 pub use events::RateLimiterEvent;
+pub use handle::RateLimiterHandle;
 pub use layer::RateLimiterLayer;
 
 use crate::limiter::SharedRateLimiter;
@@ -285,6 +287,33 @@ impl<S> RateLimiter<S> {
             config.refresh_period,
             config.timeout_duration,
         );
+
+        Self {
+            inner,
+            config,
+            limiter,
+            sleep: None,
+            permit_acquired: false,
+        }
+    }
+
+    /// Creates a new `RateLimiter` using pre-created shared limiter state.
+    pub(crate) fn from_shared(
+        inner: S,
+        config: Arc<RateLimiterConfig>,
+        limiter: SharedRateLimiter,
+    ) -> Self {
+        #[cfg(feature = "metrics")]
+        {
+            describe_counter!(
+                "ratelimiter_calls_total",
+                "Total number of rate limiter calls (permitted or rejected)"
+            );
+            describe_histogram!(
+                "ratelimiter_wait_duration_seconds",
+                "Time spent waiting for a permit"
+            );
+        }
 
         Self {
             inner,

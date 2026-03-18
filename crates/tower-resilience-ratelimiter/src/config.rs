@@ -320,7 +320,53 @@ impl RateLimiterConfigBuilder {
 
     /// Builds the rate limiter layer.
     pub fn build(self) -> crate::RateLimiterLayer {
-        let config = RateLimiterConfig {
+        let config = self.into_config();
+        crate::RateLimiterLayer::new(config)
+    }
+
+    /// Builds the rate limiter layer and returns an observable handle.
+    ///
+    /// All services produced by the returned layer share the same rate limiter
+    /// state, and the handle can observe that state from outside the service.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_ratelimiter::RateLimiterLayer;
+    ///
+    /// let (layer, handle) = RateLimiterLayer::builder()
+    ///     .limit_for_period(100)
+    ///     .build_with_handle();
+    ///
+    /// assert_eq!(handle.available_permits(), 100);
+    /// ```
+    pub fn build_with_handle(self) -> (crate::RateLimiterLayer, crate::RateLimiterHandle) {
+        let config = self.into_config();
+
+        let limiter = crate::limiter::SharedRateLimiter::new(
+            config.window_type,
+            config.limit_for_period,
+            config.refresh_period,
+            config.timeout_duration,
+        );
+
+        let config = std::sync::Arc::new(config);
+
+        let handle = crate::RateLimiterHandle {
+            limiter: limiter.clone(),
+            config: std::sync::Arc::clone(&config),
+        };
+
+        let layer = crate::layer::RateLimiterLayer {
+            config,
+            shared_limiter: Some(limiter),
+        };
+
+        (layer, handle)
+    }
+
+    fn into_config(self) -> RateLimiterConfig {
+        RateLimiterConfig {
             limit_for_period: self.limit_for_period,
             refresh_period: self.refresh_period,
             timeout_duration: self.timeout_duration,
@@ -328,9 +374,7 @@ impl RateLimiterConfigBuilder {
             backpressure: self.backpressure,
             event_listeners: self.event_listeners,
             name: self.name,
-        };
-
-        crate::RateLimiterLayer::new(config)
+        }
     }
 }
 
