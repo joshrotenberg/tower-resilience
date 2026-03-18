@@ -53,6 +53,21 @@ impl<S> Bulkhead<S> {
             acquire_future: None,
         }
     }
+
+    /// Creates a new bulkhead service using pre-created shared state.
+    pub(crate) fn from_shared(
+        inner: S,
+        semaphore: Arc<Semaphore>,
+        config: Arc<BulkheadConfig>,
+    ) -> Self {
+        Self {
+            inner,
+            semaphore,
+            config,
+            permit: None,
+            acquire_future: None,
+        }
+    }
 }
 
 impl<S, Request> Service<Request> for Bulkhead<S>

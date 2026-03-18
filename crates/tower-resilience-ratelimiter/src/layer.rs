@@ -1,3 +1,4 @@
+use crate::limiter::SharedRateLimiter;
 use crate::{RateLimiter, RateLimiterConfig};
 use std::sync::Arc;
 use tower::Layer;
@@ -31,7 +32,9 @@ use tower::Layer;
 /// ```
 #[derive(Clone)]
 pub struct RateLimiterLayer {
-    config: Arc<RateLimiterConfig>,
+    pub(crate) config: Arc<RateLimiterConfig>,
+    /// Pre-created shared limiter state (set by `build_with_handle()`).
+    pub(crate) shared_limiter: Option<SharedRateLimiter>,
 }
 
 impl RateLimiterLayer {
@@ -39,6 +42,7 @@ impl RateLimiterLayer {
     pub fn new(config: RateLimiterConfig) -> Self {
         Self {
             config: Arc::new(config),
+            shared_limiter: None,
         }
     }
 
@@ -144,6 +148,10 @@ impl<S> Layer<S> for RateLimiterLayer {
     type Service = RateLimiter<S>;
 
     fn layer(&self, service: S) -> Self::Service {
-        RateLimiter::new(service, Arc::clone(&self.config))
+        if let Some(limiter) = &self.shared_limiter {
+            RateLimiter::from_shared(service, Arc::clone(&self.config), limiter.clone())
+        } else {
+            RateLimiter::new(service, Arc::clone(&self.config))
+        }
     }
 }

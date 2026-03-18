@@ -259,6 +259,7 @@ pub mod config;
 pub mod error;
 /// Event types emitted by the bulkhead.
 pub mod events;
+mod handle;
 /// Tower `Layer` implementation for the bulkhead.
 pub mod layer;
 /// Tower `Service` implementation for the bulkhead.
@@ -267,6 +268,7 @@ pub mod service;
 pub use config::{BulkheadConfig, BulkheadConfigBuilder};
 pub use error::{BulkheadError, BulkheadServiceError, Result};
 pub use events::BulkheadEvent;
+pub use handle::BulkheadHandle;
 pub use layer::BulkheadLayer;
 pub use service::Bulkhead;
 
