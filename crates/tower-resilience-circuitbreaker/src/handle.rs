@@ -8,7 +8,7 @@ use crate::config::CircuitBreakerConfig;
 
 /// A read-only handle for observing circuit breaker state.
 ///
-/// Obtained from [`CircuitBreakerConfigBuilder::build_with_handle()`]. The handle
+/// Obtained from [`crate::CircuitBreakerConfigBuilder::build_with_handle()`]. The handle
 /// is cheap to clone and safe to share across threads (`Clone + Send + Sync`).
 ///
 /// This is useful when the circuit breaker service is consumed by middleware
