@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-coalesce-v0.9.3...tower-resilience-coalesce-v0.9.4) - 2026-04-30
+
+### Other
+
+- *(deps)* update hashbrown requirement from 0.15 to 0.17 ([#282](https://github.com/joshrotenberg/tower-resilience/pull/282))
+
 ## [0.9.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-coalesce-v0.9.1...tower-resilience-coalesce-v0.9.2) - 2026-03-08
 
 ### Added
