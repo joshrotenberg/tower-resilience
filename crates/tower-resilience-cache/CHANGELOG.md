@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.9.3...tower-resilience-cache-v0.9.4) - 2026-04-30
+
+### Other
+
+- *(deps)* update lru requirement from 0.17.0 to 0.18.0 ([#285](https://github.com/joshrotenberg/tower-resilience/pull/285))
+- *(deps)* update lru requirement from 0.16.2 to 0.17.0 ([#284](https://github.com/joshrotenberg/tower-resilience/pull/284))
+
 ## [0.9.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.9.1...tower-resilience-cache-v0.9.2) - 2026-03-08
 
 ### Added
