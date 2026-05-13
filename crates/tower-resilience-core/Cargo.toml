@@ -29,6 +29,8 @@ tracing = ["dep:tracing"]
 metrics = ["dep:metrics"]
 # Enable HealthTriggerable trait for health-based pattern control
 health-integration = []
+# Expose test helpers (StatefulInner probe). Intended for dev-dependencies only.
+testing = ["dep:tower"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }

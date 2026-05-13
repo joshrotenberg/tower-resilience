@@ -37,5 +37,6 @@ health-integration = ["tower-resilience-core/health-integration"]
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }
 tower = { workspace = true, features = ["util"] }
+tower-resilience-core = { workspace = true, features = ["testing"] }
 
 tracing-subscriber = "0.3"
