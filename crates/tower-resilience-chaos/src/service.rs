@@ -52,7 +52,8 @@ where
     }
 
     fn call(&mut self, req: Req) -> Self::Future {
-        let mut inner = self.inner.clone();
+        let clone = self.inner.clone();
+        let mut inner = std::mem::replace(&mut self.inner, clone);
         let config = Arc::clone(&self.config);
         let rng = Arc::clone(&self.rng);
 

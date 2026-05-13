@@ -400,7 +400,8 @@ where
             // Backpressure mode: permit already acquired in poll_ready
             self.permit_acquired = false;
             let config = Arc::clone(&self.config);
-            let mut inner = self.inner.clone();
+            let clone = self.inner.clone();
+            let mut inner = std::mem::replace(&mut self.inner, clone);
 
             let event = RateLimiterEvent::PermitAcquired {
                 pattern_name: config.name.clone(),
@@ -430,7 +431,8 @@ where
         // Rejection mode: acquire permit in call
         let limiter = self.limiter.clone();
         let config = Arc::clone(&self.config);
-        let mut inner = self.inner.clone();
+        let clone = self.inner.clone();
+        let mut inner = std::mem::replace(&mut self.inner, clone);
 
         Box::pin(async move {
             match limiter.acquire().await {

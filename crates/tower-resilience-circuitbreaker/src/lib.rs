@@ -628,7 +628,8 @@ where
     fn call(&mut self, req: Req) -> Self::Future {
         let config = Arc::clone(&self.config);
         let circuit = Arc::clone(&self.circuit);
-        let mut inner = self.inner.clone();
+        let clone = self.inner.clone();
+        let mut inner = std::mem::replace(&mut self.inner, clone);
 
         Box::pin(async move {
             #[cfg(feature = "tracing")]
@@ -836,7 +837,8 @@ where
     fn call(&mut self, req: Req) -> Self::Future {
         let config = Arc::clone(&self.config);
         let circuit = Arc::clone(&self.circuit);
-        let mut inner = self.inner.clone();
+        let clone = self.inner.clone();
+        let mut inner = std::mem::replace(&mut self.inner, clone);
         let fallback = Arc::clone(&self.fallback);
 
         Box::pin(async move {

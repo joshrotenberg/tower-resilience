@@ -125,7 +125,8 @@ where
             // Backpressure mode: permit already acquired in poll_ready
             let semaphore_for_check = Arc::clone(&self.semaphore);
             let config = Arc::clone(&self.config);
-            let mut inner = self.inner.clone();
+            let clone = self.inner.clone();
+            let mut inner = std::mem::replace(&mut self.inner, clone);
             let start_time = Instant::now();
 
             // Emit call permitted event
@@ -204,7 +205,8 @@ where
         let semaphore = Arc::clone(&self.semaphore);
         let semaphore_for_check = Arc::clone(&self.semaphore);
         let config = Arc::clone(&self.config);
-        let mut inner = self.inner.clone();
+        let clone = self.inner.clone();
+        let mut inner = std::mem::replace(&mut self.inner, clone);
         let start_time = Instant::now();
 
         #[cfg(feature = "metrics")]
