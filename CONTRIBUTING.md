@@ -96,6 +96,57 @@ cargo run --example combined -p tower-resilience
 - Ensure `cargo clippy` passes with `-D warnings`
 - Maintain test coverage
 
+### Implementing a New `Service`
+
+Every layer in this crate implements [`tower::Service`](https://docs.rs/tower-service/latest/tower_service/trait.Service.html). The trait has a non-obvious contract that, if violated, lets a wrapped middleware panic at runtime. Use this checklist on every new `Service` impl and every PR that touches `call` or `poll_ready`.
+
+#### `Service::call` must move the readied receiver
+
+The caller drove `poll_ready` on the instance held by `&mut self`. That instance -- not a fresh clone -- must be the one that runs `call`. The canonical pattern:
+
+```rust
+fn call(&mut self, req: Req) -> Self::Future {
+    let clone = self.inner.clone();
+    let mut inner = std::mem::replace(&mut self.inner, clone);
+    Box::pin(async move { inner.call(req).await })
+}
+```
+
+**Wrong** (panics for any inner whose `Clone` resets readiness state, including `tower::limit::ConcurrencyLimit`, `tower::buffer::Buffer`, `tower::load_shed::LoadShed`):
+
+```rust
+fn call(&mut self, req: Req) -> Self::Future {
+    let mut inner = self.inner.clone();          // unreadied clone!
+    Box::pin(async move { inner.call(req).await })
+}
+```
+
+The `contract-lints` CI job greps for this anti-pattern and fails the build.
+
+See: [tower-service docs on cloning inner services](https://docs.rs/tower-service/0.3.3/tower_service/trait.Service.html#be-careful-when-cloning-inner-services), #286.
+
+#### `Clone` must reset every per-instance readiness field
+
+Anything `poll_ready` mutates (`sleep`, `permit`, `acquire_task`, etc.) must be reset to its initial state in `Clone`. Otherwise the fresh clone left on `&mut self` by `mem::replace` retains stale readiness state.
+
+#### `poll_ready` must be safe to call repeatedly between `Ready` and the next `call`
+
+The trait docs are explicit: once `poll_ready` returns `Ready(Ok(()))`, repeated calls must continue to return `Ready` (or `Err`). Don't double-acquire permits or restart timers on the second poll -- guard with `if self.permit.is_some()` or equivalent.
+
+#### `poll_ready` must register the waker on `Pending`
+
+If `poll_ready` returns `Pending`, `cx.waker()` must be registered somewhere that will wake the task when the blocking condition clears. Polling a child future via `cx` is the standard way to do this.
+
+#### `Err` from `poll_ready` is terminal
+
+The contract says `Ready(Err(_))` from `poll_ready` means the service is done and should be discarded. Don't return `Err` for transient conditions (rate limited, circuit open, bulkhead full). Surface those as errors from the future returned by `call` instead.
+
+#### Add a contract regression test
+
+`tests/clone_in_call_contract.rs` wraps each layer around a `StatefulInner` whose `Clone` resets readiness. A new layer should add a `<layer>_drives_readied_instance` case to that suite.
+
+`tests/auto_traits.rs` asserts every layer is `Send + Sync + 'static` when its inner is. New layers should be added there too -- a regression that drops `Sync` (e.g., storing a `Pin<Box<dyn Future + Send>>` field) fails to compile there. See #287.
+
 ### Testing
 
 - Unit tests in each crate's `src/` files
