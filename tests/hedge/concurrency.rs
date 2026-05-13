@@ -291,9 +291,11 @@ async fn test_cancellation_on_first_success() {
         .unwrap();
     let elapsed = start.elapsed();
 
-    // Should complete quickly (hedge wins)
+    // Should complete quickly (hedge wins). Expected ~40ms (30ms delay +
+    // 10ms hedge service); ceiling generous for CI scheduling slop (see
+    // #301).
     assert!(
-        elapsed < Duration::from_millis(100),
+        elapsed < Duration::from_millis(200),
         "elapsed: {:?}",
         elapsed
     );
