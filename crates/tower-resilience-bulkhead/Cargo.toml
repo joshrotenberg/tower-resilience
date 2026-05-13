@@ -16,7 +16,7 @@ tower-resilience-core = { workspace = true }
 tower = { workspace = true }
 tower-layer = { workspace = true }
 tower-service = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["rt"] }
 futures = { workspace = true }
 thiserror = { workspace = true }
 
