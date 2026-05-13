@@ -69,6 +69,33 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
+  contract-lints:
+    name: Source Contract Lints
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Catches the clone-in-call anti-pattern that violates Tower's Service
+      # contract (#286). The Service contract permits `call` to panic if
+      # invoked on an instance whose `poll_ready` was not driven to
+      # `Poll::Ready(Ok(()))`. Cloning self.inner in call() and moving the
+      # unreadied clone into the future violates this for any compliant
+      # stateful inner middleware (tower::limit::ConcurrencyLimit,
+      # tower::buffer::Buffer, tower::load_shed::LoadShed, etc.). The
+      # contract-compliant form uses `std::mem::replace` so the readied
+      # original moves into the future and a fresh clone stays on &mut self.
+      #
+      # See https://docs.rs/tower-service/0.3.3/tower_service/trait.Service.html#be-careful-when-cloning-inner-services
+      - name: Forbid clone-in-call anti-pattern
+        run: |
+          if git grep -nE 'let mut [a-zA-Z_][a-zA-Z0-9_]* = self\.inner\.clone\(\);' -- 'crates/**/*.rs'; then
+            echo ""
+            echo "Found clone-in-call anti-pattern (#286). Use std::mem::replace instead:"
+            echo "  let clone = self.inner.clone();"
+            echo "  let mut inner = std::mem::replace(&mut self.inner, clone);"
+            exit 1
+          fi
+
   docs:
     name: Documentation
     runs-on: ubuntu-latest

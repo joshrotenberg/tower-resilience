@@ -97,9 +97,8 @@ where
             });
         }
 
-        let mut inner = self.inner.clone();
-        // Swap so the clone becomes the "pending" one
-        std::mem::swap(&mut self.inner, &mut inner);
+        let clone = self.inner.clone();
+        let mut inner = std::mem::replace(&mut self.inner, clone);
 
         Box::pin(async move {
             let result = inner.call(request).await;
