@@ -17,7 +17,7 @@
 //! Tests that wrap a layer around `tower::service_fn` or a `MockService` style
 //! probe never exercise this -- those inners have no-op `poll_ready` and no
 //! per-instance readiness state, so the contract violation is invisible. The
-//! [`StatefulInner`] probe in this module deliberately resets its `ready` flag
+//! `StatefulInner` probe in this module deliberately resets its `ready` flag
 //! on `Clone`, mirroring how `tower::limit::ConcurrencyLimit`, `Buffer`,
 //! `LoadShed`, and other stateful tower middleware behave in production. Any
 //! regression to the clone-in-call anti-pattern (see #286) panics here.
