@@ -10,13 +10,33 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Instant;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+use tokio::task::JoinHandle;
 use tower::Service;
 
 #[cfg(feature = "metrics")]
 use metrics::{counter, gauge, histogram};
 
-type AcquireFuture =
-    Pin<Box<dyn Future<Output = Result<OwnedSemaphorePermit, tokio::sync::AcquireError>> + Send>>;
+/// Wraps a `JoinHandle` so the task is aborted when the handle is dropped.
+///
+/// Used for the in-flight `Semaphore::acquire_owned` task in backpressure mode.
+/// Without this, dropping a `Bulkhead` while a permit acquisition is pending
+/// would leak the spawned task (it would keep running, holding an `Arc` to the
+/// semaphore, until either the permit was acquired and immediately discarded
+/// or the semaphore was closed).
+///
+/// Storing a `JoinHandle` rather than a `Pin<Box<dyn Future + Send>>` also
+/// keeps `Bulkhead: Sync` -- `JoinHandle` implements `Sync` whereas a boxed
+/// trait-object future does not (#287). This is what unblocks composition with
+/// tonic's gRPC servers and other `Arc`-shared service holders.
+struct AbortOnDrop<T> {
+    handle: JoinHandle<T>,
+}
+
+impl<T> Drop for AbortOnDrop<T> {
+    fn drop(&mut self) {
+        self.handle.abort();
+    }
+}
 
 /// Bulkhead service that limits concurrent calls.
 pub struct Bulkhead<S> {
@@ -25,8 +45,11 @@ pub struct Bulkhead<S> {
     config: Arc<BulkheadConfig>,
     /// Permit reserved in `poll_ready` (backpressure mode only).
     permit: Option<OwnedSemaphorePermit>,
-    /// In-flight semaphore acquire future (backpressure mode only).
-    acquire_future: Option<AcquireFuture>,
+    /// In-flight semaphore acquire task (backpressure mode only).
+    ///
+    /// Stored as a `JoinHandle` rather than a boxed future so that `Bulkhead`
+    /// remains `Sync` (a `dyn Future + Send` is not `Sync`). See #287.
+    acquire_task: Option<AbortOnDrop<Result<OwnedSemaphorePermit, tokio::sync::AcquireError>>>,
 }
 
 impl<S: Clone> Clone for Bulkhead<S> {
@@ -36,7 +59,7 @@ impl<S: Clone> Clone for Bulkhead<S> {
             semaphore: Arc::clone(&self.semaphore),
             config: Arc::clone(&self.config),
             permit: None,
-            acquire_future: None,
+            acquire_task: None,
         }
     }
 }
@@ -50,7 +73,7 @@ impl<S> Bulkhead<S> {
             semaphore,
             config: Arc::new(config),
             permit: None,
-            acquire_future: None,
+            acquire_task: None,
         }
     }
 
@@ -65,7 +88,7 @@ impl<S> Bulkhead<S> {
             semaphore,
             config,
             permit: None,
-            acquire_future: None,
+            acquire_task: None,
         }
     }
 }
@@ -99,21 +122,47 @@ where
             return Poll::Ready(Ok(()));
         }
 
-        // Create or poll the acquire future
-        let fut = self.acquire_future.get_or_insert_with(|| {
-            let sem = Arc::clone(&self.semaphore);
-            Box::pin(async move { sem.acquire_owned().await })
-        });
+        // Fast path on first poll: try to acquire without queueing.
+        if self.acquire_task.is_none() {
+            match Arc::clone(&self.semaphore).try_acquire_owned() {
+                Ok(permit) => {
+                    self.permit = Some(permit);
+                    return Poll::Ready(Ok(()));
+                }
+                Err(tokio::sync::TryAcquireError::NoPermits) => {
+                    // Spawn a task to wait in the semaphore's FIFO queue.
+                    let sem = Arc::clone(&self.semaphore);
+                    let handle = tokio::spawn(async move { sem.acquire_owned().await });
+                    self.acquire_task = Some(AbortOnDrop { handle });
+                }
+                Err(tokio::sync::TryAcquireError::Closed) => {
+                    // Semaphore closed -- should not happen in normal operation.
+                    return Poll::Ready(Ok(()));
+                }
+            }
+        }
 
-        match fut.as_mut().poll(cx) {
-            Poll::Ready(Ok(permit)) => {
-                self.acquire_future = None;
+        // Poll the in-flight acquire task.
+        let task = self
+            .acquire_task
+            .as_mut()
+            .expect("acquire_task set above when None");
+        match Pin::new(&mut task.handle).poll(cx) {
+            Poll::Ready(Ok(Ok(permit))) => {
+                self.acquire_task = None;
                 self.permit = Some(permit);
                 Poll::Ready(Ok(()))
             }
+            Poll::Ready(Ok(Err(_))) => {
+                // Semaphore closed -- should not happen in normal operation.
+                self.acquire_task = None;
+                Poll::Ready(Ok(()))
+            }
             Poll::Ready(Err(_)) => {
-                // Semaphore closed -- should not happen in normal operation
-                self.acquire_future = None;
+                // JoinError -- task was aborted or panicked. Treat like a
+                // closed semaphore: clear the slot and let the caller
+                // re-attempt on the next poll cycle.
+                self.acquire_task = None;
                 Poll::Ready(Ok(()))
             }
             Poll::Pending => Poll::Pending,
