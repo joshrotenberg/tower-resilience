@@ -278,7 +278,8 @@ where
     }
 
     fn call(&mut self, req: Req) -> Self::Future {
-        let mut service = self.inner.clone();
+        let clone = self.inner.clone();
+        let mut service = std::mem::replace(&mut self.inner, clone);
         let config = Arc::clone(&self.config);
         let req_clone = req.clone();
 
