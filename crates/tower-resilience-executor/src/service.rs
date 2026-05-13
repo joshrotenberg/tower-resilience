@@ -74,8 +74,10 @@ where
     }
 
     fn call(&mut self, req: Req) -> Self::Future {
-        // Clone the service for the spawned task
-        let mut service = self.inner.clone();
+        // Take the readied service for the spawned task, leaving a fresh
+        // clone behind for the next poll_ready cycle. See #286.
+        let clone = self.inner.clone();
+        let mut service = std::mem::replace(&mut self.inner, clone);
         let (tx, rx) = oneshot::channel();
 
         // Spawn the request processing on the executor

@@ -179,3 +179,49 @@ async fn chaos_drives_readied_instance() {
         let _ = svc.ready().await.unwrap().call(()).await;
     }
 }
+
+#[tokio::test]
+async fn fallback_drives_readied_instance() {
+    use tower_resilience_fallback::FallbackLayer;
+
+    // value() strategy returns a fixed Res when inner errors. We only care
+    // that the inner is invoked on the readied instance.
+    let layer = FallbackLayer::<(), (), std::convert::Infallible>::value(());
+    let mut svc = tower::ServiceBuilder::new()
+        .layer(layer)
+        .service(StatefulInner::new());
+
+    for _ in 0..3 {
+        let _ = svc.ready().await.unwrap().call(()).await;
+    }
+}
+
+#[tokio::test]
+async fn retry_drives_readied_instance() {
+    use tower_resilience_retry::RetryLayer;
+
+    let layer: tower_resilience_retry::RetryLayer<(), (), std::convert::Infallible> =
+        RetryLayer::builder().max_attempts(1).build();
+    let mut svc = tower::ServiceBuilder::new()
+        .layer(layer)
+        .service(StatefulInner::new());
+
+    // Multiple calls force the contract over the retry boundary as well.
+    for _ in 0..3 {
+        let _ = svc.ready().await.unwrap().call(()).await;
+    }
+}
+
+#[tokio::test]
+async fn executor_drives_readied_instance() {
+    use tower_resilience_executor::ExecutorLayer;
+
+    let layer = ExecutorLayer::current();
+    let mut svc = tower::ServiceBuilder::new()
+        .layer(layer)
+        .service(StatefulInner::new());
+
+    for _ in 0..3 {
+        let _ = svc.ready().await.unwrap().call(()).await;
+    }
+}
