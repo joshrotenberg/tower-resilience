@@ -26,6 +26,10 @@ pub mod error_layer;
 #[cfg(feature = "health-integration")]
 pub mod health_integration;
 
+/// Test helpers for layer-crate contract regression tests.
+#[cfg(feature = "testing")]
+pub mod testing;
+
 pub use aimd::{AimdConfig, AimdController};
 pub use classifier::{DefaultClassifier, FailureClassifier, FnClassifier};
 pub use error::{IntoResilienceError, ResilienceError};

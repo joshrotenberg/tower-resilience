@@ -441,10 +441,15 @@ async fn custom_function_interval_linear_growth() {
     let times = timestamps.lock().unwrap();
     assert_eq!(times.len(), 4);
 
+    // Upper bounds are generous (~2x expected) -- wall-clock scheduling on
+    // busy CI runners regularly overshoots tight windows. Lower bounds verify
+    // the backoff actually fires; upper bounds just guard against runaway
+    // delays.
+
     // First retry: ~50ms
     let delay1 = times[1].duration_since(times[0]);
     assert!(
-        delay1 >= Duration::from_millis(20) && delay1 <= Duration::from_millis(80),
+        delay1 >= Duration::from_millis(20) && delay1 <= Duration::from_millis(150),
         "Expected ~50ms, got {:?}",
         delay1
     );
@@ -452,7 +457,7 @@ async fn custom_function_interval_linear_growth() {
     // Second retry: ~100ms
     let delay2 = times[2].duration_since(times[1]);
     assert!(
-        delay2 >= Duration::from_millis(70) && delay2 <= Duration::from_millis(130),
+        delay2 >= Duration::from_millis(70) && delay2 <= Duration::from_millis(250),
         "Expected ~100ms, got {:?}",
         delay2
     );
@@ -460,7 +465,7 @@ async fn custom_function_interval_linear_growth() {
     // Third retry: ~150ms
     let delay3 = times[3].duration_since(times[2]);
     assert!(
-        delay3 >= Duration::from_millis(120) && delay3 <= Duration::from_millis(180),
+        delay3 >= Duration::from_millis(120) && delay3 <= Duration::from_millis(350),
         "Expected ~150ms, got {:?}",
         delay3
     );

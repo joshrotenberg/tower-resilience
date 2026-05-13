@@ -24,6 +24,7 @@ metrics = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "macros", "rt-multi-thread"] }
+tower-resilience-core = { workspace = true, features = ["testing"] }
 
 [features]
 default = []
