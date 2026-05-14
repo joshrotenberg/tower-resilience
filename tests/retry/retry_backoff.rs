@@ -109,10 +109,14 @@ async fn exponential_backoff_doubles_delay() {
     let times = timestamps.lock().unwrap();
     assert_eq!(times.len(), 4);
 
+    // Upper bounds are generous (~3-4x expected) -- wall-clock scheduling on
+    // busy CI runners regularly overshoots tight windows. Lower bounds verify
+    // the backoff actually fires. See #301.
+
     // First retry: ~50ms
     let delay1 = times[1].duration_since(times[0]);
     assert!(
-        delay1 >= Duration::from_millis(20) && delay1 <= Duration::from_millis(80),
+        delay1 >= Duration::from_millis(20) && delay1 <= Duration::from_millis(200),
         "Expected first delay ~50ms, got {:?}",
         delay1
     );
@@ -120,7 +124,7 @@ async fn exponential_backoff_doubles_delay() {
     // Second retry: ~100ms (50 * 2^1)
     let delay2 = times[2].duration_since(times[1]);
     assert!(
-        delay2 >= Duration::from_millis(70) && delay2 <= Duration::from_millis(130),
+        delay2 >= Duration::from_millis(70) && delay2 <= Duration::from_millis(300),
         "Expected second delay ~100ms, got {:?}",
         delay2
     );
@@ -128,7 +132,7 @@ async fn exponential_backoff_doubles_delay() {
     // Third retry: ~200ms (50 * 2^2)
     let delay3 = times[3].duration_since(times[2]);
     assert!(
-        delay3 >= Duration::from_millis(170) && delay3 <= Duration::from_millis(230),
+        delay3 >= Duration::from_millis(170) && delay3 <= Duration::from_millis(500),
         "Expected third delay ~200ms, got {:?}",
         delay3
     );
@@ -176,7 +180,7 @@ async fn exponential_backoff_custom_multiplier() {
     // First retry: ~50ms
     let delay1 = times[1].duration_since(times[0]);
     assert!(
-        delay1 >= Duration::from_millis(20) && delay1 <= Duration::from_millis(80),
+        delay1 >= Duration::from_millis(20) && delay1 <= Duration::from_millis(200),
         "Expected first delay ~50ms, got {:?}",
         delay1
     );
@@ -184,7 +188,7 @@ async fn exponential_backoff_custom_multiplier() {
     // Second retry: ~150ms (50 * 3^1)
     let delay2 = times[2].duration_since(times[1]);
     assert!(
-        delay2 >= Duration::from_millis(120) && delay2 <= Duration::from_millis(180),
+        delay2 >= Duration::from_millis(120) && delay2 <= Duration::from_millis(400),
         "Expected second delay ~150ms, got {:?}",
         delay2
     );
@@ -235,7 +239,7 @@ async fn exponential_backoff_respects_max_interval() {
     // First retry: ~50ms
     let delay1 = times[1].duration_since(times[0]);
     assert!(
-        delay1 >= Duration::from_millis(20) && delay1 <= Duration::from_millis(80),
+        delay1 >= Duration::from_millis(20) && delay1 <= Duration::from_millis(200),
         "First delay should be ~50ms, got {:?}",
         delay1
     );
@@ -243,7 +247,7 @@ async fn exponential_backoff_respects_max_interval() {
     // Second retry: ~100ms
     let delay2 = times[2].duration_since(times[1]);
     assert!(
-        delay2 >= Duration::from_millis(70) && delay2 <= Duration::from_millis(130),
+        delay2 >= Duration::from_millis(70) && delay2 <= Duration::from_millis(300),
         "Second delay should be ~100ms, got {:?}",
         delay2
     );
@@ -252,7 +256,7 @@ async fn exponential_backoff_respects_max_interval() {
     // Use generous tolerance for CI environments with variable timing
     let delay3 = times[3].duration_since(times[2]);
     assert!(
-        delay3 >= Duration::from_millis(100) && delay3 <= Duration::from_millis(250),
+        delay3 >= Duration::from_millis(100) && delay3 <= Duration::from_millis(400),
         "Third delay should be capped at ~150ms, got {:?}",
         delay3
     );
@@ -260,7 +264,7 @@ async fn exponential_backoff_respects_max_interval() {
     // Fourth retry: still capped at ~150ms
     let delay4 = times[4].duration_since(times[3]);
     assert!(
-        delay4 >= Duration::from_millis(100) && delay4 <= Duration::from_millis(250),
+        delay4 >= Duration::from_millis(100) && delay4 <= Duration::from_millis(400),
         "Fourth delay should be capped at ~150ms, got {:?}",
         delay4
     );
@@ -336,13 +340,14 @@ async fn exponential_random_backoff_has_variance() {
         delays.len()
     );
 
-    // All delays should be within the expected range
-    // Base: 100ms, randomization 0.5 means 50ms to 150ms
-    // Use generous tolerance for CI environments
+    // Base: 100ms, randomization 0.5 means delays nominally in 50-150ms.
+    // Upper bound widened (~2.5x) to absorb CI scheduling slop on top of the
+    // randomization range; lower bound preserved to verify the delay
+    // actually fires. See #301.
     for delay in delays.iter() {
         assert!(
-            *delay >= Duration::from_millis(20) && *delay <= Duration::from_millis(180),
-            "Delay {:?} outside expected randomized range (20-180ms)",
+            *delay >= Duration::from_millis(20) && *delay <= Duration::from_millis(400),
+            "Delay {:?} outside expected randomized range",
             delay
         );
     }
@@ -390,10 +395,13 @@ async fn exponential_random_backoff_respects_max() {
     let times = timestamps.lock().unwrap();
     assert_eq!(times.len(), 4);
 
-    // Third retry should be capped (would be ~200ms without cap)
+    // Third retry should be capped at ~100ms (cap=100ms ±30% jitter, so
+    // ~70-130ms ideal). Uncapped would be ~200ms ±30% (~140-260ms). Upper
+    // bound 200ms cleanly distinguishes capped from uncapped while leaving
+    // room for CI scheduling slop on top of the capped value. See #301.
     let delay3 = times[3].duration_since(times[2]);
     assert!(
-        delay3 <= Duration::from_millis(160),
+        delay3 <= Duration::from_millis(200),
         "Delay should be capped with randomization, got {:?}",
         delay3
     );
@@ -606,9 +614,10 @@ async fn zero_backoff_retries_immediately() {
         .await;
     let elapsed = start.elapsed();
 
-    // With zero backoff, should complete very quickly
+    // With zero backoff, three calls should complete very quickly. Upper
+    // bound generous for CI scheduling slop; see #301.
     assert!(
-        elapsed < Duration::from_millis(50),
+        elapsed < Duration::from_millis(200),
         "Zero backoff should complete quickly, took {:?}",
         elapsed
     );

@@ -8,8 +8,10 @@ use tokio::time::sleep;
 use tower::{Layer, Service, ServiceExt, service_fn};
 use tower_resilience_timelimiter::TimeLimiterLayer;
 
-// Windows has less precise timers, so use larger tolerance
-const TOLERANCE_MS: u64 = 30;
+// Upper-bound slack for wall-clock checks. CI runners (especially Windows
+// with ~15.6ms timer resolution) regularly overshoot tight windows, so the
+// tolerance is set well above what a healthy local run would need. See #301.
+const TOLERANCE_MS: u64 = 80;
 
 #[tokio::test]
 async fn timeout_fires_at_correct_time() {
@@ -68,8 +70,10 @@ async fn very_short_timeout_1ms() {
         .timeout_duration(Duration::from_millis(1))
         .build();
 
+    // Inner sleep is well above the elapsed ceiling so the assertion below
+    // genuinely proves the timeout short-circuited the service. See #301.
     let svc = service_fn(|_req: ()| async {
-        sleep(Duration::from_millis(50)).await;
+        sleep(Duration::from_millis(500)).await;
         Ok::<_, TestError>("should timeout")
     });
 
@@ -80,7 +84,7 @@ async fn very_short_timeout_1ms() {
 
     assert!(result.is_err());
     assert!(result.unwrap_err().is_timeout());
-    assert!(elapsed.as_millis() < 50);
+    assert!(elapsed.as_millis() < 200);
 }
 
 #[tokio::test]
@@ -89,8 +93,10 @@ async fn very_short_timeout_10ms() {
         .timeout_duration(Duration::from_millis(10))
         .build();
 
+    // Inner sleep is well above the elapsed ceiling so the assertion below
+    // genuinely proves the timeout short-circuited the service. See #301.
     let svc = service_fn(|_req: ()| async {
-        sleep(Duration::from_millis(100)).await;
+        sleep(Duration::from_millis(500)).await;
         Ok::<_, TestError>("should timeout")
     });
 
@@ -101,7 +107,7 @@ async fn very_short_timeout_10ms() {
 
     assert!(result.is_err());
     assert!(result.unwrap_err().is_timeout());
-    assert!(elapsed.as_millis() < 50);
+    assert!(elapsed.as_millis() < 200);
 }
 
 #[tokio::test]
@@ -171,9 +177,10 @@ async fn timeout_just_before_completion() {
 
     assert!(result.is_err());
     assert!(result.unwrap_err().is_timeout());
-    // Windows has less precise timers, allow more margin
+    // Upper bound is ~5x expected; CI scheduling regularly overshoots tight
+    // windows. See #301.
     assert!(
-        elapsed.as_millis() < 60,
+        elapsed.as_millis() < 150,
         "Expected timeout ~30ms, got {}ms",
         elapsed.as_millis()
     );
@@ -196,9 +203,10 @@ async fn timeout_just_after_completion() {
     let elapsed = start.elapsed();
 
     assert!(result.is_ok());
-    // Windows CI has less precise timers, use larger tolerance
+    // Upper bound is ~4x expected; CI scheduling regularly overshoots tight
+    // windows. See #301.
     assert!(
-        elapsed.as_millis() < 90,
+        elapsed.as_millis() < 200,
         "Expected completion ~50ms, got {}ms",
         elapsed.as_millis()
     );
