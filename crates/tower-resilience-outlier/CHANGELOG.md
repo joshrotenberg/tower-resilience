@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-outlier-v0.9.3...tower-resilience-outlier-v0.9.4) - 2026-05-13
+
+### Other
+
+- compose each layer with tower::limit::ConcurrencyLimit ([#302](https://github.com/joshrotenberg/tower-resilience/pull/302))
+- share StatefulInner contract probe across layer crates ([#300](https://github.com/joshrotenberg/tower-resilience/pull/300))
+- forbid clone-in-call anti-pattern ([#298](https://github.com/joshrotenberg/tower-resilience/pull/298))
+
 ## [0.9.2](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-outlier-v0.9.1...tower-resilience-outlier-v0.9.2) - 2026-03-08
 
 ### Added
