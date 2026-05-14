@@ -181,9 +181,11 @@ async fn fixed_backoff_configuration() {
     let elapsed = start.elapsed();
 
     assert!(result.is_ok());
-    // 2 retries at 20ms each = ~40ms total (with tolerance)
+    // 2 retries at 20ms each = ~40ms total. Upper bound is generous (~5x
+    // expected) because CI scheduling regularly overshoots tight windows; the
+    // lower bound verifies the backoff actually fires. See #301.
     assert!(
-        elapsed >= Duration::from_millis(10) && elapsed <= Duration::from_millis(80),
+        elapsed >= Duration::from_millis(10) && elapsed <= Duration::from_millis(200),
         "Expected ~40ms, got {:?}",
         elapsed
     );
