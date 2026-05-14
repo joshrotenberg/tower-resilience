@@ -127,7 +127,7 @@ use futures::future::BoxFuture;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
-use tower::Service;
+use tower::{Service, ServiceExt};
 
 /// Hedging service that wraps an inner service.
 ///
@@ -214,12 +214,19 @@ where
     // Channel to collect results from all attempts
     let (tx, mut rx) = mpsc::channel::<(usize, Result<S::Response, S::Error>)>(max_attempts);
 
-    // Spawn primary request
-    let mut service_clone = service.clone();
+    // `service` is the readied receiver moved out of `self.inner` by the
+    // calling `Service::call`. Clone for the hedge template *before* moving
+    // it into the primary spawn -- each subsequent hedge spawn must drive
+    // `poll_ready` on its own clone before calling, since `Clone` does not
+    // propagate readiness for stateful services. See #293.
+    let hedge_template = service.clone();
+
+    // Spawn primary request using the readied receiver directly.
+    let mut primary = service;
     let req_clone = req.clone();
     let tx_clone = tx.clone();
     tokio::spawn(async move {
-        let result = service_clone.call(req_clone).await;
+        let result = primary.call(req_clone).await;
         let _ = tx_clone.send((0, result)).await;
     });
 
@@ -297,11 +304,16 @@ where
                                 timestamp: Instant::now(),
                             });
 
-                            let mut svc = service.clone();
+                            let mut svc = hedge_template.clone();
                             let r = req.clone();
                             let tx_c = tx.clone();
                             tokio::spawn(async move {
-                                let result = svc.call(r).await;
+                                // Drive poll_ready on the fresh clone before
+                                // calling; clones do not inherit readiness.
+                                let result = match svc.ready().await {
+                                    Ok(svc) => svc.call(r).await,
+                                    Err(e) => Err(e),
+                                };
                                 let _ = tx_c.send((attempt_num, result)).await;
                             });
 
@@ -363,11 +375,16 @@ where
                         timestamp: Instant::now(),
                     });
 
-                    let mut svc = service.clone();
+                    let mut svc = hedge_template.clone();
                     let r = req.clone();
                     let tx_c = tx.clone();
                     tokio::spawn(async move {
-                        let result = svc.call(r).await;
+                        // Drive poll_ready on the fresh clone before calling;
+                        // clones do not inherit readiness.
+                        let result = match svc.ready().await {
+                            Ok(svc) => svc.call(r).await,
+                            Err(e) => Err(e),
+                        };
                         let _ = tx_c.send((i, result)).await;
                     });
                 }
