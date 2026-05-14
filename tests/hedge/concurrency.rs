@@ -264,8 +264,9 @@ async fn test_cancellation_on_first_success() {
         async move {
             let attempt = sc.fetch_add(1, Ordering::SeqCst);
             if attempt == 0 {
-                // Primary is slow
-                tokio::time::sleep(Duration::from_millis(200)).await;
+                // Primary is very slow so the assertion below stays meaningful
+                // even on overloaded CI runners. See #301.
+                tokio::time::sleep(Duration::from_millis(1000)).await;
             } else {
                 // Hedge is fast
                 tokio::time::sleep(Duration::from_millis(10)).await;
@@ -291,11 +292,13 @@ async fn test_cancellation_on_first_success() {
         .unwrap();
     let elapsed = start.elapsed();
 
-    // Should complete quickly (hedge wins). Expected ~40ms (30ms delay +
-    // 10ms hedge service); ceiling generous for CI scheduling slop (see
-    // #301).
+    // Hedge wins; expected ~40ms (30ms delay + 10ms hedge service). Ceiling
+    // is well below the primary's 1s sleep, so the assertion still proves the
+    // hedge result returned before the primary -- but generous enough to
+    // absorb CI scheduling slop (macOS runners have been seen at ~250ms).
+    // See #301.
     assert!(
-        elapsed < Duration::from_millis(200),
+        elapsed < Duration::from_millis(500),
         "elapsed: {:?}",
         elapsed
     );
@@ -304,7 +307,7 @@ async fn test_cancellation_on_first_success() {
     assert_eq!(started_count.load(Ordering::SeqCst), 2);
 
     // Give time for primary to complete
-    tokio::time::sleep(Duration::from_millis(250)).await;
+    tokio::time::sleep(Duration::from_millis(1100)).await;
 
     // Both should eventually complete (tasks run to completion)
     assert_eq!(completed_count.load(Ordering::SeqCst), 2);
