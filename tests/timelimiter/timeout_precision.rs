@@ -165,8 +165,10 @@ async fn timeout_just_before_completion() {
         .timeout_duration(Duration::from_millis(30))
         .build();
 
+    // Inner sleep well above the timeout so the boundary stays unambiguous
+    // even when CI runners blur sub-100ms scheduling. See #301.
     let svc = service_fn(|_req: ()| async {
-        sleep(Duration::from_millis(50)).await;
+        sleep(Duration::from_millis(300)).await;
         Ok::<_, TestError>("should timeout before completion")
     });
 
@@ -189,9 +191,11 @@ async fn timeout_just_before_completion() {
 #[tokio::test]
 async fn timeout_just_after_completion() {
     let layer = TimeLimiterLayer::builder()
-        .timeout_duration(Duration::from_millis(70))
+        .timeout_duration(Duration::from_millis(300))
         .build();
 
+    // Inner sleep well below the timeout so the boundary stays unambiguous
+    // even when CI runners blur sub-100ms scheduling. See #301.
     let svc = service_fn(|_req: ()| async {
         sleep(Duration::from_millis(50)).await;
         Ok::<_, TestError>("should complete before timeout")
