@@ -96,6 +96,11 @@ where
 enum Phase<F> {
     Calling(#[pin] F),
     Sleeping(#[pin] tokio::time::Sleep),
+    /// Driving `poll_ready` on the stored inner clone before issuing a retry
+    /// `call`. The initial call uses the caller-readied receiver; every
+    /// subsequent retry must re-ready the clone we hold here (tower::Service
+    /// contract -- see #293).
+    Readying,
     Failed,
 }
 
@@ -194,9 +199,10 @@ where
                         Poll::Ready(()) => {
                             // Sleep complete - check retry_on_reconnect flag
                             if this.config.retry_on_reconnect {
-                                // Retry the original request (reconnection happens via clone)
-                                let call_future = this.inner.call(this.request.clone());
-                                this.phase.set(Phase::Calling(call_future));
+                                // Drive poll_ready on the stored clone before
+                                // re-issuing the call -- the tower::Service
+                                // contract requires it. See #293.
+                                this.phase.set(Phase::Readying);
                             } else {
                                 // Don't retry - return error to caller
                                 // The backoff succeeded, so mark connected for next request
@@ -211,6 +217,17 @@ where
                         Poll::Pending => return Poll::Pending,
                     }
                 }
+                PhaseProj::Readying => match this.inner.poll_ready(cx) {
+                    Poll::Ready(Ok(())) => {
+                        let call_future = this.inner.call(this.request.clone());
+                        this.phase.set(Phase::Calling(call_future));
+                    }
+                    Poll::Ready(Err(error)) => {
+                        this.phase.set(Phase::Failed);
+                        return Poll::Ready(Err(ReconnectError::ServiceError(error)));
+                    }
+                    Poll::Pending => return Poll::Pending,
+                },
                 PhaseProj::Failed => {
                     panic!("ReconnectFuture polled after completion");
                 }
