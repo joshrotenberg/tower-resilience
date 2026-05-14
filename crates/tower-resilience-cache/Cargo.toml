@@ -24,7 +24,8 @@ tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
-tower = { workspace = true, features = ["util"] }
+tower = { workspace = true, features = ["util", "limit"] }
+tower-resilience-core = { workspace = true, features = ["testing"] }
 
 [features]
 default = []
