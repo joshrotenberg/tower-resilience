@@ -27,6 +27,8 @@ tracing = { workspace = true, optional = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 tokio-test = "0.4"
+tower-resilience-core = { workspace = true, features = ["testing"] }
+tower = { workspace = true, features = ["util", "limit"] }
 
 [features]
 default = []
