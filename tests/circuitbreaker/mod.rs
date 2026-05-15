@@ -15,6 +15,7 @@ mod combinations;
 mod concurrency;
 mod config_validation;
 mod edge_cases;
+mod failure_model;
 mod half_open;
 mod integration;
 mod reset;

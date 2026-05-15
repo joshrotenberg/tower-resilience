@@ -1,4 +1,4 @@
-use crate::config::{CircuitBreakerConfig, SlidingWindowType};
+use crate::config::{CircuitBreakerConfig, FailureModel, SlidingWindowType};
 use crate::events::CircuitBreakerEvent;
 #[cfg(feature = "metrics")]
 use metrics::{counter, gauge, histogram};
@@ -75,6 +75,9 @@ pub(crate) struct Circuit {
     slow_call_count: usize,
     // Time-based window tracking
     call_records: VecDeque<CallRecord>,
+    // FailureModel::ConsecutiveFailures tracking. Resets to 0 on every
+    // success and on every state transition to Closed/HalfOpen.
+    consecutive_failures: usize,
 }
 
 impl Default for Circuit {
@@ -101,6 +104,7 @@ impl Circuit {
             total_count: 0,
             slow_call_count: 0,
             call_records: VecDeque::new(),
+            consecutive_failures: 0,
         }
     }
 
@@ -192,6 +196,10 @@ impl Circuit {
             .map(|threshold| duration >= threshold)
             .unwrap_or(false);
 
+        // A success resets the consecutive-failure counter regardless of the
+        // configured FailureModel; see ConsecutiveFailures.
+        self.consecutive_failures = 0;
+
         // Update statistics based on window type
         match config.sliding_window_type {
             SlidingWindowType::CountBased => {
@@ -270,6 +278,11 @@ impl Circuit {
             .slow_call_duration_threshold
             .map(|threshold| duration >= threshold)
             .unwrap_or(false);
+
+        // Track consecutive failures for FailureModel::ConsecutiveFailures.
+        // Maintained regardless of the active model so switching models via
+        // observability or live config is consistent.
+        self.consecutive_failures = self.consecutive_failures.saturating_add(1);
 
         // Update statistics based on window type
         match config.sliding_window_type {
@@ -486,6 +499,7 @@ impl Circuit {
         self.total_count = 0;
         self.slow_call_count = 0;
         self.call_records.clear();
+        self.consecutive_failures = 0;
     }
 
     fn evaluate_window<C>(&mut self, config: &CircuitBreakerConfig<C>) {
@@ -505,27 +519,37 @@ impl Circuit {
                 }
             };
 
-        // Don't evaluate until minimum calls threshold is met
-        if total_count < config.minimum_number_of_calls {
-            return;
-        }
+        // Slow-call detection runs in both failure models -- a circuit that
+        // is healthy by error rate but degraded by latency should still open.
+        // Sliding-window gating still applies to the slow-call evaluation.
+        let slow_should_open = config.slow_call_duration_threshold.is_some()
+            && total_count >= config.minimum_number_of_calls
+            && !(config.sliding_window_type == SlidingWindowType::CountBased
+                && total_count < config.sliding_window_size)
+            && {
+                let slow_call_rate = slow_call_count as f64 / total_count as f64;
+                slow_call_rate >= config.slow_call_rate_threshold
+            };
 
-        // For count-based window, also check if window is full
-        if config.sliding_window_type == SlidingWindowType::CountBased
-            && total_count < config.sliding_window_size
-        {
-            return;
-        }
+        let failure_should_open = match config.failure_model {
+            FailureModel::SlidingWindow => {
+                // Don't evaluate until minimum calls threshold is met
+                if total_count < config.minimum_number_of_calls {
+                    false
+                } else if config.sliding_window_type == SlidingWindowType::CountBased
+                    && total_count < config.sliding_window_size
+                {
+                    // For count-based window, also wait until window is full
+                    false
+                } else {
+                    let failure_rate = failure_count as f64 / total_count as f64;
+                    failure_rate >= config.failure_rate_threshold
+                }
+            }
+            FailureModel::ConsecutiveFailures { k } => self.consecutive_failures >= k,
+        };
 
-        let failure_rate = failure_count as f64 / total_count as f64;
-        let slow_call_rate = slow_call_count as f64 / total_count as f64;
-
-        // Open if either failure rate or slow call rate exceeds threshold
-        let should_open = failure_rate >= config.failure_rate_threshold
-            || (config.slow_call_duration_threshold.is_some()
-                && slow_call_rate >= config.slow_call_rate_threshold);
-
-        if should_open {
+        if failure_should_open || slow_should_open {
             self.transition_to(CircuitState::Open, config);
         }
         // Don't transition to closed if we're in HalfOpen - that happens via record_success
