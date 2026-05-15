@@ -20,6 +20,65 @@ pub enum SlidingWindowType {
     TimeBased,
 }
 
+/// Trip-condition model used by the circuit breaker.
+///
+/// The default ([`Self::SlidingWindow`]) trips when the failure *rate* over the
+/// configured sliding window exceeds `failure_rate_threshold`. The alternative
+/// [`Self::ConsecutiveFailures`] trips when `k` failures occur in a row with no
+/// successful call between them. The latter matches the default behavior of
+/// `ex_resilience` (the Elixir companion library) and is common in agent /
+/// LLM-retry contexts where an in-a-row burst matters more than the rate.
+///
+/// See the crate-level docs for a table mapping each model to its trip
+/// condition.
+///
+/// # Example
+///
+/// ```rust
+/// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, FailureModel};
+///
+/// // Sliding-window failure rate (default).
+/// let layer = CircuitBreakerLayer::builder()
+///     .failure_rate_threshold(0.5)
+///     .build();
+///
+/// // Trip after 5 consecutive failures.
+/// let layer = CircuitBreakerLayer::builder()
+///     .failure_model(FailureModel::ConsecutiveFailures { k: 5 })
+///     .build();
+///
+/// // Same, via the convenience shortcut.
+/// let layer = CircuitBreakerLayer::builder()
+///     .consecutive_failures(5)
+///     .build();
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum FailureModel {
+    /// Trip when the failure rate over the sliding window crosses the
+    /// configured `failure_rate_threshold`. This is the default.
+    ///
+    /// Honors all sliding-window settings: `sliding_window_type`,
+    /// `sliding_window_size`, `sliding_window_duration`, and
+    /// `minimum_number_of_calls`.
+    #[default]
+    SlidingWindow,
+    /// Trip after `k` consecutive failures with no intervening success.
+    ///
+    /// Ignores `failure_rate_threshold`, `sliding_window_type`, and the
+    /// minimum-calls / window-size gating: a single sequence of `k`
+    /// classified failures opens the circuit. A single successful call
+    /// (per the configured failure classifier) resets the counter.
+    ///
+    /// Slow-call detection (`slow_call_duration_threshold` /
+    /// `slow_call_rate_threshold`) continues to evaluate against the
+    /// sliding-window stats and can still open the circuit independently.
+    ConsecutiveFailures {
+        /// The number of consecutive failures required to trip the circuit.
+        /// Must be > 0; a builder with `k == 0` panics on `build()`.
+        k: usize,
+    },
+}
+
 /// Configuration for the circuit breaker pattern.
 ///
 /// The type parameter `C` is the failure classifier type, which determines
@@ -38,6 +97,7 @@ pub struct CircuitBreakerConfig<C> {
     pub(crate) failure_classifier: C,
     pub(crate) slow_call_duration_threshold: Option<Duration>,
     pub(crate) slow_call_rate_threshold: f64,
+    pub(crate) failure_model: FailureModel,
     pub(crate) event_listeners: EventListeners<CircuitBreakerEvent>,
     pub(crate) name: String,
     pub(crate) backpressure: bool,
@@ -88,6 +148,7 @@ pub struct CircuitBreakerConfigBuilder<C = DefaultClassifier> {
     minimum_number_of_calls: Option<usize>,
     slow_call_duration_threshold: Option<Duration>,
     slow_call_rate_threshold: f64,
+    failure_model: FailureModel,
     event_listeners: EventListeners<CircuitBreakerEvent>,
     name: String,
     backpressure: bool,
@@ -116,6 +177,7 @@ impl CircuitBreakerConfigBuilder<DefaultClassifier> {
             minimum_number_of_calls: None,
             slow_call_duration_threshold: None,
             slow_call_rate_threshold: 1.0,
+            failure_model: FailureModel::SlidingWindow,
             event_listeners: EventListeners::new(),
             name: String::from("<unnamed>"),
             backpressure: false,
@@ -204,6 +266,47 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     /// Default: 1.0 (100%, effectively disabled)
     pub fn slow_call_rate_threshold(mut self, rate: f64) -> Self {
         self.slow_call_rate_threshold = rate;
+        self
+    }
+
+    /// Selects the trip-condition model.
+    ///
+    /// See [`FailureModel`] for the available variants and their trip
+    /// conditions. The default is [`FailureModel::SlidingWindow`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, FailureModel};
+    ///
+    /// let layer = CircuitBreakerLayer::builder()
+    ///     .failure_model(FailureModel::ConsecutiveFailures { k: 5 })
+    ///     .build();
+    /// ```
+    pub fn failure_model(mut self, model: FailureModel) -> Self {
+        self.failure_model = model;
+        self
+    }
+
+    /// Shortcut for [`Self::failure_model`] with
+    /// [`FailureModel::ConsecutiveFailures`].
+    ///
+    /// # Panics
+    ///
+    /// The [`build`](Self::build) call panics if `k == 0`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// // Trip after 3 consecutive failures.
+    /// let layer = CircuitBreakerLayer::builder()
+    ///     .consecutive_failures(3)
+    ///     .build();
+    /// ```
+    pub fn consecutive_failures(mut self, k: usize) -> Self {
+        self.failure_model = FailureModel::ConsecutiveFailures { k };
         self
     }
 
@@ -313,6 +416,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             minimum_number_of_calls: self.minimum_number_of_calls,
             slow_call_duration_threshold: self.slow_call_duration_threshold,
             slow_call_rate_threshold: self.slow_call_rate_threshold,
+            failure_model: self.failure_model,
             event_listeners: self.event_listeners,
             name: self.name,
             backpressure: self.backpressure,
@@ -688,6 +792,11 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             panic!("sliding_window_duration must be set when using TimeBased sliding window");
         }
 
+        // Validate failure model configuration
+        if let FailureModel::ConsecutiveFailures { k } = self.failure_model {
+            assert!(k > 0, "ConsecutiveFailures requires k > 0");
+        }
+
         CircuitBreakerConfig {
             failure_rate_threshold: self.failure_rate_threshold,
             sliding_window_type: self.sliding_window_type,
@@ -701,6 +810,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
                 .unwrap_or(self.sliding_window_size),
             slow_call_duration_threshold: self.slow_call_duration_threshold,
             slow_call_rate_threshold: self.slow_call_rate_threshold,
+            failure_model: self.failure_model,
             event_listeners: self.event_listeners,
             name: self.name,
             backpressure: self.backpressure,

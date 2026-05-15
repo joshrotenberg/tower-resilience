@@ -85,6 +85,7 @@ mod tests {
             minimum_number_of_calls: 10,
             slow_call_duration_threshold: None,
             slow_call_rate_threshold: 1.0,
+            failure_model: crate::config::FailureModel::SlidingWindow,
             event_listeners: EventListeners::new(),
             name: "test".into(),
             backpressure: false,

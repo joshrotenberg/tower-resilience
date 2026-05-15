@@ -110,6 +110,39 @@
 //! This is simpler than `failure_classifier()` because you don't need to handle
 //! the `Err` case (which can never occur with `Error = Infallible`).
 //!
+//! ## Failure Models
+//!
+//! The trip condition is selectable via [`FailureModel`]. The default is
+//! [`FailureModel::SlidingWindow`] (failure rate over a count- or time-based
+//! window). The alternative [`FailureModel::ConsecutiveFailures`] trips
+//! after `k` failures in a row with no intervening success -- this matches
+//! the default behavior of the Elixir `ex_resilience` library and is
+//! common in agent / LLM-retry contexts.
+//!
+//! | Model                              | Trip condition                                                                                            |
+//! |------------------------------------|-----------------------------------------------------------------------------------------------------------|
+//! | `FailureModel::SlidingWindow`      | `failure_count / total_count >= failure_rate_threshold` over the configured window (the default)         |
+//! | `FailureModel::ConsecutiveFailures { k }` | `k` classified failures in a row with no intervening success                                       |
+//!
+//! Slow-call detection (`slow_call_duration_threshold` /
+//! `slow_call_rate_threshold`) continues to evaluate against the
+//! sliding-window stats in both models, and can open the circuit
+//! independently of the failure model.
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::{CircuitBreakerLayer, FailureModel};
+//!
+//! // Trip after 5 consecutive failures.
+//! let layer = CircuitBreakerLayer::builder()
+//!     .consecutive_failures(5)
+//!     .build();
+//!
+//! // Equivalent via the general setter.
+//! let layer = CircuitBreakerLayer::builder()
+//!     .failure_model(FailureModel::ConsecutiveFailures { k: 5 })
+//!     .build();
+//! ```
+//!
 //! ## Time-Based Sliding Window
 //!
 //! Use time-based windows instead of count-based:
@@ -304,7 +337,9 @@ use tracing::debug;
 
 pub use circuit::{CircuitMetrics, CircuitState};
 pub use classifier::{DefaultClassifier, FailureClassifier, FnClassifier};
-pub use config::{CircuitBreakerConfig, CircuitBreakerConfigBuilder, SlidingWindowType};
+pub use config::{
+    CircuitBreakerConfig, CircuitBreakerConfigBuilder, FailureModel, SlidingWindowType,
+};
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
 pub use handle::CircuitBreakerHandle;
@@ -919,6 +954,7 @@ mod tests {
             minimum_number_of_calls: 10,
             slow_call_duration_threshold: None,
             slow_call_rate_threshold: 1.0,
+            failure_model: crate::config::FailureModel::SlidingWindow,
             event_listeners: EventListeners::new(),
             name: "test".into(),
             backpressure: false,
@@ -1006,6 +1042,7 @@ mod tests {
             minimum_number_of_calls: 10,
             slow_call_duration_threshold: None,
             slow_call_rate_threshold: 1.0,
+            failure_model: crate::config::FailureModel::SlidingWindow,
             event_listeners: {
                 let mut listeners = EventListeners::new();
                 listeners.add(tower_resilience_core::FnListener::new(
@@ -1075,6 +1112,7 @@ mod tests {
             minimum_number_of_calls: 10,
             slow_call_duration_threshold: Some(Duration::from_millis(100)),
             slow_call_rate_threshold: 0.5,
+            failure_model: crate::config::FailureModel::SlidingWindow,
             event_listeners: {
                 let mut listeners = EventListeners::new();
                 listeners.add(tower_resilience_core::FnListener::new(move |event| {
