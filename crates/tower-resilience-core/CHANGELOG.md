@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-core-v0.9.4...tower-resilience-core-v0.9.5) - 2026-06-08
+
+### Added
+
+- add prelude module, make README Quick Start a doctest (closes #310) ([#324](https://github.com/joshrotenberg/tower-resilience/pull/324))
+
 ## [0.9.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-core-v0.9.3...tower-resilience-core-v0.9.4) - 2026-05-13
 
 ### Other
