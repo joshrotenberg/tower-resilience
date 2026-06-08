@@ -72,8 +72,53 @@ router = ["dep:tower-resilience-router"]
 # Time limiter: enforce timeouts with cancellation support
 timelimiter = ["dep:tower-resilience-timelimiter"]
 
-# Enable all patterns at once
-full = ["adaptive", "bulkhead", "cache", "chaos", "circuitbreaker", "coalesce", "executor", "fallback", "hedge", "healthcheck", "layer", "outlier", "ratelimiter", "reconnect", "retry", "router", "timelimiter"]
+# Observability: enable Prometheus metrics on every enabled pattern.
+# Uses weak dependency syntax (`dep?/feature`) so this feature only activates
+# metrics on patterns the user has already enabled -- it does not pull in any
+# pattern on its own. healthcheck is intentionally omitted: it has no metrics
+# feature.
+metrics = [
+    "tower-resilience-adaptive?/metrics",
+    "tower-resilience-bulkhead?/metrics",
+    "tower-resilience-cache?/metrics",
+    "tower-resilience-chaos?/metrics",
+    "tower-resilience-circuitbreaker?/metrics",
+    "tower-resilience-coalesce?/metrics",
+    "tower-resilience-executor?/metrics",
+    "tower-resilience-fallback?/metrics",
+    "tower-resilience-hedge?/metrics",
+    "tower-resilience-outlier?/metrics",
+    "tower-resilience-ratelimiter?/metrics",
+    "tower-resilience-reconnect?/metrics",
+    "tower-resilience-retry?/metrics",
+    "tower-resilience-router?/metrics",
+    "tower-resilience-timelimiter?/metrics",
+]
+# Observability: enable distributed tracing on every enabled pattern.
+# Uses weak dependency syntax (`dep?/feature`) so this feature only activates
+# tracing on patterns the user has already enabled -- it does not pull in any
+# pattern on its own.
+tracing = [
+    "tower-resilience-adaptive?/tracing",
+    "tower-resilience-bulkhead?/tracing",
+    "tower-resilience-cache?/tracing",
+    "tower-resilience-chaos?/tracing",
+    "tower-resilience-circuitbreaker?/tracing",
+    "tower-resilience-coalesce?/tracing",
+    "tower-resilience-executor?/tracing",
+    "tower-resilience-fallback?/tracing",
+    "tower-resilience-hedge?/tracing",
+    "tower-resilience-healthcheck?/tracing",
+    "tower-resilience-outlier?/tracing",
+    "tower-resilience-ratelimiter?/tracing",
+    "tower-resilience-reconnect?/tracing",
+    "tower-resilience-retry?/tracing",
+    "tower-resilience-router?/tracing",
+    "tower-resilience-timelimiter?/tracing",
+]
+
+# Enable all patterns at once (plus observability)
+full = ["adaptive", "bulkhead", "cache", "chaos", "circuitbreaker", "coalesce", "executor", "fallback", "hedge", "healthcheck", "layer", "outlier", "ratelimiter", "reconnect", "retry", "router", "timelimiter", "metrics", "tracing"]
 
 # Integration: health checks can proactively open/close circuit breakers
 health-circuitbreaker = [
