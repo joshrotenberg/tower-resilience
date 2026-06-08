@@ -22,6 +22,7 @@ fn unique_key_layer() -> CacheLayer<(), usize> {
         .ttl(Duration::from_secs(60))
         .key_extractor(move |_: &()| counter.fetch_add(1, Ordering::SeqCst))
         .build()
+        .unwrap()
 }
 
 #[tokio::test]

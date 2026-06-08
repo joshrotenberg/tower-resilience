@@ -200,7 +200,8 @@ let layer = CacheLayer::builder()
     .key_extractor(|req: &Request| req.id.clone())
     .on_hit(|| println!("Cache hit!"))
     .on_miss(|| println!("Cache miss"))
-    .build();
+    .build()
+    .unwrap();
 
 let service = layer.layer(my_service);
 ```

@@ -29,7 +29,8 @@ use tower::Layer;
 ///     .max_size(100)
 ///     .ttl(Duration::from_secs(60))
 ///     .key_extractor(|req: &String| req.clone())
-///     .build();
+///     .build()
+///     .unwrap();
 ///
 /// let service = ServiceBuilder::new()
 ///     .layer(cache_layer)
@@ -67,7 +68,8 @@ where
     ///     .max_size(100)
     ///     .ttl(Duration::from_secs(60))
     ///     .key_extractor(|req: &String| req.clone())
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn builder() -> crate::CacheConfigBuilder<Req, K> {
         crate::CacheConfigBuilder::new()
@@ -97,6 +99,7 @@ where
     ///     .ttl(Duration::from_secs(60))
     ///     .key_extractor(|req: &String| req.clone())
     ///     .build()
+    ///     .unwrap()
     ///     .shared::<String>();  // Specify the response type
     ///
     /// // Both services share the same cache

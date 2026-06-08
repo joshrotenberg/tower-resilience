@@ -27,7 +27,7 @@
 //!     .key_extractor(|req: &String| req.clone())
 //!     .on_hit(|| println!("Cache hit!"))
 //!     .on_miss(|| println!("Cache miss!"))
-//!     .build();
+//!     .build()?;
 //!
 //! // Apply to a service
 //! let service = ServiceBuilder::new()
@@ -48,7 +48,7 @@ mod shared_layer;
 mod store;
 
 pub use config::{CacheConfig, CacheConfigBuilder, KeyExtractor};
-pub use error::CacheError;
+pub use error::{CacheBuildError, CacheError};
 pub use events::CacheEvent;
 pub use eviction::EvictionPolicy;
 pub use layer::CacheLayer;
@@ -281,7 +281,8 @@ mod tests {
         let layer = CacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -317,7 +318,8 @@ mod tests {
         let layer = CacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -347,7 +349,8 @@ mod tests {
         let layer = CacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -386,7 +389,8 @@ mod tests {
             .max_size(10)
             .ttl(Duration::from_millis(50))
             .key_extractor(|req: &String| req.clone())
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -421,7 +425,8 @@ mod tests {
         let layer = CacheLayer::builder()
             .max_size(2)
             .key_extractor(|req: &String| req.clone())
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -501,7 +506,8 @@ mod tests {
             .on_eviction(move || {
                 ec.fetch_add(1, Ordering::SeqCst);
             })
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -554,7 +560,8 @@ mod tests {
         let layer = CacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 

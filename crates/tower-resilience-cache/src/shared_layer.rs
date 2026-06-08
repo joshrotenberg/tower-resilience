@@ -36,7 +36,8 @@ use tower_resilience_core::{EventListeners, FnListener};
 ///     .max_size(100)
 ///     .ttl(Duration::from_secs(60))
 ///     .key_extractor(|req: &String| req.clone())
-///     .build();
+///     .build()
+///     .unwrap();
 ///
 /// // Both services share the same cache
 /// let service1 = ServiceBuilder::new()
@@ -65,6 +66,7 @@ use tower_resilience_core::{EventListeners, FnListener};
 ///     .ttl(Duration::from_secs(60))
 ///     .key_extractor(|req: &String| req.clone())
 ///     .build()
+///     .unwrap()
 ///     .shared::<String>();  // Specify the response type
 /// ```
 #[derive(Clone)]
@@ -115,7 +117,8 @@ where
     ///     .max_size(100)
     ///     .ttl(Duration::from_secs(60))
     ///     .key_extractor(|req: &String| req.clone())
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn builder() -> SharedCacheConfigBuilder<Req, K, Resp> {
         SharedCacheConfigBuilder::new()
@@ -257,13 +260,14 @@ where
 
     /// Builds the shared cache layer.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if `key_extractor` was not set.
-    pub fn build(self) -> SharedCacheLayer<Req, K, Resp> {
+    /// Returns [`crate::CacheBuildError::MissingKeyExtractor`] if `key_extractor`
+    /// was not set before calling `build()`.
+    pub fn build(self) -> Result<SharedCacheLayer<Req, K, Resp>, crate::CacheBuildError> {
         let key_extractor = self
             .key_extractor
-            .expect("key_extractor must be set before building");
+            .ok_or(crate::CacheBuildError::MissingKeyExtractor)?;
 
         let config = CacheConfig {
             max_size: self.max_size,
@@ -274,7 +278,7 @@ where
             name: self.name,
         };
 
-        SharedCacheLayer::new(config)
+        Ok(SharedCacheLayer::new(config))
     }
 }
 
@@ -304,7 +308,8 @@ mod tests {
     fn test_shared_builder_defaults() {
         let _layer: SharedCacheLayer<TestRequest, String, String> = SharedCacheLayer::builder()
             .key_extractor(|req: &TestRequest| req.id.clone())
-            .build();
+            .build()
+            .unwrap();
     }
 
     #[test]
@@ -314,14 +319,17 @@ mod tests {
             .ttl(Duration::from_secs(60))
             .key_extractor(|req: &TestRequest| req.id.clone())
             .name("my-shared-cache")
-            .build();
+            .build()
+            .unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "key_extractor must be set")]
-    fn test_shared_builder_panics_without_key_extractor() {
-        let _config: SharedCacheLayer<TestRequest, String, String> =
-            SharedCacheLayer::builder().build();
+    fn test_shared_builder_errors_without_key_extractor() {
+        let result = SharedCacheLayer::<TestRequest, String, String>::builder().build();
+        assert!(matches!(
+            result,
+            Err(crate::CacheBuildError::MissingKeyExtractor)
+        ));
     }
 
     #[tokio::test]
@@ -351,7 +359,8 @@ mod tests {
         let shared_layer: SharedCacheLayer<String, String, String> = SharedCacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
-            .build();
+            .build()
+            .unwrap();
 
         // Apply to both services
         let mut wrapped1 = shared_layer.clone().layer(service1);
@@ -410,7 +419,8 @@ mod tests {
         let layer = CacheLayer::builder()
             .max_size(10)
             .key_extractor(|req: &String| req.clone())
-            .build();
+            .build()
+            .unwrap();
 
         // Apply to both services
         let mut wrapped1 = layer.clone().layer(service1);

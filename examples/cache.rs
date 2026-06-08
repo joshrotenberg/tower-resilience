@@ -36,7 +36,8 @@ async fn main() {
         .on_hit(|| {
             println!("  Cache hit - returning cached response");
         })
-        .build();
+        .build()
+        .expect("key_extractor is set");
 
     let layer = config;
     let mut service = layer.layer(svc);

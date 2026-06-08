@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .on_hit(|| println!("  [EVENT] Cache HIT"))
         .on_miss(|| println!("  [EVENT] Cache MISS"))
         .on_eviction(|| println!("  [EVENT] Cache EVICTION"))
-        .build();
+        .build()?;
 
     let mut service = cache_layer.layer(service);
 
