@@ -35,7 +35,7 @@ tower = "0.5"
 ```
 
 ```rust
-use tower::{Layer, ServiceBuilder};
+use tower::ServiceBuilder;
 use tower_resilience::prelude::*;
 
 let circuit_breaker = CircuitBreakerLayer::builder()

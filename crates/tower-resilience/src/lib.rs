@@ -11,6 +11,26 @@
 //! tower-resilience = { version = "0.9", features = ["circuitbreaker", "bulkhead"] }
 //! ```
 //!
+//! ```rust,no_run
+//! # #[cfg(all(feature = "circuitbreaker", feature = "bulkhead"))]
+//! # {
+//! use tower::ServiceBuilder;
+//! use tower_resilience::prelude::*;
+//!
+//! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::convert::Infallible>(()) });
+//! let circuit_breaker = CircuitBreakerLayer::builder()
+//!     .failure_rate_threshold(0.5)
+//!     .build();
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(circuit_breaker)
+//!     .layer(BulkheadLayer::builder()
+//!         .max_concurrent_calls(10)
+//!         .build())
+//!     .service(my_service);
+//! # }
+//! ```
+//!
 //! # Presets: Get Started Immediately
 //!
 //! Every pattern includes **preset configurations** with sensible defaults.
@@ -349,3 +369,33 @@ pub use tower_resilience_timelimiter as timelimiter;
 pub use tower_resilience_core::{
     IntoResilienceError, ResilienceErrorLayer, ResilienceErrorService, UnifiedErrors,
 };
+
+/// Convenient re-exports of the most commonly used layer types.
+///
+/// Glob-import this module to bring the common pattern layers into scope:
+///
+/// ```
+/// use tower_resilience::prelude::*;
+/// ```
+///
+/// Each re-export is gated behind the same feature flag as its corresponding
+/// module, so only the layers for the patterns you enabled are in scope.
+pub mod prelude {
+    #[cfg(feature = "bulkhead")]
+    pub use tower_resilience_bulkhead::BulkheadLayer;
+
+    #[cfg(feature = "circuitbreaker")]
+    pub use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+
+    #[cfg(feature = "hedge")]
+    pub use tower_resilience_hedge::HedgeLayer;
+
+    #[cfg(feature = "ratelimiter")]
+    pub use tower_resilience_ratelimiter::RateLimiterLayer;
+
+    #[cfg(feature = "retry")]
+    pub use tower_resilience_retry::RetryLayer;
+
+    #[cfg(feature = "timelimiter")]
+    pub use tower_resilience_timelimiter::TimeLimiterLayer;
+}
