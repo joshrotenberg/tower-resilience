@@ -107,6 +107,134 @@ fn chaos_is_send_sync() {
     assert_send_sync_static(&svc);
 }
 
+#[test]
+fn adaptive_is_send_sync() {
+    use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd};
+    let svc = AdaptiveLimiterLayer::new(
+        Aimd::builder()
+            .initial_limit(8)
+            .latency_threshold(Duration::from_secs(1))
+            .build(),
+    )
+    .layer(SyncInner);
+    assert_send_sync_static(&svc);
+}
+
+#[test]
+fn cache_is_send_sync() {
+    use tower_resilience_cache::CacheLayer;
+    let svc = CacheLayer::<(), usize>::builder()
+        .max_size(16)
+        .ttl(Duration::from_secs(60))
+        .key_extractor(|_: &()| 0usize)
+        .build()
+        .unwrap()
+        .layer(SyncInner);
+    assert_send_sync_static(&svc);
+}
+
+#[test]
+fn coalesce_is_send_sync() {
+    use tower_resilience_coalesce::CoalesceLayer;
+    let svc = CoalesceLayer::new(|_: &()| 0usize).layer(SyncInner);
+    assert_send_sync_static(&svc);
+}
+
+// `ExecutorLayer::current()` captures `tokio::runtime::Handle::current()`, which
+// panics outside a runtime -- so this is the one assertion that runs under
+// `#[tokio::test]` rather than `#[test]`. The auto-trait check is identical.
+#[tokio::test]
+async fn executor_is_send_sync() {
+    use tower_resilience_executor::ExecutorLayer;
+    let svc = ExecutorLayer::current().layer(SyncInner);
+    assert_send_sync_static(&svc);
+}
+
+#[test]
+fn fallback_is_send_sync() {
+    use tower_resilience_fallback::FallbackLayer;
+    let svc = FallbackLayer::<(), (), std::convert::Infallible>::value(()).layer(SyncInner);
+    assert_send_sync_static(&svc);
+}
+
+#[test]
+fn hedge_is_send_sync() {
+    use tower_resilience_hedge::HedgeLayer;
+    let svc = HedgeLayer::builder()
+        .delay(Duration::from_millis(20))
+        .max_hedged_attempts(2)
+        .build()
+        .layer(SyncInner);
+    assert_send_sync_static(&svc);
+}
+
+// Healthcheck does not expose a tower `Layer`; `HealthCheckWrapper` monitors a
+// set of resources via a `HealthChecker` rather than wrapping an inner service.
+// We assert the wrapper itself is `Send + Sync + 'static` over a unit resource.
+#[test]
+fn healthcheck_is_send_sync() {
+    use tower_resilience_healthcheck::{HealthCheckWrapper, HealthChecker, HealthStatus};
+
+    struct UnitChecker;
+    impl HealthChecker<()> for UnitChecker {
+        async fn check(&self, _: &()) -> HealthStatus {
+            HealthStatus::Healthy
+        }
+    }
+
+    let wrapper = HealthCheckWrapper::builder()
+        .with_context((), "inner")
+        .with_checker(UnitChecker)
+        .build();
+    assert_send_sync_static(&wrapper);
+}
+
+#[test]
+fn outlier_is_send_sync() {
+    use tower_resilience_outlier::{OutlierDetectionLayer, OutlierDetector};
+    let detector = OutlierDetector::new();
+    detector.register("inner", 5);
+    let svc = OutlierDetectionLayer::builder()
+        .detector(detector)
+        .instance_name("inner")
+        .build()
+        .layer(SyncInner);
+    assert_send_sync_static(&svc);
+}
+
+#[test]
+fn reconnect_is_send_sync() {
+    use tower_resilience_reconnect::{ReconnectConfig, ReconnectLayer, ReconnectPolicy};
+    let config = ReconnectConfig::builder()
+        .policy(ReconnectPolicy::exponential(
+            Duration::from_millis(5),
+            Duration::from_millis(20),
+        ))
+        .max_attempts(3)
+        .build();
+    let svc = ReconnectLayer::new(config).layer(SyncInner);
+    assert_send_sync_static(&svc);
+}
+
+#[test]
+fn retry_is_send_sync() {
+    use tower_resilience_retry::RetryLayer;
+    let layer: RetryLayer<(), (), std::convert::Infallible> =
+        RetryLayer::builder().max_attempts(1).build();
+    let svc = layer.layer(SyncInner);
+    assert_send_sync_static(&svc);
+}
+
+// Router exposes a standalone `Service` (`WeightedRouter`), not a `Layer`: it
+// fans requests out to weighted backend services. We use `SyncInner` as the
+// backend and assert the composed router is `Send + Sync + 'static`.
+#[test]
+fn router_is_send_sync() {
+    use tower_resilience_router::WeightedRouter;
+    let router = WeightedRouter::builder().route(SyncInner, 1).build();
+    assert_send_sync_static(&router);
+}
+
 /// Simulates the tonic / `Arc<T>` server holder pattern from #287. tonic
 /// stores `inner: Arc<T>` and dispatches via `Arc::clone` across `.await`
 /// points, which requires `T: Send + Sync + 'static`. Before the fix, this
