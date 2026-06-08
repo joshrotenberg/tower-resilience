@@ -173,7 +173,7 @@ where
 
         // Check cache first
         let cached = {
-            let mut store = self.store.lock().unwrap();
+            let mut store = self.store.lock().unwrap_or_else(|e| e.into_inner());
             store.get(&key)
         };
 
@@ -221,7 +221,7 @@ where
 
             // Store successful response in cache
             let was_evicted = {
-                let mut store = store.lock().unwrap();
+                let mut store = store.lock().unwrap_or_else(|e| e.into_inner());
                 let was_full = store.len() >= config.max_size;
                 store.insert(key, response.clone());
 

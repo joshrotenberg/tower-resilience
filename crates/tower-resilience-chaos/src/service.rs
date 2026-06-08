@@ -64,7 +64,7 @@ where
 
             // Determine what chaos to inject
             {
-                let mut rng = rng.lock().unwrap();
+                let mut rng = rng.lock().unwrap_or_else(|e| e.into_inner());
 
                 // Check if we should inject an error
                 if config.error_injector.error_rate() > 0.0 {
