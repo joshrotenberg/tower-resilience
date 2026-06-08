@@ -322,7 +322,8 @@ pub mod cache {
     //!     .max_size(1000)
     //!     .ttl(Duration::from_secs(300))
     //!     .key_extractor(|req: &Request| req.id)
-    //!     .build();
+    //!     .build()
+    //!     .unwrap();
     //!
     //! let service = tower::ServiceBuilder::new()
     //!     .layer(cache)
@@ -549,7 +550,8 @@ pub mod coalesce {
     //!     .max_size(1000)
     //!     .ttl(Duration::from_secs(300))
     //!     .key_extractor(|req: &Request| req.id.clone())
-    //!     .build();
+    //!     .build()
+    //!     .unwrap();
     //!
     //! let coalesce = CoalesceLayer::new(|req: &Request| req.id.clone());
     //!

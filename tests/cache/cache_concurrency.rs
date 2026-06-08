@@ -31,7 +31,8 @@ async fn concurrent_reads_from_same_cached_item() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -87,7 +88,8 @@ async fn concurrent_writes_with_different_keys() {
     let config = CacheLayer::builder()
         .max_size(100)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let service = layer.layer(service);
@@ -138,7 +140,8 @@ async fn concurrent_read_write_mix() {
     let config = CacheLayer::builder()
         .max_size(50)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let service = layer.layer(service);
@@ -203,7 +206,8 @@ async fn cache_service_cloning_preserves_shared_state() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service1 = layer.layer(service);
@@ -260,7 +264,8 @@ async fn thread_safety_of_arc_mutex_cache_store() {
     let config = CacheLayer::builder()
         .max_size(100)
         .key_extractor(|req: &u32| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let service = layer.layer(service);
@@ -304,7 +309,8 @@ async fn multiple_clones_accessing_simultaneously() {
     let config = CacheLayer::builder()
         .max_size(20)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let service = layer.layer(service);
@@ -352,7 +358,8 @@ async fn no_data_corruption_under_concurrent_load() {
     let config = CacheLayer::builder()
         .max_size(100)
         .key_extractor(|req: &u64| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let service = layer.layer(service);
@@ -403,7 +410,8 @@ async fn concurrent_cache_hits_maintain_correctness() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);

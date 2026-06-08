@@ -50,7 +50,8 @@ async fn complex_key_extraction_from_struct() {
             user_id: req.user_id,
             resource_id: req.resource_id,
         })
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -110,7 +111,8 @@ async fn key_collision_handling() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.chars().next().unwrap_or('?').to_string())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -173,7 +175,8 @@ async fn different_request_types_same_key_extracted() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &RequestV1| req.id)
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -236,7 +239,8 @@ async fn key_extractor_with_hash_of_struct_fields() {
             req.hash(&mut hasher);
             hasher.finish()
         })
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -300,7 +304,8 @@ async fn key_extractor_with_simple_types() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &u64| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -327,7 +332,8 @@ async fn key_extractor_with_simple_types() {
     let string_config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let string_layer = string_config;
     let mut string_service = string_layer.layer(string_service);
@@ -365,7 +371,8 @@ async fn key_extraction_consistency() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &Request| (req.a, req.b))
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);

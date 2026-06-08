@@ -280,7 +280,8 @@ async fn scenario_cache() {
         .on_miss(|| {
             println!("[Cache] Miss");
         })
-        .build();
+        .build()
+        .expect("key_extractor is set");
 
     let mut client = cache_layer.layer(base_client);
 
@@ -347,7 +348,8 @@ async fn scenario_full_stack() {
                 .on_miss(|| {
                     println!("[Cache] Miss - calling API");
                 })
-                .build(),
+                .build()
+                .expect("key_extractor is set"),
         )
         // 2. Circuit breaker - fail fast when downstream is degraded
         .layer(circuit_breaker_layer)

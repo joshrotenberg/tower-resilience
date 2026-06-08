@@ -90,7 +90,8 @@ where
     ///     .max_size(100)
     ///     .eviction_policy(EvictionPolicy::Lfu)
     ///     .key_extractor(|req| req.clone())
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     ///
     /// Default: `EvictionPolicy::Lru`
@@ -145,7 +146,8 @@ where
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Cache hit #{}", count + 1);
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_hit<F>(mut self, f: F) -> Self
     where
@@ -187,7 +189,8 @@ where
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Cache miss #{} - fetching from service", count + 1);
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_miss<F>(mut self, f: F) -> Self
     where
@@ -233,7 +236,8 @@ where
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Entry evicted (total: {})", count + 1);
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_eviction<F>(mut self, f: F) -> Self
     where
@@ -249,13 +253,14 @@ where
 
     /// Builds the cache layer.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if `key_extractor` was not set.
-    pub fn build(self) -> crate::CacheLayer<Req, K> {
+    /// Returns [`crate::CacheBuildError::MissingKeyExtractor`] if `key_extractor`
+    /// was not set before calling `build()`.
+    pub fn build(self) -> Result<crate::CacheLayer<Req, K>, crate::CacheBuildError> {
         let key_extractor = self
             .key_extractor
-            .expect("key_extractor must be set before building");
+            .ok_or(crate::CacheBuildError::MissingKeyExtractor)?;
 
         let config = CacheConfig {
             max_size: self.max_size,
@@ -266,7 +271,7 @@ where
             name: self.name,
         };
 
-        crate::CacheLayer::new(config)
+        Ok(crate::CacheLayer::new(config))
     }
 }
 
@@ -293,7 +298,8 @@ mod tests {
     fn test_builder_defaults() {
         let _layer = CacheLayer::<TestRequest, String>::builder()
             .key_extractor(|req| req.id.clone())
-            .build();
+            .build()
+            .unwrap();
         // If this compiles and doesn't panic, the builder works
     }
 
@@ -304,7 +310,8 @@ mod tests {
             .ttl(Duration::from_secs(60))
             .key_extractor(|req| req.id.clone())
             .name("my-cache")
-            .build();
+            .build()
+            .unwrap();
         // If this compiles and doesn't panic, the builder works
     }
 
@@ -315,13 +322,17 @@ mod tests {
             .on_hit(|| {})
             .on_miss(|| {})
             .on_eviction(|| {})
-            .build();
+            .build()
+            .unwrap();
         // If this compiles and doesn't panic, the event listener registration works
     }
 
     #[test]
-    #[should_panic(expected = "key_extractor must be set")]
-    fn test_builder_panics_without_key_extractor() {
-        let _config = CacheLayer::<TestRequest, String>::builder().build();
+    fn test_builder_errors_without_key_extractor() {
+        let result = CacheLayer::<TestRequest, String>::builder().build();
+        assert!(matches!(
+            result,
+            Err(crate::CacheBuildError::MissingKeyExtractor)
+        ));
     }
 }

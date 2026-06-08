@@ -31,7 +31,8 @@ async fn empty_cache_behavior() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -83,7 +84,8 @@ async fn single_item_cache_lru_works() {
         .on_eviction(move || {
             ec.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -140,7 +142,8 @@ async fn large_cache_stress_test() {
     let config = CacheLayer::builder()
         .max_size(2000) // Large cache
         .key_extractor(|req: &u32| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -181,7 +184,8 @@ async fn zero_ttl_instant_expiration() {
         .max_size(10)
         .ttl(Duration::from_nanos(1)) // Effectively instant expiration
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -227,7 +231,8 @@ async fn very_long_ttl() {
         .max_size(10)
         .ttl(Duration::from_secs(365 * 24 * 60 * 60)) // 1 year
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -274,7 +279,8 @@ async fn multiple_items_same_value_different_keys() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -332,7 +338,8 @@ async fn rapid_insert_evict_cycles() {
         .on_eviction(move || {
             ec.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -374,7 +381,8 @@ async fn cache_full_behavior() {
         .on_eviction(move || {
             ec.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -418,7 +426,8 @@ async fn ttl_expiration_during_service_call() {
         .max_size(10)
         .ttl(Duration::from_millis(80))
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);
@@ -468,7 +477,8 @@ async fn clone_overhead_with_large_responses() {
     let config = CacheLayer::builder()
         .max_size(10)
         .key_extractor(|req: &u32| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let layer = config;
     let mut service = layer.layer(service);

@@ -14,7 +14,8 @@ async fn cache_metrics_exist() {
         .name("test_cache")
         .max_size(10)
         .key_extractor(|req: &u64| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let counter = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let counter_clone = counter.clone();
@@ -54,7 +55,8 @@ async fn cache_eviction_metrics() {
         .name("eviction_cache")
         .max_size(2)
         .key_extractor(|req: &u64| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let service = tower::service_fn(|req: u64| async move { Ok::<_, &'static str>(req) });
 

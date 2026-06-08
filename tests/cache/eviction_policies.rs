@@ -10,7 +10,8 @@ async fn lru_evicts_least_recently_used() {
         .max_size(2)
         .eviction_policy(EvictionPolicy::Lru)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = cache_layer.layer(tower::service_fn(|req: String| async move {
         Ok::<_, ()>(format!("Response: {}", req))
@@ -61,7 +62,8 @@ async fn lfu_evicts_least_frequently_used() {
         .max_size(2)
         .eviction_policy(EvictionPolicy::Lfu)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = cache_layer.layer(tower::service_fn(|req: String| async move {
         Ok::<_, ()>(format!("Response: {}", req))
@@ -133,7 +135,8 @@ async fn fifo_evicts_oldest_entry() {
         .max_size(2)
         .eviction_policy(EvictionPolicy::Fifo)
         .key_extractor(|req: &String| req.clone())
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = cache_layer.layer(tower::service_fn(|req: String| async move {
         Ok::<_, ()>(format!("Response: {}", req))
@@ -195,7 +198,8 @@ async fn eviction_policies_work_with_ttl() {
             .ttl(Duration::from_millis(50))
             .eviction_policy(policy)
             .key_extractor(|req: &String| req.clone())
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = cache_layer.layer(tower::service_fn(|req: String| async move {
             Ok::<_, ()>(format!("Response: {}", req))
@@ -251,7 +255,8 @@ async fn different_policies_produce_different_eviction_behavior() {
             .on_miss(move || {
                 misses.fetch_add(1, Ordering::Relaxed);
             })
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = cache_layer.layer(tower::service_fn(|req: String| async move {
             Ok::<_, ()>(format!("Response: {}", req))
@@ -312,7 +317,8 @@ async fn different_policies_produce_different_eviction_behavior() {
             .on_miss(move || {
                 misses.fetch_add(1, Ordering::Relaxed);
             })
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = cache_layer.layer(tower::service_fn(|req: String| async move {
             Ok::<_, ()>(format!("Response: {}", req))
@@ -373,7 +379,8 @@ async fn different_policies_produce_different_eviction_behavior() {
             .on_miss(move || {
                 misses.fetch_add(1, Ordering::Relaxed);
             })
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = cache_layer.layer(tower::service_fn(|req: String| async move {
             Ok::<_, ()>(format!("Response: {}", req))

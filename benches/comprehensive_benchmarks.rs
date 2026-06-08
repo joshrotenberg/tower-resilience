@@ -264,7 +264,8 @@ fn bench_cache_miss(c: &mut Criterion) {
                 .max_size(100)
                 .ttl(Duration::from_secs(60))
                 .key_extractor(|req: &TestRequest| req.0)
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(BaselineService);
 

@@ -317,6 +317,7 @@ async fn demo_cache() {
         .ttl(Duration::from_secs(60))
         .key_extractor(|req: &Request| req.id)
         .build()
+        .expect("key_extractor is set")
         .layer(base_service);
 
     let mut service = service;

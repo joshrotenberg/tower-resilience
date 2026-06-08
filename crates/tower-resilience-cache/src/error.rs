@@ -34,6 +34,25 @@ impl<E> CacheError<E> {
     }
 }
 
+/// Errors that can occur when building a cache layer.
+#[derive(Debug)]
+pub enum CacheBuildError {
+    /// A `key_extractor` was not set before calling `build()`.
+    MissingKeyExtractor,
+}
+
+impl fmt::Display for CacheBuildError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CacheBuildError::MissingKeyExtractor => {
+                write!(f, "key_extractor must be set before building")
+            }
+        }
+    }
+}
+
+impl std::error::Error for CacheBuildError {}
+
 #[cfg(test)]
 mod tests {
     use super::*;

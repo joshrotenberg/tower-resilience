@@ -208,7 +208,8 @@ async fn demo_cache() {
         .key_extractor(|req: &String| req.clone())
         .on_hit(|| println!("  [Cache] Hit!"))
         .on_miss(|| println!("  [Cache] Miss"))
-        .build();
+        .build()
+        .expect("key_extractor is set");
 
     let mut service = cache_layer.layer(service);
 

@@ -27,7 +27,8 @@ async fn stress_large_cache() {
     let layer = CacheLayer::builder()
         .max_size(100_000)
         .key_extractor(|req: &u32| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -82,7 +83,8 @@ async fn stress_eviction_churn() {
         .max_size(1000)
         .eviction_policy(EvictionPolicy::Lru)
         .key_extractor(|req: &u32| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -123,7 +125,8 @@ async fn stress_ttl_expiration() {
         .max_size(1000)
         .ttl(Duration::from_millis(100))
         .key_extractor(|req: &u32| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -180,7 +183,8 @@ async fn stress_eviction_policy_comparison() {
             .max_size(100)
             .eviction_policy(policy)
             .key_extractor(|req: &u32| *req)
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(svc);
 
@@ -230,7 +234,8 @@ async fn stress_concurrent_access() {
     let layer = CacheLayer::builder()
         .max_size(1000)
         .key_extractor(|req: &u32| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let service = layer.layer(svc);
 
@@ -276,7 +281,8 @@ async fn stress_memory_scaling() {
         let layer = CacheLayer::builder()
             .max_size(size)
             .key_extractor(|req: &u32| *req)
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(svc);
 
@@ -316,7 +322,8 @@ async fn stress_throughput() {
     let layer = CacheLayer::builder()
         .max_size(1000)
         .key_extractor(|req: &u32| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -364,7 +371,8 @@ async fn stress_stability() {
         .ttl(Duration::from_millis(500))
         .eviction_policy(EvictionPolicy::Lru)
         .key_extractor(|req: &u32| *req)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 

@@ -972,6 +972,7 @@ pub mod advanced {
     //!     .ttl(Duration::from_secs(300))
     //!     .key_extractor(|req: &Request| req.id)
     //!     .build()
+    //!     .unwrap()
     //!     .layer(with_circuit_breaker);
     //! # }
     //! # }
@@ -1012,6 +1013,7 @@ pub mod advanced {
     //!     .ttl(Duration::from_secs(300))
     //!     .key_extractor(|req: &Request| req.id)
     //!     .build()
+    //!     .unwrap()
     //!     .layer(inner);
     //! # }
     //! # }
