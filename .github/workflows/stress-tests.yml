@@ -33,14 +33,21 @@ jobs:
       fail-fast: false
       matrix:
         pattern:
+          - adaptive
           - bulkhead
           - cache
           - circuitbreaker
+          - coalesce
           - composition
+          - executor
+          - fallback
           - healthcheck
+          - hedge
+          - outlier
           - ratelimiter
           - reconnect
           - retry
+          - router
           - timelimiter
 
     steps:
