@@ -12,7 +12,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use tower::{Layer, Service, ServiceExt};
 use tower_resilience_retry::{
-    ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval, RetryLayer,
+    ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval, IntervalFunction,
+    RetryLayer,
 };
 
 #[derive(Debug, Clone)]
@@ -272,67 +273,33 @@ async fn exponential_backoff_respects_max_interval() {
 
 #[tokio::test]
 async fn exponential_random_backoff_has_variance() {
-    let call_count = Arc::new(AtomicUsize::new(0));
-    let all_delays = Arc::new(std::sync::Mutex::new(Vec::new()));
+    // This test verifies that the randomized backoff actually randomizes.
+    //
+    // It used to drive a real retrying service and measure wall-clock gaps
+    // between attempts, then assert variance and range on those measured
+    // delays. That approach was inherently flaky on loaded CI runners
+    // (scheduler jitter / timer granularity), and the upper wall-clock bound
+    // had already been widened once (#301) yet still flaked (#337).
+    //
+    // Instead we now exercise the backoff's *computed* delays directly via the
+    // public IntervalFunction::next_interval API -- the same way the crate's
+    // own unit tests do. This removes scheduler/timer dependence entirely
+    // while preserving the test's intent (randomized backoff varies).
+    let backoff = ExponentialRandomBackoff::new(Duration::from_millis(100), 0.5);
 
-    // Run multiple times to check variance - increased sample size for better variance detection
-    for _ in 0..10 {
-        let cc = Arc::clone(&call_count);
-        let timestamps = Arc::new(std::sync::Mutex::new(Vec::new()));
-        let ts = Arc::clone(&timestamps);
+    // Compute the delay for the same attempt many times. attempt 0 has a base
+    // of 100ms (100 * 2^0); with a 0.5 randomization factor the result is
+    // nominally in 50ms..=150ms. This mirrors the first retry delay the old
+    // timing-based version measured.
+    let delays: Vec<Duration> = (0..50).map(|_| backoff.next_interval(0)).collect();
 
-        let service = tower::service_fn(move |_req: String| {
-            let cc = Arc::clone(&cc);
-            let ts = Arc::clone(&ts);
-            async move {
-                ts.lock().unwrap().push(Instant::now());
-                let count = cc.fetch_add(1, Ordering::SeqCst);
-                if count.is_multiple_of(3) || (count % 3) == 1 {
-                    Err(TestError)
-                } else {
-                    Ok::<_, TestError>("success".to_string())
-                }
-            }
-        });
-
-        let config = RetryLayer::builder()
-            .max_attempts(4)
-            .backoff(ExponentialRandomBackoff::new(
-                Duration::from_millis(100),
-                0.5,
-            ))
-            .build();
-
-        let layer = config;
-        let mut service = layer.layer(service);
-
-        let _ = service
-            .ready()
-            .await
-            .unwrap()
-            .call("test".to_string())
-            .await;
-
-        let times = timestamps.lock().unwrap();
-        if times.len() >= 2 {
-            let delay = times[1].duration_since(times[0]);
-            all_delays.lock().unwrap().push(delay);
-        }
-    }
-
-    let delays = all_delays.lock().unwrap();
-    assert!(
-        delays.len() >= 5,
-        "Need at least 5 samples for variance test"
-    );
-
-    // Check that we have some variance in delays
-    // Instead of requiring all delays to be different (which can fail with timing resolution),
-    // check that we have at least 2 unique delay values
-    let mut unique_delays: Vec<Duration> = delays.clone();
+    // Variance: a correct randomized implementation must not return the same
+    // value every time. Assert "at least 2 unique values" rather than a
+    // numeric variance threshold -- effectively impossible to fail for a
+    // correct impl, and no longer probabilistic in any timing sense.
+    let mut unique_delays = delays.clone();
     unique_delays.sort();
     unique_delays.dedup();
-
     assert!(
         unique_delays.len() >= 2,
         "Randomized backoff should produce at least 2 different delays, got {} unique values from {} samples",
@@ -340,14 +307,14 @@ async fn exponential_random_backoff_has_variance() {
         delays.len()
     );
 
-    // Base: 100ms, randomization 0.5 means delays nominally in 50-150ms.
-    // Upper bound widened (~2.5x) to absorb CI scheduling slop on top of the
-    // randomization range; lower bound preserved to verify the delay
-    // actually fires. See #301.
-    for delay in delays.iter() {
+    // Range: every computed delay must fall within the nominal randomized
+    // band (50ms..=150ms for attempt 0 with a 0.5 factor). Because these are
+    // computed (not wall-clock measured) values, the bounds can be exact --
+    // no CI scheduling slop to absorb.
+    for delay in &delays {
         assert!(
-            *delay >= Duration::from_millis(20) && *delay <= Duration::from_millis(400),
-            "Delay {:?} outside expected randomized range",
+            *delay >= Duration::from_millis(50) && *delay <= Duration::from_millis(150),
+            "Delay {:?} outside expected randomized range (50ms..=150ms)",
             delay
         );
     }
