@@ -30,9 +30,13 @@ A comprehensive resilience and fault-tolerance toolkit for [Tower](https://githu
 
 ```toml
 [dependencies]
-tower-resilience = "0.9"
+tower-resilience = { version = "0.10", features = ["circuitbreaker", "bulkhead"] }
 tower = "0.5"
 ```
+
+Patterns are opt-in via Cargo features (the default feature set is empty). The
+snippet above enables the two patterns it uses; see
+[Cargo Features](#cargo-features) for the full list.
 
 ```rust
 use tower::ServiceBuilder;
@@ -49,6 +53,60 @@ let service = ServiceBuilder::new()
         .build())
     .service(my_service);
 ```
+
+## Cargo Features
+
+Every pattern is gated behind a Cargo feature; `default = []`, so you enable only
+what you use. Enable patterns explicitly, or use `full` to get them all:
+
+```toml
+# Pick specific patterns
+tower-resilience = { version = "0.10", features = ["circuitbreaker", "retry", "bulkhead"] }
+
+# Or enable everything (all patterns + observability)
+tower-resilience = { version = "0.10", features = ["full"] }
+```
+
+### Pattern Features
+
+| Feature | Pattern |
+|---------|---------|
+| `adaptive` | Adaptive concurrency limiting (AIMD/Vegas) |
+| `bulkhead` | Resource isolation / concurrency limits |
+| `cache` | Response memoization |
+| `chaos` | Fault and latency injection (testing) |
+| `circuitbreaker` | Circuit breaker |
+| `coalesce` | Request coalescing (singleflight) |
+| `executor` | Dedicated thread-pool execution |
+| `fallback` | Alternative responses on failure |
+| `hedge` | Tail-latency hedging |
+| `healthcheck` | Proactive health monitoring |
+| `outlier` | Fleet-aware outlier ejection |
+| `ratelimiter` | Rate limiting (fixed / sliding window) |
+| `reconnect` | Automatic reconnection with backoff |
+| `retry` | Retries with exponential backoff and jitter |
+| `router` | Weighted traffic routing |
+| `timelimiter` | Timeout enforcement with cancellation |
+
+### Other Features
+
+| Feature | Effect |
+|---------|--------|
+| `layer` | Unified error layer for composing patterns under one error type |
+| `metrics` | Prometheus metrics on every pattern you've enabled |
+| `tracing` | Structured `tracing` spans/events on every pattern you've enabled |
+| `full` | All patterns plus `layer`, `metrics`, and `tracing` |
+| `health-circuitbreaker` | Integration: health checks can open/close circuit breakers |
+
+`metrics` and `tracing` use weak feature activation, so they only turn on
+observability for the patterns you've already enabled - they never pull in a
+pattern on their own. To get all patterns with observability:
+
+```toml
+tower-resilience = { version = "0.10", features = ["full"] }
+```
+
+(`full` already includes `metrics` and `tracing`.)
 
 ## Presets: Get Started in One Line
 
