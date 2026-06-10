@@ -96,6 +96,22 @@ cargo run --example combined -p tower-resilience
 - Ensure `cargo clippy` passes with `-D warnings`
 - Maintain test coverage
 
+### Builder pattern
+
+Builders in this workspace use the **consuming** style: each setter takes
+`mut self` and returns `Self`, so calls chain fluently and end in `.build()`:
+
+```rust
+let layer = CircuitBreakerLayer::builder()
+    .name("payments")
+    .failure_threshold(5)
+    .build();
+```
+
+This is deliberate. Although the consuming style differs from the
+`&mut Self` builder convention, it is the established idiom across every
+pattern crate here. New crates should follow it for consistency.
+
 ### Implementing a New `Service`
 
 Every layer in this crate implements [`tower::Service`](https://docs.rs/tower-service/latest/tower_service/trait.Service.html). The trait has a non-obvious contract that, if violated, lets a wrapped middleware panic at runtime. Use this checklist on every new `Service` impl and every PR that touches `call` or `poll_ready`.
