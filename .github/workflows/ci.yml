@@ -112,3 +112,28 @@ jobs:
         run: cargo doc --workspace --all-features --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      # Scans Cargo.lock against the RustSec advisory database. The lock is
+      # currently clean (0 vulnerabilities, 0 warnings) thanks to the loosened
+      # `tokio = "1"` workspace pin letting transitive crates (notably
+      # `bytes >= 1.10.2` for RUSTSEC-2026-0007) float to fixed versions. No
+      # `--ignore` flags are needed today; add one per advisory here (with a
+      # rationale comment) only if a future advisory has no available
+      # non-breaking fix.
+      - name: Run cargo audit
+        run: cargo audit
