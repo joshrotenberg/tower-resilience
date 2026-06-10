@@ -29,12 +29,15 @@ pub mod cache;
 pub mod circuitbreaker;
 pub mod coalesce;
 pub mod composition;
+pub mod executor;
 pub mod fallback;
 pub mod healthcheck;
 pub mod hedge;
+pub mod outlier;
 pub mod ratelimiter;
 pub mod reconnect;
 pub mod retry;
+pub mod router;
 pub mod timelimiter;
 
 use std::sync::Arc;
