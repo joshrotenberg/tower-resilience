@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.9.4...tower-resilience-v0.10.0) - 2026-06-10
+
+### Added
+
+- add metrics and tracing features to facade crate (closes #315) ([#329](https://github.com/joshrotenberg/tower-resilience/pull/329))
+- add prelude module, make README Quick Start a doctest (closes #310) ([#324](https://github.com/joshrotenberg/tower-resilience/pull/324))
+
+### Fixed
+
+- validate and correct MSRV, add MSRV CI job (closes #312) ([#341](https://github.com/joshrotenberg/tower-resilience/pull/341))
+- [**breaking**] return Result from CacheLayer/SharedCacheLayer build() (closes #314) ([#326](https://github.com/joshrotenberg/tower-resilience/pull/326))
+
+### Other
+
+- fix Quick Start features and add Cargo Features section (closes #342, closes #343) ([#344](https://github.com/joshrotenberg/tower-resilience/pull/344))
+
 ## [0.9.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.9.3...tower-resilience-v0.9.4) - 2026-05-15
 
 ### Other

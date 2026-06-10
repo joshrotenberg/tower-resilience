@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-healthcheck-v0.9.4...tower-resilience-healthcheck-v0.10.0) - 2026-06-10
+
+### Other
+
+- use workspace tokio dependency in healthcheck (closes #321) ([#339](https://github.com/joshrotenberg/tower-resilience/pull/339))
+
 ## [0.9.4](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-healthcheck-v0.9.3...tower-resilience-healthcheck-v0.9.4) - 2026-05-15
 
 ### Other
