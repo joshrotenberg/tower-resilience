@@ -188,3 +188,120 @@ async fn outlier_drives_readied_instance() {
         let _ = svc.ready().await.unwrap().call(()).await;
     }
 }
+
+#[tokio::test]
+async fn adaptive_drives_readied_instance() {
+    use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd};
+
+    let layer = AdaptiveLimiterLayer::new(
+        Aimd::builder()
+            .initial_limit(8)
+            .latency_threshold(Duration::from_secs(1))
+            .build(),
+    );
+    let mut svc = tower::ServiceBuilder::new()
+        .layer(layer)
+        .service(StatefulInner::new());
+
+    for _ in 0..3 {
+        let _ = svc.ready().await.unwrap().call(()).await;
+    }
+}
+
+#[tokio::test]
+async fn cache_miss_drives_readied_instance() {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tower_resilience_cache::CacheLayer;
+
+    // A fresh key per call forces every iteration through the cache-miss path,
+    // which is the only path that dispatches to the readied inner.
+    let counter = Arc::new(AtomicUsize::new(0));
+    let layer = CacheLayer::<(), usize>::builder()
+        .max_size(16)
+        .ttl(Duration::from_secs(60))
+        .key_extractor(move |_: &()| counter.fetch_add(1, Ordering::SeqCst))
+        .build()
+        .unwrap();
+    let mut svc = tower::ServiceBuilder::new()
+        .layer(layer)
+        .service(StatefulInner::new());
+
+    for _ in 0..3 {
+        let _ = svc.ready().await.unwrap().call(()).await;
+    }
+}
+
+#[tokio::test]
+async fn coalesce_leader_drives_readied_instance() {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tower_resilience_coalesce::CoalesceLayer;
+
+    // A unique key per call forces every iteration through the leader path,
+    // which is the only path that dispatches to the readied inner.
+    let counter = Arc::new(AtomicUsize::new(0));
+    let layer = CoalesceLayer::new(move |_: &()| counter.fetch_add(1, Ordering::SeqCst));
+    let mut svc = tower::ServiceBuilder::new()
+        .layer(layer)
+        .service(StatefulInner::new());
+
+    for _ in 0..3 {
+        let _ = svc.ready().await.unwrap().call(()).await;
+    }
+}
+
+#[tokio::test]
+async fn router_drives_readied_instance() {
+    use tower_resilience_router::WeightedRouter;
+
+    // `WeightedRouter` is constructed directly rather than as a layer; it
+    // readies every backend in `poll_ready`, so the selected backend is a
+    // readied instance.
+    let mut router = WeightedRouter::builder()
+        .route(StatefulInner::new(), 1)
+        .route(StatefulInner::new(), 1)
+        .build();
+
+    for _ in 0..6 {
+        let _ = router.ready().await.unwrap().call(()).await;
+    }
+}
+
+#[tokio::test]
+async fn hedge_drives_readied_instance() {
+    use tower_resilience_hedge::HedgeLayer;
+
+    let layer = HedgeLayer::builder()
+        .delay(Duration::from_millis(20))
+        .max_hedged_attempts(2)
+        .build();
+    let mut svc = tower::ServiceBuilder::new()
+        .layer(layer)
+        .service(StatefulInner::new());
+
+    for _ in 0..3 {
+        let _ = svc.ready().await.unwrap().call(()).await;
+    }
+}
+
+#[tokio::test]
+async fn reconnect_drives_readied_instance() {
+    use tower_resilience_reconnect::{ReconnectConfig, ReconnectLayer, ReconnectPolicy};
+
+    let config = ReconnectConfig::builder()
+        .policy(ReconnectPolicy::exponential(
+            Duration::from_millis(5),
+            Duration::from_millis(20),
+        ))
+        .max_attempts(3)
+        .build();
+    let layer = ReconnectLayer::new(config);
+    let mut svc = tower::ServiceBuilder::new()
+        .layer(layer)
+        .service(StatefulInner::new());
+
+    for _ in 0..3 {
+        let _ = svc.ready().await.unwrap().call(()).await;
+    }
+}
