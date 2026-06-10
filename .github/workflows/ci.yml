@@ -69,6 +69,28 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
+  msrv:
+    name: MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Validates the published-crate MSRV (declared in [workspace.package]
+      # rust-version). This pins the toolchain to the declared floor so the
+      # advertised MSRV can't silently drift. Scope note: this checks the
+      # publishable surface only (`-p tower-resilience --all-features`, all
+      # edition 2021), NOT the repo-root `tower-resilience-tests` harness,
+      # which is edition 2024 (publish = false) and is not part of the MSRV
+      # contract.
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@1.85.0
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check MSRV
+        run: cargo check -p tower-resilience --all-features
+
   contract-lints:
     name: Source Contract Lints
     runs-on: ubuntu-latest
