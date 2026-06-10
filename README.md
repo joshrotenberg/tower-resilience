@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/tower-resilience.svg)](https://crates.io/crates/tower-resilience)
 [![Documentation](https://docs.rs/tower-resilience/badge.svg)](https://docs.rs/tower-resilience)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
-[![Rust Version](https://img.shields.io/badge/rust-1.64.0%2B-blue.svg)](https://www.rust-lang.org)
+[![Rust Version](https://img.shields.io/badge/rust-1.85.0%2B-blue.svg)](https://www.rust-lang.org)
 
 A comprehensive resilience and fault-tolerance toolkit for [Tower](https://github.com/tower-rs/tower) services, inspired by [Resilience4j](https://resilience4j.readme.io/).
 
@@ -737,7 +737,9 @@ cargo test --test stress -- --ignored
 
 ## MSRV
 
-1.64.0 (matches Tower)
+1.85.0. The floor is set by the edition-2024 dependency graph (the
+all-features build pulls `metrics-util` -> `indexmap`, which requires
+Rust 1.85). Validated in CI by the `msrv` job.
 
 ## License
 
