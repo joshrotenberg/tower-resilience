@@ -8,7 +8,12 @@ semver_check = true
 # Release all crates together to keep versions in sync
 release_always = true
 
-# Generate separate changelogs for each crate
+# Generate separate changelogs for each crate.
+#
+# Crates without an explicit [[package]] entry intentionally rely on
+# release-plz's default per-crate changelog path (crates/<name>/CHANGELOG.md),
+# which is the same location the explicit entries below point to. The explicit
+# entries are kept only for clarity on the core crates.
 [[package]]
 name = "tower-resilience-core"
 changelog_path = "crates/tower-resilience-core/CHANGELOG.md"
