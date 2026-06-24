@@ -83,7 +83,7 @@ jobs:
       # which is edition 2024 (publish = false) and is not part of the MSRV
       # contract.
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@1.85.0
+        uses: dtolnay/rust-toolchain@1.100.0
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
