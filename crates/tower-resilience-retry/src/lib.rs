@@ -240,7 +240,7 @@ where
     S::Future: Send + 'static,
     Req: Clone + Send + 'static,
     Res: Send + 'static,
-    E: Clone + Send + 'static,
+    E: Send + 'static,
 {
     type Response = Res;
     type Error = E;
