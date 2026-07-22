@@ -267,7 +267,7 @@ where
     S::Future: Send + 'static,
     Req: Clone + Send + Sync + 'static,
     Res: Clone + Send + Sync + 'static,
-    E: Clone + Send + Sync + 'static,
+    E: Send + Sync + 'static,
 {
     type Response = Res;
     type Error = FallbackError<E>;
@@ -898,5 +898,53 @@ mod tests {
         let recorded = events.lock().unwrap();
         assert!(recorded.contains(&"failed_attempt".to_string()));
         assert!(recorded.contains(&"applied".to_string()));
+    }
+
+    // Regression: the Fallback Service impl must not require `E: Clone`. The
+    // error is only ever used by reference or moved once, never cloned, so a
+    // non-Clone error type must work end to end. This fails to compile if the
+    // `E: Clone` bound is reintroduced on the Service impl.
+    #[derive(Debug)]
+    struct NonCloneError(String);
+
+    #[tokio::test]
+    async fn works_with_non_clone_error() {
+        // Fallback applied: the error is consumed by reference (from_error).
+        let service = service_fn(|_req: String| async move {
+            Err::<String, _>(NonCloneError("boom".to_string()))
+        });
+        let layer =
+            FallbackLayer::<String, String, NonCloneError>::from_error(|e: &NonCloneError| {
+                format!("recovered: {}", e.0)
+            });
+        let mut service = layer.layer(service);
+        let response = service
+            .ready()
+            .await
+            .unwrap()
+            .call("test".to_string())
+            .await
+            .unwrap();
+        assert_eq!(response, "recovered: boom");
+
+        // Error propagated: the original error is moved into FallbackError::Inner.
+        let service = service_fn(|_req: String| async move {
+            Err::<String, _>(NonCloneError("permanent".to_string()))
+        });
+        let layer = FallbackLayer::builder()
+            .value("unused".to_string())
+            .handle(|_e: &NonCloneError| false) // never handle -> propagate original
+            .build();
+        let mut service = layer.layer(service);
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call("test".to_string())
+            .await;
+        match result {
+            Err(FallbackError::Inner(e)) => assert_eq!(e.0, "permanent"),
+            _ => panic!("expected original error to propagate"),
+        }
     }
 }
