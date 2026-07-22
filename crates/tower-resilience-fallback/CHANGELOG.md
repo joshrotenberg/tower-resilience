@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-fallback-v0.10.0...tower-resilience-fallback-v0.10.1) - 2026-07-22
+
+### Added
+
+- *(fallback)* relax E: Clone bound on Service impl ([#352](https://github.com/joshrotenberg/tower-resilience/pull/352))
+
 ## [0.10.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-fallback-v0.9.4...tower-resilience-fallback-v0.10.0) - 2026-06-10
 
 ### Other
