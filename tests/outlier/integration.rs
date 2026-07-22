@@ -110,55 +110,61 @@ async fn auto_recovery_after_ejection_duration() {
 
 #[tokio::test]
 async fn exponential_backoff_on_repeated_ejections() {
+    // Durations are deliberately generous (100ms base) so that scheduler
+    // jitter on loaded CI runners does not push a real-clock sleep past the
+    // ejection window and flake the assertions. See is_ejected, which measures
+    // elapsed time with std::time::Instant (not tokio virtual time).
     let detector = OutlierDetector::new()
-        .base_ejection_duration(Duration::from_millis(50))
+        .base_ejection_duration(Duration::from_millis(100))
         .max_ejection_percent(100);
     detector.register("backend-1", 1);
 
-    // First ejection: 50ms
+    // First ejection: 100ms
     assert!(detector.record_failure("backend-1"));
     assert!(detector.is_ejected("backend-1"));
 
-    // Wait for recovery
-    tokio::time::sleep(Duration::from_millis(60)).await;
+    // Wait past the 100ms window for recovery
+    tokio::time::sleep(Duration::from_millis(160)).await;
     assert!(!detector.is_ejected("backend-1"));
 
-    // Second ejection: 100ms (50 * 2^1)
+    // Second ejection: 200ms (100 * 2^1)
     assert!(detector.record_failure("backend-1"));
     assert!(detector.is_ejected("backend-1"));
 
-    // After 60ms, still ejected (needs 100ms)
-    tokio::time::sleep(Duration::from_millis(60)).await;
+    // After 100ms, still ejected (needs 200ms)
+    tokio::time::sleep(Duration::from_millis(100)).await;
     assert!(detector.is_ejected("backend-1"));
 
-    // After total 110ms, recovered
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    // After total ~260ms, recovered
+    tokio::time::sleep(Duration::from_millis(160)).await;
     assert!(!detector.is_ejected("backend-1"));
 }
 
 #[tokio::test]
 async fn max_ejection_duration_caps_backoff() {
+    // Generous 100ms base / 200ms cap so real-clock sleeps stay comfortably
+    // inside each window despite CI scheduler jitter (see is_ejected).
     let detector = OutlierDetector::new()
-        .base_ejection_duration(Duration::from_millis(50))
-        .max_ejection_duration(Duration::from_millis(100))
+        .base_ejection_duration(Duration::from_millis(100))
+        .max_ejection_duration(Duration::from_millis(200))
         .max_ejection_percent(100);
     detector.register("backend-1", 1);
 
-    // First ejection: 50ms
+    // First ejection: 100ms
     detector.record_failure("backend-1");
-    tokio::time::sleep(Duration::from_millis(60)).await;
+    tokio::time::sleep(Duration::from_millis(160)).await;
     assert!(!detector.is_ejected("backend-1"));
 
-    // Second ejection: 100ms (50 * 2, capped at 100)
+    // Second ejection: 200ms (100 * 2, capped at 200)
     detector.record_failure("backend-1");
-    tokio::time::sleep(Duration::from_millis(60)).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
     assert!(detector.is_ejected("backend-1"));
-    tokio::time::sleep(Duration::from_millis(50)).await;
+    tokio::time::sleep(Duration::from_millis(160)).await;
     assert!(!detector.is_ejected("backend-1"));
 
-    // Third ejection: still 100ms (50 * 4 = 200, capped at 100)
+    // Third ejection: still 200ms (100 * 4 = 400, capped at 200)
     detector.record_failure("backend-1");
-    tokio::time::sleep(Duration::from_millis(110)).await;
+    tokio::time::sleep(Duration::from_millis(260)).await;
     assert!(!detector.is_ejected("backend-1"));
 }
 

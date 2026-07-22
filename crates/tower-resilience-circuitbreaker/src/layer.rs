@@ -1,5 +1,5 @@
 use crate::circuit::Circuit;
-use crate::classifier::{DefaultClassifier, FnClassifier};
+use crate::classifier::DefaultClassifier;
 use crate::config::CircuitBreakerConfig;
 use crate::CircuitBreaker;
 use std::sync::Arc;
@@ -254,18 +254,14 @@ impl CircuitBreakerLayer<DefaultClassifier> {
     }
 }
 
-// Implement Layer<S> for DefaultClassifier - works with any service
-impl<S> Layer<S> for CircuitBreakerLayer<DefaultClassifier> {
-    type Service = CircuitBreaker<S, DefaultClassifier>;
-
-    fn layer(&self, service: S) -> Self::Service {
-        self.make_service(service)
-    }
-}
-
-// Implement Layer<S> for FnClassifier - the classifier determines compatible services
-impl<S, F> Layer<S> for CircuitBreakerLayer<FnClassifier<F>> {
-    type Service = CircuitBreaker<S, FnClassifier<F>>;
+// Implement Layer<S> for any classifier type `C`. Layering itself places no
+// constraint on the classifier; which services the resulting `CircuitBreaker`
+// can serve is decided by the `C: FailureClassifier<Res, Err>` bound on the
+// `Service` impl, at the point the concrete service is wrapped. This covers
+// `DefaultClassifier`, `FnClassifier<F>`, and any named classifier passed to
+// `failure_classifier_type`.
+impl<S, C> Layer<S> for CircuitBreakerLayer<C> {
+    type Service = CircuitBreaker<S, C>;
 
     fn layer(&self, service: S) -> Self::Service {
         self.make_service(service)

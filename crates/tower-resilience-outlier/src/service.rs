@@ -184,4 +184,78 @@ mod tests {
         assert!(resp.is_err());
         assert!(resp.unwrap_err().is_outlier_detection());
     }
+
+    // A named error type standing in for an infrastructure client error.
+    #[derive(Debug)]
+    struct RedisError {
+        connection: bool,
+    }
+
+    impl RedisError {
+        fn is_connection(&self) -> bool {
+            self.connection
+        }
+    }
+
+    // A named classifier with a blanket impl over the response type `Res`: one
+    // value classifies for every command's response type against a `RedisError`.
+    // `Clone` is required by the outlier `Layer` impl to clone the config.
+    #[derive(Clone)]
+    struct RedisFailureClassifier;
+
+    impl<Res> crate::FailureClassifier<Res, RedisError> for RedisFailureClassifier {
+        fn classify(&self, result: &Result<Res, RedisError>) -> bool {
+            matches!(result, Err(e) if e.is_connection())
+        }
+    }
+
+    #[tokio::test]
+    async fn failure_classifier_type_ejects_on_classified_failure() {
+        let detector = OutlierDetector::new().max_ejection_percent(100);
+        detector.register("backend-1", 1);
+
+        // Service always fails with a connection error the classifier counts.
+        let fail_svc = tower::service_fn(|_req: String| async {
+            Err::<String, RedisError>(RedisError { connection: true })
+        });
+        let boxed = tower::util::BoxCloneService::new(fail_svc);
+        let layer = crate::OutlierDetectionLayer::builder()
+            .detector(detector)
+            .instance_name("backend-1")
+            .error_on_ejection()
+            .failure_classifier_type(RedisFailureClassifier)
+            .build();
+        let mut svc = tower::Layer::layer(&layer, boxed);
+
+        // First call fails (inner error) and triggers ejection.
+        let resp = svc.ready().await.unwrap().call("cmd".to_string()).await;
+        assert!(resp.is_err());
+        assert!(resp.unwrap_err().is_inner());
+
+        // Second call is rejected by outlier detection.
+        let resp = svc.ready().await.unwrap().call("cmd".to_string()).await;
+        assert!(resp.is_err());
+        assert!(resp.unwrap_err().is_outlier_detection());
+    }
+
+    #[test]
+    fn failure_classifier_type_one_instance_serves_two_response_types() {
+        use crate::FailureClassifier;
+
+        // Compile-level assertion: a single classifier value satisfies
+        // `FailureClassifier` for two different response types, because the impl
+        // is blanket over `Res`.
+        fn assert_serves<C>(c: &C)
+        where
+            C: FailureClassifier<String, RedisError> + FailureClassifier<u64, RedisError>,
+        {
+            assert!(FailureClassifier::<String, RedisError>::classify(
+                c,
+                &Err(RedisError { connection: true })
+            ));
+            assert!(!FailureClassifier::<u64, RedisError>::classify(c, &Ok(7)));
+        }
+
+        assert_serves(&RedisFailureClassifier);
+    }
 }

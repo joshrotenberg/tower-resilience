@@ -1356,4 +1356,96 @@ mod tests {
         assert_eq!(permitted_count.load(std::sync::atomic::Ordering::SeqCst), 3);
         assert_eq!(rejected_count.load(std::sync::atomic::Ordering::SeqCst), 0);
     }
+
+    // A named error type standing in for an infrastructure client error.
+    #[derive(Debug)]
+    struct RedisError {
+        connection: bool,
+    }
+
+    impl RedisError {
+        fn is_connection(&self) -> bool {
+            self.connection
+        }
+    }
+
+    // A named classifier carrying no config here, but with a blanket impl over
+    // the response type `Res`: one value classifies for every command's
+    // response type against a `RedisError`.
+    struct RedisFailureClassifier;
+
+    impl<Res> FailureClassifier<Res, RedisError> for RedisFailureClassifier {
+        fn classify(&self, result: &Result<Res, RedisError>) -> bool {
+            matches!(result, Err(e) if e.is_connection())
+        }
+    }
+
+    #[tokio::test]
+    async fn failure_classifier_type_trips_and_recovers() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use tower::{Service, ServiceExt};
+
+        // Service fails with a connection error until flipped healthy.
+        let healthy = Arc::new(AtomicBool::new(false));
+        let h = Arc::clone(&healthy);
+        let service = tower::service_fn(move |_req: String| {
+            let h = Arc::clone(&h);
+            async move {
+                if h.load(Ordering::SeqCst) {
+                    Ok::<String, RedisError>("ok".to_string())
+                } else {
+                    Err(RedisError { connection: true })
+                }
+            }
+        });
+
+        let layer = CircuitBreakerLayer::builder()
+            .consecutive_failures(3)
+            .wait_duration_in_open(Duration::from_millis(50))
+            .permitted_calls_in_half_open(1)
+            .failure_classifier_type(RedisFailureClassifier)
+            .build();
+
+        let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
+
+        // Three consecutive connection failures trip the breaker. Each call
+        // still surfaces the inner error.
+        for _ in 0..3 {
+            let res = service.ready().await.unwrap().call("cmd".to_string()).await;
+            assert!(matches!(res, Err(CircuitBreakerError::Inner(_))));
+        }
+
+        // Circuit is now open: the next call is rejected without reaching the
+        // service.
+        let rejected = service.ready().await.unwrap().call("cmd".to_string()).await;
+        assert!(matches!(rejected, Err(CircuitBreakerError::OpenCircuit)));
+
+        // Recover: make the service healthy and let the open duration elapse.
+        healthy.store(true, Ordering::SeqCst);
+        tokio::time::sleep(Duration::from_millis(60)).await;
+
+        // Half-open permits a probe; the successful probe closes the circuit.
+        let recovered = service.ready().await.unwrap().call("cmd".to_string()).await;
+        assert!(recovered.is_ok());
+        assert_eq!(recovered.unwrap(), "ok");
+    }
+
+    #[test]
+    fn failure_classifier_type_one_instance_serves_two_response_types() {
+        // Compile-level assertion: a single classifier value satisfies
+        // `FailureClassifier` for two different response types, because the impl
+        // is blanket over `Res`.
+        fn assert_serves<C>(c: &C)
+        where
+            C: FailureClassifier<String, RedisError> + FailureClassifier<u64, RedisError>,
+        {
+            assert!(FailureClassifier::<String, RedisError>::classify(
+                c,
+                &Err(RedisError { connection: true })
+            ));
+            assert!(!FailureClassifier::<u64, RedisError>::classify(c, &Ok(7)));
+        }
+
+        assert_serves(&RedisFailureClassifier);
+    }
 }

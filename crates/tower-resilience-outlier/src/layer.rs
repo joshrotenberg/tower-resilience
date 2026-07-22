@@ -3,7 +3,7 @@
 use crate::config::{OutlierDetectionConfig, OutlierDetectionConfigBuilder};
 use crate::service::OutlierDetectionService;
 use tower::Layer;
-use tower_resilience_core::classifier::{DefaultClassifier, FnClassifier};
+use tower_resilience_core::classifier::DefaultClassifier;
 
 /// A Tower Layer that applies outlier detection behavior to an inner service.
 ///
@@ -50,19 +50,17 @@ impl OutlierDetectionLayer<DefaultClassifier> {
     }
 }
 
-impl<S> Layer<S> for OutlierDetectionLayer<DefaultClassifier> {
-    type Service = OutlierDetectionService<S, DefaultClassifier>;
-
-    fn layer(&self, service: S) -> Self::Service {
-        OutlierDetectionService::new(service, self.config.clone())
-    }
-}
-
-impl<S, F> Layer<S> for OutlierDetectionLayer<FnClassifier<F>>
+// Implement Layer<S> for any classifier type `C`. The `C: Clone` bound is only
+// needed to clone the config into the service; which services the resulting
+// `OutlierDetectionService` can serve is decided by the classifier's
+// `FailureClassifier<Res, Err>` impl at the wrap point. This covers
+// `DefaultClassifier`, `FnClassifier<F>`, and any named classifier passed to
+// `failure_classifier_type`.
+impl<S, C> Layer<S> for OutlierDetectionLayer<C>
 where
-    F: Clone,
+    C: Clone,
 {
-    type Service = OutlierDetectionService<S, FnClassifier<F>>;
+    type Service = OutlierDetectionService<S, C>;
 
     fn layer(&self, service: S) -> Self::Service {
         OutlierDetectionService::new(service, self.config.clone())
