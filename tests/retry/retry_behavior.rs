@@ -538,3 +538,49 @@ async fn empty_response_type() {
     assert!(result.is_ok());
     assert_eq!(call_count.load(Ordering::SeqCst), 3);
 }
+
+/// Regression test for #346: the retry Service impl must not require
+/// `E: Clone`. Many real-world client errors wrap `std::io::Error` (which is
+/// not `Clone` by design), for example redis-tower's `RedisError`. This error
+/// type deliberately wraps `std::io::Error` and does NOT derive `Clone`, so
+/// this test fails to compile if the `E: Clone` bound is reintroduced.
+#[derive(Debug)]
+struct NonCloneError {
+    #[allow(dead_code)]
+    source: std::io::Error,
+}
+
+#[tokio::test]
+async fn retries_error_without_clone_bound() {
+    let call_count = Arc::new(AtomicUsize::new(0));
+    let cc = Arc::clone(&call_count);
+
+    let service = tower::service_fn(move |_req: String| {
+        let cc = Arc::clone(&cc);
+        async move {
+            cc.fetch_add(1, Ordering::SeqCst);
+            Err::<String, _>(NonCloneError {
+                source: std::io::Error::new(std::io::ErrorKind::ConnectionReset, "boom"),
+            })
+        }
+    });
+
+    let layer = RetryLayer::builder()
+        .max_attempts(3)
+        .fixed_backoff(std::time::Duration::from_millis(10))
+        .build();
+    let mut service = layer.layer(service);
+
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
+
+    // The last error is returned by value (no per-attempt clone), and every
+    // attempt ran.
+    let err = result.unwrap_err();
+    assert_eq!(err.source.kind(), std::io::ErrorKind::ConnectionReset);
+    assert_eq!(call_count.load(Ordering::SeqCst), 3);
+}
