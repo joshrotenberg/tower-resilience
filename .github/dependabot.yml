@@ -13,3 +13,9 @@ updates:
       interval: "weekly"
     labels:
       - "dependencies"
+    ignore:
+      # dtolnay/rust-toolchain is pinned to a Rust toolchain VERSION tag
+      # (e.g. @1.85.0), not an action release. Dependabot's github-actions
+      # updater misreads the tag and proposes bumps like 1.85.0 -> 1.100.0,
+      # which fail the MSRV CI job because that Rust version does not exist.
+      - dependency-name: "dtolnay/rust-toolchain"
