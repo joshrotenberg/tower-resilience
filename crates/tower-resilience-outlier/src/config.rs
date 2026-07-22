@@ -109,6 +109,73 @@ impl<C> OutlierDetectionConfigBuilder<C> {
         self
     }
 
+    /// Sets a custom failure classifier instance.
+    ///
+    /// Unlike [`failure_classifier`](OutlierDetectionConfigBuilder::failure_classifier),
+    /// which wraps a closure in an [`FnClassifier`], this accepts any value that
+    /// implements [`FailureClassifier`](crate::FailureClassifier). Use it for a named classifier type that
+    /// carries its own configuration (error-kind allowlists, thresholds) and can
+    /// be reused across instances.
+    ///
+    /// No trait bound is required at the builder stage: the builder is generic
+    /// over its classifier slot, and the response/error types are unknowable at
+    /// configuration time. The `C: FailureClassifier<Res, Err>` bound is checked
+    /// where it already lives for [`FnClassifier`], at the point the layer wraps
+    /// a concrete service.
+    ///
+    /// # The polymorphic pattern: a blanket impl over the response type
+    ///
+    /// Implement [`FailureClassifier`](crate::FailureClassifier) over **all** response types, pinning only
+    /// the concrete error type. One classifier value then serves every
+    /// `Service<Cmd>` in a polymorphic stack, with no type erasure. This mirrors
+    /// [`DefaultClassifier`], which is blanket over both `Res` and `Err`.
+    ///
+    /// ```
+    /// use tower_resilience_outlier::{OutlierDetectionLayer, OutlierDetector, FailureClassifier};
+    ///
+    /// // A Redis error type carrying enough detail to separate infrastructure
+    /// // failures from user-level ones.
+    /// # #[derive(Debug)]
+    /// struct RedisError {
+    ///     connection: bool,
+    ///     timeout: bool,
+    /// }
+    /// # impl RedisError {
+    /// #     fn is_connection(&self) -> bool { self.connection }
+    /// #     fn is_timeout(&self) -> bool { self.timeout }
+    /// # }
+    ///
+    /// // A named classifier. The blanket impl over `Res` means one value works
+    /// // for every command's response type against a `RedisError`. `Clone` lets
+    /// // the layer clone the config into each service it wraps.
+    /// #[derive(Clone)]
+    /// struct RedisFailureClassifier;
+    ///
+    /// impl<Res> FailureClassifier<Res, RedisError> for RedisFailureClassifier {
+    ///     fn classify(&self, result: &Result<Res, RedisError>) -> bool {
+    ///         // WRONGTYPE/MOVED/ASK are user-level, not infrastructure failures.
+    ///         matches!(result, Err(e) if e.is_connection() || e.is_timeout())
+    ///     }
+    /// }
+    ///
+    /// let detector = OutlierDetector::new();
+    /// detector.register("backend-1", 5);
+    ///
+    /// let layer = OutlierDetectionLayer::builder()
+    ///     .detector(detector)
+    ///     .instance_name("backend-1")
+    ///     .failure_classifier_type(RedisFailureClassifier)
+    ///     .build();
+    /// ```
+    pub fn failure_classifier_type<C2>(self, classifier: C2) -> OutlierDetectionConfigBuilder<C2> {
+        OutlierDetectionConfigBuilder {
+            detector: self.detector,
+            instance_name: self.instance_name,
+            classifier,
+            backpressure: self.backpressure,
+        }
+    }
+
     /// Builds the `OutlierDetectionLayer`.
     ///
     /// # Panics

@@ -423,6 +423,77 @@ impl<C> CircuitBreakerConfigBuilder<C> {
         }
     }
 
+    /// Sets a custom failure classifier instance.
+    ///
+    /// Unlike [`failure_classifier`](Self::failure_classifier), which wraps a
+    /// closure in an [`FnClassifier`], this accepts any value that implements
+    /// [`FailureClassifier`](crate::FailureClassifier). Use it for a named
+    /// classifier type that carries its own configuration (error-kind
+    /// allowlists, thresholds) and can be reused across breakers.
+    ///
+    /// No trait bound is required at the builder stage: the builder is generic
+    /// over its classifier slot, and the response/error types are unknowable at
+    /// configuration time. The `C: FailureClassifier<Res, Err>` bound is checked
+    /// where it already lives for [`FnClassifier`], at the point the layer wraps
+    /// a concrete service.
+    ///
+    /// # The polymorphic pattern: a blanket impl over the response type
+    ///
+    /// Implement [`FailureClassifier`](crate::FailureClassifier) over **all**
+    /// response types, pinning only the concrete error type. One classifier
+    /// value then serves every `Service<Cmd>` in a polymorphic stack, with no
+    /// type erasure. This mirrors [`DefaultClassifier`](crate::DefaultClassifier),
+    /// which is blanket over both `Res` and `Err`.
+    ///
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::{CircuitBreakerLayer, FailureClassifier};
+    ///
+    /// // A Redis error type carrying enough detail to separate infrastructure
+    /// // failures from user-level ones.
+    /// # #[derive(Debug)]
+    /// struct RedisError {
+    ///     connection: bool,
+    ///     timeout: bool,
+    /// }
+    /// # impl RedisError {
+    /// #     fn is_connection(&self) -> bool { self.connection }
+    /// #     fn is_timeout(&self) -> bool { self.timeout }
+    /// # }
+    ///
+    /// // A named classifier. The blanket impl over `Res` means one value works
+    /// // for every command's response type against a `RedisError`.
+    /// struct RedisFailureClassifier;
+    ///
+    /// impl<Res> FailureClassifier<Res, RedisError> for RedisFailureClassifier {
+    ///     fn classify(&self, result: &Result<Res, RedisError>) -> bool {
+    ///         // WRONGTYPE/MOVED/ASK are user-level, not infrastructure failures.
+    ///         matches!(result, Err(e) if e.is_connection() || e.is_timeout())
+    ///     }
+    /// }
+    ///
+    /// let layer = CircuitBreakerLayer::builder()
+    ///     .failure_classifier_type(RedisFailureClassifier)
+    ///     .build();
+    /// ```
+    pub fn failure_classifier_type<C2>(self, classifier: C2) -> CircuitBreakerConfigBuilder<C2> {
+        CircuitBreakerConfigBuilder {
+            failure_rate_threshold: self.failure_rate_threshold,
+            sliding_window_type: self.sliding_window_type,
+            sliding_window_size: self.sliding_window_size,
+            sliding_window_duration: self.sliding_window_duration,
+            wait_duration_in_open: self.wait_duration_in_open,
+            permitted_calls_in_half_open: self.permitted_calls_in_half_open,
+            failure_classifier: classifier,
+            minimum_number_of_calls: self.minimum_number_of_calls,
+            slow_call_duration_threshold: self.slow_call_duration_threshold,
+            slow_call_rate_threshold: self.slow_call_rate_threshold,
+            failure_model: self.failure_model,
+            event_listeners: self.event_listeners,
+            name: self.name,
+            backpressure: self.backpressure,
+        }
+    }
+
     /// Sets a response-based failure classifier.
     ///
     /// This is a convenience method for services where errors are encoded in the response
