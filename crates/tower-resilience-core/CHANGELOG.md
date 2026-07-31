@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-core-v0.10.0...tower-resilience-core-v0.10.1) - 2026-07-27
+
+### Other
+
+- *(deps)* update serial_test requirement from 3.2 to 4.0 ([#354](https://github.com/joshrotenberg/tower-resilience/pull/354))
+
 ## [0.10.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-core-v0.9.4...tower-resilience-core-v0.10.0) - 2026-06-10
 
 ### Added
