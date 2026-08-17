@@ -251,8 +251,8 @@ async fn test_mixed_success_failure_concurrent() {
 
 #[tokio::test]
 async fn test_cancellation_on_first_success() {
-    // This test verifies that when one request succeeds, the others are
-    // effectively cancelled (their results are ignored).
+    // This test verifies that when one request succeeds, the losing attempt
+    // future is dropped before it can complete.
     let completed_count = Arc::new(AtomicUsize::new(0));
     let started_count = Arc::new(AtomicUsize::new(0));
 
@@ -306,9 +306,10 @@ async fn test_cancellation_on_first_success() {
     // Both should have started
     assert_eq!(started_count.load(Ordering::SeqCst), 2);
 
-    // Give time for primary to complete
+    // Give the primary enough time that it would have completed if it had
+    // survived the hedge result.
     tokio::time::sleep(Duration::from_millis(1100)).await;
 
-    // Both should eventually complete (tasks run to completion)
-    assert_eq!(completed_count.load(Ordering::SeqCst), 2);
+    // Only the winning hedge completes; the slow primary was cancelled.
+    assert_eq!(completed_count.load(Ordering::SeqCst), 1);
 }

@@ -16,6 +16,14 @@
 //! If your request or error types don't implement Clone, consider wrapping them
 //! in `Arc<T>` instead.
 //!
+//! # Eligibility and cancellation
+//!
+//! The default policy assumes every request is safe to duplicate. Services
+//! with mixed operations should use `eligible_if` to hedge only idempotent
+//! requests (or requests carrying an idempotency key). Ineligible requests run
+//! once. A winner or a dropped caller future drops all losing attempt futures;
+//! cancellation cannot undo downstream side effects already committed.
+//!
 //! Run with: cargo run --example hedge
 
 use std::sync::Arc;

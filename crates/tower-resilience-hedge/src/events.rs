@@ -32,7 +32,7 @@ pub enum HedgeEvent {
         name: Option<String>,
         /// Total duration from start to success.
         duration: Duration,
-        /// Number of hedge requests that were cancelled.
+        /// Number of in-flight hedge attempts dropped before returning.
         hedges_cancelled: usize,
         /// When this event occurred.
         timestamp: Instant,
@@ -46,7 +46,7 @@ pub enum HedgeEvent {
         attempt: usize,
         /// Total duration from start to success.
         duration: Duration,
-        /// Whether the primary request was cancelled.
+        /// Whether the still-in-flight primary attempt was dropped.
         primary_cancelled: bool,
         /// When this event occurred.
         timestamp: Instant,

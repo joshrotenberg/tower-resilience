@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add a per-request eligibility predicate so non-idempotent requests execute once.
+
+### Fixed
+
+- Cancel losing and caller-abandoned attempt futures instead of detaching spawned tasks.
+- Wait for every failed attempt and consistently return the primary error.
+
 ## [0.10.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-hedge-v0.9.4...tower-resilience-hedge-v0.10.0) - 2026-06-10
 
 ### Other

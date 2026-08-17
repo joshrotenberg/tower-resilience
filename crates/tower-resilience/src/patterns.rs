@@ -1127,6 +1127,33 @@ pub mod hedge {
     //! ❌ **Hedging already-optimized endpoints**: Diminishing returns
     //! ✅ Target high-variance latency endpoints where hedging provides value
     //!
+    //! ## Eligibility and cancellation
+    //!
+    //! The default policy assumes every request is safe to execute more than
+    //! once concurrently. Gate mixed request types explicitly:
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "hedge")]
+    //! # {
+    //! use tower_resilience::hedge::HedgeLayer;
+    //!
+    //! #[derive(Clone)]
+    //! struct Request {
+    //!     idempotent: bool,
+    //! }
+    //!
+    //! let hedge = HedgeLayer::builder()
+    //!     .eligible_if(|request: &Request| request.idempotent)
+    //!     .max_hedged_attempts(3)
+    //!     .build();
+    //! # }
+    //! ```
+    //!
+    //! Ineligible requests execute once. After a winner, all losing attempt
+    //! futures are dropped before the response is returned; dropping the
+    //! caller's future drops every attempt without a terminal event. Future
+    //! cancellation cannot undo side effects already committed downstream.
+    //!
     //! ## Presets
     //!
     //! ```rust,no_run
