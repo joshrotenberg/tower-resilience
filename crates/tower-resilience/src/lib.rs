@@ -69,7 +69,7 @@
 //! | **Hedge** | [`conservative()`][h_conservative], [`standard()`][h_standard], [`aggressive()`][h_aggressive] |
 //! | **Rate Limiter** | [`per_second(n)`], [`per_minute(n)`], [`burst(rate, size)`] |
 //! | **Retry** | [`exponential_backoff()`], [`aggressive()`], [`conservative()`] |
-//! | **Time Limiter** | [`fast()`], [`standard()`][tl_standard], [`slow()`], [`streaming()`] |
+//! | **Time Limiter** | [`fast()`], [`standard()`][tl_standard], [`slow()`], [`detached()`] |
 //!
 //! Presets return builders, so you can customize any setting:
 //!
@@ -104,7 +104,7 @@
 //! [`fast()`]: timelimiter::TimeLimiterLayer::fast
 //! [tl_standard]: timelimiter::TimeLimiterLayer::standard
 //! [`slow()`]: timelimiter::TimeLimiterLayer::slow
-//! [`streaming()`]: timelimiter::TimeLimiterLayer::streaming
+//! [`detached()`]: timelimiter::TimeLimiterLayer::detached
 //!
 //! # Resilience Patterns
 //!

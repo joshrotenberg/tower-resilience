@@ -1771,7 +1771,7 @@ pub mod time_limiter {
     //! let fast = TimeLimiterLayer::fast().build();        // 1s, cancel on timeout
     //! let standard = TimeLimiterLayer::standard().build(); // 5s, cancel on timeout
     //! let slow = TimeLimiterLayer::slow().build();         // 30s, cancel on timeout
-    //! let stream = TimeLimiterLayer::streaming().build();  // 60s, no cancellation
+    //! let detached = TimeLimiterLayer::detached().build(); // 60s, continue call in background
     //! # }
     //! ```
     //!

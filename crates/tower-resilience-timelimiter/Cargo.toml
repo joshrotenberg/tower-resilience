@@ -22,8 +22,14 @@ metrics = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
+bytes = "1"
+http = "1"
+http-body = "1"
+http-body-util = "0.1"
+pin-project-lite = { workspace = true }
 tokio = { workspace = true, features = ["full", "test-util"] }
 tower = { workspace = true, features = ["util"] }
+tower-http = { version = "0.7", features = ["timeout"] }
 tower-resilience-core = { workspace = true, features = ["testing"] }
 
 [features]
