@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Define `burst(rate, size)` as a continuously replenished token bucket whose
+  sustained rate remains `rate` and whose total stored capacity is
+  `rate + size`.
+
+### Fixed
+
+- Retry contended admissions until a permit is actually consumed, using one
+  cancellation-safe total timeout across all waits.
+- Reject zero limits, zero refresh periods, and overflowing burst capacities
+  during construction.
+
 ## [0.11.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-ratelimiter-v0.10.1...tower-resilience-ratelimiter-v0.11.0) - 2026-08-17
 
 ### Other

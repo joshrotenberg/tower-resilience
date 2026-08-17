@@ -46,10 +46,11 @@ impl RateLimiterHandle {
     ///
     /// A value of 1.0 means all permits are consumed.
     pub fn utilization(&self) -> f64 {
-        let limit = self.config.limit_for_period;
-        if limit == 0 {
-            return 0.0;
-        }
+        let limit = self
+            .config
+            .limit_for_period
+            .checked_add(self.config.burst_size.unwrap_or(0))
+            .expect("validated rate limiter capacity");
         let available = self.available_permits();
         let used = limit.saturating_sub(available);
         used as f64 / limit as f64
@@ -58,6 +59,21 @@ impl RateLimiterHandle {
     /// Returns the configured limit per period.
     pub fn limit_for_period(&self) -> usize {
         self.config.limit_for_period
+    }
+
+    /// Returns the additional token-bucket burst credit.
+    ///
+    /// This is zero for fixed and sliding-window limiters.
+    pub fn burst_size(&self) -> usize {
+        self.config.burst_size.unwrap_or(0)
+    }
+
+    /// Returns the maximum number of permits that can accumulate.
+    pub fn capacity(&self) -> usize {
+        self.config
+            .limit_for_period
+            .checked_add(self.config.burst_size.unwrap_or(0))
+            .expect("validated rate limiter capacity")
     }
 }
 

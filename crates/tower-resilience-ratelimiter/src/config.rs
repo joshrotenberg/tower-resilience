@@ -59,6 +59,7 @@ pub struct RateLimiterConfig {
     pub(crate) refresh_period: Duration,
     pub(crate) timeout_duration: Duration,
     pub(crate) window_type: WindowType,
+    pub(crate) burst_size: Option<usize>,
     pub(crate) backpressure: bool,
     pub(crate) event_listeners: EventListeners<RateLimiterEvent>,
     pub(crate) name: String,
@@ -70,6 +71,7 @@ pub struct RateLimiterConfigBuilder {
     refresh_period: Duration,
     timeout_duration: Duration,
     window_type: WindowType,
+    burst_size: Option<usize>,
     backpressure: bool,
     event_listeners: EventListeners<RateLimiterEvent>,
     name: String,
@@ -96,6 +98,7 @@ impl RateLimiterConfigBuilder {
             refresh_period: Duration::from_secs(1),
             timeout_duration: Duration::from_millis(100),
             window_type: WindowType::default(),
+            burst_size: None,
             backpressure: false,
             event_listeners: EventListeners::new(),
             name: "<unnamed>".to_string(),
@@ -113,7 +116,9 @@ impl RateLimiterConfigBuilder {
 
     /// Sets the duration of the refresh period.
     ///
-    /// After each period, the available permits are reset to limit_for_period.
+    /// For fixed and sliding windows, this is the window duration. For a token
+    /// bucket, `limit_for_period` tokens are replenished continuously over this
+    /// duration.
     pub fn refresh_period(mut self, duration: Duration) -> Self {
         self.refresh_period = duration;
         self
@@ -181,7 +186,6 @@ impl RateLimiterConfigBuilder {
     ///
     /// - [`WindowType::SlidingCounter`]: Uses weighted averaging between buckets.
     ///   Approximate sliding window with O(1) memory.
-    ///
     /// # Example
     /// ```rust,no_run
     /// use tower_resilience_ratelimiter::{RateLimiterLayer, WindowType};
@@ -196,6 +200,22 @@ impl RateLimiterConfigBuilder {
     /// ```
     pub fn window_type(mut self, window_type: WindowType) -> Self {
         self.window_type = window_type;
+        self.burst_size = None;
+        self
+    }
+
+    /// Configures additional token-bucket burst credit.
+    ///
+    /// This selects token-bucket admission instead of a window algorithm. The
+    /// bucket capacity is `limit_for_period + burst_size`, while tokens are
+    /// replenished at only `limit_for_period` per `refresh_period`. Thus burst
+    /// credit can be earned back while idle but does not increase the sustained
+    /// rate. Calling [`Self::window_type`] afterwards selects that window again.
+    ///
+    /// A value of zero is valid and creates a token bucket with no additional
+    /// credit.
+    pub fn burst_size(mut self, burst_size: usize) -> Self {
+        self.burst_size = Some(burst_size);
         self
     }
 
@@ -348,6 +368,7 @@ impl RateLimiterConfigBuilder {
             config.limit_for_period,
             config.refresh_period,
             config.timeout_duration,
+            config.burst_size,
         );
 
         let config = std::sync::Arc::new(config);
@@ -366,11 +387,26 @@ impl RateLimiterConfigBuilder {
     }
 
     fn into_config(self) -> RateLimiterConfig {
+        assert!(
+            self.limit_for_period > 0,
+            "limit_for_period must be greater than zero"
+        );
+        assert!(
+            !self.refresh_period.is_zero(),
+            "refresh_period must be greater than zero"
+        );
+        if let Some(burst_size) = self.burst_size {
+            self.limit_for_period
+                .checked_add(burst_size)
+                .expect("limit_for_period + burst_size must not overflow");
+        }
+
         RateLimiterConfig {
             limit_for_period: self.limit_for_period,
             refresh_period: self.refresh_period,
             timeout_duration: self.timeout_duration,
             window_type: self.window_type,
+            burst_size: self.burst_size,
             backpressure: self.backpressure,
             event_listeners: self.event_listeners,
             name: self.name,
@@ -421,7 +457,32 @@ mod tests {
 
     #[test]
     fn test_preset_burst() {
-        let _layer = RateLimiterLayer::burst(100, 50).build();
+        let (layer, handle) = RateLimiterLayer::burst(100, 50).build_with_handle();
+        assert_eq!(layer.config.burst_size, Some(50));
+        assert_eq!(handle.limit_for_period(), 100);
+        assert_eq!(handle.burst_size(), 50);
+        assert_eq!(handle.capacity(), 150);
+        assert_eq!(handle.available_permits(), 150);
+    }
+
+    #[test]
+    #[should_panic(expected = "limit_for_period must be greater than zero")]
+    fn test_zero_limit_is_rejected_at_build() {
+        let _ = RateLimiterLayer::builder().limit_for_period(0).build();
+    }
+
+    #[test]
+    #[should_panic(expected = "refresh_period must be greater than zero")]
+    fn test_zero_refresh_period_is_rejected_at_build() {
+        let _ = RateLimiterLayer::builder()
+            .refresh_period(Duration::ZERO)
+            .build();
+    }
+
+    #[test]
+    #[should_panic(expected = "limit_for_period + burst_size must not overflow")]
+    fn test_overflowing_burst_capacity_is_rejected_at_build() {
+        let _ = RateLimiterLayer::burst(usize::MAX, 1).build();
     }
 
     #[test]

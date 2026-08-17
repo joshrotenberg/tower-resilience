@@ -123,8 +123,11 @@ impl RateLimiterLayer {
     /// - `burst_size` additional burst capacity above the sustained rate
     /// - 100ms timeout waiting for permits
     ///
-    /// This uses a sliding window to smooth out the rate limiting while
-    /// allowing short bursts of traffic.
+    /// This uses a continuously replenished token bucket. The bucket starts
+    /// with `rate_per_second + burst_size` tokens and is capped at that value,
+    /// but replenishes at only `rate_per_second` tokens per second. An idle
+    /// limiter can therefore admit the documented burst without raising its
+    /// sustained rate.
     ///
     /// # Examples
     ///
@@ -137,10 +140,10 @@ impl RateLimiterLayer {
     pub fn burst(rate_per_second: usize, burst_size: usize) -> crate::RateLimiterConfigBuilder {
         use std::time::Duration;
         Self::builder()
-            .limit_for_period(rate_per_second + burst_size)
+            .limit_for_period(rate_per_second)
             .refresh_period(Duration::from_secs(1))
             .timeout_duration(Duration::from_millis(100))
-            .window_type(crate::WindowType::SlidingCounter)
+            .burst_size(burst_size)
     }
 }
 
