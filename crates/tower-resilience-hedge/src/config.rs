@@ -2,6 +2,7 @@
 
 use crate::events::HedgeEvent;
 use crate::layer::HedgeLayer;
+use crate::policy::{AlwaysHedge, HedgePredicate};
 use std::sync::Arc;
 use std::time::Duration;
 use tower_resilience_core::{EventListener, EventListeners};
@@ -78,22 +79,70 @@ impl Default for HedgeConfig {
 ///     .max_hedged_attempts(3)
 ///     .build();
 /// ```
-pub struct HedgeConfigBuilder {
+pub struct HedgeConfigBuilder<P = AlwaysHedge> {
     config: HedgeConfig,
+    policy: P,
 }
 
-impl Default for HedgeConfigBuilder {
+impl Default for HedgeConfigBuilder<AlwaysHedge> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl HedgeConfigBuilder {
+impl HedgeConfigBuilder<AlwaysHedge> {
     /// Create a new builder with default settings.
     pub fn new() -> Self {
         Self {
             config: HedgeConfig::default(),
+            policy: AlwaysHedge,
         }
+    }
+}
+
+impl<P> HedgeConfigBuilder<P> {
+    /// Set a custom request eligibility policy.
+    ///
+    /// The policy must implement [`crate::HedgePolicy<Req>`] for the wrapped
+    /// service's request type. Most callers can use [`Self::eligible_if`]
+    /// instead of defining a policy type.
+    pub fn policy<Q>(self, policy: Q) -> HedgeConfigBuilder<Q> {
+        HedgeConfigBuilder {
+            config: self.config,
+            policy,
+        }
+    }
+
+    /// Set a typed predicate that decides whether each request is safe to hedge.
+    ///
+    /// Ineligible requests are sent exactly once through the primary service;
+    /// no hedge attempts are started. The predicate should normally recognize
+    /// idempotent operations or requests carrying a downstream idempotency key.
+    ///
+    /// The default policy is [`AlwaysHedge`], which preserves historical
+    /// behavior and assumes every request is safe to execute concurrently.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower_resilience_hedge::HedgeLayer;
+    ///
+    /// #[derive(Clone)]
+    /// struct Request {
+    ///     is_idempotent: bool,
+    /// }
+    ///
+    /// let layer = HedgeLayer::builder()
+    ///     .eligible_if(|request: &Request| request.is_idempotent)
+    ///     .max_hedged_attempts(3)
+    ///     .build();
+    /// ```
+    pub fn eligible_if<Req, F>(self, predicate: F) -> HedgeConfigBuilder<HedgePredicate<Req>>
+    where
+        Req: 'static,
+        F: Fn(&Req) -> bool + Send + Sync + 'static,
+    {
+        self.policy(HedgePredicate::new(predicate))
     }
 
     /// Set the name for this hedge instance (used in metrics/tracing).
@@ -219,7 +268,7 @@ impl HedgeConfigBuilder {
     }
 
     /// Build the [`HedgeLayer`].
-    pub fn build(self) -> HedgeLayer {
-        HedgeLayer::from_config(self.config)
+    pub fn build(self) -> HedgeLayer<P> {
+        HedgeLayer::from_config(self.config, self.policy)
     }
 }

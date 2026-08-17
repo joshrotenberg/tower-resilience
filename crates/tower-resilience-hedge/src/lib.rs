@@ -94,9 +94,38 @@
 //!
 //! # Cancellation
 //!
-//! When one request succeeds, all other in-flight requests are cancelled
-//! by dropping their futures. This relies on the inner service supporting
-//! cooperative cancellation.
+//! Attempt futures are owned by the returned call future. When an attempt
+//! succeeds, all losing futures are dropped before the success event is
+//! emitted or the response is returned. Dropping the caller's future likewise
+//! drops every attempt and emits no terminal success or failure event.
+//!
+//! Future cancellation is cooperative: dropping prevents further polling, but
+//! it cannot undo side effects the downstream service already committed.
+//!
+//! # Eligibility and idempotency
+//!
+//! The default [`AlwaysHedge`] policy preserves historical behavior by
+//! assuming every request is safe to execute more than once concurrently. For
+//! a service that accepts both idempotent and non-idempotent operations,
+//! configure a request predicate:
+//!
+//! ```rust
+//! use tower_resilience_hedge::HedgeLayer;
+//!
+//! #[derive(Clone)]
+//! struct Request {
+//!     idempotent: bool,
+//! }
+//!
+//! let layer = HedgeLayer::builder()
+//!     .eligible_if(|request: &Request| request.idempotent)
+//!     .max_hedged_attempts(3)
+//!     .build();
+//! ```
+//!
+//! An ineligible request executes exactly once as the primary and never emits
+//! a [`HedgeEvent::HedgeStarted`] event. Eligibility should normally require
+//! an intrinsically idempotent operation or a downstream idempotency key.
 //!
 //! # Type Requirements
 //!
@@ -117,13 +146,16 @@ mod config;
 mod error;
 mod events;
 mod layer;
+mod policy;
 
 pub use config::{HedgeConfig, HedgeConfigBuilder, HedgeDelay};
 pub use error::HedgeError;
 pub use events::HedgeEvent;
 pub use layer::HedgeLayer;
+pub use policy::{AlwaysHedge, HedgePolicy, HedgePredicate};
 
 use futures::future::BoxFuture;
+use futures::stream::{FuturesUnordered, StreamExt};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
@@ -135,39 +167,50 @@ use tower::{Service, ServiceExt};
 /// It fires additional "hedge" requests after a configurable delay and returns
 /// whichever request completes first successfully.
 ///
-/// The type parameter is just the inner service type - request, response, and
-/// error types are derived from the service's associated types.
-pub struct Hedge<S> {
+/// The first type parameter is the inner service. The policy parameter defaults
+/// to [`AlwaysHedge`] and is inferred when `eligible_if` is configured; request,
+/// response, and error types are derived from the service implementation.
+pub struct Hedge<S, P = AlwaysHedge> {
     inner: S,
     config: Arc<HedgeConfig>,
+    policy: Arc<P>,
 }
 
-impl<S> Hedge<S> {
+impl<S> Hedge<S, AlwaysHedge> {
     /// Create a new Hedge service with the given configuration.
     pub fn new(inner: S, config: HedgeConfig) -> Self {
+        Self::with_policy(inner, config, Arc::new(AlwaysHedge))
+    }
+}
+
+impl<S, P> Hedge<S, P> {
+    pub(crate) fn with_policy(inner: S, config: HedgeConfig, policy: Arc<P>) -> Self {
         Self {
             inner,
             config: Arc::new(config),
+            policy,
         }
     }
 }
 
-impl<S: Clone> Clone for Hedge<S> {
+impl<S: Clone, P> Clone for Hedge<S, P> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
             config: Arc::clone(&self.config),
+            policy: Arc::clone(&self.policy),
         }
     }
 }
 
-impl<S, Req> Service<Req> for Hedge<S>
+impl<S, Req, P> Service<Req> for Hedge<S, P>
 where
     S: Service<Req> + Clone + Send + 'static,
     S::Response: Send + Sync + 'static,
     S::Error: Clone + Send + Sync + 'static,
     S::Future: Send,
     Req: Clone + Send + Sync + 'static,
+    P: HedgePolicy<Req>,
 {
     type Response = S::Response;
     type Error = HedgeError<S::Error>;
@@ -179,19 +222,51 @@ where
 
     fn call(&mut self, req: Req) -> Self::Future {
         let config = Arc::clone(&self.config);
+        let policy = Arc::clone(&self.policy);
         let inner = self.inner.clone();
         // Replace the clone we just made with the ready service
         let inner = std::mem::replace(&mut self.inner, inner);
 
-        Box::pin(async move { execute_with_hedging(inner, req, config).await })
+        Box::pin(async move { execute_with_hedging(inner, req, config, policy).await })
     }
 }
 
-/// Execute the request with hedging strategy
-async fn execute_with_hedging<S, Req>(
+type AttemptFuture<R, E> = BoxFuture<'static, (usize, Result<R, E>)>;
+
+fn attempt_future<S, Req>(
+    mut service: S,
+    request: Req,
+    attempt: usize,
+    already_ready: bool,
+) -> AttemptFuture<S::Response, S::Error>
+where
+    S: Service<Req> + Send + 'static,
+    S::Response: Send + 'static,
+    S::Error: Send + 'static,
+    S::Future: Send,
+    Req: Send + 'static,
+{
+    Box::pin(async move {
+        let result = if already_ready {
+            service.call(request).await
+        } else {
+            // Clones do not inherit readiness. Every hedge must drive its own
+            // clone to readiness before consuming it with `call`. See #293.
+            match service.ready().await {
+                Ok(service) => service.call(request).await,
+                Err(error) => Err(error),
+            }
+        };
+        (attempt, result)
+    })
+}
+
+/// Execute the request with the configured hedging strategy.
+async fn execute_with_hedging<S, Req, P>(
     service: S,
     req: Req,
     config: Arc<HedgeConfig>,
+    policy: Arc<P>,
 ) -> Result<S::Response, HedgeError<S::Error>>
 where
     S: Service<Req> + Clone + Send + 'static,
@@ -199,10 +274,15 @@ where
     S::Error: Clone + Send + 'static,
     S::Future: Send,
     Req: Clone + Send + 'static,
+    P: HedgePolicy<Req>,
 {
-    use tokio::sync::mpsc;
-
-    let max_attempts = config.max_hedged_attempts;
+    // An ineligible request follows the same one-attempt success/error path as
+    // `max_hedged_attempts(1)`, but is never cloned or fanned out.
+    let max_attempts = if policy.is_eligible(&req) {
+        config.max_hedged_attempts
+    } else {
+        1
+    };
     let start = Instant::now();
 
     // Emit primary started event
@@ -211,205 +291,160 @@ where
         timestamp: Instant::now(),
     });
 
-    // Channel to collect results from all attempts
-    let (tx, mut rx) = mpsc::channel::<(usize, Result<S::Response, S::Error>)>(max_attempts);
+    // Keep every attempt future owned by this call future. Dropping the caller
+    // future or this collection cancels work synchronously; no detached Tokio
+    // tasks survive a winner or caller cancellation.
+    let mut attempts: FuturesUnordered<AttemptFuture<S::Response, S::Error>> =
+        FuturesUnordered::new();
 
-    // `service` is the readied receiver moved out of `self.inner` by the
-    // calling `Service::call`. Clone for the hedge template *before* moving
-    // it into the primary spawn -- each subsequent hedge spawn must drive
-    // `poll_ready` on its own clone before calling, since `Clone` does not
-    // propagate readiness for stateful services. See #293.
-    let hedge_template = service.clone();
+    let hedge_template = (max_attempts > 1).then(|| service.clone());
+    let mut request = Some(req);
+    let primary_request = if max_attempts > 1 {
+        request
+            .as_ref()
+            .expect("hedged request must be available")
+            .clone()
+    } else {
+        request.take().expect("primary request must be available")
+    };
+    attempts.push(attempt_future(service, primary_request, 0, true));
 
-    // Spawn primary request using the readied receiver directly.
-    let mut primary = service;
-    let req_clone = req.clone();
-    let tx_clone = tx.clone();
-    tokio::spawn(async move {
-        let result = primary.call(req_clone).await;
-        let _ = tx_clone.send((0, result)).await;
-    });
-
-    // Track spawned hedge tasks
-    let mut hedges_spawned: usize = 0;
+    let mut hedges_started = 0usize;
+    let mut hedges_in_flight = 0usize;
+    let mut primary_in_flight = true;
     let mut primary_error: Option<S::Error> = None;
+    let mut first_hedge_error: Option<S::Error> = None;
 
-    // Get delay for first hedge
     let first_delay = config.delay.get_delay(1);
+    let mut delay_future = match first_delay {
+        Some(delay) if max_attempts > 1 && delay > Duration::ZERO => {
+            Some(Box::pin(tokio::time::sleep(delay)))
+        }
+        _ => None,
+    };
 
-    // If we have more attempts and there's a delay, set up hedge timing
-    if max_attempts > 1 {
-        match first_delay {
-            Some(delay) if delay > Duration::ZERO => {
-                // Latency mode: wait for delay or result
-                let mut delay_fut = std::pin::pin!(tokio::time::sleep(delay));
-
-                loop {
-                    tokio::select! {
-                        biased;
-
-                        // Check for results
-                        Some((attempt, result)) = rx.recv() => {
-                            match &result {
-                                Ok(_) => {
-                                    let duration = start.elapsed();
-                                    if attempt == 0 {
-                                        config.listeners.emit(&HedgeEvent::PrimarySucceeded {
-                                            name: config.name.clone(),
-                                            duration,
-                                            hedges_cancelled: hedges_spawned,
-                                            timestamp: Instant::now(),
-                                        });
-                                    } else {
-                                        config.listeners.emit(&HedgeEvent::HedgeSucceeded {
-                                            name: config.name.clone(),
-                                            attempt,
-                                            duration,
-                                            primary_cancelled: true,
-                                            timestamp: Instant::now(),
-                                        });
-                                    }
-                                    return result.map_err(HedgeError::Inner);
-                                }
-                                Err(e) => {
-                                    // Store error, continue waiting for other attempts
-                                    if attempt == 0 {
-                                        primary_error = Some(e.clone());
-                                    }
-                                    // Check if all attempts exhausted
-                                    if hedges_spawned + 1 >= max_attempts {
-                                        // All spawned, check if this was the last result
-                                        config.listeners.emit(&HedgeEvent::AllFailed {
-                                            name: config.name.clone(),
-                                            attempts: hedges_spawned + 1,
-                                            timestamp: Instant::now(),
-                                        });
-                                        return Err(HedgeError::AllAttemptsFailed(
-                                            primary_error.unwrap_or_else(|| e.clone())
-                                        ));
-                                    }
-                                }
-                            }
-                        }
-
-                        // Delay elapsed, spawn hedge
-                        _ = &mut delay_fut, if hedges_spawned + 1 < max_attempts => {
-                            hedges_spawned += 1;
-                            let attempt_num = hedges_spawned;
-
-                            config.listeners.emit(&HedgeEvent::HedgeStarted {
-                                name: config.name.clone(),
-                                attempt: attempt_num,
-                                delay,
-                                timestamp: Instant::now(),
-                            });
-
-                            let mut svc = hedge_template.clone();
-                            let r = req.clone();
-                            let tx_c = tx.clone();
-                            tokio::spawn(async move {
-                                // Drive poll_ready on the fresh clone before
-                                // calling; clones do not inherit readiness.
-                                let result = match svc.ready().await {
-                                    Ok(svc) => svc.call(r).await,
-                                    Err(e) => Err(e),
-                                };
-                                let _ = tx_c.send((attempt_num, result)).await;
-                            });
-
-                            // Set up next delay if more hedges available
-                            if hedges_spawned + 1 < max_attempts {
-                                if let Some(next_delay) = config.delay.get_delay(hedges_spawned + 1) {
-                                    delay_fut.set(tokio::time::sleep(next_delay));
-                                }
-                            }
-                        }
-
-                        else => {
-                            // No more hedges to spawn, just wait for results
-                            if let Some((attempt, result)) = rx.recv().await {
-                                match &result {
-                                    Ok(_) => {
-                                        let duration = start.elapsed();
-                                        if attempt == 0 {
-                                            config.listeners.emit(&HedgeEvent::PrimarySucceeded {
-                                                name: config.name.clone(),
-                                                duration,
-                                                hedges_cancelled: hedges_spawned,
-                                                timestamp: Instant::now(),
-                                            });
-                                        } else {
-                                            config.listeners.emit(&HedgeEvent::HedgeSucceeded {
-                                                name: config.name.clone(),
-                                                attempt,
-                                                duration,
-                                                primary_cancelled: attempt != 0,
-                                                timestamp: Instant::now(),
-                                            });
-                                        }
-                                        return result.map_err(HedgeError::Inner);
-                                    }
-                                    Err(e) => {
-                                        if attempt == 0 && primary_error.is_none() {
-                                            primary_error = Some(e.clone());
-                                        }
-                                    }
-                                }
-                            } else {
-                                // Channel closed, all senders dropped
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            _ => {
-                // Parallel mode: spawn all hedges immediately
-                for i in 1..max_attempts {
-                    hedges_spawned += 1;
-
-                    config.listeners.emit(&HedgeEvent::HedgeStarted {
-                        name: config.name.clone(),
-                        attempt: i,
-                        delay: Duration::ZERO,
-                        timestamp: Instant::now(),
-                    });
-
-                    let mut svc = hedge_template.clone();
-                    let r = req.clone();
-                    let tx_c = tx.clone();
-                    tokio::spawn(async move {
-                        // Drive poll_ready on the fresh clone before calling;
-                        // clones do not inherit readiness.
-                        let result = match svc.ready().await {
-                            Ok(svc) => svc.call(r).await,
-                            Err(e) => Err(e),
-                        };
-                        let _ = tx_c.send((i, result)).await;
-                    });
-                }
-            }
+    // A zero/absent first delay is parallel mode: register every attempt
+    // before polling for a result.
+    if max_attempts > 1 && delay_future.is_none() {
+        for attempt in 1..max_attempts {
+            config.listeners.emit(&HedgeEvent::HedgeStarted {
+                name: config.name.clone(),
+                attempt,
+                delay: Duration::ZERO,
+                timestamp: Instant::now(),
+            });
+            attempts.push(attempt_future(
+                hedge_template
+                    .as_ref()
+                    .expect("hedge service template must be available")
+                    .clone(),
+                request
+                    .as_ref()
+                    .expect("hedged request must be available")
+                    .clone(),
+                attempt,
+                false,
+            ));
+            hedges_started += 1;
+            hedges_in_flight += 1;
         }
     }
 
-    // Drop our sender so channel closes when all tasks complete
-    drop(tx);
+    enum RaceResult<R, E> {
+        Attempt(usize, Result<R, E>),
+        StartHedge,
+    }
 
-    // Wait for first success or all failures
-    let mut attempts_received: usize = 0;
-    let total_attempts = hedges_spawned + 1;
+    while !attempts.is_empty() || hedges_started + 1 < max_attempts {
+        let next = if let Some(delay) = delay_future.as_mut() {
+            tokio::select! {
+                biased;
+                result = attempts.next(), if !attempts.is_empty() => {
+                    let (attempt, result) = result.expect("an in-flight attempt must resolve");
+                    RaceResult::Attempt(attempt, result)
+                }
+                _ = delay.as_mut() => RaceResult::StartHedge,
+            }
+        } else {
+            let (attempt, result) = attempts
+                .next()
+                .await
+                .expect("at least one attempt must remain");
+            RaceResult::Attempt(attempt, result)
+        };
 
-    while let Some((attempt, result)) = rx.recv().await {
-        attempts_received += 1;
+        match next {
+            RaceResult::StartHedge => {
+                hedges_started += 1;
+                hedges_in_flight += 1;
+                let attempt = hedges_started;
+                let elapsed_delay = config
+                    .delay
+                    .get_delay(attempt)
+                    .expect("hedge delays are defined for every attempt");
 
-        match result {
-            Ok(res) => {
+                config.listeners.emit(&HedgeEvent::HedgeStarted {
+                    name: config.name.clone(),
+                    attempt,
+                    delay: elapsed_delay,
+                    timestamp: Instant::now(),
+                });
+                attempts.push(attempt_future(
+                    hedge_template
+                        .as_ref()
+                        .expect("hedge service template must be available")
+                        .clone(),
+                    request
+                        .as_ref()
+                        .expect("hedged request must be available")
+                        .clone(),
+                    attempt,
+                    false,
+                ));
+
+                delay_future = if hedges_started + 1 < max_attempts {
+                    config
+                        .delay
+                        .get_delay(hedges_started + 1)
+                        .map(|delay| Box::pin(tokio::time::sleep(delay)))
+                } else {
+                    None
+                };
+            }
+            RaceResult::Attempt(attempt, result) => {
+                if attempt == 0 {
+                    primary_in_flight = false;
+                } else {
+                    hedges_in_flight = hedges_in_flight.saturating_sub(1);
+                }
+
+                let response = match result {
+                    Ok(response) => response,
+                    Err(error) => {
+                        if attempt == 0 {
+                            primary_error = Some(error);
+                        } else if first_hedge_error.is_none() {
+                            first_hedge_error = Some(error);
+                        }
+                        continue;
+                    }
+                };
+
                 let duration = start.elapsed();
+                let hedges_cancelled = hedges_in_flight;
+                let primary_cancelled = primary_in_flight;
+
+                // Cancellation is synchronous: event listeners observing the
+                // terminal success see every losing call future already
+                // dropped, and no loser can subsequently report completion.
+                drop(attempts);
+                drop(delay_future);
+
                 if attempt == 0 {
                     config.listeners.emit(&HedgeEvent::PrimarySucceeded {
                         name: config.name.clone(),
                         duration,
-                        hedges_cancelled: hedges_spawned.saturating_sub(attempts_received - 1),
+                        hedges_cancelled,
                         timestamp: Instant::now(),
                     });
                 } else {
@@ -417,16 +452,11 @@ where
                         name: config.name.clone(),
                         attempt,
                         duration,
-                        primary_cancelled: true,
+                        primary_cancelled,
                         timestamp: Instant::now(),
                     });
                 }
-                return Ok(res);
-            }
-            Err(e) => {
-                if primary_error.is_none() {
-                    primary_error = Some(e);
-                }
+                return Ok(response);
             }
         }
     }
@@ -434,12 +464,14 @@ where
     // All attempts failed
     config.listeners.emit(&HedgeEvent::AllFailed {
         name: config.name.clone(),
-        attempts: total_attempts,
+        attempts: max_attempts,
         timestamp: Instant::now(),
     });
 
     Err(HedgeError::AllAttemptsFailed(
-        primary_error.expect("at least one error should exist"),
+        primary_error
+            .or(first_hedge_error)
+            .expect("all completed attempts must yield at least one error"),
     ))
 }
 
@@ -481,9 +513,6 @@ mod tests {
             .await;
         assert!(result.is_ok());
 
-        // Give a moment for any hedges to complete
-        tokio::time::sleep(Duration::from_millis(10)).await;
-
         // Should only have called once since primary was fast
         assert_eq!(call_count.load(Ordering::SeqCst), 1);
     }
@@ -518,10 +547,7 @@ mod tests {
             .await;
         assert!(result.is_ok());
 
-        // Give time for all spawned tasks to increment counter
-        tokio::time::sleep(Duration::from_millis(100)).await;
-
-        // All 3 should have been called in parallel mode
+        // Every parallel attempt was polled before the first one completed.
         assert_eq!(call_count.load(Ordering::SeqCst), 3);
     }
 
@@ -564,8 +590,7 @@ mod tests {
         // generous (~3x expected) for CI scheduling slop. See #301.
         assert!(elapsed < Duration::from_millis(300));
 
-        // Both should have been called
-        tokio::time::sleep(Duration::from_millis(10)).await;
+        // Both were called; the slow primary was dropped before return.
         assert_eq!(call_count.load(Ordering::SeqCst), 2);
     }
 

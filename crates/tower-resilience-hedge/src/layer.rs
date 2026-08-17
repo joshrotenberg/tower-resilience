@@ -1,13 +1,17 @@
 //! Tower Layer implementation for hedging.
 
 use crate::config::{HedgeConfig, HedgeConfigBuilder};
+use crate::policy::AlwaysHedge;
 use crate::Hedge;
+use std::sync::Arc;
 use std::time::Duration;
 use tower_layer::Layer;
 
 /// A Tower [`Layer`] that applies hedging to a service.
 ///
-/// No type parameters needed - types are inferred from the service.
+/// No type parameters are needed for the default [`AlwaysHedge`] policy.
+/// Calling [`HedgeConfigBuilder::eligible_if`] returns a layer carrying a
+/// typed request predicate.
 ///
 /// See the [crate-level documentation](crate) for more details.
 ///
@@ -23,12 +27,21 @@ use tower_layer::Layer;
 ///     .max_hedged_attempts(3)
 ///     .build();
 /// ```
-#[derive(Clone)]
-pub struct HedgeLayer {
+pub struct HedgeLayer<P = AlwaysHedge> {
     config: HedgeConfig,
+    policy: Arc<P>,
 }
 
-impl HedgeLayer {
+impl<P> Clone for HedgeLayer<P> {
+    fn clone(&self) -> Self {
+        Self {
+            config: self.config.clone(),
+            policy: Arc::clone(&self.policy),
+        }
+    }
+}
+
+impl HedgeLayer<AlwaysHedge> {
     /// Create a new `HedgeLayer` with the given delay.
     ///
     /// This creates a layer that will fire a single hedge request
@@ -141,17 +154,22 @@ impl HedgeLayer {
     pub fn builder() -> HedgeConfigBuilder {
         HedgeConfigBuilder::new()
     }
+}
 
+impl<P> HedgeLayer<P> {
     /// Create a `HedgeLayer` from a configuration.
-    pub(crate) fn from_config(config: HedgeConfig) -> Self {
-        Self { config }
+    pub(crate) fn from_config(config: HedgeConfig, policy: P) -> Self {
+        Self {
+            config,
+            policy: Arc::new(policy),
+        }
     }
 }
 
-impl<S> Layer<S> for HedgeLayer {
-    type Service = Hedge<S>;
+impl<S, P> Layer<S> for HedgeLayer<P> {
+    type Service = Hedge<S, P>;
 
     fn layer(&self, service: S) -> Self::Service {
-        Hedge::new(service, self.config.clone())
+        Hedge::with_policy(service, self.config.clone(), Arc::clone(&self.policy))
     }
 }

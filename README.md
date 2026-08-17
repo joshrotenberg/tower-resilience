@@ -416,8 +416,8 @@ let layer = HedgeLayer::builder()
     .max_hedged_attempts(2)
     .build();
 
-// Or fire all requests in parallel (no delay)
-let layer = HedgeLayer::<(), String, MyError>::builder()
+// Fire all eligible requests in parallel (no delay)
+let layer = HedgeLayer::builder()
     .no_delay()
     .max_hedged_attempts(3)
     .build();
@@ -426,6 +426,23 @@ let service = layer.layer(my_service);
 ```
 
 **Note:** Hedge requires `Req: Clone` (requests are cloned for parallel execution) and `E: Clone` (for error handling). If your types don't implement Clone, consider wrapping them in `Arc`.
+
+By default, Hedge assumes every request is safe to execute concurrently. For a
+mixed request type, gate hedging on idempotency (or a downstream idempotency
+key); ineligible requests execute exactly once:
+
+```rust
+let layer = HedgeLayer::builder()
+    .eligible_if(|request: &MyRequest| request.is_idempotent())
+    .delay(Duration::from_millis(100))
+    .max_hedged_attempts(2)
+    .build();
+```
+
+Losing attempt futures are dropped before the winner is returned. Dropping the
+caller's future also drops every attempt and emits no terminal success/failure
+event. Cancellation prevents further polling but cannot roll back side effects
+already committed by the downstream service.
 
 **Full examples:** [hedge.rs](examples/hedge.rs)
 
