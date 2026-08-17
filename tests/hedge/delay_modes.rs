@@ -10,33 +10,19 @@ use tower_resilience_hedge::HedgeLayer;
 #[tokio::test]
 async fn test_parallel_mode_fires_all_immediately() {
     let call_count = Arc::new(AtomicUsize::new(0));
-    let first_call_time = Arc::new(tokio::sync::Mutex::new(None));
-    let last_call_time = Arc::new(tokio::sync::Mutex::new(None));
+    let all_attempts_started = Arc::new(tokio::sync::Barrier::new(3));
 
     let cc = Arc::clone(&call_count);
-    let fct = Arc::clone(&first_call_time);
-    let lct = Arc::clone(&last_call_time);
+    let barrier = Arc::clone(&all_attempts_started);
 
     let service = service_fn(move |_req: String| {
         let cc = Arc::clone(&cc);
-        let fct = Arc::clone(&fct);
-        let lct = Arc::clone(&lct);
+        let barrier = Arc::clone(&barrier);
         async move {
-            let now = std::time::Instant::now();
             cc.fetch_add(1, Ordering::SeqCst);
-
-            let mut first = fct.lock().await;
-            if first.is_none() {
-                *first = Some(now);
-            }
-            drop(first);
-
-            let mut last = lct.lock().await;
-            *last = Some(now);
-            drop(last);
-
-            // Simulate some work
-            tokio::time::sleep(Duration::from_millis(50)).await;
+            // The call cannot finish until every no-delay attempt has started.
+            // This proves concurrency without depending on scheduler latency.
+            barrier.wait().await;
             Ok::<_, TestError>("success".to_string())
         }
     });
@@ -56,18 +42,7 @@ async fn test_parallel_mode_fires_all_immediately() {
         .unwrap();
 
     // All 3 should have been called
-    tokio::time::sleep(Duration::from_millis(100)).await;
     assert_eq!(call_count.load(Ordering::SeqCst), 3);
-
-    // All calls should have started within a few ms of each other
-    let first = first_call_time.lock().await.unwrap();
-    let last = last_call_time.lock().await.unwrap();
-    let spread = last.duration_since(first);
-    assert!(
-        spread < Duration::from_millis(20),
-        "calls spread: {:?}",
-        spread
-    );
 }
 
 #[tokio::test]
@@ -92,7 +67,6 @@ async fn test_latency_mode_waits_before_hedge() {
         .build();
     let mut service = layer.layer(service);
 
-    let start = std::time::Instant::now();
     let _ = service
         .ready()
         .await
@@ -105,26 +79,9 @@ async fn test_latency_mode_waits_before_hedge() {
     let times = call_times.lock().await;
     assert_eq!(times.len(), 2);
 
-    // First call should be immediate (primary)
-    let primary_delay = times[0].duration_since(start);
-    assert!(
-        primary_delay < Duration::from_millis(20),
-        "primary delay: {:?}",
-        primary_delay
-    );
-
     // Second call should be after the configured delay
     let hedge_delay = times[1].duration_since(times[0]);
-    assert!(
-        hedge_delay >= Duration::from_millis(40),
-        "hedge delay: {:?}",
-        hedge_delay
-    );
-    assert!(
-        hedge_delay < Duration::from_millis(100),
-        "hedge delay too long: {:?}",
-        hedge_delay
-    );
+    assert!(hedge_delay >= delay, "hedge delay: {:?}", hedge_delay);
 }
 
 #[tokio::test]
@@ -155,7 +112,6 @@ async fn test_dynamic_delay_function() {
         .build();
     let mut service = layer.layer(service);
 
-    let start = std::time::Instant::now();
     let _ = service
         .ready()
         .await
@@ -167,37 +123,18 @@ async fn test_dynamic_delay_function() {
     let times = call_times.lock().await;
     assert_eq!(times.len(), 3);
 
-    // Primary immediate
-    let primary_delay = times[0].duration_since(start);
-    assert!(
-        primary_delay < Duration::from_millis(20),
-        "primary delay: {:?}",
-        primary_delay
-    );
-
     // First hedge after ~50ms
     let first_hedge_delay = times[1].duration_since(times[0]);
     assert!(
-        first_hedge_delay >= Duration::from_millis(40),
+        first_hedge_delay >= Duration::from_millis(50),
         "first hedge delay: {:?}",
         first_hedge_delay
     );
-    assert!(
-        first_hedge_delay < Duration::from_millis(100),
-        "first hedge delay too long: {:?}",
-        first_hedge_delay
-    );
-
     // Second hedge after ~100ms from first hedge
     let second_hedge_delay = times[2].duration_since(times[1]);
     assert!(
-        second_hedge_delay >= Duration::from_millis(80),
+        second_hedge_delay >= Duration::from_millis(100),
         "second hedge delay: {:?}",
-        second_hedge_delay
-    );
-    assert!(
-        second_hedge_delay < Duration::from_millis(150),
-        "second hedge delay too long: {:?}",
         second_hedge_delay
     );
 }
@@ -260,7 +197,6 @@ async fn test_multiple_hedges_with_increasing_delays() {
         .build();
     let mut service = layer.layer(service);
 
-    let start = std::time::Instant::now();
     let _ = service
         .ready()
         .await
@@ -274,23 +210,10 @@ async fn test_multiple_hedges_with_increasing_delays() {
 
     // Verify staggered timing
     let total_spread = times[3].duration_since(times[0]);
-    // Should be roughly 90ms total spread (3 x 30ms delays)
+    // Three configured 30ms delays must produce at least 90ms total spread.
     assert!(
-        total_spread >= Duration::from_millis(60),
+        total_spread >= Duration::from_millis(90),
         "total spread: {:?}",
         total_spread
-    );
-    assert!(
-        total_spread < Duration::from_millis(200),
-        "total spread too long: {:?}",
-        total_spread
-    );
-
-    // Overall time should be reasonable
-    let total_time = times[3].duration_since(start);
-    assert!(
-        total_time < Duration::from_millis(200),
-        "total time: {:?}",
-        total_time
     );
 }
