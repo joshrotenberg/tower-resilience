@@ -309,7 +309,7 @@ mod tests {
     use tokio::time::sleep;
     use tower::{service_fn, Layer, ServiceExt};
 
-    #[tokio::test]
+    #[tokio::test(start_paused = true)]
     async fn test_success_within_timeout() {
         // No type parameters needed!
         let layer = TimeLimiterLayer::builder()
@@ -328,7 +328,7 @@ mod tests {
         assert_eq!(result.unwrap(), "success");
     }
 
-    #[tokio::test]
+    #[tokio::test(start_paused = true)]
     async fn test_timeout_occurs() {
         let layer = TimeLimiterLayer::builder()
             .timeout_duration(Duration::from_millis(10))
@@ -363,7 +363,7 @@ mod tests {
         assert_eq!(err.into_inner(), Some("inner error"));
     }
 
-    #[tokio::test]
+    #[tokio::test(start_paused = true)]
     async fn test_event_listeners() {
         let success_count = Arc::new(AtomicUsize::new(0));
         let timeout_count = Arc::new(AtomicUsize::new(0));
@@ -400,7 +400,7 @@ mod tests {
         assert_eq!(timeout_count.load(Ordering::SeqCst), 1);
     }
 
-    #[tokio::test]
+    #[tokio::test(start_paused = true)]
     async fn test_per_request_timeout() {
         #[derive(Clone)]
         struct Request {
@@ -446,7 +446,7 @@ mod tests {
         assert!(result.unwrap_err().is_timeout());
     }
 
-    #[tokio::test]
+    #[tokio::test(start_paused = true)]
     async fn test_different_timeouts_per_request() {
         #[derive(Clone)]
         struct Request {
