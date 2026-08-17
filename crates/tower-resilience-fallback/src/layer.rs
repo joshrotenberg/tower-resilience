@@ -25,6 +25,38 @@ impl<Req, Res, E> FallbackLayer<Req, Res, E> {
         FallbackConfigBuilder::new()
     }
 
+    /// Creates a fallback layer backed by an arbitrary Tower service.
+    ///
+    /// This is distinct from [`Self::service`], which preserves the existing
+    /// async-closure API. The concrete backup service is retained without type
+    /// erasure, polled for readiness after primary failure, and shared across
+    /// clones of the returned layer and service.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use tower::{service_fn, Layer, ServiceExt};
+    /// use tower_resilience_fallback::FallbackLayer;
+    ///
+    /// # #[derive(Debug)]
+    /// # struct PrimaryError;
+    /// # async fn example() {
+    /// let primary = service_fn(|request: String| async move {
+    ///     Err::<String, PrimaryError>(PrimaryError)
+    /// });
+    /// let backup = service_fn(|request: String| async move {
+    ///     Ok::<String, std::convert::Infallible>(format!("backup: {request}"))
+    /// });
+    /// let service = FallbackLayer::<String, String, PrimaryError>::tower_service(backup)
+    ///     .layer(primary);
+    ///
+    /// assert_eq!(service.oneshot("request".into()).await.unwrap(), "backup: request");
+    /// # }
+    /// ```
+    pub fn tower_service<B>(backup: B) -> crate::ServiceFallbackLayer<B, Req, Res, E> {
+        crate::ServiceFallbackLayer::new(backup)
+    }
+
     /// Creates a fallback layer that generates a value using a function.
     ///
     /// Unlike [`value`](Self::value), this doesn't require `Res: Clone` since

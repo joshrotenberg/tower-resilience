@@ -715,8 +715,14 @@ pub mod fallback {
     //! ### FromRequestError
     //! Compute fallback from both request and error. Best for request-specific defaults.
     //!
-    //! ### Service
-    //! Delegate to a fallback service. Best for complex fallback logic or secondary backends.
+    //! ### Async Function
+    //! Delegate to an async closure with `FallbackLayer::service`. Best for
+    //! lightweight fallback logic that does not need Tower readiness.
+    //!
+    //! ### Tower Service
+    //! Delegate to a readiness-aware secondary backend with
+    //! `FallbackLayer::tower_service`. Best for stateful Tower services and
+    //! middleware stacks.
     //!
     //! ### Exception
     //! Transform the error instead of providing a response. Best for error normalization.
