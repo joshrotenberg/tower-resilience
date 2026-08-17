@@ -2611,6 +2611,7 @@ dependencies = [
  "metrics",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
  "tower",
  "tower-layer",
  "tower-resilience-core",

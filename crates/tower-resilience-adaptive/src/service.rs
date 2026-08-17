@@ -4,25 +4,38 @@ use crate::ConcurrencyAlgorithm;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
 use std::time::Instant;
-use tokio::sync::Semaphore;
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+use tokio_util::sync::PollSemaphore;
 use tower_service::Service;
+
+#[derive(Debug)]
+struct CapacityState {
+    desired_limit: usize,
+    shrink_debt: usize,
+}
 
 /// A service that applies adaptive concurrency limiting.
 ///
 /// This service dynamically adjusts the number of concurrent requests based
-/// on observed latency and error rates.
+/// on observed latency and error rates. A successful [`Service::poll_ready`]
+/// reserves one shared permit for that clone. Dropping the clone or the future
+/// returned by [`Service::call`] releases the reservation and wakes a waiter.
 pub struct AdaptiveService<S, A> {
     inner: S,
     algorithm: Arc<A>,
-    /// Current limit (tracked separately for dynamic adjustment)
-    current_limit: Arc<AtomicUsize>,
+    /// Serializes changes to the semaphore's logical capacity.
+    capacity: Arc<Mutex<CapacityState>>,
     /// In-flight requests counter
     in_flight: Arc<AtomicUsize>,
     /// Semaphore for limiting concurrency
     semaphore: Arc<Semaphore>,
+    /// Pollable acquisition state local to this clone.
+    poll_semaphore: PollSemaphore,
+    /// Capacity reserved by a successful `poll_ready` call.
+    permit: Option<OwnedSemaphorePermit>,
 }
 
 impl<S, A> AdaptiveService<S, A>
@@ -32,12 +45,18 @@ where
     /// Create a new adaptive service.
     pub fn new(service: S, algorithm: Arc<A>) -> Self {
         let initial_limit = algorithm.limit();
+        let semaphore = Arc::new(Semaphore::new(initial_limit));
         Self {
             inner: service,
             algorithm,
-            current_limit: Arc::new(AtomicUsize::new(initial_limit)),
+            capacity: Arc::new(Mutex::new(CapacityState {
+                desired_limit: initial_limit,
+                shrink_debt: 0,
+            })),
             in_flight: Arc::new(AtomicUsize::new(0)),
-            semaphore: Arc::new(Semaphore::new(initial_limit)),
+            semaphore: Arc::clone(&semaphore),
+            poll_semaphore: PollSemaphore::new(semaphore),
+            permit: None,
         }
     }
 
@@ -65,9 +84,91 @@ where
         Self {
             inner: self.inner.clone(),
             algorithm: Arc::clone(&self.algorithm),
-            current_limit: Arc::clone(&self.current_limit),
+            capacity: Arc::clone(&self.capacity),
             in_flight: Arc::clone(&self.in_flight),
             semaphore: Arc::clone(&self.semaphore),
+            poll_semaphore: PollSemaphore::new(Arc::clone(&self.semaphore)),
+            permit: None,
+        }
+    }
+}
+
+impl<S, A> Drop for AdaptiveService<S, A> {
+    fn drop(&mut self) {
+        if let Some(permit) = self.permit.take() {
+            release_permit(permit, &self.capacity);
+        }
+    }
+}
+
+fn sync_limit<A>(algorithm: &A, semaphore: &Semaphore, capacity: &Mutex<CapacityState>)
+where
+    A: ConcurrencyAlgorithm + ?Sized,
+{
+    let mut state = capacity.lock().expect("adaptive capacity lock poisoned");
+    let limit = algorithm.limit();
+
+    if limit > state.desired_limit {
+        let increase = limit - state.desired_limit;
+        let cancelled_debt = increase.min(state.shrink_debt);
+        state.shrink_debt -= cancelled_debt;
+        semaphore.add_permits(increase - cancelled_debt);
+    } else if limit < state.desired_limit {
+        let decrease = state.desired_limit - limit;
+        let removed = semaphore.forget_permits(decrease);
+        state.shrink_debt += decrease - removed;
+    }
+
+    state.desired_limit = limit;
+}
+
+fn release_permit(permit: OwnedSemaphorePermit, capacity: &Mutex<CapacityState>) {
+    let retire = {
+        let mut state = capacity.lock().expect("adaptive capacity lock poisoned");
+        if state.shrink_debt == 0 {
+            false
+        } else {
+            state.shrink_debt -= 1;
+            true
+        }
+    };
+
+    if retire {
+        permit.forget();
+    }
+}
+
+struct AdmissionGuard<A: ConcurrencyAlgorithm> {
+    algorithm: Arc<A>,
+    capacity: Arc<Mutex<CapacityState>>,
+    in_flight: Arc<AtomicUsize>,
+    semaphore: Arc<Semaphore>,
+    permit: Option<OwnedSemaphorePermit>,
+    completed: bool,
+}
+
+impl<A> AdmissionGuard<A>
+where
+    A: ConcurrencyAlgorithm,
+{
+    fn complete(mut self) {
+        self.completed = true;
+    }
+}
+
+impl<A> Drop for AdmissionGuard<A>
+where
+    A: ConcurrencyAlgorithm,
+{
+    fn drop(&mut self) {
+        if !self.completed {
+            self.algorithm.record_dropped();
+            sync_limit(self.algorithm.as_ref(), &self.semaphore, &self.capacity);
+        }
+
+        self.in_flight.fetch_sub(1, Ordering::SeqCst);
+        if let Some(permit) = self.permit.take() {
+            release_permit(permit, &self.capacity);
         }
     }
 }
@@ -85,65 +186,61 @@ where
     type Future = AdaptiveFuture<S::Response, S::Error>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        // Check if we have capacity
-        let algorithm_limit = self.algorithm.limit();
-        let in_flight = self.in_flight.load(Ordering::Relaxed);
+        sync_limit(self.algorithm.as_ref(), &self.semaphore, &self.capacity);
 
-        if in_flight >= algorithm_limit {
-            // At capacity - wake and try again later
-            cx.waker().wake_by_ref();
-            return Poll::Pending;
+        if self.permit.is_none() {
+            match self.poll_semaphore.poll_acquire(cx) {
+                Poll::Ready(Some(permit)) => self.permit = Some(permit),
+                Poll::Ready(None) => return Poll::Ready(Err(AdaptiveError::LimitReached)),
+                Poll::Pending => return Poll::Pending,
+            }
         }
 
-        // Poll the inner service
-        self.inner.poll_ready(cx).map_err(AdaptiveError::Service)
+        match self.inner.poll_ready(cx) {
+            Poll::Ready(Ok(())) => Poll::Ready(Ok(())),
+            Poll::Ready(Err(error)) => {
+                if let Some(permit) = self.permit.take() {
+                    release_permit(permit, &self.capacity);
+                }
+                Poll::Ready(Err(AdaptiveError::Service(error)))
+            }
+            Poll::Pending => Poll::Pending,
+        }
     }
 
     fn call(&mut self, req: Req) -> Self::Future {
+        let permit = self
+            .permit
+            .take()
+            .expect("AdaptiveService::call requires a successful poll_ready reservation");
         let start = Instant::now();
-        self.in_flight.fetch_add(1, Ordering::Relaxed);
-
-        let future = self.inner.call(req);
-
-        // Adjust semaphore based on algorithm
-        let algorithm_limit = self.algorithm.limit();
-        let current = self.current_limit.load(Ordering::Relaxed);
-        if algorithm_limit > current {
-            let diff = algorithm_limit - current;
-            self.semaphore.add_permits(diff);
-            self.current_limit.store(algorithm_limit, Ordering::Relaxed);
-        } else if algorithm_limit < current {
-            self.current_limit.store(algorithm_limit, Ordering::Relaxed);
-        }
+        self.in_flight.fetch_add(1, Ordering::SeqCst);
 
         let algorithm = Arc::clone(&self.algorithm);
-        let in_flight = Arc::clone(&self.in_flight);
         let semaphore = Arc::clone(&self.semaphore);
-        let current_limit = Arc::clone(&self.current_limit);
+        let capacity = Arc::clone(&self.capacity);
+        let guard = AdmissionGuard {
+            algorithm: Arc::clone(&algorithm),
+            capacity: Arc::clone(&capacity),
+            in_flight: Arc::clone(&self.in_flight),
+            semaphore: Arc::clone(&semaphore),
+            permit: Some(permit),
+            completed: false,
+        };
+        let future = self.inner.call(req);
 
         AdaptiveFuture {
             inner: Box::pin(async move {
                 let result = future.await;
                 let latency = start.elapsed();
 
-                // Decrement in-flight counter
-                in_flight.fetch_sub(1, Ordering::Relaxed);
-
                 match &result {
                     Ok(_) => algorithm.record_success(latency),
                     Err(_) => algorithm.record_failure(),
                 }
 
-                // Adjust semaphore based on new algorithm limit
-                let alg_limit = algorithm.limit();
-                let curr = current_limit.load(Ordering::Relaxed);
-                if alg_limit > curr {
-                    let diff = alg_limit - curr;
-                    semaphore.add_permits(diff);
-                    current_limit.store(alg_limit, Ordering::Relaxed);
-                } else if alg_limit < curr {
-                    current_limit.store(alg_limit, Ordering::Relaxed);
-                }
+                sync_limit(algorithm.as_ref(), &semaphore, &capacity);
+                guard.complete();
 
                 result.map_err(AdaptiveError::Service)
             }),
