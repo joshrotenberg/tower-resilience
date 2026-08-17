@@ -66,6 +66,11 @@ jobs:
         with:
           components: clippy
 
+      # The tonic workspace example compiles protobufs from source. Keep this
+      # explicit until the examples audit in #388 decides whether it remains.
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
       - name: Run clippy
         run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 
