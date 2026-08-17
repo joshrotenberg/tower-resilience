@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-ratelimiter-v0.11.0...tower-resilience-ratelimiter-v0.12.0) - 2026-08-17
+
+### Fixed
+
+- *(ratelimiter)* prevent over-admission under contention ([#394](https://github.com/joshrotenberg/tower-resilience/pull/394))
+- *(hedge)* cancel losing attempts and gate eligibility ([#393](https://github.com/joshrotenberg/tower-resilience/pull/393))
+- *(reconnect)* rebuild failed services from factory ([#391](https://github.com/joshrotenberg/tower-resilience/pull/391))
+
 ### Changed
 
 - Define `burst(rate, size)` as a continuously replenished token bucket whose

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-adaptive-v0.11.0...tower-resilience-adaptive-v0.12.0) - 2026-08-17
+
+### Fixed
+
+- *(hedge)* cancel losing attempts and gate eligibility ([#393](https://github.com/joshrotenberg/tower-resilience/pull/393))
+- *(reconnect)* rebuild failed services from factory ([#391](https://github.com/joshrotenberg/tower-resilience/pull/391))
+
 ## [0.11.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-adaptive-v0.10.1...tower-resilience-adaptive-v0.11.0) - 2026-08-17
 
 ### Fixed

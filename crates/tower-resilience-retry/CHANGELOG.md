@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.11.0...tower-resilience-retry-v0.12.0) - 2026-08-17
+
+### Fixed
+
+- *(hedge)* cancel losing attempts and gate eligibility ([#393](https://github.com/joshrotenberg/tower-resilience/pull/393))
+- *(retry)* poll readiness before retry attempts ([#392](https://github.com/joshrotenberg/tower-resilience/pull/392))
+- *(reconnect)* rebuild failed services from factory ([#391](https://github.com/joshrotenberg/tower-resilience/pull/391))
+
 ### Fixed
 
 - Poll inner service readiness before every retry attempt and propagate readiness errors unchanged ([#362](https://github.com/joshrotenberg/tower-resilience/issues/362))
