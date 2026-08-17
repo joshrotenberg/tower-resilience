@@ -1,4 +1,4 @@
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use futures::future::BoxFuture;
 use std::hint::black_box;
 use std::time::Duration;
@@ -108,6 +108,43 @@ fn bench_bulkhead(c: &mut Criterion) {
                 .await;
             black_box(response)
         });
+    });
+
+    c.bench_function("bulkhead_backpressure_permits_available", |b| {
+        let layer = BulkheadLayer::builder()
+            .max_concurrent_calls(100)
+            .backpressure()
+            .build();
+
+        b.to_async(&runtime).iter_batched(
+            || layer.layer(BaselineService),
+            |mut service| async move {
+                let response = service
+                    .ready()
+                    .await
+                    .unwrap()
+                    .call(black_box(TestRequest(42)))
+                    .await;
+                black_box(response)
+            },
+            BatchSize::SmallInput,
+        );
+    });
+
+    c.bench_function("tower_concurrency_limit_permits_available", |b| {
+        b.to_async(&runtime).iter_batched(
+            || tower::limit::ConcurrencyLimit::new(BaselineService, 100),
+            |mut service| async move {
+                let response = service
+                    .ready()
+                    .await
+                    .unwrap()
+                    .call(black_box(TestRequest(42)))
+                    .await;
+                black_box(response)
+            },
+            BatchSize::SmallInput,
+        );
     });
 }
 

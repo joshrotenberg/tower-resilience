@@ -49,6 +49,8 @@ impl From<tower_resilience_bulkhead::BulkheadError> for ServiceError {
             tower_resilience_bulkhead::BulkheadError::BulkheadFull { .. } => {
                 ServiceError::BulkheadFull
             }
+            tower_resilience_bulkhead::BulkheadError::Closed
+            | tower_resilience_bulkhead::BulkheadError::NotReady => ServiceError::BulkheadFull,
         }
     }
 }

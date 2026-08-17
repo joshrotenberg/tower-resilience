@@ -14,6 +14,12 @@ pub enum BulkheadError {
     /// Timeout waiting for a permit.
     #[error("timeout waiting for bulkhead permit")]
     Timeout,
+    /// The bulkhead has been permanently closed.
+    #[error("bulkhead semaphore is closed")]
+    Closed,
+    /// Backpressure mode was called without a successful readiness reservation.
+    #[error("bulkhead call requires a successful poll_ready reservation")]
+    NotReady,
 }
 
 /// Result type for bulkhead operations.
@@ -112,6 +118,10 @@ impl<E> From<BulkheadError> for ResilienceError<E> {
             } => ResilienceError::BulkheadFull {
                 concurrent_calls: max_concurrent_calls,
                 max_concurrent: max_concurrent_calls,
+            },
+            BulkheadError::Closed | BulkheadError::NotReady => ResilienceError::BulkheadFull {
+                concurrent_calls: 0,
+                max_concurrent: 0,
             },
         }
     }

@@ -108,7 +108,8 @@ impl BulkheadConfigBuilder {
     /// When backpressure mode is enabled:
     /// - `max_wait_duration` is ignored (the service waits indefinitely; callers control
     ///   timeout externally)
-    /// - `BulkheadError::BulkheadFull` and `BulkheadError::Timeout` are never returned
+    /// - capacity never returns `BulkheadError::BulkheadFull` or `BulkheadError::Timeout`
+    /// - `call` requires a successful `poll_ready` reservation
     ///
     /// Default: `false` (rejection mode)
     ///

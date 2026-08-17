@@ -4,52 +4,25 @@ use crate::config::BulkheadConfig;
 use crate::error::{BulkheadError, BulkheadServiceError};
 use crate::events::BulkheadEvent;
 use futures::future::BoxFuture;
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Instant;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
-use tokio::task::JoinHandle;
+use tokio_util::sync::PollSemaphore;
 use tower::Service;
 
 #[cfg(feature = "metrics")]
 use metrics::{counter, gauge, histogram};
-
-/// Wraps a `JoinHandle` so the task is aborted when the handle is dropped.
-///
-/// Used for the in-flight `Semaphore::acquire_owned` task in backpressure mode.
-/// Without this, dropping a `Bulkhead` while a permit acquisition is pending
-/// would leak the spawned task (it would keep running, holding an `Arc` to the
-/// semaphore, until either the permit was acquired and immediately discarded
-/// or the semaphore was closed).
-///
-/// Storing a `JoinHandle` rather than a `Pin<Box<dyn Future + Send>>` also
-/// keeps `Bulkhead: Sync` -- `JoinHandle` implements `Sync` whereas a boxed
-/// trait-object future does not (#287). This is what unblocks composition with
-/// tonic's gRPC servers and other `Arc`-shared service holders.
-struct AbortOnDrop<T> {
-    handle: JoinHandle<T>,
-}
-
-impl<T> Drop for AbortOnDrop<T> {
-    fn drop(&mut self) {
-        self.handle.abort();
-    }
-}
 
 /// Bulkhead service that limits concurrent calls.
 pub struct Bulkhead<S> {
     inner: S,
     semaphore: Arc<Semaphore>,
     config: Arc<BulkheadConfig>,
+    /// Directly pollable semaphore acquisition state local to this clone.
+    poll_semaphore: PollSemaphore,
     /// Permit reserved in `poll_ready` (backpressure mode only).
     permit: Option<OwnedSemaphorePermit>,
-    /// In-flight semaphore acquire task (backpressure mode only).
-    ///
-    /// Stored as a `JoinHandle` rather than a boxed future so that `Bulkhead`
-    /// remains `Sync` (a `dyn Future + Send` is not `Sync`). See #287.
-    acquire_task: Option<AbortOnDrop<Result<OwnedSemaphorePermit, tokio::sync::AcquireError>>>,
 }
 
 impl<S: Clone> Clone for Bulkhead<S> {
@@ -58,8 +31,8 @@ impl<S: Clone> Clone for Bulkhead<S> {
             inner: self.inner.clone(),
             semaphore: Arc::clone(&self.semaphore),
             config: Arc::clone(&self.config),
+            poll_semaphore: PollSemaphore::new(Arc::clone(&self.semaphore)),
             permit: None,
-            acquire_task: None,
         }
     }
 }
@@ -70,10 +43,10 @@ impl<S> Bulkhead<S> {
         let semaphore = Arc::new(Semaphore::new(config.max_concurrent_calls));
         Self {
             inner,
-            semaphore,
+            semaphore: Arc::clone(&semaphore),
             config: Arc::new(config),
+            poll_semaphore: PollSemaphore::new(semaphore),
             permit: None,
-            acquire_task: None,
         }
     }
 
@@ -85,10 +58,10 @@ impl<S> Bulkhead<S> {
     ) -> Self {
         Self {
             inner,
-            semaphore,
+            semaphore: Arc::clone(&semaphore),
             config,
+            poll_semaphore: PollSemaphore::new(semaphore),
             permit: None,
-            acquire_task: None,
         }
     }
 }
@@ -106,71 +79,39 @@ where
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        // Check inner service readiness first
-        match self.inner.poll_ready(cx) {
-            Poll::Pending => return Poll::Pending,
-            Poll::Ready(Err(e)) => return Poll::Ready(Err(BulkheadServiceError::Inner(e))),
-            Poll::Ready(Ok(())) => {}
-        }
-
         if !self.config.backpressure {
-            return Poll::Ready(Ok(()));
+            return self
+                .inner
+                .poll_ready(cx)
+                .map_err(BulkheadServiceError::Inner);
         }
 
-        // Backpressure mode: acquire permit in poll_ready
-        if self.permit.is_some() {
-            return Poll::Ready(Ok(()));
-        }
-
-        // Fast path on first poll: try to acquire without queueing.
-        if self.acquire_task.is_none() {
-            match Arc::clone(&self.semaphore).try_acquire_owned() {
-                Ok(permit) => {
-                    self.permit = Some(permit);
-                    return Poll::Ready(Ok(()));
-                }
-                Err(tokio::sync::TryAcquireError::NoPermits) => {
-                    // Spawn a task to wait in the semaphore's FIFO queue.
-                    let sem = Arc::clone(&self.semaphore);
-                    let handle = tokio::spawn(async move { sem.acquire_owned().await });
-                    self.acquire_task = Some(AbortOnDrop { handle });
-                }
-                Err(tokio::sync::TryAcquireError::Closed) => {
-                    // Semaphore closed -- should not happen in normal operation.
-                    return Poll::Ready(Ok(()));
-                }
+        // Backpressure mode: reserve capacity before reporting readiness. The
+        // pollable semaphore keeps its own FIFO waiter and is cancelled simply
+        // by dropping this service clone; no detached task is involved.
+        if self.permit.is_none() {
+            match self.poll_semaphore.poll_acquire(cx) {
+                Poll::Ready(Some(permit)) => self.permit = Some(permit),
+                Poll::Ready(None) => return Poll::Ready(Err(BulkheadError::Closed.into())),
+                Poll::Pending => return Poll::Pending,
             }
         }
 
-        // Poll the in-flight acquire task.
-        let task = self
-            .acquire_task
-            .as_mut()
-            .expect("acquire_task set above when None");
-        match Pin::new(&mut task.handle).poll(cx) {
-            Poll::Ready(Ok(Ok(permit))) => {
-                self.acquire_task = None;
-                self.permit = Some(permit);
-                Poll::Ready(Ok(()))
-            }
-            Poll::Ready(Ok(Err(_))) => {
-                // Semaphore closed -- should not happen in normal operation.
-                self.acquire_task = None;
-                Poll::Ready(Ok(()))
-            }
-            Poll::Ready(Err(_)) => {
-                // JoinError -- task was aborted or panicked. Treat like a
-                // closed semaphore: clear the slot and let the caller
-                // re-attempt on the next poll cycle.
-                self.acquire_task = None;
-                Poll::Ready(Ok(()))
-            }
+        match self.inner.poll_ready(cx) {
+            Poll::Ready(Ok(())) => Poll::Ready(Ok(())),
             Poll::Pending => Poll::Pending,
+            Poll::Ready(Err(error)) => {
+                self.permit = None;
+                Poll::Ready(Err(BulkheadServiceError::Inner(error)))
+            }
         }
     }
 
     fn call(&mut self, request: Request) -> Self::Future {
-        if let Some(permit) = self.permit.take() {
+        if self.config.backpressure {
+            let Some(permit) = self.permit.take() else {
+                return Box::pin(async { Err(BulkheadError::NotReady.into()) });
+            };
             // Backpressure mode: permit already acquired in poll_ready
             let semaphore_for_check = Arc::clone(&self.semaphore);
             let config = Arc::clone(&self.config);
@@ -268,7 +209,7 @@ where
                     match tokio::time::timeout(duration, semaphore.acquire_owned()).await {
                         Ok(Ok(permit)) => permit,
                         Ok(Err(_)) => {
-                            // Semaphore was closed, shouldn't happen in normal operation
+                            // Semaphore was closed while the caller was waiting.
                             let event = BulkheadEvent::CallRejected {
                                 pattern_name: config.name.clone(),
                                 timestamp: Instant::now(),
@@ -280,10 +221,7 @@ where
                             counter!("bulkhead_calls_rejected_total", "bulkhead" => config.name.clone())
                                 .increment(1);
 
-                            return Err(BulkheadError::BulkheadFull {
-                                max_concurrent_calls: config.max_concurrent_calls,
-                            }
-                            .into());
+                            return Err(BulkheadError::Closed.into());
                         }
                         Err(_) => {
                             // Timeout
@@ -319,10 +257,7 @@ where
                             counter!("bulkhead_calls_rejected_total", "bulkhead" => config.name.clone())
                                 .increment(1);
 
-                            return Err(BulkheadError::BulkheadFull {
-                                max_concurrent_calls: config.max_concurrent_calls,
-                            }
-                            .into());
+                            return Err(BulkheadError::Closed.into());
                         }
                     }
                 }
@@ -403,5 +338,166 @@ where
 
             result.map_err(BulkheadServiceError::Inner)
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::BulkheadLayer;
+    use futures::future::{pending, ready, Ready};
+    use std::convert::Infallible;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::time::Duration;
+    use tower::{service_fn, Layer, ServiceExt};
+
+    #[derive(Clone)]
+    struct ReadinessError;
+
+    impl Service<()> for ReadinessError {
+        type Response = ();
+        type Error = &'static str;
+        type Future = Ready<Result<(), Self::Error>>;
+
+        fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+            Poll::Ready(Err("inner not ready"))
+        }
+
+        fn call(&mut self, (): ()) -> Self::Future {
+            ready(Ok(()))
+        }
+    }
+
+    #[tokio::test]
+    async fn backpressure_call_requires_readiness_reservation() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&calls);
+        let layer = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .backpressure()
+            .build();
+        let mut service = layer.layer(service_fn(move |()| {
+            observed.fetch_add(1, Ordering::SeqCst);
+            async { Ok::<_, Infallible>(()) }
+        }));
+
+        let error = service.call(()).await.unwrap_err();
+        assert!(matches!(
+            error,
+            BulkheadServiceError::Bulkhead(BulkheadError::NotReady)
+        ));
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
+    async fn closed_backpressure_semaphore_is_a_readiness_error() {
+        let (layer, handle) = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .backpressure()
+            .build_with_handle();
+        let mut service = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
+        handle.semaphore.close();
+
+        let error = match service.ready().await {
+            Ok(_) => panic!("closed semaphore unexpectedly reported readiness"),
+            Err(error) => error,
+        };
+        assert!(matches!(
+            error,
+            BulkheadServiceError::Bulkhead(BulkheadError::Closed)
+        ));
+    }
+
+    #[tokio::test]
+    async fn inner_readiness_error_releases_reserved_permit() {
+        let (layer, handle) = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .backpressure()
+            .build_with_handle();
+        let mut service = layer.layer(ReadinessError);
+
+        let error = match service.ready().await {
+            Ok(_) => panic!("inner readiness error was not propagated"),
+            Err(error) => error,
+        };
+        assert!(matches!(
+            error,
+            BulkheadServiceError::Inner("inner not ready")
+        ));
+        assert_eq!(handle.available_permits(), 1);
+    }
+
+    #[tokio::test]
+    async fn dropping_reserved_clone_releases_exactly_one_permit() {
+        let (layer, handle) = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .backpressure()
+            .build_with_handle();
+        let service = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
+        let mut reserved = service.clone();
+        let mut waiter = service.clone();
+
+        reserved.ready().await.unwrap();
+        assert_eq!(handle.available_permits(), 0);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(10), waiter.ready())
+                .await
+                .is_err()
+        );
+
+        drop(reserved);
+        tokio::time::timeout(Duration::from_secs(1), waiter.ready())
+            .await
+            .expect("dropping a readied clone must wake a waiter")
+            .unwrap();
+        assert_eq!(handle.available_permits(), 0);
+        drop(waiter);
+        assert_eq!(handle.available_permits(), 1);
+    }
+
+    #[tokio::test]
+    async fn dropping_pending_waiter_does_not_block_fifo() {
+        let layer = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .backpressure()
+            .build();
+        let service = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
+        let mut reserved = service.clone();
+        let mut next = service.clone();
+        reserved.ready().await.unwrap();
+
+        let mut cancelled = service.clone();
+        let waiter = tokio::spawn(async move { cancelled.ready().await.map(|_| ()) });
+        tokio::task::yield_now().await;
+        waiter.abort();
+        let _ = waiter.await;
+
+        drop(reserved);
+        tokio::time::timeout(Duration::from_secs(1), next.ready())
+            .await
+            .expect("a dropped FIFO waiter must not retain queue position")
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn dropping_call_future_releases_reserved_permit() {
+        let (layer, handle) = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .backpressure()
+            .build_with_handle();
+        let service = layer.layer(service_fn(|()| pending::<Result<(), Infallible>>()));
+        let mut first = service.clone();
+        let mut second = service.clone();
+
+        first.ready().await.unwrap();
+        let future = first.call(());
+        assert_eq!(handle.available_permits(), 0);
+        drop(future);
+        assert_eq!(handle.available_permits(), 1);
+
+        tokio::time::timeout(Duration::from_secs(1), second.ready())
+            .await
+            .expect("dropping the response future must release its permit")
+            .unwrap();
     }
 }

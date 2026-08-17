@@ -17,6 +17,7 @@ tower = { workspace = true }
 tower-layer = { workspace = true }
 tower-service = { workspace = true }
 tokio = { workspace = true, features = ["rt"] }
+tokio-util.workspace = true
 futures = { workspace = true }
 thiserror = { workspace = true }
 

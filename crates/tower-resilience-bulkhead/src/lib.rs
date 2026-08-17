@@ -27,6 +27,30 @@
 //! # }
 //! ```
 //!
+//! # Backpressure Mode
+//!
+//! Backpressure mode follows the same Tower contract as
+//! [`tower::limit::ConcurrencyLimit`]: a successful `poll_ready` reserves one
+//! permit, `call` transfers that permit to the response future, and dropping
+//! either the readied service clone or response future releases it. Bulkhead
+//! additionally supports fail-fast rejection, bounded waits, events, metrics,
+//! and an observable handle. Permit acquisition is polled directly; it does
+//! not spawn a Tokio task per waiter.
+//!
+//! ```rust
+//! use tower::ServiceBuilder;
+//! use tower_resilience_bulkhead::BulkheadLayer;
+//!
+//! let service = ServiceBuilder::new()
+//!     .layer(
+//!         BulkheadLayer::builder()
+//!             .max_concurrent_calls(10)
+//!             .backpressure()
+//!             .build(),
+//!     )
+//!     .service_fn(|request: String| async move { Ok::<_, ()>(request) });
+//! ```
+//!
 //! # Rejection Mode (Fail-Fast)
 //!
 //! Configure the bulkhead to reject requests immediately when at capacity,
@@ -313,6 +337,12 @@ mod tests {
 
         let err = BulkheadError::Timeout;
         assert!(err.to_string().contains("timeout"));
+
+        let err = BulkheadError::Closed;
+        assert!(err.to_string().contains("closed"));
+
+        let err = BulkheadError::NotReady;
+        assert!(err.to_string().contains("poll_ready"));
     }
 
     #[test]

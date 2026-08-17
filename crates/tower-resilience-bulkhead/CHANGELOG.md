@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Backpressure readiness now polls and reserves semaphore permits directly,
+  without spawning one Tokio task per waiter.
+
+### Fixed
+
+- Closed semaphores and calls made without a readiness reservation return
+  explicit errors instead of allowing an unreserved inner call.
+- Dropping a waiting clone, readied clone, or response future releases its
+  queue position or permit without leaking capacity.
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-bulkhead-v0.11.0...tower-resilience-bulkhead-v0.12.0) - 2026-08-17
 
 ### Fixed
