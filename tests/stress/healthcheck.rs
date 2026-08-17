@@ -69,6 +69,7 @@ async fn stress_many_resources() {
     let wrapper = builder
         .with_checker(TestHealthChecker)
         .with_interval(Duration::from_millis(100))
+        .with_initial_delay(Duration::ZERO)
         .with_selection_strategy(SelectionStrategy::RoundRobin)
         .build();
 
@@ -121,6 +122,7 @@ async fn stress_high_concurrency() {
         builder
             .with_checker(TestHealthChecker)
             .with_interval(Duration::from_millis(100))
+            .with_initial_delay(Duration::ZERO)
             .with_selection_strategy(SelectionStrategy::RoundRobin)
             .build(),
     );
@@ -142,6 +144,9 @@ async fn stress_high_concurrency() {
 
         let handle = tokio::spawn(async move {
             tracker.enter();
+            // Ensure the tracker measures concurrently scheduled callers even
+            // when get_healthy can complete without yielding.
+            tokio::task::yield_now().await;
 
             // Each task makes 100 requests
             for _ in 0..100 {
@@ -196,6 +201,7 @@ async fn stress_rapid_status_changes() {
     let wrapper = builder
         .with_checker(TestHealthChecker)
         .with_interval(Duration::from_millis(50))
+        .with_initial_delay(Duration::ZERO)
         .with_selection_strategy(SelectionStrategy::RoundRobin)
         .build();
 
@@ -256,6 +262,7 @@ async fn stress_memory_stability() {
     let wrapper = builder
         .with_checker(TestHealthChecker)
         .with_interval(Duration::from_millis(10))
+        .with_initial_delay(Duration::ZERO)
         .with_selection_strategy(SelectionStrategy::RoundRobin)
         .build();
 
@@ -306,6 +313,7 @@ async fn stress_selection_strategies() {
         let wrapper = builder
             .with_checker(TestHealthChecker)
             .with_interval(Duration::from_millis(100))
+            .with_initial_delay(Duration::ZERO)
             .with_selection_strategy(strategy.clone())
             .build();
 
@@ -360,6 +368,7 @@ async fn stress_health_check_throughput() {
     let wrapper = builder
         .with_checker(TestHealthChecker)
         .with_interval(Duration::from_millis(10)) // Very frequent
+        .with_initial_delay(Duration::ZERO)
         .with_selection_strategy(SelectionStrategy::RoundRobin)
         .build();
 
@@ -404,6 +413,7 @@ async fn stress_recovery_pattern() {
     let wrapper = builder
         .with_checker(TestHealthChecker)
         .with_interval(Duration::from_millis(50))
+        .with_initial_delay(Duration::ZERO)
         .with_selection_strategy(SelectionStrategy::RoundRobin)
         .build();
 

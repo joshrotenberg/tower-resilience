@@ -594,8 +594,6 @@ pub mod coalesce {
     //! - **Request collapsing**
 }
 
-/// Outlier Detection pattern guide
-
 pub mod executor {
     //! # Executor
     //!

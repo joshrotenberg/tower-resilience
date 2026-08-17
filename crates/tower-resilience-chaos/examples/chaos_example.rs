@@ -41,9 +41,7 @@ async fn basic_error_injection() {
     let chaos = ChaosLayer::builder()
         .name("error-injector")
         .error_rate(0.3) // 30% of requests fail
-        .error_fn(|_req: &String| {
-            std::io::Error::new(std::io::ErrorKind::Other, "chaos-induced failure")
-        })
+        .error_fn(|_req: &String| std::io::Error::other("chaos-induced failure"))
         .build();
 
     let svc = tower::service_fn(|req: String| async move {
@@ -136,7 +134,7 @@ async fn deterministic_chaos() {
         let chaos = ChaosLayer::builder()
             .name("deterministic-chaos")
             .error_rate(0.5)
-            .error_fn(|_req: &String| std::io::Error::new(std::io::ErrorKind::Other, "chaos"))
+            .error_fn(|_req: &String| std::io::Error::other("chaos"))
             .seed(42) // Same seed = same results
             .build();
 
@@ -183,7 +181,7 @@ async fn event_monitoring() {
     let chaos = ChaosLayer::builder()
         .name("monitored-chaos")
         .error_rate(0.2)
-        .error_fn(|_req: &String| std::io::Error::new(std::io::ErrorKind::Other, "chaos"))
+        .error_fn(|_req: &String| std::io::Error::other("chaos"))
         .latency_rate(0.3)
         .min_latency(Duration::from_millis(10))
         .max_latency(Duration::from_millis(20))

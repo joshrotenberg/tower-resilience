@@ -151,20 +151,24 @@ async fn stress_exponential_backoff_timing() {
 async fn stress_high_concurrency_with_retries() {
     let tracker = ConcurrencyTracker::new();
     let attempt_count = Arc::new(AtomicUsize::new(0));
+    let per_request_attempts = Arc::new((0..1000).map(|_| AtomicUsize::new(0)).collect::<Vec<_>>());
     let tracker_clone = Arc::clone(&tracker);
     let attempts = Arc::clone(&attempt_count);
+    let request_attempts = Arc::clone(&per_request_attempts);
 
-    let svc = tower::service_fn(move |_req: u32| {
+    let svc = tower::service_fn(move |req: u32| {
         let tracker = Arc::clone(&tracker_clone);
         let attempts = Arc::clone(&attempts);
+        let request_attempts = Arc::clone(&request_attempts);
         async move {
             tracker.enter();
-            let attempt = attempts.fetch_add(1, Ordering::Relaxed);
+            attempts.fetch_add(1, Ordering::Relaxed);
+            let attempt = request_attempts[req as usize].fetch_add(1, Ordering::Relaxed);
             sleep(Duration::from_millis(5)).await;
             tracker.exit();
 
             // Fail first attempt, succeed on second
-            if attempt.is_multiple_of(2) {
+            if attempt == 0 {
                 Err("transient failure".to_string())
             } else {
                 Ok(())
