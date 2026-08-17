@@ -632,11 +632,16 @@ let router = WeightedRouter::builder()
 ```
 
 Key features:
-- **Deterministic** (default): Atomic counter for exact, repeatable distribution
+- **Deterministic** (default): Clone-shared smooth weighted round-robin; exact over
+  each normalized cycle without contiguous traffic bursts
 - **Random**: Probabilistic selection for high-volume statistical distribution
 - **Composable**: Wrap each backend with circuit breakers, bulkheads, etc.
 
-**Note:** Router is a standalone `Service`, not a `Layer`. Use `BoxService` to type-erase different backend implementations.
+**Note:** Router is a standalone `Service`, not a `Layer`. Its fixed backend set
+and all-backend readiness are similar to Tower `Steer`, but selection is a
+request-independent weighted schedule. Tower `Balance` instead uses dynamic
+discovery, ready endpoints, and observed load. Use `BoxService` to type-erase
+different backend implementations.
 
 **Full examples:** [router.rs](examples/router.rs)
 

@@ -1,6 +1,7 @@
 //! Router stress tests - weighted traffic distribution under load
 //!
-//! `WeightedRouter` coordinates backend selection through an atomic counter.
+//! `WeightedRouter` coordinates backend selection through clone-shared smooth
+//! weighted-round-robin state.
 //! These tests validate that the weighted distribution stays exact at high
 //! volume and under concurrent access, and that many-backend fan-out remains
 //! consistent.
@@ -74,9 +75,9 @@ async fn stress_high_volume_deterministic_distribution() {
 
 /// Test: Concurrent routing keeps the distribution exact.
 ///
-/// The selector's atomic counter is the only coordination point. Driving a
-/// single shared router from many concurrent tasks must still produce an exact
-/// weighted split, because each `call` performs exactly one atomic increment.
+/// The selector's short-lived score lock is the only coordination point.
+/// Driving a single shared router from many concurrent tasks must still produce
+/// an exact weighted split because every `call` advances one global sequence.
 #[tokio::test]
 #[ignore]
 async fn stress_concurrent_distribution_consistency() {

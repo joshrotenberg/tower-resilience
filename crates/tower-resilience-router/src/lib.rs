@@ -16,13 +16,27 @@
 //!
 //! # Selection Strategies
 //!
-//! - **Deterministic** (default): Uses an atomic counter for predictable,
-//!   repeatable distribution. With weights `[90, 10]`, every cycle of 100
-//!   requests sends exactly 90 to the first backend and 10 to the second.
+//! - **Deterministic** (default): Uses smooth weighted round-robin for a
+//!   predictable, repeatable distribution without contiguous weight buckets.
+//!   Weights are reduced by their greatest common divisor, so `[90, 10]`
+//!   repeats a 10-request cycle containing exactly 9 stable picks and 1 canary
+//!   pick. Ties are resolved by backend order.
 //!
 //! - **Random**: Each request independently selects a backend with probability
 //!   proportional to its weight. Better for high-volume statistical distribution,
 //!   but may show variance at low traffic.
+//!
+//! # Cloning and concurrency
+//!
+//! Selector progression is shared by every clone of a `WeightedRouter`.
+//! Clone-per-request middleware therefore contributes to one global weighted
+//! sequence instead of restarting at backend zero. Every complete normalized
+//! cycle has zero distribution error; a final partial cycle is deliberately
+//! smoothed across its backends. Under concurrent calls the sequence of picks
+//! remains deterministic, although task scheduling determines which request
+//! receives each pick.
+//! Deterministic selection performs an `O(backends)` score scan behind a short
+//! standard-library mutex; it never awaits or invokes user code while locked.
 //!
 //! # Readiness
 //!
@@ -30,6 +44,25 @@
 //! and most predictable contract. If a backend is slow or failing, pair it
 //! with a circuit breaker so that readiness resolves quickly (open circuit =
 //! immediate ready or error).
+//!
+//! # Relationship to Tower routing
+//!
+//! [`tower::steer::Steer`](https://docs.rs/tower/latest/tower/steer/struct.Steer.html)
+//! is the closest fixed-set primitive: both services wait for all backends to
+//! become ready. `Steer` delegates request-aware selection to a `Picker`, while
+//! `WeightedRouter` ignores request contents and owns a clone-shared weighted
+//! schedule. `WeightedRouter` also rejects empty backend sets and zero weights
+//! during construction, avoiding the empty-service readiness/call mismatch
+//! tracked in [tower-rs/tower#859](https://github.com/tower-rs/tower/issues/859)
+//! and [tower-rs/tower#866](https://github.com/tower-rs/tower/pull/866).
+//!
+//! [`tower::balance::p2c::Balance`](https://docs.rs/tower/latest/tower/balance/p2c/struct.Balance.html)
+//! serves a different purpose. It consumes dynamic discovery, selects only
+//! ready endpoints, and chooses the less-loaded of two random candidates.
+//! `WeightedRouter` uses a fixed set, preserves configured traffic ratios, and
+//! intentionally gates readiness on every backend; it does not react to
+//! backend load. Tower's weighted P2C design remains tracked in
+//! [tower-rs/tower#696](https://github.com/tower-rs/tower/issues/696).
 //!
 //! # Example
 //!
@@ -102,6 +135,9 @@ use tower_service::Service;
 /// `WeightedRouter` is a standalone `Service`, not a `Layer`. It selects among
 /// multiple backend services of the same type, distributing traffic according
 /// to configured weights.
+///
+/// Clones have independently cloned backend services but share one selector
+/// progression, so cloning this service does not reset its traffic split.
 ///
 /// Use [`WeightedRouter::builder`] to construct a new router.
 pub struct WeightedRouter<S> {
