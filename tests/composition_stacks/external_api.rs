@@ -2,10 +2,13 @@
 //!
 //! These stacks are designed for calling third-party APIs (Stripe, Twilio, AWS, etc.)
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
-use tower::{Layer, Service, ServiceBuilder};
+use tower::{Layer, Service, ServiceBuilder, ServiceExt};
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+use tower_resilience_core::testing::ServiceProbe;
 use tower_resilience_fallback::FallbackLayer;
 use tower_resilience_hedge::HedgeLayer;
 use tower_resilience_retry::RetryLayer;
@@ -80,6 +83,50 @@ async fn minimal_stack_compiles() {
         .layer(timeout) // Outermost: bounds total time
         .layer(retry) // Innermost: retries within timeout
         .service(http_client);
+}
+
+/// Timeout + Retry drives fresh inner readiness for every retry attempt.
+#[tokio::test]
+async fn minimal_stack_repolls_readiness_for_internal_attempts() {
+    let attempts = Arc::new(AtomicUsize::new(0));
+    let attempts_for_service = Arc::clone(&attempts);
+    let http_client = tower::service_fn(move |_req: ApiRequest| {
+        let attempt = attempts_for_service.fetch_add(1, Ordering::SeqCst);
+        async move {
+            if attempt < 2 {
+                Err(ApiError(format!("transient failure {}", attempt + 1)))
+            } else {
+                Ok(ApiResponse::new("success on attempt 3"))
+            }
+        }
+    });
+    let probe = ServiceProbe::new(http_client);
+    let probe_handle = probe.handle();
+    let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
+        .max_attempts(3)
+        .fixed_backoff(Duration::ZERO)
+        .build();
+    let timeout = TimeLimiterLayer::builder()
+        .timeout_duration(Duration::from_secs(1))
+        .build();
+
+    let with_retry = retry.layer(probe);
+    let mut service = timeout.layer(with_retry);
+    let response = service
+        .ready()
+        .await
+        .unwrap()
+        .call(ApiRequest::new("payments"))
+        .await
+        .unwrap();
+
+    assert_eq!(response.body, "success on attempt 3");
+    assert_eq!(attempts.load(Ordering::SeqCst), 3);
+    let snapshot = probe_handle.snapshot();
+    assert_eq!(snapshot.calls, 3);
+    assert_eq!(snapshot.readiness_successes, 3);
+    probe_handle.assert_ready_contract();
+    probe_handle.assert_quiescent();
 }
 
 /// Standard stack: Total Timeout + Retry + CircuitBreaker + Per-attempt Timeout

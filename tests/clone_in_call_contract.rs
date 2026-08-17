@@ -141,18 +141,41 @@ async fn fallback_drives_readied_instance() {
 }
 
 #[tokio::test]
-async fn retry_drives_readied_instance() {
+async fn retry_repolls_readiness_for_internal_attempts() {
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tower::service_fn;
+    use tower_resilience_core::testing::ServiceProbe;
     use tower_resilience_retry::RetryLayer;
 
-    let layer: tower_resilience_retry::RetryLayer<(), (), std::convert::Infallible> =
-        RetryLayer::builder().max_attempts(1).build();
-    let mut svc = tower::ServiceBuilder::new()
-        .layer(layer)
-        .service(StatefulInner::new());
+    let attempts = Arc::new(AtomicUsize::new(0));
+    let attempts_for_service = Arc::clone(&attempts);
+    let inner = service_fn(move |(): ()| {
+        let attempt = attempts_for_service.fetch_add(1, Ordering::SeqCst);
+        async move {
+            if attempt < 2 {
+                Err("retryable")
+            } else {
+                Ok(())
+            }
+        }
+    });
+    let probe = ServiceProbe::new(inner);
+    let probe_handle = probe.handle();
+    let layer: tower_resilience_retry::RetryLayer<(), (), &'static str> = RetryLayer::builder()
+        .max_attempts(3)
+        .fixed_backoff(Duration::ZERO)
+        .build();
+    let mut svc = tower::ServiceBuilder::new().layer(layer).service(probe);
 
-    for _ in 0..3 {
-        let _ = svc.ready().await.unwrap().call(()).await;
-    }
+    svc.ready().await.unwrap().call(()).await.unwrap();
+
+    assert_eq!(attempts.load(Ordering::SeqCst), 3);
+    let snapshot = probe_handle.snapshot();
+    assert_eq!(snapshot.calls, 3);
+    assert_eq!(snapshot.readiness_successes, 3);
+    probe_handle.assert_ready_contract();
+    probe_handle.assert_quiescent();
 }
 
 #[tokio::test]

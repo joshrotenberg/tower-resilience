@@ -187,6 +187,11 @@ use tracing::{debug, info, warn};
 ///
 /// This service wraps an inner service and automatically retries requests
 /// that fail, according to the configured retry policy and backoff strategy.
+/// The first attempt uses the inner service instance readied by this service's
+/// [`Service::poll_ready`] call. Before every later attempt, the retry future
+/// polls the inner service for fresh readiness. If that readiness check fails,
+/// the error is returned unchanged and the operation stops without applying
+/// the retry predicate to the readiness error. This matches `tower::retry`.
 pub struct Retry<S, Req, Res, E> {
     inner: S,
     config: Arc<RetryConfig<Req, Res, E>>,
@@ -262,6 +267,15 @@ where
             let mut attempt = 0;
 
             loop {
+                // `call` consumes a service's readiness grant. The initial
+                // attempt uses the receiver readied by `Retry::poll_ready`;
+                // every subsequent attempt must obtain a fresh grant before
+                // invoking `call` again. A readiness error is terminal and is
+                // propagated unchanged, matching `tower::retry` semantics.
+                if attempt > 0 {
+                    tower::ServiceExt::<Req>::ready(&mut service).await?;
+                }
+
                 let result = service.call(req.clone()).await;
 
                 match result {

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Poll inner service readiness before every retry attempt and propagate readiness errors unchanged ([#362](https://github.com/joshrotenberg/tower-resilience/issues/362))
+
 ## [0.10.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.10.0...tower-resilience-retry-v0.10.1) - 2026-07-27
 
 ### Added
