@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** reconnect now wraps a `MakeService`-style factory and constructs
+  a fresh service after classified connection failures instead of retrying a
+  clone of the failed service. Unit targets continue to use
+  `ReconnectLayer::new`; use `ReconnectLayer::for_target` for other targets.
+
+### Fixed
+
+- Track `time_since_connected` from a real monotonic connection timestamp.
+
 ## [0.11.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-reconnect-v0.10.1...tower-resilience-reconnect-v0.11.0) - 2026-08-17
 
 ### Other

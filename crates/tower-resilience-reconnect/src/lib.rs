@@ -36,7 +36,11 @@
 //! # use tower_resilience_reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
 //! # use std::time::Duration;
 //! # async fn example() {
-//! # let redis_connection = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+//! # let make_connection = tower::service_fn(|(): ()| async {
+//! #     Ok::<_, std::io::Error>(tower::service_fn(|_req: ()| async {
+//! #         Ok::<_, std::io::Error>(())
+//! #     }))
+//! # });
 //! let service = ServiceBuilder::new()
 //!     // Outer: Retry transient request errors
 //!     // (future: use tower_resilience_retry when available)
@@ -50,7 +54,7 @@
 //!             .retry_on_reconnect(false)  // Let outer retry layer handle it
 //!             .build()
 //!     ))
-//!     .service(redis_connection);
+//!     .service(make_connection);
 //! # }
 //! ```
 //!
@@ -66,6 +70,8 @@
 //!
 //! ```rust
 //! use tower_resilience_reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
+//! use tower::{service_fn, Layer};
+//! use std::convert::Infallible;
 //! use std::time::Duration;
 //!
 //! // Create reconnect configuration
@@ -78,8 +84,14 @@
 //!     .retry_on_reconnect(true)  // Safe for idempotent operations
 //!     .build();
 //!
-//! // Create the layer
-//! let reconnect_layer = ReconnectLayer::new(config);
+//! // The layer wraps a factory. A reconnect invokes it again and receives a
+//! // distinct service instance.
+//! let factory = service_fn(|(): ()| async {
+//!     Ok::<_, Infallible>(service_fn(|request: String| async move {
+//!         Ok::<_, std::io::Error>(request)
+//!     }))
+//! });
+//! let reconnect_service = ReconnectLayer::new(config).layer(factory);
 //! ```
 //!
 //! ## Non-Idempotent Operations
@@ -114,7 +126,7 @@ mod state;
 pub use config::{ReconnectConfig, ReconnectConfigBuilder, ReconnectPredicate};
 pub use layer::ReconnectLayer;
 pub use policy::ReconnectPolicy;
-pub use service::ReconnectService;
+pub use service::{ReconnectError, ReconnectService};
 pub use state::{ConnectionState, ReconnectState};
 
 // Re-export backoff strategies from retry crate for convenience

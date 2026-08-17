@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::task::{Context, Poll};
 use std::time::Duration;
-use tower::{Layer, Service, ServiceBuilder, ServiceExt};
+use tower::{Layer, Service, ServiceBuilder, ServiceExt, service_fn};
 use tower_resilience_bulkhead::{BulkheadError, BulkheadLayer};
 use tower_resilience_cache::CacheLayer;
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
@@ -113,10 +113,19 @@ fn bench_reconnect_no_failures(c: &mut Criterion) {
                 .max_attempts(3)
                 .build();
 
+            let factory = service_fn(move |(): ()| {
+                let inner = inner.clone();
+                async move { Ok::<_, std::convert::Infallible>(inner) }
+            });
             let layer = ReconnectLayer::new(config);
-            let mut service = layer.layer(inner);
+            let mut service = layer.layer(factory);
 
-            let response = service.call(black_box("test".to_string())).await;
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box("test".to_string()))
+                .await;
             black_box(response)
         });
     });
@@ -133,10 +142,19 @@ fn bench_reconnect_with_failure(c: &mut Criterion) {
                 .max_attempts(5)
                 .build();
 
+            let factory = service_fn(move |(): ()| {
+                let inner = inner.clone();
+                async move { Ok::<_, std::convert::Infallible>(inner) }
+            });
             let layer = ReconnectLayer::new(config);
-            let mut service = layer.layer(inner);
+            let mut service = layer.layer(factory);
 
-            let response = service.call(black_box("test".to_string())).await;
+            let response = service
+                .ready()
+                .await
+                .unwrap()
+                .call(black_box("test".to_string()))
+                .await;
             black_box(response)
         });
     });
