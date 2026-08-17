@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-core-v0.10.1...tower-resilience-core-v0.11.0) - 2026-08-17
+
+### Other
+
+- add Tower contract harness ([#385](https://github.com/joshrotenberg/tower-resilience/pull/385))
+
 ## [0.10.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-core-v0.10.0...tower-resilience-core-v0.10.1) - 2026-07-27
 
 ### Other

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.10.1...tower-resilience-circuitbreaker-v0.11.0) - 2026-08-17
+
+### Fixed
+
+- *(circuitbreaker)* gate inner readiness on circuit state ([#386](https://github.com/joshrotenberg/tower-resilience/pull/386))
+
 ## [0.10.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.10.0...tower-resilience-circuitbreaker-v0.10.1) - 2026-07-27
 
 ### Added
