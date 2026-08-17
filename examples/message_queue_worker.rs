@@ -58,6 +58,10 @@ impl From<tower_resilience_bulkhead::BulkheadError> for ProcessingError {
             tower_resilience_bulkhead::BulkheadError::BulkheadFull { .. } => {
                 ProcessingError::BulkheadFull
             }
+            tower_resilience_bulkhead::BulkheadError::Closed
+            | tower_resilience_bulkhead::BulkheadError::NotReady => {
+                ProcessingError::DownstreamUnavailable
+            }
         }
     }
 }

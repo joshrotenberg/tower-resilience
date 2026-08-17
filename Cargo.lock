@@ -2627,6 +2627,7 @@ dependencies = [
  "metrics",
  "thiserror 2.0.17",
  "tokio",
+ "tokio-util",
  "tower",
  "tower-layer",
  "tower-resilience-core",
