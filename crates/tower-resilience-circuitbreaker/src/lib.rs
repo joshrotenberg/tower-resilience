@@ -360,6 +360,58 @@ pub(crate) type FallbackFn<Req, Res, Err> =
     dyn Fn(Req) -> BoxFuture<'static, Result<Res, Err>> + Send + Sync;
 pub(crate) type SharedFallback<Req, Res, Err> = Arc<FallbackFn<Req, Res, Err>>;
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CircuitGate {
+    PollInner,
+    Reject,
+}
+
+fn poll_circuit_gate<C>(
+    circuit: &Arc<Mutex<Circuit>>,
+    state_atomic: &std::sync::atomic::AtomicU8,
+    config: &CircuitBreakerConfig<C>,
+    sleep: &mut Option<std::pin::Pin<Box<tokio::time::Sleep>>>,
+    cx: &mut Context<'_>,
+) -> Poll<CircuitGate> {
+    // Closed is the hot path. The atomic state is updated with Release before
+    // observers see a transition, so no circuit mutex is needed to delegate
+    // ordinary inner readiness.
+    if CircuitState::from_u8(state_atomic.load(std::sync::atomic::Ordering::Acquire))
+        == CircuitState::Closed
+    {
+        *sleep = None;
+        return Poll::Ready(CircuitGate::PollInner);
+    }
+
+    if let Some(pending_sleep) = sleep.as_mut() {
+        match pending_sleep.as_mut().poll(cx) {
+            Poll::Pending => return Poll::Pending,
+            Poll::Ready(()) => *sleep = None,
+        }
+    }
+
+    let circuit = match circuit.try_lock() {
+        Ok(guard) => guard,
+        Err(_) => {
+            let mut retry = Box::pin(tokio::time::sleep(std::time::Duration::from_millis(1)));
+            let _ = retry.as_mut().poll(cx);
+            *sleep = Some(retry);
+            return Poll::Pending;
+        }
+    };
+
+    match circuit.check_permitted(config) {
+        Ok(()) => Poll::Ready(CircuitGate::PollInner),
+        Err(_) if !config.backpressure => Poll::Ready(CircuitGate::Reject),
+        Err(wait) => {
+            let mut retry = Box::pin(tokio::time::sleep(wait));
+            let _ = retry.as_mut().poll(cx);
+            *sleep = Some(retry);
+            Poll::Pending
+        }
+    }
+}
+
 #[cfg(feature = "metrics")]
 static METRICS_INIT: Once = Once::new();
 
@@ -414,6 +466,11 @@ pub fn circuit_breaker_builder() -> CircuitBreakerConfigBuilder<DefaultClassifie
 /// A Tower Service that applies circuit breaker logic to an inner service.
 ///
 /// Manages the circuit state and controls calls to the inner service accordingly.
+/// Circuit state is checked before inner readiness. In rejection mode an open
+/// circuit reports readiness without polling the inner service, and the
+/// corresponding `call` returns [`CircuitBreakerError::OpenCircuit`]. In
+/// backpressure mode readiness remains pending on the circuit timer; the inner
+/// service is polled only once the circuit may admit traffic.
 ///
 /// # Type Parameters
 ///
@@ -426,6 +483,8 @@ pub struct CircuitBreaker<S, C> {
     pub(crate) config: Arc<CircuitBreakerConfig<C>>,
     /// Sleep future for backpressure mode wake-ups.
     sleep: Option<std::pin::Pin<Box<tokio::time::Sleep>>>,
+    /// A readiness grant that is reserved for immediate open-circuit rejection.
+    reject_next_call: bool,
 }
 
 impl<S, C> CircuitBreaker<S, C> {
@@ -440,6 +499,7 @@ impl<S, C> CircuitBreaker<S, C> {
             state_atomic,
             config,
             sleep: None,
+            reject_next_call: false,
         }
     }
 
@@ -460,6 +520,7 @@ impl<S, C> CircuitBreaker<S, C> {
             state_atomic,
             config,
             sleep: None,
+            reject_next_call: false,
         }
     }
 
@@ -509,6 +570,7 @@ impl<S, C> CircuitBreaker<S, C> {
             fallback: Arc::new(fallback),
             _phantom: std::marker::PhantomData,
             sleep: None,
+            reject_next_call: false,
         }
     }
 
@@ -593,6 +655,7 @@ where
             state_atomic: Arc::clone(&self.state_atomic),
             config: Arc::clone(&self.config),
             sleep: None,
+            reject_next_call: false,
         }
     }
 }
@@ -611,52 +674,31 @@ where
     type Future = BoxFuture<'static, Result<S::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        // Check inner service readiness first
-        match self.inner.poll_ready(cx) {
-            Poll::Pending => return Poll::Pending,
-            Poll::Ready(Err(e)) => return Poll::Ready(Err(CircuitBreakerError::Inner(e))),
-            Poll::Ready(Ok(())) => {}
-        }
-
-        if !self.config.backpressure {
+        // Once rejection readiness is granted, repeated polls must preserve it
+        // until the corresponding call consumes it.
+        if self.reject_next_call {
             return Poll::Ready(Ok(()));
         }
 
-        // Backpressure mode: check circuit state in poll_ready
-
-        // If we have a pending sleep, poll it first
-        if let Some(sleep) = self.sleep.as_mut() {
-            match sleep.as_mut().poll(cx) {
-                Poll::Pending => return Poll::Pending,
-                Poll::Ready(()) => {
-                    self.sleep = None;
-                    // Fall through to re-check circuit state
-                }
+        match poll_circuit_gate(
+            &self.circuit,
+            &self.state_atomic,
+            &self.config,
+            &mut self.sleep,
+            cx,
+        ) {
+            Poll::Pending => return Poll::Pending,
+            Poll::Ready(CircuitGate::Reject) => {
+                self.reject_next_call = true;
+                return Poll::Ready(Ok(()));
             }
+            Poll::Ready(CircuitGate::PollInner) => {}
         }
 
-        // Try to lock the circuit mutex synchronously
-        let circuit = match self.circuit.try_lock() {
-            Ok(guard) => guard,
-            Err(_) => {
-                // Mutex contended; set a short sleep and return Pending
-                let sleep = tokio::time::sleep(std::time::Duration::from_millis(1));
-                let mut pinned = Box::pin(sleep);
-                let _ = pinned.as_mut().poll(cx);
-                self.sleep = Some(pinned);
-                return Poll::Pending;
-            }
-        };
-
-        match circuit.check_permitted(&self.config) {
-            Ok(()) => Poll::Ready(Ok(())),
-            Err(wait) => {
-                let sleep = tokio::time::sleep(wait);
-                let mut pinned = Box::pin(sleep);
-                let _ = pinned.as_mut().poll(cx);
-                self.sleep = Some(pinned);
-                Poll::Pending
-            }
+        match self.inner.poll_ready(cx) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(Err(error)) => Poll::Ready(Err(CircuitBreakerError::Inner(error))),
+            Poll::Ready(Ok(())) => Poll::Ready(Ok(())),
         }
     }
 
@@ -665,6 +707,7 @@ where
         let circuit = Arc::clone(&self.circuit);
         let clone = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
+        let reject_without_inner = std::mem::take(&mut self.reject_next_call);
 
         Box::pin(async move {
             #[cfg(feature = "tracing")]
@@ -676,7 +719,11 @@ where
                 );
             }
 
-            let permitted = {
+            let permitted = if reject_without_inner {
+                let circuit = circuit.lock().await;
+                circuit.record_rejection(&config);
+                false
+            } else {
                 let mut circuit = circuit.lock().await;
                 circuit.try_acquire(&config)
             };
@@ -722,7 +769,8 @@ where
 /// A circuit breaker with a configured fallback handler.
 ///
 /// This type is returned by [`CircuitBreaker::with_fallback`] and implements
-/// `Service<Req>` with fallback behavior when the circuit is open.
+/// `Service<Req>` with fallback behavior when the circuit is open. An open
+/// circuit does not poll inner readiness before making the fallback available.
 pub struct CircuitBreakerWithFallback<S, C, Req, Res, Err> {
     inner: S,
     pub(crate) circuit: Arc<Mutex<Circuit>>,
@@ -732,6 +780,8 @@ pub struct CircuitBreakerWithFallback<S, C, Req, Res, Err> {
     _phantom: std::marker::PhantomData<(Req, Res, Err)>,
     /// Sleep future for backpressure mode wake-ups.
     sleep: Option<std::pin::Pin<Box<tokio::time::Sleep>>>,
+    /// A readiness grant that is reserved for immediate fallback execution.
+    reject_next_call: bool,
 }
 
 impl<S, C, Req, Res, Err> CircuitBreakerWithFallback<S, C, Req, Res, Err> {
@@ -807,6 +857,7 @@ where
             fallback: Arc::clone(&self.fallback),
             _phantom: std::marker::PhantomData,
             sleep: None,
+            reject_next_call: false,
         }
     }
 }
@@ -825,47 +876,29 @@ where
     type Future = BoxFuture<'static, Result<Res, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        // Check inner service readiness first
-        match self.inner.poll_ready(cx) {
-            Poll::Pending => return Poll::Pending,
-            Poll::Ready(Err(e)) => return Poll::Ready(Err(CircuitBreakerError::Inner(e))),
-            Poll::Ready(Ok(())) => {}
-        }
-
-        if !self.config.backpressure {
+        if self.reject_next_call {
             return Poll::Ready(Ok(()));
         }
 
-        // Backpressure mode: check circuit state in poll_ready
-        if let Some(sleep) = self.sleep.as_mut() {
-            match sleep.as_mut().poll(cx) {
-                Poll::Pending => return Poll::Pending,
-                Poll::Ready(()) => {
-                    self.sleep = None;
-                }
+        match poll_circuit_gate(
+            &self.circuit,
+            &self.state_atomic,
+            &self.config,
+            &mut self.sleep,
+            cx,
+        ) {
+            Poll::Pending => return Poll::Pending,
+            Poll::Ready(CircuitGate::Reject) => {
+                self.reject_next_call = true;
+                return Poll::Ready(Ok(()));
             }
+            Poll::Ready(CircuitGate::PollInner) => {}
         }
 
-        let circuit = match self.circuit.try_lock() {
-            Ok(guard) => guard,
-            Err(_) => {
-                let sleep = tokio::time::sleep(std::time::Duration::from_millis(1));
-                let mut pinned = Box::pin(sleep);
-                let _ = pinned.as_mut().poll(cx);
-                self.sleep = Some(pinned);
-                return Poll::Pending;
-            }
-        };
-
-        match circuit.check_permitted(&self.config) {
-            Ok(()) => Poll::Ready(Ok(())),
-            Err(wait) => {
-                let sleep = tokio::time::sleep(wait);
-                let mut pinned = Box::pin(sleep);
-                let _ = pinned.as_mut().poll(cx);
-                self.sleep = Some(pinned);
-                Poll::Pending
-            }
+        match self.inner.poll_ready(cx) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(Err(error)) => Poll::Ready(Err(CircuitBreakerError::Inner(error))),
+            Poll::Ready(Ok(())) => Poll::Ready(Ok(())),
         }
     }
 
@@ -875,6 +908,7 @@ where
         let clone = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
         let fallback = Arc::clone(&self.fallback);
+        let reject_without_inner = std::mem::take(&mut self.reject_next_call);
 
         Box::pin(async move {
             #[cfg(feature = "tracing")]
@@ -886,7 +920,11 @@ where
                 );
             }
 
-            let permitted = {
+            let permitted = if reject_without_inner {
+                let circuit = circuit.lock().await;
+                circuit.record_rejection(&config);
+                false
+            } else {
                 let mut circuit = circuit.lock().await;
                 circuit.try_acquire(&config)
             };
