@@ -17,6 +17,7 @@ tower = { workspace = true }
 tower-layer = { workspace = true }
 tower-service = { workspace = true }
 tokio = { workspace = true, features = ["sync", "time"] }
+tokio-util.workspace = true
 pin-project-lite = { workspace = true }
 
 # Optional dependencies

@@ -15,7 +15,7 @@ into a regression test. It does **not** mean the behavior is assumed correct.
 
 | Crate | Readied receiver / Tower composition | Internal attempts | Cancellation / drop | Admission / wake | Response / error preservation | Configuration edges | Differential reference |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| adaptive | Covered in crate + umbrella contract tests | N/A | Gap ([#365]) | Gap: clone-heavy permit reservation and wake ([#365]); atomic controller updates ([#368]) | Gap ([#365]) | Gap ([#368], [#372]) | `tower::limit::ConcurrencyLimit` |
+| adaptive | Covered in crate + umbrella contract tests | N/A | Covered for readied-clone and call-future drop ([#365]) | Covered for clone-heavy reservation, wake, and safe dynamic shrink ([#365]); atomic controller updates remain ([#368]) | Covered by contract and behavior tests | Gap ([#368], [#372]) | `tower::limit::ConcurrencyLimit` |
 | bulkhead | Covered in rejection and backpressure modes | N/A | Gap: waiter/future drop ([#367]) | Differential single-permit test matches Tower; direct permit polling remains ([#367]) | Covered by integration tests | Audit in [#372] | `tower::limit::ConcurrencyLimit` |
 | cache | Covered on forced misses | N/A | Pass-through cancellation; probe regression not yet added | Covered by existing concurrency tests | Covered on hits/misses | Audit in [#372] | `tower::Service` pass-through |
 | chaos | Covered | N/A | Pass-through cancellation; probe regression not yet added | N/A | Covered by behavior tests | Audit in [#372] | `tower::Service` pass-through |
