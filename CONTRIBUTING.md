@@ -188,6 +188,14 @@ The contract says `Ready(Err(_))` from `poll_ready` means the service is done an
 
 `tests/clone_in_call_contract.rs` wraps each layer around a `StatefulInner` whose `Clone` resets readiness. A new layer should add a `<layer>_drives_readied_instance` case to that suite.
 
+For retry paths, cancellation, wake behavior, admission boundaries, and
+response/error preservation, compose the reusable `ServiceProbe` and
+`ControlledService` from `tower_resilience_core::testing`. The current coverage
+and known gaps are tracked in [`docs/tower-contract-matrix.md`](docs/tower-contract-matrix.md).
+When reviewing a new or changed `Service` implementation, paste and complete
+the [`Tower service review checklist`](docs/tower-service-review-checklist.md)
+in the pull request.
+
 `tests/auto_traits.rs` asserts every layer is `Send + Sync + 'static` when its inner is. New layers should be added there too -- a regression that drops `Sync` (e.g., storing a `Pin<Box<dyn Future + Send>>` field) fails to compile there. See #287.
 
 ### Testing

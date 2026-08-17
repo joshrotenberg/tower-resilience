@@ -29,7 +29,7 @@ tracing = ["dep:tracing"]
 metrics = ["dep:metrics"]
 # Enable HealthTriggerable trait for health-based pattern control
 health-integration = []
-# Expose test helpers (StatefulInner probe). Intended for dev-dependencies only.
+# Expose adversarial Tower contract probes. Intended for dev-dependencies only.
 testing = ["dep:tower"]
 
 [dev-dependencies]
