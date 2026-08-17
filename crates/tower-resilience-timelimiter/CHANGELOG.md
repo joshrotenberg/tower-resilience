@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Define TimeLimiter's deadline as covering only the `Service::call` future,
+  excluding readiness and response-body frames; document and test composition
+  with tower-http 0.7 idle and absolute body timeouts.
+- Rename the misleading `streaming()` preset to `detached()`; the old name is
+  retained as a deprecated alias.
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-timelimiter-v0.11.0...tower-resilience-timelimiter-v0.12.0) - 2026-08-17
 
 ### Fixed

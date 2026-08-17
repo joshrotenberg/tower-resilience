@@ -187,15 +187,16 @@ impl TimeLimiterLayer<FixedTimeout> {
         Self::builder().timeout_duration(Duration::from_secs(30))
     }
 
-    /// Preset: Long timeout for streaming and long-poll scenarios.
+    /// Preset: Long timeout whose service future continues in the background.
     ///
     /// Configuration:
     /// - 60 second timeout
     /// - Does NOT cancel running future on timeout
     ///
-    /// Use this for streaming responses, long-polling, or WebSocket
-    /// connections where you want the background work to continue
-    /// even after the timeout fires.
+    /// Use this when abandoning the caller must not cancel the work submitted
+    /// to the inner service. This preset only times the future returned by
+    /// [`tower::Service::call`]; it does not time readiness or
+    /// HTTP body frames.
     ///
     /// # Examples
     ///
@@ -203,17 +204,32 @@ impl TimeLimiterLayer<FixedTimeout> {
     /// use tower_resilience_timelimiter::TimeLimiterLayer;
     ///
     /// // Use as-is
-    /// let layer = TimeLimiterLayer::streaming().build();
+    /// let layer = TimeLimiterLayer::detached().build();
     ///
     /// // Or customize further
-    /// let layer = TimeLimiterLayer::streaming()
-    ///     .name("stream-timeout")
+    /// let layer = TimeLimiterLayer::detached()
+    ///     .name("detached-timeout")
     ///     .build();
     /// ```
-    pub fn streaming() -> crate::TimeLimiterConfigBuilder<FixedTimeout> {
+    pub fn detached() -> crate::TimeLimiterConfigBuilder<FixedTimeout> {
         Self::builder()
             .timeout_duration(Duration::from_secs(60))
             .cancel_running_future(false)
+    }
+
+    /// Deprecated alias for [`TimeLimiterLayer::detached`].
+    ///
+    /// Despite its name, this preset has never timed HTTP request or response
+    /// body frames. It only lets the inner service future continue after the
+    /// caller receives a timeout. Compose `TimeLimiterLayer` with the body
+    /// timeout layers in `tower-http` 0.7 or later when body-frame timing is
+    /// required.
+    #[deprecated(
+        since = "0.13.0",
+        note = "this preset does not time streams; use `detached()` for its service-future behavior and tower-http 0.7 body timeout layers for HTTP bodies"
+    )]
+    pub fn streaming() -> crate::TimeLimiterConfigBuilder<FixedTimeout> {
+        Self::detached()
     }
 }
 
