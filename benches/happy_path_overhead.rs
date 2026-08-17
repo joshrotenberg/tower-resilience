@@ -2,7 +2,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use futures::future::BoxFuture;
 use std::hint::black_box;
 use std::time::Duration;
-use tower::{Layer, Service, ServiceBuilder, ServiceExt};
+use tower::{Layer, Service, ServiceBuilder, ServiceExt, service_fn};
 use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd};
 use tower_resilience_bulkhead::BulkheadLayer;
 use tower_resilience_cache::CacheLayer;
@@ -295,7 +295,9 @@ fn bench_reconnect(c: &mut Criterion) {
     c.bench_function("reconnect_no_reconnect_needed", |b| {
         b.to_async(&runtime).iter(|| async {
             let layer = ReconnectLayer::new(ReconnectConfig::default());
-            let mut service = layer.layer(BaselineService);
+            let factory =
+                service_fn(|(): ()| async { Ok::<_, std::convert::Infallible>(BaselineService) });
+            let mut service = layer.layer(factory);
 
             let response = service
                 .ready()

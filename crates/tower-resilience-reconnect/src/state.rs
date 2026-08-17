@@ -1,7 +1,7 @@
 //! Connection state tracking for reconnection logic.
 
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 /// Connection state information
@@ -26,8 +26,8 @@ pub struct ReconnectState {
     /// Current reconnection attempt number (0-indexed)
     attempts: Arc<AtomicU32>,
 
-    /// Last successful connection time (unix timestamp millis)
-    last_connected: Arc<AtomicU64>,
+    /// Monotonic instant of the last successful connection.
+    last_connected: Arc<Mutex<Option<Instant>>>,
 }
 
 impl ReconnectState {
@@ -38,7 +38,7 @@ impl ReconnectState {
                 ConnectionState::Disconnected,
             ))),
             attempts: Arc::new(AtomicU32::new(0)),
-            last_connected: Arc::new(AtomicU64::new(0)),
+            last_connected: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -72,9 +72,10 @@ impl ReconnectState {
     pub fn mark_connected(&self) {
         self.set_state(ConnectionState::Connected);
         self.reset_attempts();
-        let now = Instant::now();
-        let millis = now.elapsed().as_millis() as u64;
-        self.last_connected.store(millis, Ordering::Release);
+        *self
+            .last_connected
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(Instant::now());
     }
 
     /// Mark connection as disconnected
@@ -89,13 +90,11 @@ impl ReconnectState {
 
     /// Get time since last successful connection
     pub fn time_since_connected(&self) -> Option<Duration> {
-        let last = self.last_connected.load(Ordering::Acquire);
-        if last == 0 {
-            None
-        } else {
-            let now = Instant::now().elapsed().as_millis() as u64;
-            Some(Duration::from_millis(now.saturating_sub(last)))
-        }
+        self.last_connected
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+            .map(Instant::elapsed)
     }
 
     fn encode_state(state: ConnectionState) -> u64 {
@@ -180,5 +179,6 @@ mod tests {
         state.mark_connected();
         assert_eq!(state.attempts(), 0);
         assert_eq!(state.state(), ConnectionState::Connected);
+        assert!(state.time_since_connected().is_some());
     }
 }

@@ -1,10 +1,11 @@
+use std::convert::Infallible;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::task::{Context, Poll};
 use std::time::Duration;
-use tower::{Layer, Service};
+use tower::{Layer, Service, ServiceExt, service_fn};
 use tower_resilience_reconnect::{ReconnectConfig, ReconnectLayer, ReconnectPolicy};
 
 /// Simulated service that fails for the first N calls
@@ -49,6 +50,13 @@ impl Service<String> for FailingService {
     }
 }
 
+fn factory<S: Clone>(service: S) -> impl Service<(), Response = S, Error = Infallible> + Clone {
+    service_fn(move |(): ()| {
+        let service = service.clone();
+        async move { Ok::<_, Infallible>(service) }
+    })
+}
+
 #[tokio::test]
 async fn reconnect_succeeds_after_retries() {
     let inner = FailingService::new(2); // Fail first 2 attempts
@@ -60,9 +68,14 @@ async fn reconnect_succeeds_after_retries() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
 
     assert!(result.is_ok());
     assert_eq!(
@@ -82,9 +95,14 @@ async fn reconnect_respects_max_attempts() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
 
     assert!(result.is_err());
 }
@@ -103,10 +121,15 @@ async fn exponential_backoff_policy() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
     let start = std::time::Instant::now();
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
     let elapsed = start.elapsed();
 
     assert!(result.is_ok());
@@ -132,9 +155,14 @@ async fn unlimited_attempts() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
 
     assert!(result.is_ok());
     assert!(
@@ -153,9 +181,14 @@ async fn no_reconnect_policy_fails_immediately() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
 
     assert!(result.is_err());
     assert_eq!(
@@ -172,9 +205,14 @@ async fn successful_on_first_attempt() {
 
     let config = ReconnectConfig::default();
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
 
     assert!(result.is_ok());
     assert_eq!(
@@ -199,9 +237,14 @@ async fn reconnect_predicate_filters_errors() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
 
     // Should fail immediately because error is ConnectionRefused, not BrokenPipe
     assert!(result.is_err());
@@ -258,9 +301,14 @@ async fn reconnect_predicate_allows_matching_errors() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
 
     // Should succeed after 2 reconnect attempts
     assert!(result.is_ok());

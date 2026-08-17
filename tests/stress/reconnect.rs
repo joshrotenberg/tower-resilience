@@ -1,5 +1,6 @@
 //! Reconnect stress tests
 
+use std::convert::Infallible;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -7,7 +8,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
 
-use tower::{Layer, Service};
+use tower::{Layer, Service, ServiceExt, service_fn};
 use tower_resilience_reconnect::{ReconnectConfig, ReconnectLayer, ReconnectPolicy};
 
 use super::{ConcurrencyTracker, get_memory_usage_mb};
@@ -57,6 +58,13 @@ impl Service<String> for FailingService {
     }
 }
 
+fn factory<S: Clone>(service: S) -> impl Service<(), Response = S, Error = Infallible> + Clone {
+    service_fn(move |(): ()| {
+        let service = service.clone();
+        async move { Ok::<_, Infallible>(service) }
+    })
+}
+
 /// Test: High volume of reconnection attempts
 #[tokio::test]
 #[ignore]
@@ -72,13 +80,18 @@ async fn stress_one_million_successful_calls() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
     let start = Instant::now();
     let count = 1_000_000;
 
     for i in 0..count {
-        let result = service.call(format!("req-{}", i)).await;
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call(format!("req-{}", i))
+            .await;
         assert!(result.is_ok());
     }
 
@@ -118,9 +131,14 @@ async fn stress_high_volume_with_reconnections() {
         // Each iteration creates a new failing service that fails 3 times
         let inner = FailingService::new(3);
         let attempts_tracker = Arc::clone(&inner.call_count);
-        let mut service = layer.layer(inner);
+        let mut service = layer.layer(factory(inner));
 
-        let result = service.call("test".to_string()).await;
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call("test".to_string())
+            .await;
         if result.is_ok() {
             successes += 1;
         }
@@ -170,26 +188,29 @@ async fn stress_high_concurrency_with_reconnections() {
         let tracker = Arc::clone(&tracker);
         let successes = Arc::clone(&successes);
 
-        let handle = tokio::spawn(async move {
+        let handle = async move {
             tracker.enter();
 
             let inner = FailingService::new(2); // Fail 2 times
-            let mut service = layer.layer(inner);
+            let mut service = layer.layer(factory(inner));
 
-            let result = service.call("test".to_string()).await;
+            let result = service
+                .ready()
+                .await
+                .unwrap()
+                .call("test".to_string())
+                .await;
             if result.is_ok() {
                 successes.fetch_add(1, Ordering::SeqCst);
             }
 
             tracker.exit();
-        });
+        };
 
         handles.push(handle);
     }
 
-    for handle in handles {
-        handle.await.unwrap();
-    }
+    futures::future::join_all(handles).await;
 
     let elapsed = start.elapsed();
     let success_count = successes.load(Ordering::SeqCst);
@@ -221,10 +242,15 @@ async fn stress_exponential_backoff_timing() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
     let start = Instant::now();
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
     let elapsed = start.elapsed();
 
     assert!(result.is_ok());
@@ -260,8 +286,13 @@ async fn stress_memory_stability() {
     // Perform many reconnect cycles
     for _ in 0..10_000 {
         let inner = FailingService::new(3);
-        let mut service = layer.layer(inner);
-        let _ = service.call("test".to_string()).await;
+        let mut service = layer.layer(factory(inner));
+        let _ = service
+            .ready()
+            .await
+            .unwrap()
+            .call("test".to_string())
+            .await;
     }
 
     let mem_end = get_memory_usage_mb();
@@ -294,10 +325,15 @@ async fn stress_unlimited_attempts() {
         .build();
 
     let layer = ReconnectLayer::new(config);
-    let mut service = layer.layer(inner);
+    let mut service = layer.layer(factory(inner));
 
     let start = Instant::now();
-    let result = service.call("test".to_string()).await;
+    let result = service
+        .ready()
+        .await
+        .unwrap()
+        .call("test".to_string())
+        .await;
     let elapsed = start.elapsed();
 
     assert!(result.is_ok());
@@ -334,9 +370,15 @@ async fn stress_mixed_patterns() {
         // Vary failure count: 0-4 failures
         let fail_count = i % 5;
         let inner = FailingService::new(fail_count);
-        let mut service = layer.layer(inner);
+        let mut service = layer.layer(factory(inner));
 
-        match service.call(format!("req-{}", i)).await {
+        match service
+            .ready()
+            .await
+            .unwrap()
+            .call(format!("req-{}", i))
+            .await
+        {
             Ok(_) => successes += 1,
             Err(_) => failures += 1,
         }
@@ -385,9 +427,15 @@ async fn stress_reconnect_predicate() {
         }
 
         let inner = FailingService::new(2);
-        let mut service = layer.layer(inner);
+        let mut service = layer.layer(factory(inner));
 
-        match service.call("test".to_string()).await {
+        match service
+            .ready()
+            .await
+            .unwrap()
+            .call("test".to_string())
+            .await
+        {
             Ok(_) => reconnected += 1,
             Err(_) => failed_immediately += 1,
         }

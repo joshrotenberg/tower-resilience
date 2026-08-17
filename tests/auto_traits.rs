@@ -212,7 +212,9 @@ fn reconnect_is_send_sync() {
         ))
         .max_attempts(3)
         .build();
-    let svc = ReconnectLayer::new(config).layer(SyncInner);
+    let factory =
+        tower::service_fn(|(): ()| async { Ok::<_, std::convert::Infallible>(SyncInner) });
+    let svc = ReconnectLayer::new(config).layer(factory);
     assert_send_sync_static(&svc);
 }
 

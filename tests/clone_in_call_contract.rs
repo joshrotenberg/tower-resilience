@@ -297,9 +297,12 @@ async fn reconnect_drives_readied_instance() {
         .max_attempts(3)
         .build();
     let layer = ReconnectLayer::new(config);
-    let mut svc = tower::ServiceBuilder::new()
-        .layer(layer)
-        .service(StatefulInner::new());
+    let inner = StatefulInner::new();
+    let factory = tower::service_fn(move |(): ()| {
+        let inner = inner.clone();
+        async move { Ok::<_, std::convert::Infallible>(inner) }
+    });
+    let mut svc = tower::ServiceBuilder::new().layer(layer).service(factory);
 
     for _ in 0..3 {
         let _ = svc.ready().await.unwrap().call(()).await;

@@ -7,7 +7,7 @@ repository.workspace = true
 authors.workspace = true
 rust-version.workspace = true
 readme = "../../README.md"
-description = "Automatic reconnection middleware for Tower services with configurable backoff strategies"
+description = "Factory-backed reconnection middleware for Tower services with configurable backoff"
 categories = ["asynchronous", "network-programming"]
 keywords = ["tower", "reconnect", "resilience", "middleware", "connection"]
 
@@ -18,7 +18,6 @@ tower = { workspace = true, features = ["make"] }
 futures = { workspace = true }
 tokio = { workspace = true }
 thiserror = { workspace = true }
-pin-project = "1.1"
 
 # Optional dependencies
 metrics = { workspace = true, optional = true }

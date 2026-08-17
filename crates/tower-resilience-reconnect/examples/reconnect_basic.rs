@@ -6,7 +6,7 @@
 //! capabilities using the ReconnectLayer.
 
 use std::time::Duration;
-use tower::{Service, ServiceBuilder};
+use tower::{service_fn, Service, ServiceBuilder};
 use tower_resilience_reconnect::{ReconnectConfig, ReconnectLayer, ReconnectPolicy};
 
 /// Example demonstrating basic reconnection with exponential backoff.
@@ -55,9 +55,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Retry on reconnect: true\n");
 
     // Create the service with reconnection layer
-    let service = ExampleService;
+    // Reconnect wraps a factory, not an already-created connection. Every
+    // classified connection failure causes this factory to be invoked again.
+    let factory = service_fn(|(): ()| async { Ok::<_, std::convert::Infallible>(ExampleService) });
     let layer = ReconnectLayer::new(config);
-    let mut reconnect_service = ServiceBuilder::new().layer(layer).service(service);
+    let mut reconnect_service = ServiceBuilder::new().layer(layer).service(factory);
 
     println!("Service created with reconnection capabilities!");
 

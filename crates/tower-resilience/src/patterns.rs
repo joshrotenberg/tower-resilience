@@ -1518,7 +1518,11 @@ pub mod reconnect {
     //! use std::time::Duration;
     //!
     //! # async fn example() {
-    //! # let database_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+    //! # let make_database_service = tower::service_fn(|(): ()| async {
+    //! #     Ok::<_, std::io::Error>(tower::service_fn(|_req: ()| async {
+    //! #         Ok::<_, std::io::Error>(())
+    //! #     }))
+    //! # });
     //! let reconnect = ReconnectLayer::new(
     //!     ReconnectConfig::builder()
     //!         .policy(ReconnectPolicy::exponential(
@@ -1530,7 +1534,7 @@ pub mod reconnect {
     //!         .build()
     //! );
     //!
-    //! let service = reconnect.layer(database_service);
+    //! let service = reconnect.layer(make_database_service);
     //! # }
     //! # }
     //! ```

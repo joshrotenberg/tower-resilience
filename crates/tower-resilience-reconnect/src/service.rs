@@ -1,244 +1,575 @@
 use std::{
     future::Future,
     pin::Pin,
-    sync::Arc,
+    sync::{Arc, Mutex, MutexGuard},
     task::{Context, Poll},
 };
 
-use pin_project::pin_project;
 use tower::Service;
 
 use crate::{config::ReconnectConfig, state::ReconnectState};
 
-/// A Tower Service that automatically reconnects on connection failures.
+/// A Tower service that owns a service factory and replaces failed connections.
 ///
-/// This is a placeholder implementation that will be enhanced to support
-/// automatic reconnection with configurable backoff strategies.
-///
-/// # Type Parameters
-///
-/// * `S` - The inner service
-#[derive(Clone)]
-pub struct ReconnectService<S> {
-    inner: S,
+/// `M` is a `MakeService`-style factory: a `Service<Target>` whose response is
+/// another `Service`. All clones coordinate through one shared connection. A
+/// classified connection failure invalidates that connection generation, and
+/// the next retry is issued only after the factory has produced a fresh service.
+pub struct ReconnectService<M, Target>
+where
+    M: Service<Target>,
+{
+    shared: Arc<Mutex<Shared<M, Target>>>,
     config: Arc<ReconnectConfig>,
     state: ReconnectState,
+    ready: Option<(u64, M::Response)>,
+    readiness_attempts: u32,
 }
 
-impl<S> ReconnectService<S> {
-    /// Creates a new `ReconnectService` wrapping the given service.
-    pub(crate) fn new(inner: S, config: Arc<ReconnectConfig>, state: ReconnectState) -> Self {
+impl<M, Target> ReconnectService<M, Target>
+where
+    M: Service<Target>,
+{
+    /// Creates a reconnecting service from a factory, target, and configuration.
+    pub fn new(factory: M, target: Target, config: ReconnectConfig) -> Self {
+        Self::from_parts(factory, target, Arc::new(config), ReconnectState::new())
+    }
+
+    pub(crate) fn from_parts(
+        factory: M,
+        target: Target,
+        config: Arc<ReconnectConfig>,
+        state: ReconnectState,
+    ) -> Self {
         Self {
-            inner,
+            shared: Arc::new(Mutex::new(Shared::new(factory, target))),
             config,
             state,
+            ready: None,
+            readiness_attempts: 0,
         }
     }
 
-    /// Returns a reference to the current reconnection state.
+    /// Returns the shared reconnection state.
     pub fn state(&self) -> &ReconnectState {
         &self.state
     }
 
-    /// Returns a reference to the reconnection configuration.
+    /// Returns the reconnection configuration.
     pub fn config(&self) -> &ReconnectConfig {
         &self.config
     }
 }
 
-impl<S, Request> Service<Request> for ReconnectService<S>
+impl<M, Target> Clone for ReconnectService<M, Target>
 where
-    S: Service<Request> + Clone,
-    S::Error: std::error::Error + Send + Sync + 'static,
-    Request: Clone,
+    M: Service<Target>,
 {
-    type Response = S::Response;
-    type Error = ReconnectError<S::Error>;
-    type Future = ReconnectFuture<S, Request>;
-
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner
-            .poll_ready(cx)
-            .map_err(ReconnectError::ServiceError)
-    }
-
-    fn call(&mut self, request: Request) -> Self::Future {
-        let call_future = self.inner.call(request.clone());
-        ReconnectFuture {
-            inner: self.inner.clone(),
-            config: self.config.clone(),
+    fn clone(&self) -> Self {
+        Self {
+            shared: Arc::clone(&self.shared),
+            config: Arc::clone(&self.config),
             state: self.state.clone(),
-            request,
-            attempt: 0,
-            last_error: None,
-            phase: Phase::Calling(call_future),
+            // Readiness belongs to the receiver that observed it. A clone must
+            // acquire and poll its own service instance.
+            ready: None,
+            readiness_attempts: 0,
         }
     }
 }
 
-/// Future returned by `ReconnectService`.
-#[pin_project]
-pub struct ReconnectFuture<S, Request>
+impl<M, Target, Request> Service<Request> for ReconnectService<M, Target>
 where
-    S: Service<Request>,
+    M: Service<Target>,
+    M::Response: Service<Request> + Clone,
+    M::Error: std::error::Error + Send + Sync + 'static,
+    <M::Response as Service<Request>>::Error: std::error::Error + Send + Sync + 'static,
+    Target: Clone,
+    Request: Clone,
 {
-    inner: S,
+    type Response = <M::Response as Service<Request>>::Response;
+    type Error = ReconnectError<M::Error, <M::Response as Service<Request>>::Error>;
+    type Future = ReconnectFuture<M, Target, Request>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        loop {
+            if let Some((generation, service)) = self.ready.as_mut() {
+                if !is_current_generation(&self.shared, *generation) {
+                    self.ready = None;
+                    continue;
+                }
+
+                match service.poll_ready(cx) {
+                    Poll::Ready(Ok(())) => {
+                        self.readiness_attempts = 0;
+                        return Poll::Ready(Ok(()));
+                    }
+                    Poll::Pending => return Poll::Pending,
+                    Poll::Ready(Err(error)) => {
+                        let generation = *generation;
+                        self.ready = None;
+
+                        if !self.config.should_reconnect(&error) {
+                            return Poll::Ready(Err(ReconnectError::ServiceError(error)));
+                        }
+
+                        self.readiness_attempts += 1;
+                        if exceeded(self.config.max_attempts, self.readiness_attempts) {
+                            return Poll::Ready(Err(ReconnectError::MaxAttemptsExceeded {
+                                attempts: self.readiness_attempts,
+                                error: Box::new(error),
+                            }));
+                        }
+
+                        let can_reconnect = invalidate(
+                            &self.shared,
+                            generation,
+                            self.readiness_attempts,
+                            &self.config,
+                            &self.state,
+                        );
+                        if !can_reconnect {
+                            return Poll::Ready(Err(ReconnectError::ConnectionFailed(error)));
+                        }
+                    }
+                }
+            } else {
+                match poll_connection(&self.shared, &self.config, &self.state, cx) {
+                    Poll::Ready(Ok(connection)) => self.ready = Some(connection),
+                    Poll::Ready(Err(error)) => return Poll::Ready(Err(error)),
+                    Poll::Pending => return Poll::Pending,
+                }
+            }
+        }
+    }
+
+    fn call(&mut self, request: Request) -> Self::Future {
+        let (generation, mut service) = self
+            .ready
+            .take()
+            .expect("ReconnectService::call invoked without poll_ready");
+        let future = service.call(request.clone());
+
+        ReconnectFuture {
+            shared: Arc::clone(&self.shared),
+            config: Arc::clone(&self.config),
+            state: self.state.clone(),
+            request,
+            attempts: 0,
+            phase: ResponsePhase::Calling {
+                generation,
+                future: Box::pin(future),
+            },
+        }
+    }
+}
+
+struct Shared<M, Target>
+where
+    M: Service<Target>,
+{
+    factory: M,
+    target: Target,
+    generation: u64,
+    factory_attempts: u32,
+    phase: ConnectionPhase<M::Future, M::Response>,
+}
+
+impl<M, Target> Shared<M, Target>
+where
+    M: Service<Target>,
+{
+    fn new(factory: M, target: Target) -> Self {
+        Self {
+            factory,
+            target,
+            generation: 0,
+            factory_attempts: 0,
+            phase: ConnectionPhase::Idle,
+        }
+    }
+}
+
+enum ConnectionPhase<F, S> {
+    Idle,
+    Sleeping(Pin<Box<tokio::time::Sleep>>),
+    Connecting(Pin<Box<F>>),
+    Connected(S),
+}
+
+type ConnectionPoll<M, Target, Request> = Poll<
+    Result<
+        (u64, <M as Service<Target>>::Response),
+        ReconnectError<
+            <M as Service<Target>>::Error,
+            <<M as Service<Target>>::Response as Service<Request>>::Error,
+        >,
+    >,
+>;
+
+/// Future returned by [`ReconnectService`].
+pub struct ReconnectFuture<M, Target, Request>
+where
+    M: Service<Target>,
+    M::Response: Service<Request>,
+{
+    shared: Arc<Mutex<Shared<M, Target>>>,
     config: Arc<ReconnectConfig>,
     state: ReconnectState,
     request: Request,
-    attempt: u32,
-    last_error: Option<S::Error>,
-    #[pin]
-    phase: Phase<S::Future>,
+    attempts: u32,
+    phase: ResponsePhase<<M::Response as Service<Request>>::Future, M::Response>,
 }
 
-#[pin_project(project = PhaseProj)]
-enum Phase<F> {
-    Calling(#[pin] F),
-    Sleeping(#[pin] tokio::time::Sleep),
-    /// Driving `poll_ready` on the stored inner clone before issuing a retry
-    /// `call`. The initial call uses the caller-readied receiver; every
-    /// subsequent retry must re-ready the clone we hold here (tower::Service
-    /// contract -- see #293).
-    Readying,
-    Failed,
-}
-
-impl<S, Request> Future for ReconnectFuture<S, Request>
+// Inner call/factory futures remain pinned in `Pin<Box<_>>`. The remaining
+// fields are ordinary state and are never exposed as pinned projections.
+impl<M, Target, Request> Unpin for ReconnectFuture<M, Target, Request>
 where
-    S: Service<Request>,
-    S::Error: std::error::Error + Send + Sync + 'static,
+    M: Service<Target>,
+    M::Response: Service<Request>,
+{
+}
+
+enum ResponsePhase<F, S> {
+    Calling {
+        generation: u64,
+        future: Pin<Box<F>>,
+    },
+    Reconnecting,
+    Readying {
+        generation: u64,
+        service: S,
+    },
+    Done,
+}
+
+impl<M, Target, Request> Future for ReconnectFuture<M, Target, Request>
+where
+    M: Service<Target>,
+    M::Response: Service<Request> + Clone,
+    M::Error: std::error::Error + Send + Sync + 'static,
+    <M::Response as Service<Request>>::Error: std::error::Error + Send + Sync + 'static,
+    Target: Clone,
     Request: Clone,
 {
-    type Output = Result<S::Response, ReconnectError<S::Error>>;
+    type Output = Result<
+        <M::Response as Service<Request>>::Response,
+        ReconnectError<M::Error, <M::Response as Service<Request>>::Error>,
+    >;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let mut this = self.project();
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.as_mut().get_mut();
 
         loop {
-            match this.phase.as_mut().project() {
-                PhaseProj::Calling(call_future) => {
-                    match call_future.poll(cx) {
-                        Poll::Ready(Ok(response)) => {
-                            this.state.mark_connected();
-
-                            #[cfg(feature = "tracing")]
-                            if let Some(ref callback) = this.config.on_state_change {
-                                callback(
-                                    crate::state::ConnectionState::Reconnecting,
-                                    crate::state::ConnectionState::Connected,
-                                );
-                            }
-                            return Poll::Ready(Ok(response));
-                        }
-                        Poll::Ready(Err(error)) => {
-                            // Check if this error should trigger reconnection
-                            if !this.config.should_reconnect(&error) {
-                                // Not a reconnectable error, fail immediately
-                                this.phase.set(Phase::Failed);
-                                return Poll::Ready(Err(ReconnectError::ServiceError(error)));
-                            }
-
-                            this.state.mark_disconnected();
-
-                            #[cfg(feature = "tracing")]
-                            if let Some(ref callback) = this.config.on_state_change {
-                                callback(
-                                    crate::state::ConnectionState::Connected,
-                                    crate::state::ConnectionState::Disconnected,
-                                );
-                            }
-                            *this.attempt += 1;
-
-                            // Store the error for potential use
-                            *this.last_error = Some(error);
-
-                            // Check if we've exceeded max attempts
-                            if let Some(max) = this.config.max_attempts {
-                                if *this.attempt > max {
-                                    this.phase.set(Phase::Failed);
-                                    return Poll::Ready(Err(ReconnectError::MaxAttemptsExceeded {
-                                        attempts: *this.attempt,
-                                        error: Box::new(this.last_error.take().unwrap()),
-                                    }));
-                                }
-                            }
-
-                            // Get delay for this attempt
-                            if let Some(delay) =
-                                this.config.policy.delay_for_attempt(*this.attempt as usize)
-                            {
-                                this.state.mark_reconnecting();
-
-                                #[cfg(feature = "tracing")]
-                                if let Some(ref callback) = this.config.on_state_change {
-                                    callback(
-                                        crate::state::ConnectionState::Disconnected,
-                                        crate::state::ConnectionState::Reconnecting,
-                                    );
-                                }
-
-                                #[cfg(feature = "tracing")]
-                                if let Some(ref callback) = this.config.on_reconnect {
-                                    callback(*this.attempt);
-                                }
-
-                                this.phase.set(Phase::Sleeping(tokio::time::sleep(delay)));
-                            } else {
-                                // No backoff - fail immediately
-                                this.phase.set(Phase::Failed);
-                                let error = this.last_error.take().unwrap();
-                                return Poll::Ready(Err(ReconnectError::ConnectionFailed(error)));
-                            }
-                        }
-                        Poll::Pending => return Poll::Pending,
-                    }
-                }
-                PhaseProj::Sleeping(sleep) => {
-                    match sleep.poll(cx) {
-                        Poll::Ready(()) => {
-                            // Sleep complete - check retry_on_reconnect flag
-                            if this.config.retry_on_reconnect {
-                                // Drive poll_ready on the stored clone before
-                                // re-issuing the call -- the tower::Service
-                                // contract requires it. See #293.
-                                this.phase.set(Phase::Readying);
-                            } else {
-                                // Don't retry - return error to caller
-                                // The backoff succeeded, so mark connected for next request
-                                this.state.mark_connected();
-                                this.phase.set(Phase::Failed);
-                                let error = this.last_error.take().unwrap();
-                                return Poll::Ready(Err(ReconnectError::ConnectionFailedNoRetry(
-                                    error,
-                                )));
-                            }
-                        }
-                        Poll::Pending => return Poll::Pending,
-                    }
-                }
-                PhaseProj::Readying => match this.inner.poll_ready(cx) {
-                    Poll::Ready(Ok(())) => {
-                        let call_future = this.inner.call(this.request.clone());
-                        this.phase.set(Phase::Calling(call_future));
-                    }
-                    Poll::Ready(Err(error)) => {
-                        this.phase.set(Phase::Failed);
-                        return Poll::Ready(Err(ReconnectError::ServiceError(error)));
+            match &mut this.phase {
+                ResponsePhase::Calling { generation, future } => match future.as_mut().poll(cx) {
+                    Poll::Ready(Ok(response)) => {
+                        this.phase = ResponsePhase::Done;
+                        return Poll::Ready(Ok(response));
                     }
                     Poll::Pending => return Poll::Pending,
+                    Poll::Ready(Err(error)) => {
+                        if !this.config.should_reconnect(&error) {
+                            this.phase = ResponsePhase::Done;
+                            return Poll::Ready(Err(ReconnectError::ServiceError(error)));
+                        }
+
+                        this.attempts += 1;
+                        if exceeded(this.config.max_attempts, this.attempts) {
+                            this.phase = ResponsePhase::Done;
+                            return Poll::Ready(Err(ReconnectError::MaxAttemptsExceeded {
+                                attempts: this.attempts,
+                                error: Box::new(error),
+                            }));
+                        }
+
+                        let can_reconnect = invalidate(
+                            &this.shared,
+                            *generation,
+                            this.attempts,
+                            &this.config,
+                            &this.state,
+                        );
+                        if !can_reconnect {
+                            this.phase = ResponsePhase::Done;
+                            return Poll::Ready(Err(ReconnectError::ConnectionFailed(error)));
+                        }
+
+                        if !this.config.retry_on_reconnect {
+                            this.phase = ResponsePhase::Done;
+                            return Poll::Ready(Err(ReconnectError::ConnectionFailedNoRetry(
+                                error,
+                            )));
+                        }
+
+                        this.phase = ResponsePhase::Reconnecting;
+                    }
                 },
-                PhaseProj::Failed => {
-                    panic!("ReconnectFuture polled after completion");
+                ResponsePhase::Reconnecting => {
+                    match poll_connection(&this.shared, &this.config, &this.state, cx) {
+                        Poll::Ready(Ok((generation, service))) => {
+                            this.phase = ResponsePhase::Readying {
+                                generation,
+                                service,
+                            };
+                        }
+                        Poll::Ready(Err(error)) => {
+                            this.phase = ResponsePhase::Done;
+                            return Poll::Ready(Err(error));
+                        }
+                        Poll::Pending => return Poll::Pending,
+                    }
                 }
+                ResponsePhase::Readying {
+                    generation,
+                    service,
+                } => match service.poll_ready(cx) {
+                    Poll::Ready(Ok(())) => {
+                        let future = service.call(this.request.clone());
+                        this.phase = ResponsePhase::Calling {
+                            generation: *generation,
+                            future: Box::pin(future),
+                        };
+                    }
+                    Poll::Pending => return Poll::Pending,
+                    Poll::Ready(Err(error)) => {
+                        if !this.config.should_reconnect(&error) {
+                            this.phase = ResponsePhase::Done;
+                            return Poll::Ready(Err(ReconnectError::ServiceError(error)));
+                        }
+
+                        this.attempts += 1;
+                        if exceeded(this.config.max_attempts, this.attempts) {
+                            this.phase = ResponsePhase::Done;
+                            return Poll::Ready(Err(ReconnectError::MaxAttemptsExceeded {
+                                attempts: this.attempts,
+                                error: Box::new(error),
+                            }));
+                        }
+
+                        let can_reconnect = invalidate(
+                            &this.shared,
+                            *generation,
+                            this.attempts,
+                            &this.config,
+                            &this.state,
+                        );
+                        if !can_reconnect {
+                            this.phase = ResponsePhase::Done;
+                            return Poll::Ready(Err(ReconnectError::ConnectionFailed(error)));
+                        }
+                        this.phase = ResponsePhase::Reconnecting;
+                    }
+                },
+                ResponsePhase::Done => panic!("ReconnectFuture polled after completion"),
             }
         }
     }
 }
 
+fn poll_connection<M, Target, Request>(
+    shared: &Arc<Mutex<Shared<M, Target>>>,
+    config: &ReconnectConfig,
+    state: &ReconnectState,
+    cx: &mut Context<'_>,
+) -> ConnectionPoll<M, Target, Request>
+where
+    M: Service<Target>,
+    M::Response: Service<Request> + Clone,
+    M::Error: std::error::Error + Send + Sync + 'static,
+    <M::Response as Service<Request>>::Error: std::error::Error + Send + Sync + 'static,
+    Target: Clone,
+{
+    let mut shared = lock(shared);
+
+    loop {
+        let generation = shared.generation;
+        match &mut shared.phase {
+            ConnectionPhase::Idle => match shared.factory.poll_ready(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(Ok(())) => {
+                    let target = shared.target.clone();
+                    let future = shared.factory.call(target);
+                    shared.phase = ConnectionPhase::Connecting(Box::pin(future));
+                    mark_reconnecting(config, state, None);
+                    continue;
+                }
+                Poll::Ready(Err(error)) => {
+                    if !schedule_factory_retry(&mut shared, config, state) {
+                        return Poll::Ready(Err(ReconnectError::FactoryError(error)));
+                    }
+                    if exceeded(config.max_attempts, shared.factory_attempts) {
+                        return Poll::Ready(Err(ReconnectError::MaxAttemptsExceeded {
+                            attempts: shared.factory_attempts,
+                            error: Box::new(error),
+                        }));
+                    }
+                }
+            },
+            ConnectionPhase::Sleeping(sleep) => match sleep.as_mut().poll(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(()) => shared.phase = ConnectionPhase::Idle,
+            },
+            ConnectionPhase::Connecting(future) => match future.as_mut().poll(cx) {
+                Poll::Pending => return Poll::Pending,
+                Poll::Ready(Ok(service)) => {
+                    shared.generation = shared.generation.wrapping_add(1);
+                    shared.factory_attempts = 0;
+                    shared.phase = ConnectionPhase::Connected(service);
+                    mark_connected(config, state);
+                }
+                Poll::Ready(Err(error)) => {
+                    if !schedule_factory_retry(&mut shared, config, state) {
+                        return Poll::Ready(Err(ReconnectError::FactoryError(error)));
+                    }
+                    if exceeded(config.max_attempts, shared.factory_attempts) {
+                        return Poll::Ready(Err(ReconnectError::MaxAttemptsExceeded {
+                            attempts: shared.factory_attempts,
+                            error: Box::new(error),
+                        }));
+                    }
+                }
+            },
+            ConnectionPhase::Connected(service) => {
+                return Poll::Ready(Ok((generation, service.clone())));
+            }
+        }
+    }
+}
+
+fn schedule_factory_retry<M, Target>(
+    shared: &mut Shared<M, Target>,
+    config: &ReconnectConfig,
+    state: &ReconnectState,
+) -> bool
+where
+    M: Service<Target>,
+{
+    shared.factory_attempts += 1;
+    mark_disconnected(config, state);
+    state.increment_attempts();
+
+    let Some(delay) = config
+        .policy
+        .delay_for_attempt(shared.factory_attempts as usize)
+    else {
+        shared.phase = ConnectionPhase::Idle;
+        return false;
+    };
+
+    mark_reconnecting(config, state, Some(shared.factory_attempts));
+    shared.phase = ConnectionPhase::Sleeping(Box::pin(tokio::time::sleep(delay)));
+    true
+}
+
+fn invalidate<M, Target>(
+    shared: &Arc<Mutex<Shared<M, Target>>>,
+    generation: u64,
+    attempt: u32,
+    config: &ReconnectConfig,
+    state: &ReconnectState,
+) -> bool
+where
+    M: Service<Target>,
+{
+    let mut shared = lock(shared);
+
+    // Several in-flight requests can observe the same broken generation. Only
+    // the first failure replaces it; the others join that reconnect attempt.
+    if shared.generation != generation || !matches!(shared.phase, ConnectionPhase::Connected(_)) {
+        return true;
+    }
+
+    mark_disconnected(config, state);
+    state.increment_attempts();
+    let Some(delay) = config.policy.delay_for_attempt(attempt as usize) else {
+        shared.phase = ConnectionPhase::Idle;
+        shared.generation = shared.generation.wrapping_add(1);
+        return false;
+    };
+
+    mark_reconnecting(config, state, Some(attempt));
+    shared.phase = ConnectionPhase::Sleeping(Box::pin(tokio::time::sleep(delay)));
+    shared.generation = shared.generation.wrapping_add(1);
+    true
+}
+
+fn is_current_generation<M, Target>(shared: &Arc<Mutex<Shared<M, Target>>>, generation: u64) -> bool
+where
+    M: Service<Target>,
+{
+    let shared = lock(shared);
+    shared.generation == generation && matches!(shared.phase, ConnectionPhase::Connected(_))
+}
+
+fn lock<M, Target>(shared: &Arc<Mutex<Shared<M, Target>>>) -> MutexGuard<'_, Shared<M, Target>>
+where
+    M: Service<Target>,
+{
+    shared
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+fn exceeded(max_attempts: Option<u32>, attempts: u32) -> bool {
+    max_attempts.is_some_and(|max| attempts > max)
+}
+
+fn mark_disconnected(config: &ReconnectConfig, state: &ReconnectState) {
+    let previous = state.state();
+    state.mark_disconnected();
+    notify_state_change(
+        config,
+        previous,
+        crate::state::ConnectionState::Disconnected,
+    );
+}
+
+fn mark_reconnecting(config: &ReconnectConfig, state: &ReconnectState, attempt: Option<u32>) {
+    let previous = state.state();
+    state.mark_reconnecting();
+    notify_state_change(
+        config,
+        previous,
+        crate::state::ConnectionState::Reconnecting,
+    );
+
+    #[cfg(feature = "tracing")]
+    if let (Some(attempt), Some(callback)) = (attempt, config.on_reconnect.as_ref()) {
+        callback(attempt);
+    }
+
+    #[cfg(not(feature = "tracing"))]
+    let _ = attempt;
+}
+
+fn mark_connected(config: &ReconnectConfig, state: &ReconnectState) {
+    let previous = state.state();
+    state.mark_connected();
+    notify_state_change(config, previous, crate::state::ConnectionState::Connected);
+}
+
+fn notify_state_change(
+    config: &ReconnectConfig,
+    previous: crate::state::ConnectionState,
+    current: crate::state::ConnectionState,
+) {
+    if previous == current {
+        return;
+    }
+
+    #[cfg(feature = "tracing")]
+    if let Some(callback) = config.on_state_change.as_ref() {
+        callback(previous, current);
+    }
+
+    #[cfg(not(feature = "tracing"))]
+    let _ = config;
+}
+
 /// Errors that can occur during reconnection.
 #[derive(Debug)]
-pub enum ReconnectError<E> {
+pub enum ReconnectError<MakeError, ServiceError> {
     /// The maximum number of reconnection attempts was exceeded.
     MaxAttemptsExceeded {
         /// The number of attempts made.
@@ -246,263 +577,51 @@ pub enum ReconnectError<E> {
         /// The last error encountered.
         error: Box<dyn std::error::Error + Send + Sync>,
     },
-
-    /// Failed to establish a connection.
-    ConnectionFailed(E),
-
-    /// Connection failed and retry_on_reconnect is false.
-    ConnectionFailedNoRetry(E),
-
-    /// The service returned an error.
-    ServiceError(E),
+    /// The service factory failed to construct a connection.
+    FactoryError(MakeError),
+    /// Reconnection was disabled by the configured policy.
+    ConnectionFailed(ServiceError),
+    /// The connection failed and the original request was not retried.
+    ConnectionFailedNoRetry(ServiceError),
+    /// The connected service returned a non-reconnectable error.
+    ServiceError(ServiceError),
 }
 
-impl<E> std::fmt::Display for ReconnectError<E>
+impl<M, S> std::fmt::Display for ReconnectError<M, S>
 where
-    E: std::fmt::Display,
+    M: std::fmt::Display,
+    S: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::MaxAttemptsExceeded { attempts, error } => {
                 write!(
                     f,
-                    "max reconnection attempts ({}) exceeded: {}",
-                    attempts, error
+                    "max reconnection attempts ({attempts}) exceeded: {error}"
                 )
             }
-            Self::ConnectionFailed(e) => write!(f, "connection failed: {}", e),
-            Self::ConnectionFailedNoRetry(e) => write!(f, "connection failed (no retry): {}", e),
-            Self::ServiceError(e) => write!(f, "service error: {}", e),
+            Self::FactoryError(error) => write!(f, "connection factory failed: {error}"),
+            Self::ConnectionFailed(error) => write!(f, "connection failed: {error}"),
+            Self::ConnectionFailedNoRetry(error) => {
+                write!(f, "connection failed (request not retried): {error}")
+            }
+            Self::ServiceError(error) => write!(f, "service error: {error}"),
         }
     }
 }
 
-impl<E> std::error::Error for ReconnectError<E>
+impl<M, S> std::error::Error for ReconnectError<M, S>
 where
-    E: std::error::Error + 'static,
+    M: std::error::Error + 'static,
+    S: std::error::Error + 'static,
 {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::MaxAttemptsExceeded { error, .. } => Some(error.as_ref()),
-            Self::ConnectionFailed(e) => Some(e),
-            Self::ConnectionFailedNoRetry(e) => Some(e),
-            Self::ServiceError(e) => Some(e),
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{ReconnectConfig, ReconnectPolicy};
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::time::Duration;
-
-    #[derive(Clone)]
-    struct FailingService {
-        fail_count: Arc<AtomicUsize>,
-        max_fails: usize,
-    }
-
-    impl Service<String> for FailingService {
-        type Response = String;
-        type Error = std::io::Error;
-        type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
-
-        fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-            Poll::Ready(Ok(()))
-        }
-
-        fn call(&mut self, req: String) -> Self::Future {
-            let count = self.fail_count.fetch_add(1, Ordering::SeqCst);
-            let max_fails = self.max_fails;
-
-            Box::pin(async move {
-                if count < max_fails {
-                    Err(std::io::Error::new(
-                        std::io::ErrorKind::ConnectionRefused,
-                        "mock connection failure",
-                    ))
-                } else {
-                    Ok(format!("echo: {}", req))
-                }
-            })
-        }
-    }
-
-    #[tokio::test]
-    async fn test_service_successful_on_first_try() {
-        let inner = FailingService {
-            fail_count: Arc::new(AtomicUsize::new(0)),
-            max_fails: 0, // Don't fail
-        };
-
-        let config = ReconnectConfig::default();
-        let state = ReconnectState::new();
-        let mut service = ReconnectService::new(inner, Arc::new(config), state);
-
-        let response = service.call("test".to_string()).await.unwrap();
-        assert_eq!(response, "echo: test");
-    }
-
-    #[tokio::test]
-    async fn test_service_reconnects_after_failure() {
-        let inner = FailingService {
-            fail_count: Arc::new(AtomicUsize::new(0)),
-            max_fails: 2, // Fail twice, then succeed
-        };
-
-        let config = ReconnectConfig::builder()
-            .policy(ReconnectPolicy::exponential(
-                Duration::from_millis(10),
-                Duration::from_millis(100),
-            ))
-            .max_attempts(5)
-            .build();
-
-        let state = ReconnectState::new();
-        let mut service = ReconnectService::new(inner, Arc::new(config), state.clone());
-
-        let response = service.call("test".to_string()).await.unwrap();
-        assert_eq!(response, "echo: test");
-        // After successful connection, attempts are reset to 0
-        assert_eq!(state.attempts(), 0);
-    }
-
-    #[tokio::test]
-    async fn test_service_fails_after_max_attempts() {
-        let inner = FailingService {
-            fail_count: Arc::new(AtomicUsize::new(0)),
-            max_fails: 100, // Always fail
-        };
-
-        let config = ReconnectConfig::builder()
-            .policy(ReconnectPolicy::exponential(
-                Duration::from_millis(10),
-                Duration::from_millis(50),
-            ))
-            .max_attempts(3)
-            .build();
-
-        let state = ReconnectState::new();
-        let mut service = ReconnectService::new(inner, Arc::new(config), state.clone());
-
-        let result = service.call("test".to_string()).await;
-        assert!(result.is_err());
-
-        match result.unwrap_err() {
-            ReconnectError::MaxAttemptsExceeded { attempts, .. } => {
-                assert_eq!(attempts, 4); // Initial + 3 retries
-            }
-            _ => panic!("Expected MaxAttemptsExceeded error"),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_retry_on_reconnect_false() {
-        let inner = FailingService {
-            fail_count: Arc::new(AtomicUsize::new(0)),
-            max_fails: 100, // Always fail
-        };
-
-        let config = ReconnectConfig::builder()
-            .policy(ReconnectPolicy::exponential(
-                Duration::from_millis(10),
-                Duration::from_millis(50),
-            ))
-            .max_attempts(3)
-            .retry_on_reconnect(false) // Don't retry after reconnection
-            .build();
-
-        let state = ReconnectState::new();
-        let mut service = ReconnectService::new(inner, Arc::new(config), state.clone());
-
-        let result = service.call("test".to_string()).await;
-        assert!(result.is_err());
-
-        // Should fail with ConnectionFailedNoRetry after first backoff
-        match result.unwrap_err() {
-            ReconnectError::ConnectionFailedNoRetry(_) => {
-                // Expected - reconnection succeeded but didn't retry
-            }
-            other => panic!("Expected ConnectionFailedNoRetry, got {:?}", other),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_reconnect_predicate_filters_errors() {
-        let inner = FailingService {
-            fail_count: Arc::new(AtomicUsize::new(0)),
-            max_fails: 100, // Always fail
-        };
-
-        let config = ReconnectConfig::builder()
-            .policy(ReconnectPolicy::exponential(
-                Duration::from_millis(10),
-                Duration::from_millis(50),
-            ))
-            .max_attempts(3) // Limit attempts to avoid exponential overflow
-            .reconnect_predicate(|error| {
-                // Only reconnect on connection errors, not on other errors
-                let error_str = error.to_string().to_lowercase();
-                error_str.contains("connection") || error_str.contains("broken pipe")
-            })
-            .build();
-
-        let state = ReconnectState::new();
-        let mut service = ReconnectService::new(inner, Arc::new(config), state);
-
-        // This will fail with ConnectionRefused, which matches our predicate
-        let result = service.call("test".to_string()).await;
-        assert!(result.is_err());
-
-        // Create a service that fails with a non-connection error
-        #[derive(Clone)]
-        struct NonConnectionError;
-
-        impl Service<String> for NonConnectionError {
-            type Response = String;
-            type Error = std::io::Error;
-            type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
-
-            fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-                Poll::Ready(Ok(()))
-            }
-
-            fn call(&mut self, _req: String) -> Self::Future {
-                Box::pin(async move {
-                    Err(std::io::Error::new(
-                        std::io::ErrorKind::PermissionDenied,
-                        "permission denied",
-                    ))
-                })
-            }
-        }
-
-        let config2 = ReconnectConfig::builder()
-            .policy(ReconnectPolicy::exponential(
-                Duration::from_millis(10),
-                Duration::from_millis(50),
-            ))
-            .max_attempts(3) // Limit attempts to avoid exponential overflow
-            .reconnect_predicate(|error| {
-                let error_str = error.to_string().to_lowercase();
-                error_str.contains("connection") || error_str.contains("broken pipe")
-            })
-            .build();
-
-        let state2 = ReconnectState::new();
-        let mut service2 = ReconnectService::new(NonConnectionError, Arc::new(config2), state2);
-
-        let result2 = service2.call("test".to_string()).await;
-        assert!(result2.is_err());
-
-        // Should fail immediately with ServiceError (not a reconnectable error)
-        match result2.unwrap_err() {
-            ReconnectError::ServiceError(_) => {
-                // Expected - error didn't match predicate
-            }
-            other => panic!("Expected ServiceError, got {:?}", other),
+            Self::FactoryError(error) => Some(error),
+            Self::ConnectionFailed(error)
+            | Self::ConnectionFailedNoRetry(error)
+            | Self::ServiceError(error) => Some(error),
         }
     }
 }

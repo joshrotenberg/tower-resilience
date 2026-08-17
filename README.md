@@ -526,7 +526,16 @@ Automatically reconnect on connection failures with configurable backoff:
 
 ```rust
 use tower_resilience::reconnect::{ReconnectLayer, ReconnectConfig, ReconnectPolicy};
+use tower::{service_fn, Layer};
+use std::convert::Infallible;
 use std::time::Duration;
+
+// The layer wraps a factory. Each invocation must create a new connection.
+let make_service = service_fn(|(): ()| async {
+    Ok::<_, Infallible>(service_fn(|request: String| async move {
+        Ok::<_, std::io::Error>(request)
+    }))
+});
 
 let layer = ReconnectLayer::new(
     ReconnectConfig::builder()
@@ -543,8 +552,13 @@ let layer = ReconnectLayer::new(
         .build()
 );
 
-let service = layer.layer(my_service);
+let service = layer.layer(make_service);
 ```
+
+Unlike retry middleware, reconnect must own a service factory; wrapping one
+already-created service cannot replace a broken connection. See the
+[factory migration guide](docs/reconnect-factory-migration.md) when upgrading
+from the pre-0.12 API.
 
 **Full examples:** [reconnect.rs](examples/reconnect.rs) | [reconnect_basic.rs](crates/tower-resilience-reconnect/examples/reconnect_basic.rs) | [reconnect_custom_policy.rs](crates/tower-resilience-reconnect/examples/reconnect_custom_policy.rs)
 

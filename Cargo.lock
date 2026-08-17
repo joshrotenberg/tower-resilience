@@ -2798,7 +2798,6 @@ version = "0.11.0"
 dependencies = [
  "futures",
  "metrics",
- "pin-project",
  "thiserror 2.0.17",
  "tokio",
  "tokio-test",
