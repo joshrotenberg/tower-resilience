@@ -22,7 +22,7 @@ metrics = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "test-util"] }
 tower-resilience-core = { workspace = true, features = ["testing"] }
 
 [features]

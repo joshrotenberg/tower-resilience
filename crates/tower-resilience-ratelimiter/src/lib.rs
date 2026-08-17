@@ -6,14 +6,14 @@
 //! # Features
 //!
 //! - **Permit-based rate limiting**: Control requests per time period
-//! - **Multiple window types**: Fixed, sliding log, and sliding counter algorithms
+//! - **Multiple algorithms**: Fixed, sliding log, sliding counter, and token bucket
 //! - **Configurable timeout**: Wait up to a specified duration for permits
 //! - **Automatic refresh**: Permits automatically refresh after each period
 //! - **Event system**: Observability through rate limiter events
 //!
-//! # Window Types
+//! # Admission Strategies
 //!
-//! The rate limiter supports three different windowing strategies:
+//! The rate limiter supports four admission strategies:
 //!
 //! - **Fixed** (default): Resets permits at fixed intervals. Simple and efficient
 //!   but can allow bursts at window boundaries.
@@ -23,6 +23,9 @@
 //!
 //! - **SlidingCounter**: Uses weighted averaging between time buckets. Approximate
 //!   sliding window behavior with O(1) memory - ideal for high-throughput APIs.
+//!
+//! - **Token bucket**: Replenishes continuously at the sustained rate and stores
+//!   bounded burst credit. Used by [`RateLimiterLayer::burst`].
 //!
 //! # Examples
 //!
@@ -286,6 +289,7 @@ impl<S> RateLimiter<S> {
             config.limit_for_period,
             config.refresh_period,
             config.timeout_duration,
+            config.burst_size,
         );
 
         Self {
@@ -852,6 +856,80 @@ mod tests {
         for _ in 0..4 {
             let result = service.ready().await.unwrap().call("x".to_string()).await;
             assert!(result.is_ok());
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn cloned_services_share_contention_without_over_admission() {
+        use futures::future::join_all;
+        use tokio::sync::Barrier;
+
+        const LIMIT: usize = 2;
+        const CALLERS: usize = 7;
+
+        for window_type in [
+            WindowType::Fixed,
+            WindowType::SlidingLog,
+            WindowType::SlidingCounter,
+        ] {
+            let inner =
+                service_fn(
+                    |request: usize| async move { Ok::<_, std::convert::Infallible>(request) },
+                );
+            let service = RateLimiterLayer::builder()
+                .limit_for_period(LIMIT)
+                .refresh_period(Duration::from_secs(1))
+                .timeout_duration(Duration::from_secs(5))
+                .window_type(window_type)
+                .build()
+                .layer(inner);
+            let barrier = Arc::new(Barrier::new(CALLERS + 1));
+            let started_at = tokio::time::Instant::now();
+
+            let tasks = (0..CALLERS)
+                .map(|request| {
+                    let service = service.clone();
+                    let barrier = Arc::clone(&barrier);
+                    tokio::spawn(async move {
+                        barrier.wait().await;
+                        let response = service.oneshot(request).await;
+                        (response, started_at.elapsed())
+                    })
+                })
+                .collect::<Vec<_>>();
+
+            barrier.wait().await;
+            let mut admitted = join_all(tasks)
+                .await
+                .into_iter()
+                .map(|result| {
+                    let (response, admitted_at) = result.expect("service task panicked");
+                    response.expect("request timed out");
+                    admitted_at
+                })
+                .collect::<Vec<_>>();
+            admitted.sort_unstable();
+
+            assert_eq!(admitted.len(), CALLERS);
+            for same_time in admitted.windows(LIMIT + 1) {
+                assert_ne!(
+                    same_time.first(),
+                    same_time.last(),
+                    "{window_type:?} over-admitted at {:?}",
+                    same_time[0]
+                );
+            }
+            for second in 0..=3 {
+                let count = admitted
+                    .iter()
+                    .filter(|timestamp| timestamp.as_secs() == second)
+                    .count();
+                assert!(
+                    count <= LIMIT,
+                    "{window_type:?} window {second} admitted {count}"
+                );
+            }
+            assert!(admitted.last().copied().unwrap() >= Duration::from_secs(3));
         }
     }
 }
