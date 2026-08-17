@@ -434,7 +434,7 @@ mod tests {
         let error = Error::new(ErrorKind::BrokenPipe, "test");
         assert!(config.should_reconnect(&error));
 
-        let error = Error::new(ErrorKind::Other, "test");
+        let error = Error::other("test");
         assert!(config.should_reconnect(&error));
     }
 
@@ -463,7 +463,7 @@ mod tests {
         )));
 
         // Other errors should NOT trigger reconnection
-        assert!(!config.should_reconnect(&Error::new(ErrorKind::Other, "other error")));
+        assert!(!config.should_reconnect(&Error::other("other error")));
         assert!(!config.should_reconnect(&Error::new(ErrorKind::TimedOut, "timed out")));
         assert!(!config.should_reconnect(&Error::new(
             ErrorKind::PermissionDenied,

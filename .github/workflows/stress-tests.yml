@@ -64,9 +64,8 @@ jobs:
       - name: Run stress tests for ${{ matrix.pattern }}
         run: |
           echo "Running stress tests for ${{ matrix.pattern }}..."
-          cargo test --test stress ${{ matrix.pattern }} -- --ignored --nocapture --test-threads=1
+          cargo test --locked --test stress ${{ matrix.pattern }} -- --ignored --nocapture --test-threads=1
         timeout-minutes: 45
-        continue-on-error: true
         id: stress-test
 
       - name: Create issue on failure
@@ -130,16 +129,18 @@ jobs:
     steps:
       - name: Summary
         run: |
-          echo "## Stress Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All stress tests have completed." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "These tests validate:" >> $GITHUB_STEP_SUMMARY
-          echo "- High volume processing (millions of operations)" >> $GITHUB_STEP_SUMMARY
-          echo "- High concurrency (thousands of concurrent requests)" >> $GITHUB_STEP_SUMMARY
-          echo "- Memory usage and leak detection" >> $GITHUB_STEP_SUMMARY
-          echo "- State consistency under stress" >> $GITHUB_STEP_SUMMARY
-          echo "- Resource cleanup (no panics, deadlocks, or leaks)" >> $GITHUB_STEP_SUMMARY
-          echo "- Performance degradation characteristics" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Check individual test results for details." >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Stress Test Results"
+            echo ""
+            echo "All stress tests have completed."
+            echo ""
+            echo "These tests validate:"
+            echo "- High volume processing (millions of operations)"
+            echo "- High concurrency (thousands of concurrent requests)"
+            echo "- Memory usage and leak detection"
+            echo "- State consistency under stress"
+            echo "- Resource cleanup (no panics, deadlocks, or leaks)"
+            echo "- Performance degradation characteristics"
+            echo ""
+            echo "Check individual matrix jobs for details. Any failing stress test fails the workflow."
+          } >> "$GITHUB_STEP_SUMMARY"

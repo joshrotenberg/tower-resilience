@@ -64,7 +64,6 @@ impl BulkheadHandle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::BulkheadLayer;
     use std::future::Future;
     use std::pin::Pin;

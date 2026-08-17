@@ -8,16 +8,43 @@ This is a Cargo workspace with multiple crates. To build and test:
 
 ```bash
 # Build all crates
-cargo build --workspace
+cargo build --locked --workspace
 
 # Run all tests
-cargo test --workspace --all-features
+cargo test --locked --workspace --all-features
 
-# Run clippy
-cargo clippy --all-targets --all-features -- -D warnings
+# Run Clippy across every workspace target (matches CI)
+cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 
-# Format code
-cargo fmt --all
+# Check formatting (matches CI)
+cargo fmt --all -- --check
+```
+
+### Authoritative pre-push checks
+
+Run this complete set before opening a pull request. These commands mirror the
+CI gates; do not omit `--workspace`, since that would skip linting package-local
+test and example targets.
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+cargo test --locked --workspace --all-features
+cargo build --locked --workspace --examples --all-features
+RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-deps
+rustup run 1.85.0 cargo check --locked -p tower-resilience --all-features
+cargo audit
+```
+
+`Cargo.lock` is committed for reproducible workspace, example, and security
+checks. Include intentional compatible dependency updates in your pull request
+and verify the resulting lockfile with the commands above.
+
+Nightly stress tests are opt-in locally but gating in their GitHub Actions
+workflow:
+
+```bash
+cargo test --locked --test stress -- --ignored --nocapture --test-threads=1
 ```
 
 ## Running Examples
@@ -88,12 +115,12 @@ cargo run --example combined -p tower-resilience
 
 ### Code Standards
 
-- Published crates use Rust 2021 edition (MSRV 1.64.0, matching Tower's MSRV policy)
+- Published crates use Rust 2021 edition with MSRV 1.85.0
 - Root workspace uses Rust 2024 edition for development
 - When adding new crates, use `edition = "2021"` in their Cargo.toml
 - All public APIs must have doc comments
 - Run `cargo fmt` before committing
-- Ensure `cargo clippy` passes with `-D warnings`
+- Ensure `cargo clippy --locked --workspace --all-targets --all-features -- -D warnings` passes
 - Maintain test coverage
 
 ### Builder pattern
@@ -173,24 +200,24 @@ The contract says `Ready(Err(_))` from `poll_ready` means the service is done an
 
 ```bash
 # Run all tests
-cargo test --workspace --all-features
+cargo test --locked --workspace --all-features
 
 # Run only library tests
-cargo test --workspace --all-features --lib
+cargo test --locked --workspace --all-features --lib
 
 # Run only integration tests
-cargo test --workspace --all-features --test '*'
+cargo test --locked --workspace --all-features --test '*'
 
 # Run stress tests (opt-in, marked with #[ignore])
-cargo test --test stress -- --ignored
+cargo test --locked --test stress -- --ignored --test-threads=1
 
 # Run specific pattern stress tests
-cargo test --test stress circuitbreaker -- --ignored
-cargo test --test stress bulkhead -- --ignored
-cargo test --test stress cache -- --ignored
+cargo test --locked --test stress circuitbreaker -- --ignored --test-threads=1
+cargo test --locked --test stress bulkhead -- --ignored --test-threads=1
+cargo test --locked --test stress cache -- --ignored --test-threads=1
 
 # Run with output to see performance metrics
-cargo test --test stress -- --ignored --nocapture
+cargo test --locked --test stress -- --ignored --nocapture --test-threads=1
 ```
 
 #### Stress Tests

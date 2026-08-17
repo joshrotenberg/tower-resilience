@@ -331,7 +331,7 @@ mod tests {
         let err: CoalesceError<std::io::Error> = CoalesceError::RecvError;
         assert_eq!(err.to_string(), "failed to receive result from leader");
 
-        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "test");
+        let io_err = std::io::Error::other("test");
         let err = CoalesceError::Service(io_err);
         assert!(err.to_string().contains("service error"));
     }

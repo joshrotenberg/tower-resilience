@@ -30,16 +30,16 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run library tests
-        run: cargo test --lib --workspace --all-features
+        run: cargo test --locked --lib --workspace --all-features
 
       - name: Run integration tests
-        run: cargo test --test '*' --workspace --all-features
+        run: cargo test --locked --test '*' --workspace --all-features
 
       - name: Run doctests
-        run: cargo test --doc --workspace --all-features
+        run: cargo test --locked --doc --workspace --all-features
 
       - name: Build all examples
-        run: cargo build --examples --workspace --all-features
+        run: cargo build --locked --examples --workspace --all-features
 
   fmt:
     name: Format
@@ -67,7 +67,7 @@ jobs:
           components: clippy
 
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 
   msrv:
     name: MSRV
@@ -89,7 +89,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Check MSRV
-        run: cargo check -p tower-resilience --all-features
+        run: cargo check --locked -p tower-resilience --all-features
 
   contract-lints:
     name: Source Contract Lints
@@ -131,7 +131,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       - name: Check documentation
-        run: cargo doc --workspace --all-features --no-deps
+        run: cargo doc --locked --workspace --all-features --no-deps
         env:
           RUSTDOCFLAGS: -D warnings
 
@@ -150,12 +150,10 @@ jobs:
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
 
-      # Scans Cargo.lock against the RustSec advisory database. The lock is
-      # currently clean (0 vulnerabilities, 0 warnings) thanks to the loosened
-      # `tokio = "1"` workspace pin letting transitive crates (notably
-      # `bytes >= 1.10.2` for RUSTSEC-2026-0007) float to fixed versions. No
-      # `--ignore` flags are needed today; add one per advisory here (with a
-      # rationale comment) only if a future advisory has no available
-      # non-breaking fix.
+      # Scans Cargo.lock against the current RustSec advisory database and
+      # fails on vulnerabilities. Non-fatal informational warnings may still
+      # be reported by cargo-audit; do not add `--ignore` flags for actionable
+      # vulnerabilities. If an advisory has no compatible fix, document the
+      # risk and rationale next to a narrowly scoped exception.
       - name: Run cargo audit
         run: cargo audit

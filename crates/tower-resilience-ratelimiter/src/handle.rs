@@ -63,12 +63,11 @@ impl RateLimiterHandle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::RateLimiterLayer;
     use std::future::Future;
     use std::pin::Pin;
     use std::task::Poll;
-    use tower::{Layer, Service, ServiceExt};
+    use tower::{Layer, Service};
 
     #[derive(Clone)]
     struct OkService;
