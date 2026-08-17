@@ -2581,7 +2581,7 @@ checksum = "121c2a6cda46980bb0fcd1647ffaf6cd3fc79a013de288782836f6df9c48780e"
 
 [[package]]
 name = "tower-resilience"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "tokio",
  "tower",
@@ -2606,7 +2606,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-adaptive"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "metrics",
  "pin-project-lite",
@@ -2621,7 +2621,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-bulkhead"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
@@ -2636,7 +2636,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-cache"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "lru",
@@ -2649,7 +2649,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-chaos"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
@@ -2664,7 +2664,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-circuitbreaker"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
@@ -2680,7 +2680,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-coalesce"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "hashbrown 0.17.1",
  "metrics",
@@ -2695,7 +2695,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-core"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "metrics",
  "metrics-util",
@@ -2710,7 +2710,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-executor"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "metrics",
  "pin-project-lite",
@@ -2724,7 +2724,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-fallback"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
@@ -2738,7 +2738,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-healthcheck"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "rand 0.9.2",
  "reqwest",
@@ -2752,7 +2752,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-hedge"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
@@ -2767,7 +2767,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-outlier"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
@@ -2782,7 +2782,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-ratelimiter"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
@@ -2794,7 +2794,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-reconnect"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
@@ -2809,7 +2809,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-retry"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
@@ -2822,7 +2822,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-router"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "metrics",
  "tokio",
@@ -2867,7 +2867,7 @@ dependencies = [
 
 [[package]]
 name = "tower-resilience-timelimiter"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
