@@ -320,8 +320,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
 
     /// Enables backpressure mode.
     ///
-    /// In backpressure mode, the circuit breaker checks circuit state in `poll_ready()`
-    /// rather than in `call()`. When the circuit is open, `poll_ready()` returns
+    /// In backpressure mode, the circuit breaker gates inner readiness on circuit
+    /// state in `poll_ready()`. When the circuit is open, `poll_ready()` returns
     /// `Poll::Pending` and wakes the caller after `wait_duration_in_open` elapses,
     /// instead of returning `CircuitBreakerError::OpenCircuit`.
     ///
@@ -329,7 +329,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     /// `service.ready().await` pattern.
     ///
     /// When backpressure mode is enabled:
-    /// - `CircuitBreakerError::OpenCircuit` is never returned
+    /// - a conforming `ready().await; call(...)` flow waits rather than returning
+    ///   `CircuitBreakerError::OpenCircuit`
     /// - Callers naturally wait for the circuit to transition to half-open
     ///
     /// Default: `false` (rejection mode)

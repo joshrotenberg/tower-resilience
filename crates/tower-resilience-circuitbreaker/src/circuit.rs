@@ -371,12 +371,7 @@ impl Circuit {
                         });
                     true
                 } else {
-                    config
-                        .event_listeners
-                        .emit(&CircuitBreakerEvent::CallRejected {
-                            pattern_name: config.name.clone(),
-                            timestamp: Instant::now(),
-                        });
+                    self.record_rejection(config);
                     false
                 }
             }
@@ -392,16 +387,20 @@ impl Circuit {
                             state: self.state,
                         });
                 } else {
-                    config
-                        .event_listeners
-                        .emit(&CircuitBreakerEvent::CallRejected {
-                            pattern_name: config.name.clone(),
-                            timestamp: Instant::now(),
-                        });
+                    self.record_rejection(config);
                 }
                 permitted
             }
         }
+    }
+
+    pub(crate) fn record_rejection<C>(&self, config: &CircuitBreakerConfig<C>) {
+        config
+            .event_listeners
+            .emit(&CircuitBreakerEvent::CallRejected {
+                pattern_name: config.name.clone(),
+                timestamp: Instant::now(),
+            });
     }
 
     /// Read-only check of whether a call would be permitted.
