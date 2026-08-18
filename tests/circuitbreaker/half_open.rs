@@ -20,7 +20,8 @@ async fn concurrent_calls_in_half_open() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(3)
         .name("concurrent-halfopen")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -86,7 +87,8 @@ async fn partial_success_in_half_open() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(3)
         .name("partial-success")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -126,7 +128,8 @@ async fn all_failures_in_half_open_various_permits() {
             .wait_duration_in_open(Duration::from_millis(50))
             .permitted_calls_in_half_open(permitted)
             .name(format!("all-fail-{}", permitted))
-            .build();
+            .build()
+            .unwrap();
 
         let mut cb = layer.layer(service);
 
@@ -161,7 +164,8 @@ async fn rapid_state_cycling() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(1)
         .name("rapid-cycling")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -219,7 +223,8 @@ async fn half_open_with_time_based_window() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(3)
         .name("halfopen-timebased")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -270,7 +275,8 @@ async fn half_open_with_slow_call_detection() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(5)
         .name("halfopen-slow")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -317,7 +323,8 @@ async fn half_open_with_minimum_calls() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(10) // More than minimum
         .name("halfopen-minimum")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -351,7 +358,8 @@ async fn half_open_rejected_calls_no_effect() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(2)
         .name("halfopen-rejected")
-        .build();
+        .build()
+        .unwrap();
 
     let cb = layer.layer(service);
 

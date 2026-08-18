@@ -134,7 +134,8 @@ impl AppState {
             .on_call_rejected(|| {
                 tracing::warn!("Circuit breaker rejected call (circuit OPEN)");
             })
-            .build();
+            .build()
+            .expect("valid circuit breaker config");
 
         let db_service = circuit_breaker_layer.layer(base_service);
 

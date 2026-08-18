@@ -52,7 +52,8 @@ async fn circuit_opens_after_consecutive_failures() {
         .sliding_window_size(6)
         .wait_duration_in_open(Duration::from_millis(100))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
 
     let mut breaker = layer.layer(service);
 
@@ -74,7 +75,8 @@ async fn circuit_transitions_through_half_open_and_recovers() {
         .sliding_window_size(4)
         .wait_duration_in_open(Duration::from_millis(100))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
 
     let mut breaker = layer.layer(failing_service);
     for _ in 0..4 {
@@ -102,7 +104,8 @@ async fn circuit_rejects_when_open() {
         .sliding_window_size(2)
         .wait_duration_in_open(Duration::from_secs(1))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
 
     let mut breaker = layer.layer(service);
     for _ in 0..2 {
@@ -121,7 +124,8 @@ async fn half_open_fails_and_reopens() {
         .sliding_window_size(2)
         .wait_duration_in_open(Duration::from_millis(100))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
     let mut breaker = layer.layer(service);
 
     for _ in 0..2 {
@@ -142,7 +146,8 @@ async fn does_not_trip_before_window_full() {
         .sliding_window_size(10)
         .wait_duration_in_open(Duration::from_secs(1))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
     let mut breaker = layer.layer(service);
 
     for _ in 0..9 {
@@ -160,7 +165,8 @@ async fn all_successes_keep_circuit_closed() {
         .sliding_window_size(5)
         .wait_duration_in_open(Duration::from_secs(1))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
     let mut breaker = layer.layer(service);
 
     for _ in 0..99 {
@@ -176,7 +182,8 @@ async fn integrates_with_service_builder_layer() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(4)
         .wait_duration_in_open(Duration::from_secs(1))
-        .build();
+        .build()
+        .unwrap();
 
     let mut service: tower_resilience_circuitbreaker::CircuitBreaker<_, DefaultClassifier> =
         ServiceBuilder::new()
@@ -198,7 +205,8 @@ async fn does_not_trip_if_minimum_not_met() {
         .minimum_number_of_calls(6)
         .wait_duration_in_open(Duration::from_secs(1))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
     let mut breaker = layer.layer(service);
 
     // fewer than 6 calls should not trigger evaluation
@@ -224,7 +232,8 @@ async fn closed_open_halfopen_closed_cycle() {
         .sliding_window_size(2)
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(2)
-        .build();
+        .build()
+        .unwrap();
     let mut breaker = layer.layer(service);
 
     // 1) Closed → Open
@@ -267,7 +276,8 @@ async fn metrics_are_emitted() {
         .minimum_number_of_calls(1)
         .wait_duration_in_open(Duration::from_secs(1))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
     let mut breaker = layer.layer(service);
 
     let _ = breaker.call(()).await;
@@ -331,7 +341,8 @@ async fn fallback_is_called_when_circuit_open() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(2)
         .wait_duration_in_open(Duration::from_secs(10))
-        .build();
+        .build()
+        .unwrap();
 
     let mut breaker = layer.layer(service).with_fallback(
         |_req: ()| -> BoxFuture<'static, Result<&'static str, &'static str>> {
@@ -361,7 +372,8 @@ async fn no_fallback_returns_error_when_circuit_open() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(2)
         .wait_duration_in_open(Duration::from_secs(10))
-        .build();
+        .build()
+        .unwrap();
 
     let mut breaker = layer.layer(service);
 
@@ -403,7 +415,8 @@ async fn multi_layer_composition_with_timeout() {
         .sliding_window_size(4)
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_secs(10))
-        .build();
+        .build()
+        .unwrap();
 
     let mut composed = ServiceBuilder::new()
         .layer(circuit_breaker_layer)
@@ -450,7 +463,8 @@ async fn multi_layer_composition_with_retry() {
         .sliding_window_size(4)
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_secs(10))
-        .build();
+        .build()
+        .unwrap();
 
     let retry_layer = RetryLayer::<(), &'static str, &'static str>::builder()
         .max_attempts(3)

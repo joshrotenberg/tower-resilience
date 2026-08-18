@@ -48,7 +48,8 @@ async fn standard_cache_stack_compiles() {
 
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.3) // Sensitive threshold for cache
-        .build();
+        .build()
+        .unwrap();
 
     let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_millis(50)) // Fast timeout for cache

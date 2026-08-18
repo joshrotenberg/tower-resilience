@@ -396,7 +396,8 @@ pub mod circuit_breaker {
     //!     .sliding_window_size(100)         // Over last 100 calls
     //!     .minimum_number_of_calls(10)      // Need at least 10 calls
     //!     .wait_duration_in_open(Duration::from_secs(30))  // Stay open 30s
-    //!     .build();
+    //!     .build()
+    //!     .unwrap();
     //!
     //! let service = circuit_breaker.layer(database_client);
     //! # }

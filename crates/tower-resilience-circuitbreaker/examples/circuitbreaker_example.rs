@@ -31,7 +31,8 @@ async fn main() {
         .wait_duration_in_open(Duration::from_secs(1)) // open for 1 second
         .permitted_calls_in_half_open(1) // before allowing 1 call
         .name("simple-circuit")
-        .build();
+        .build()
+        .unwrap();
 
     // Create a service with the circuit breaker
     let mut svc = breaker_layer.layer(boolean_service);

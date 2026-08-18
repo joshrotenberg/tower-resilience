@@ -59,7 +59,8 @@ proptest! {
                 .sliding_window_size(window_size)
                 .minimum_number_of_calls(min_failures.min(window_size))
                 .wait_duration_in_open(Duration::from_secs(60))
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(svc);
 
@@ -114,7 +115,8 @@ proptest! {
                 .failure_rate_threshold(failure_threshold as f64)
                 .sliding_window_size(window_size)
                 .minimum_number_of_calls(window_size)
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(svc);
 
@@ -174,7 +176,8 @@ proptest! {
                 .minimum_number_of_calls(window_size)
                 .wait_duration_in_open(Duration::from_millis(50))
                 .permitted_calls_in_half_open(1)
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(svc);
 
@@ -247,7 +250,8 @@ proptest! {
                 .sliding_window_size(window_size)
                 .minimum_number_of_calls(window_size)
                 .wait_duration_in_open(Duration::from_secs(60))
-                .build();
+                .build()
+                .unwrap();
 
             let service = layer.layer(svc);
 

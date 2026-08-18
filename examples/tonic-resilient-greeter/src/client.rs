@@ -67,7 +67,8 @@ fn build_call_service(
         .on_call_rejected(|| {
             warn!("CircuitBreaker: call rejected (circuit OPEN)");
         })
-        .build();
+        .build()
+        .expect("valid circuit breaker config");
 
     ServiceBuilder::new()
         .layer(circuit_breaker_layer)

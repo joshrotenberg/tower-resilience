@@ -89,7 +89,8 @@ async fn main() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .wait_duration_in_open(Duration::from_secs(2))
-        .build();
+        .build()
+        .expect("valid circuit breaker config");
 
     let mut service = cb_layer.layer(service);
 

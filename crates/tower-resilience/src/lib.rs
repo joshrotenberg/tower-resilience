@@ -20,7 +20,8 @@
 //! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::convert::Infallible>(()) });
 //! let circuit_breaker = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(0.5)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(circuit_breaker)
@@ -180,7 +181,8 @@
 //!     .name("api-client")
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_size(100)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let retry = RetryLayer::<(), (), MyError>::builder()
 //!     .name("api-retry")

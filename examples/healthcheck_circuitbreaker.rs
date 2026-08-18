@@ -80,7 +80,8 @@ async fn main() {
         .sliding_window_size(10)
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_secs(30)) // Long open time to show health-triggered close
-        .build();
+        .build()
+        .unwrap();
 
     // Wrap the service with the circuit breaker
     let mut service = breaker_layer.layer(api_service);

@@ -18,7 +18,8 @@ async fn reset_from_open() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("reset-open")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
@@ -45,7 +46,8 @@ async fn reset_from_half_open() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(2)
         .name("reset-halfopen")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
@@ -76,7 +78,8 @@ async fn reset_from_closed() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("reset-closed")
-        .build();
+        .build()
+        .unwrap();
 
     let cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
@@ -111,7 +114,8 @@ async fn reset_clears_counters_count_based() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("reset-counters")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
@@ -157,7 +161,8 @@ async fn reset_clears_time_based_records() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("reset-timebased")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
@@ -205,7 +210,8 @@ async fn reset_during_concurrent_operations() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("reset-concurrent")
-        .build();
+        .build()
+        .unwrap();
 
     let cb = layer.layer(service);
     let cb_mutex = Arc::new(tokio::sync::Mutex::new(cb));
@@ -255,7 +261,8 @@ async fn multiple_resets() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("multiple-resets")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
@@ -298,7 +305,8 @@ async fn reset_with_slow_call_detection() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("reset-slow")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 
@@ -344,7 +352,8 @@ async fn reset_preserves_configuration() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("reset-config")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb: tower_resilience_circuitbreaker::CircuitBreaker<_, _> = layer.layer(service);
 

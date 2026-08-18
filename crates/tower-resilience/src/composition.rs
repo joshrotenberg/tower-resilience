@@ -965,6 +965,7 @@ pub mod advanced {
     //! let with_circuit_breaker = CircuitBreakerLayer::builder()
     //!     .failure_rate_threshold(0.5)
     //!     .build()
+    //!     .unwrap()
     //!     .layer(with_retry);
     //!
     //! let service = CacheLayer::builder()

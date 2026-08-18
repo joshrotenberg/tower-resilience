@@ -64,7 +64,8 @@ async fn router_with_circuitbreaker_per_backend() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
-        .build();
+        .build()
+        .unwrap();
 
     let svc = tower::service_fn(move |req: String| {
         let cc = Arc::clone(&cc);
@@ -112,7 +113,8 @@ async fn router_distributes_across_circuit_broken_backends() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
-        .build();
+        .build()
+        .unwrap();
 
     let wrapped_a: BoxSvc<_> = BoxService::new(cb_layer.layer(svc_a));
     let wrapped_b: BoxSvc<_> = BoxService::new(cb_layer.layer(svc_b));

@@ -37,7 +37,8 @@ use crate::config::CircuitBreakerConfig;
 /// # async fn example() {
 /// let (layer, handle) = CircuitBreakerLayer::builder()
 ///     .failure_rate_threshold(0.5)
-///     .build_with_handle();
+///     .build_with_handle()
+///     .unwrap();
 ///
 /// // Apply the layer to a service (consumes into BoxCloneService, etc.)
 /// // ...
@@ -126,7 +127,7 @@ impl<C> CircuitBreakerHandle<C> {
     /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
     ///
     /// # async fn example() {
-    /// let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+    /// let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle().unwrap();
     /// handle.force_open().await;
     /// assert!(handle.is_open());
     /// # }
@@ -146,7 +147,7 @@ impl<C> CircuitBreakerHandle<C> {
     /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
     ///
     /// # async fn example() {
-    /// let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+    /// let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle().unwrap();
     /// handle.force_open().await;
     /// handle.force_closed().await;
     /// assert!(!handle.is_open());
@@ -220,7 +221,8 @@ mod tests {
     async fn test_handle_initial_state() {
         let (_layer, handle) = CircuitBreakerLayer::builder()
             .failure_rate_threshold(0.5)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         assert_eq!(handle.state(), CircuitState::Closed);
         assert_eq!(handle.health_status(), "healthy");
@@ -234,7 +236,8 @@ mod tests {
             .failure_rate_threshold(0.5)
             .sliding_window_size(4)
             .minimum_number_of_calls(4)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let mut svc = layer.layer(ErrService);
 
@@ -255,7 +258,8 @@ mod tests {
         let (layer, handle) = CircuitBreakerLayer::builder()
             .failure_rate_threshold(0.5)
             .sliding_window_size(10)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let svc = layer.layer(OkService);
         let _ = svc.oneshot("test".to_string()).await;
@@ -273,7 +277,8 @@ mod tests {
             .failure_rate_threshold(0.5)
             .sliding_window_size(4)
             .minimum_number_of_calls(4)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         // Create two services from the same layer -- they share state
         let mut svc1 = layer.layer(ErrService);
@@ -293,7 +298,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_handle_clone_is_independent() {
-        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle().unwrap();
 
         let handle2 = handle.clone();
 
@@ -304,7 +309,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_handle_force_open_is_immediately_observable() {
-        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle().unwrap();
 
         assert_eq!(handle.state(), CircuitState::Closed);
 
@@ -320,7 +325,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_handle_force_closed_is_immediately_observable() {
-        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle().unwrap();
 
         handle.force_open().await;
         assert_eq!(handle.state(), CircuitState::Open);
@@ -336,7 +341,8 @@ mod tests {
             .failure_rate_threshold(0.5)
             .sliding_window_size(4)
             .minimum_number_of_calls(4)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let mut svc = layer.layer(ErrService);
         for _ in 0..4 {
@@ -354,7 +360,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_handle_force_open_rejects_calls_on_every_clone() {
-        let (layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+        let (layer, handle) = CircuitBreakerLayer::builder().build_with_handle().unwrap();
 
         // Two independently created services from the same layer.
         let mut svc1 = layer.layer(OkService);
@@ -375,7 +381,7 @@ mod tests {
     async fn test_handle_controls_boxed_and_moved_service() {
         use tower::util::BoxCloneService;
 
-        let (layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+        let (layer, handle) = CircuitBreakerLayer::builder().build_with_handle().unwrap();
 
         // Apply the layer, then erase the concrete type and move it away --
         // the only remaining way to reach the circuit is through `handle`.
@@ -410,7 +416,8 @@ mod tests {
                     o_clone.store(true, Ordering::SeqCst);
                 }
             })
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         handle.force_open().await;
 

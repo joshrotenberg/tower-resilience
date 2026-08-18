@@ -231,9 +231,10 @@ fn bench_circuit_breaker_open(c: &mut Criterion) {
     c.bench_function("worst_case_circuit_breaker_open", |b| {
         b.to_async(&runtime).iter(|| async {
             let layer = CircuitBreakerLayer::builder()
-                .failure_rate_threshold(0.0) // Open immediately on any failure
+                .failure_rate_threshold(0.01) // Open on any failure (0.0 is rejected at construction)
                 .sliding_window_size(10)
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(BaselineService);
 

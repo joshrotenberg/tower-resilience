@@ -52,7 +52,8 @@ async fn time_based_slow_call_failure_classification() {
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("combination-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -93,7 +94,8 @@ async fn count_based_dual_thresholds() {
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("dual-threshold")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -144,7 +146,8 @@ async fn custom_classifier_with_slow_calls() {
                 .unwrap_or(false)
         })
         .name("custom-classifier")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -207,7 +210,8 @@ async fn event_listeners_with_complex_config() {
         .on_slow_call(move |_duration| {
             s.fetch_add(1, Ordering::Relaxed);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -242,7 +246,8 @@ async fn manual_override_during_failures() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("manual-override")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -300,7 +305,8 @@ async fn custom_classifier_transient_errors() {
                 .unwrap_or(false)
         })
         .name("transient-classifier")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -349,7 +355,8 @@ async fn time_based_kitchen_sink() {
         .permitted_calls_in_half_open(3)
         .failure_classifier(|result: &Result<(), &str>| result.is_err())
         .name("kitchen-sink")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 

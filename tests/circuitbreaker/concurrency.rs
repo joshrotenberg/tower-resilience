@@ -24,7 +24,8 @@ async fn concurrent_calls_closed_circuit() {
         .minimum_number_of_calls(50)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("concurrent-closed")
-        .build();
+        .build()
+        .unwrap();
 
     let cb: Arc<tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, _>>> =
         Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
@@ -63,7 +64,8 @@ async fn concurrent_calls_open_circuit() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_secs(10)) // Keep it open
         .name("concurrent-open")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -126,7 +128,8 @@ async fn state_transition_during_concurrent_calls() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(3)
         .name("transition-concurrent")
-        .build();
+        .build()
+        .unwrap();
 
     let cb: Arc<tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, _>>> =
         Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
@@ -172,7 +175,8 @@ async fn atomic_state_read_consistency() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("atomic-state")
-        .build();
+        .build()
+        .unwrap();
 
     let cb: Arc<tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, _>>> =
         Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
@@ -225,7 +229,8 @@ async fn concurrent_success_failure_recording() {
         .minimum_number_of_calls(50)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("concurrent-recording")
-        .build();
+        .build()
+        .unwrap();
 
     let cb: Arc<tokio::sync::Mutex<tower_resilience_circuitbreaker::CircuitBreaker<_, _>>> =
         Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
@@ -261,7 +266,8 @@ async fn concurrent_half_open_calls() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(2)
         .name("concurrent-halfopen")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -313,7 +319,8 @@ async fn concurrent_service_clones() {
         .minimum_number_of_calls(50)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("concurrent-clones")
-        .build();
+        .build()
+        .unwrap();
 
     let cb = layer.layer(service);
 
@@ -356,7 +363,8 @@ async fn concurrent_metrics_inspection() {
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(200))
         .name("metrics-test")
-        .build();
+        .build()
+        .unwrap();
 
     let cb = Arc::new(tokio::sync::Mutex::new(layer.layer(service)));
 

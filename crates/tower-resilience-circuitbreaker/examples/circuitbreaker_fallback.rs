@@ -98,7 +98,8 @@ async fn demo_static_fallback() {
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_secs(2))
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = circuit_breaker.layer(service).with_fallback(
         |_req: String| -> BoxFuture<'static, Result<String, ServiceError>> {
@@ -145,7 +146,8 @@ async fn demo_cached_fallback() {
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_secs(2))
-        .build();
+        .build()
+        .unwrap();
 
     let cache_clone = Arc::clone(&cache);
     let mut service = circuit_breaker.layer(service).with_fallback(
@@ -195,7 +197,8 @@ async fn demo_degraded_fallback() {
         .on_state_transition(|from, to| {
             println!("   🔀 Circuit transitioned: {:?} -> {:?}", from, to);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = circuit_breaker.layer(service).with_fallback(
         |req: String| -> BoxFuture<'static, Result<String, ServiceError>> {
