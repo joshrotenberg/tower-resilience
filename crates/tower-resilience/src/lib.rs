@@ -8,7 +8,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! tower-resilience = { version = "0.9", features = ["circuitbreaker", "bulkhead"] }
+//! tower-resilience = { version = "0.12", features = ["circuitbreaker", "bulkhead"] }
 //! ```
 //!
 //! ```rust,no_run
@@ -152,7 +152,7 @@
 //!
 //! ## Observability
 //!
-//! - **[Metrics](observability::metrics)** - Prometheus metrics for all patterns
+//! - **[Metrics](observability::metrics)** - Prometheus metrics for most patterns
 //! - **[Tracing](observability::tracing_guide)** - Structured logging setup
 //! - **[Events](observability::events)** - Custom event listeners
 //!

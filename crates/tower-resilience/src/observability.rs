@@ -5,13 +5,17 @@
 pub mod metrics {
     //! # Metrics Guide
     //!
-    //! All resilience patterns support optional Prometheus-compatible metrics via the `metrics` feature.
+    //! Most resilience patterns support optional Prometheus-compatible metrics via the
+    //! `metrics` feature; see [Available Metrics by Pattern](#available-metrics-by-pattern)
+    //! below for exactly which patterns currently emit metrics. `adaptive`, `executor`,
+    //! `hedge`, `outlier`, and `reconnect` accept the `metrics` Cargo feature (it compiles
+    //! cleanly) but do not yet emit any metrics of their own.
     //!
     //! ## Enabling Metrics
     //!
     //! ```toml
     //! [dependencies]
-    //! tower-resilience = { version = "0.3", features = ["circuitbreaker", "metrics"] }
+    //! tower-resilience = { version = "0.12", features = ["circuitbreaker", "metrics"] }
     //! metrics = "0.24"
     //! metrics-exporter-prometheus = "0.16"
     //! ```
@@ -79,6 +83,30 @@ pub mod metrics {
     //! - `cache_evictions_total{cache}` - Cache evictions
     //! - `cache_size{cache}` - Current cache size gauge
     //!
+    //! ### Chaos
+    //!
+    //! - `chaos.errors_injected{layer}` - Injected error counter
+    //! - `chaos.latency_injections{layer}` - Injected latency counter
+    //! - `chaos.injected_latency_ms{layer}` - Injected latency histogram
+    //! - `chaos.passed_through{layer}` - Requests passed through unmodified
+    //!
+    //! ### Coalesce
+    //!
+    //! - `coalesce_requests_total{coalesce, role}` - Requests processed, by role
+    //!   (`leader` executed the call, `waiter` joined an in-flight one)
+    //!
+    //! ### Fallback
+    //!
+    //! - `fallback_calls_total{fallback, result, strategy}` - Fallback invocations
+    //!   (`result` is `applied`/`failed`/`success`; `strategy` identifies which
+    //!   [`FallbackStrategy`](https://docs.rs/tower-resilience-fallback/latest/tower_resilience_fallback/enum.FallbackStrategy.html)
+    //!   produced the outcome)
+    //!
+    //! ### Router
+    //!
+    //! - `router_requests_routed_total{router, backend}` - Requests routed, by
+    //!   backend index
+    //!
     //! ## Example Prometheus Queries
     //!
     //! ```promql
@@ -139,7 +167,7 @@ pub mod tracing_guide {
     //!
     //! ```toml
     //! [dependencies]
-    //! tower-resilience = { version = "0.3", features = ["circuitbreaker", "tracing"] }
+    //! tower-resilience = { version = "0.12", features = ["circuitbreaker", "tracing"] }
     //! tracing-subscriber = "0.3"
     //! ```
     //!

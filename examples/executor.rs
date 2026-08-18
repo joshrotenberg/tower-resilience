@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_executor::ExecutorLayer;
+use tower_resilience_executor::{BlockingExecutor, ExecutorLayer};
 
 #[derive(Clone)]
 struct ComputeService {
@@ -165,11 +165,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // inside `#[tokio::main]`), so use the non-blocking variant instead.
     compute_runtime.shutdown_background();
 
+    println!();
+
+    // Example 4: BlockingExecutor for genuinely blocking work
+    println!("--- BlockingExecutor ---");
+    println!(
+        "ExecutorLayer::new(handle)/::current() spawn on that runtime's ordinary\n\
+         async core workers -- fine for work that yields, but a future that calls\n\
+         a blocking API directly still stalls whichever worker runs it.\n\
+         BlockingExecutor runs each request on Tokio's spawn_blocking pool instead,\n\
+         off the async core workers entirely.\n"
+    );
+
+    let blocking_layer = ExecutorLayer::new(BlockingExecutor::current());
+    let mut blocking_service =
+        ServiceBuilder::new()
+            .layer(blocking_layer)
+            .service(tower::service_fn(|ms: u64| async move {
+                // A real blocking call (not tokio::time::sleep, which yields).
+                // BlockingExecutor already runs this future on a dedicated
+                // blocking-pool OS thread, so blocking it directly is safe and
+                // does not stall the runtime's async core workers.
+                std::thread::sleep(Duration::from_millis(ms));
+                Ok::<_, std::io::Error>(ms)
+            }));
+
+    let start = std::time::Instant::now();
+    let result = blocking_service.ready().await?.call(50).await?;
+    println!(
+        "  Blocked for {}ms on the blocking pool, returned {:?} after {:?}",
+        result,
+        result,
+        start.elapsed()
+    );
+
     println!("\n=== Example Complete ===");
     println!("\nKey takeaways:");
     println!("- ExecutorLayer spawns each request as a separate task");
     println!("- Unlike Buffer, requests are processed in parallel, not serially");
-    println!("- Use a dedicated runtime for CPU-bound or blocking work");
+    println!("- Use a dedicated runtime for isolation from the caller's runtime");
+    println!("- Use BlockingExecutor specifically for blocking or non-yielding CPU work");
     println!("- Combine with Bulkhead for bounded parallelism");
 
     Ok(())

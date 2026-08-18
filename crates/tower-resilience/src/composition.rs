@@ -47,15 +47,18 @@ pub mod selection {
     //!
     //! ## Understanding ServiceBuilder Order
     //!
-    //! `ServiceBuilder` applies layers **inside-out**: the first `.layer()` call wraps
-    //! closest to the service (innermost), and the last `.layer()` call is outermost.
+    //! `ServiceBuilder` applies layers **outside-in**: the first `.layer()` call
+    //! becomes the outermost wrapper (it sees the request first), and the layer
+    //! closest to `.service(...)` is innermost, closest to the wrapped service.
+    //! ([`tower::ServiceBuilder`'s own docs](https://docs.rs/tower/latest/tower/struct.ServiceBuilder.html#order):
+    //! "Layers that are added first will be called with the request first.")
     //!
     //! ```text
     //! // Execution order: Fallback → Timeout → Retry → Service
     //! ServiceBuilder::new()
-    //!     .layer(fallback)   // 3rd added, outermost, executes 1st
-    //!     .layer(timeout)    // 2nd added, middle
-    //!     .layer(retry)      // 1st added, innermost, executes last (closest to service)
+    //!     .layer(fallback)   // added 1st, outermost, executes 1st
+    //!     .layer(timeout)    // added 2nd, middle
+    //!     .layer(retry)      // added 3rd, innermost, executes last (closest to service)
     //!     .service(svc)
     //! ```
     //!
@@ -299,8 +302,8 @@ pub mod stacks {
     //!     .layer(TimeLimiterLayer::new(Duration::from_secs(30)))  // Bound processing time
     //!     .layer(RetryLayer::builder()                            // Retry with backoff
     //!         .max_attempts(5)
-    //!         .exponential_backoff(Duration::from_secs(1))
-    //!         .max_backoff(Duration::from_secs(60))
+    //!         .backoff(ExponentialBackoff::new(Duration::from_secs(1))
+    //!             .max_interval(Duration::from_secs(60)))
     //!         .build())
     //!     .layer(CircuitBreakerLayer::builder()                   // Fail fast if handler broken
     //!         .failure_rate_threshold(0.5)
@@ -464,18 +467,21 @@ pub mod ordering {
     //!
     //! ## ServiceBuilder Order
     //!
-    //! `ServiceBuilder` applies layers **inside-out**: the first `.layer()` call wraps
-    //! closest to the service (innermost), and the last `.layer()` call is outermost.
+    //! `ServiceBuilder` applies layers **outside-in**: the first `.layer()` call becomes
+    //! the outermost wrapper (it sees the request first), and the layer closest to
+    //! `.service(...)` is innermost. Per
+    //! [`tower::ServiceBuilder`'s own docs](https://docs.rs/tower/latest/tower/struct.ServiceBuilder.html#order):
+    //! "Layers that are added first will be called with the request first."
     //!
     //! ```text
     //! // Build order vs Execution order:
     //! ServiceBuilder::new()
-    //!     .layer(A)  // Added 1st → Innermost  → Executes LAST  (closest to service)
+    //!     .layer(A)  // Added 1st → Outermost  → Executes FIRST (sees request first)
     //!     .layer(B)  // Added 2nd → Middle     → Executes 2nd
-    //!     .layer(C)  // Added 3rd → Outermost  → Executes FIRST (sees request first)
+    //!     .layer(C)  // Added 3rd → Innermost  → Executes LAST  (closest to service)
     //!     .service(svc)
     //!
-    //! // Execution: Request → C → B → A → Service → A → B → C → Response
+    //! // Execution: Request → A → B → C → Service → C → B → A → Response
     //! ```
     //!
     //! ## Recommended Layer Order
@@ -496,18 +502,20 @@ pub mod ordering {
     //!
     //! ## Client-Side (Outbound) - Correct Order
     //!
-    //! In `ServiceBuilder`, add layers from innermost to outermost:
+    //! In `ServiceBuilder`, add layers from outermost to innermost:
     //!
     //! ```text
     //! ServiceBuilder::new()
-    //!     // Added last → outermost → executes first
+    //!     // Added first → outermost → executes first
     //!     .layer(fallback)           // Catches all errors, provides degraded response
     //!     .layer(cache)              // Skips remaining layers on cache hit
     //!     .layer(total_timeout)      // Bounds entire operation including retries
     //!     // Middle layers
+    //!     .layer(retry)              // Retries individual failures; sees every circuit-breaker
+    //!                                // rejection too (exclude those via `retry_on` -- see
+    //!                                // "Circuit Breaker with Retry" below)
     //!     .layer(circuit_breaker)    // Fails fast if service is down
-    //!     .layer(retry)              // Retries individual failures
-    //!     // Added first → innermost → executes last (closest to service)
+    //!     // Added last → innermost → executes last (closest to service)
     //!     .layer(per_call_timeout)   // Bounds each attempt
     //!     .service(http_client);
     //! ```
@@ -516,10 +524,10 @@ pub mod ordering {
     //!
     //! ```text
     //! ServiceBuilder::new()
-    //!     // Added last → outermost → executes first
+    //!     // Added first → outermost → executes first
     //!     .layer(rate_limiter)       // Reject over-limit requests immediately
     //!     .layer(bulkhead)           // Isolate resources after rate limiting
-    //!     // Added first → innermost → executes last
+    //!     // Added last → innermost → executes last
     //!     .layer(timeout)            // Bound handler execution
     //!     .service(handler);
     //! ```
@@ -551,25 +559,35 @@ pub mod ordering {
     //!
     //! **Circuit Breaker with Retry:**
     //!
-    //! Both orderings are valid with different semantics:
+    //! Both orderings are valid, with different tradeoffs; see [the full
+    //! comparison](https://github.com/joshrotenberg/tower-resilience/blob/main/docs/circuitbreaker-tower-comparison.md#composition-with-retry-budgets)
+    //! for the complete reasoning:
     //!
     //! ```text
-    //! // CB outside retry (recommended for most cases):
-    //! // - Retries happen first, CB only sees final result
-    //! // - CB counts "did all retries fail?" not "did one attempt fail?"
-    //! // - Fewer CB state transitions
-    //! ServiceBuilder::new()
-    //!     .layer(CircuitBreakerLayer::new(cb_config))  // Outer
-    //!     .layer(RetryLayer::new(config))              // Inner
-    //!     .service(svc)
-    //!
-    //! // CB inside retry:
-    //! // - CB can open mid-retry, failing fast on subsequent attempts
-    //! // - More responsive to cascading failures
-    //! // - Each retry attempt is a separate CB call
+    //! // Retry outside CB (recommended default):
+    //! // - Every retry attempt -- including the first -- calls the breaker directly,
+    //! //   so the breaker's sliding window reflects real attempt volume against the
+    //! //   transport, not a smoothed per-request outcome
+    //! // - Pair with `.retry_on(...)` to exclude circuit-open rejections, so a local
+    //! //   rejection doesn't consume a retry-budget token or schedule a backoff sleep
+    //! //   for a call that never left the process
     //! ServiceBuilder::new()
     //!     .layer(RetryLayer::new(config))              // Outer
     //!     .layer(CircuitBreakerLayer::new(cb_config))  // Inner
+    //!     .service(svc)
+    //!
+    //! // CB outside retry:
+    //! // - The breaker only ever sees one call per external request -- Retry's own
+    //! //   internal attempts happen inside `Retry::call`'s future, so the breaker
+    //! //   observes the retry's fully-adjudicated final outcome, not individual
+    //! //   attempts
+    //! // - Appropriate when the retry's entire multi-attempt operation should count
+    //! //   as one unit of health for the breaker, but this does not gate individual
+    //! //   retry attempts on transport health -- choose this deliberately, not by
+    //! //   default
+    //! ServiceBuilder::new()
+    //!     .layer(CircuitBreakerLayer::new(cb_config))  // Outer
+    //!     .layer(RetryLayer::new(config))              // Inner
     //!     .service(svc)
     //! ```
 }
@@ -587,7 +605,7 @@ pub mod anti_patterns {
     //! // Bad: Immediate retries hammer the service
     //! RetryLayer::builder()
     //!     .max_attempts(5)
-    //!     .no_backoff()
+    //!     .fixed_backoff(Duration::ZERO)
     //!     .build()
     //! ```
     //!

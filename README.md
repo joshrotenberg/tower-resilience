@@ -30,7 +30,7 @@ A comprehensive resilience and fault-tolerance toolkit for [Tower](https://githu
 
 ```toml
 [dependencies]
-tower-resilience = { version = "0.10", features = ["circuitbreaker", "bulkhead"] }
+tower-resilience = { version = "0.12", features = ["circuitbreaker", "bulkhead"] }
 tower = "0.5"
 ```
 
@@ -61,10 +61,10 @@ what you use. Enable patterns explicitly, or use `full` to get them all:
 
 ```toml
 # Pick specific patterns
-tower-resilience = { version = "0.10", features = ["circuitbreaker", "retry", "bulkhead"] }
+tower-resilience = { version = "0.12", features = ["circuitbreaker", "retry", "bulkhead"] }
 
 # Or enable everything (all patterns + observability)
-tower-resilience = { version = "0.10", features = ["full"] }
+tower-resilience = { version = "0.12", features = ["full"] }
 ```
 
 ### Pattern Features
@@ -93,17 +93,27 @@ tower-resilience = { version = "0.10", features = ["full"] }
 | Feature | Effect |
 |---------|--------|
 | `layer` | Unified error layer for composing patterns under one error type |
-| `metrics` | Prometheus metrics on every pattern you've enabled |
-| `tracing` | Structured `tracing` spans/events on every pattern you've enabled |
+| `metrics` | Prometheus metrics on the patterns that implement it (see below) |
+| `tracing` | Structured `tracing` spans/events on the patterns that implement it (see below) |
 | `full` | All patterns plus `layer`, `metrics`, and `tracing` |
 | `health-circuitbreaker` | Integration: health checks can open/close circuit breakers |
 
 `metrics` and `tracing` use weak feature activation, so they only turn on
 observability for the patterns you've already enabled - they never pull in a
-pattern on their own. To get all patterns with observability:
+pattern on their own. Not every pattern emits metrics or tracing yet:
+`bulkhead`, `cache`, `chaos`, `circuitbreaker`, `coalesce`, `fallback`,
+`ratelimiter`, `retry`, `router`, and `timelimiter` emit metrics today (see
+the [metrics guide](https://docs.rs/tower-resilience/latest/tower_resilience/observability/metrics/)
+for the full list of metric names per pattern); all of those except
+`bulkhead` also emit `tracing` spans/events. `adaptive`, `executor`, `hedge`,
+`outlier`, and `reconnect` accept the `metrics`/`tracing` Cargo features
+(they compile cleanly) but do not yet instrument any calls; see
+[#428](https://github.com/joshrotenberg/tower-resilience/issues/428).
+
+To get all patterns with observability:
 
 ```toml
-tower-resilience = { version = "0.10", features = ["full"] }
+tower-resilience = { version = "0.12", features = ["full"] }
 ```
 
 (`full` already includes `metrics` and `tracing`.)
@@ -376,10 +386,36 @@ let service = ServiceBuilder::new()
     .service(my_service);
 ```
 
+`ExecutorLayer::new(handle)`/`::current()` spawn each request as an ordinary
+task on that runtime's async core workers (`tokio::runtime::Handle::spawn`).
+That gives you task-level parallelism and isolation from whatever runtime
+the caller is on, but it does **not** protect the target runtime's core
+workers from a future that blocks without yielding -- a genuinely blocking
+or CPU-bound call still stalls whichever worker thread happens to run it.
+For that case, use [`BlockingExecutor`](https://docs.rs/tower-resilience-executor/latest/tower_resilience_executor/struct.BlockingExecutor.html),
+which reserves a thread from Tokio's dedicated blocking-task pool via
+`spawn_blocking` instead:
+
+```rust
+use tower_resilience::executor::{BlockingExecutor, ExecutorLayer};
+use tower::ServiceBuilder;
+
+// Runs each request on Tokio's blocking-task pool, off the async core
+// workers, so a service that calls blocking APIs directly cannot stall
+// the rest of the application.
+let layer = ExecutorLayer::new(BlockingExecutor::current());
+
+let service = ServiceBuilder::new()
+    .layer(layer)
+    .service(my_service);
+```
+
 Use cases:
 - **CPU-bound processing**: Parallelize CPU-intensive request handling
 - **Runtime isolation**: Process requests on a dedicated runtime
 - **Thread pool delegation**: Use specific thread pools for certain workloads
+- **Blocking operations**: Use `BlockingExecutor` to offload blocking I/O or
+  CPU-bound work without yield points to a dedicated thread
 
 ### Fallback
 
@@ -410,6 +446,13 @@ let layer = FallbackLayer::<Request, Response, MyError>::tower_service(
 
 let service = layer.layer(primary_service);
 ```
+
+`tower_service()` shares one backup instance across every clone of the
+layer (the backup need only be `Send`, not `Clone`), and `Request` must
+implement `Clone` since a backup attempt needs the same logical request the
+primary consumed. See the [generic fallback-service migration
+guide](docs/fallback-service-migration.md) for readiness, sharing, and
+error-selection details.
 
 ### Hedge
 
@@ -609,6 +652,43 @@ let layer = RetryLayer::<(), (), MyError>::builder()
 
 let service = layer.layer(my_service);
 ```
+
+**Retry budgets:** cap the total retry volume across all requests (not just
+per-request attempts), so a struggling downstream doesn't get amplified
+traffic from every caller retrying independently. A budget is shared across
+every clone of the layer; retries withdraw a token and successes deposit one
+back:
+
+```rust
+use tower_resilience::retry::{RetryLayer, RetryBudgetBuilder};
+use std::time::Duration;
+
+// Token bucket: allow up to 10 retries/sec, bursting to 100.
+let budget = RetryBudgetBuilder::new()
+    .token_bucket()
+    .tokens_per_second(10.0)
+    .max_tokens(100)
+    .build()
+    .unwrap();
+
+let layer = RetryLayer::<(), (), MyError>::builder()
+    .max_attempts(5)
+    .exponential_backoff(Duration::from_millis(100))
+    .budget(budget)
+    .on_budget_exhausted(|attempt| {
+        println!("Retry budget exhausted at attempt {}", attempt);
+    })
+    .build();
+
+let service = layer.layer(my_service);
+```
+
+An `AimdBudget` (additive-increase, multiplicative-decrease) is also
+available via `RetryBudgetBuilder::new().aimd()...` for a budget that shrinks
+under sustained exhaustion and slowly recovers, comparable to Tower's own
+transactions-per-second retry-budget concept
+([tower-rs/tower#857](https://github.com/tower-rs/tower/issues/857),
+[#863](https://github.com/tower-rs/tower/issues/863)).
 
 **Full examples:** [retry_example.rs](crates/tower-resilience-retry/examples/retry_example.rs)
 
@@ -834,6 +914,14 @@ let server = ServiceBuilder::new()
     .layer(timeout_layer)
     .service(handler);
 ```
+
+Layer order changes which attempts a circuit breaker observes when combined
+with retry: wrapping the breaker with retry (breaker innermost, closest to
+the transport) is the recommended default, since every retry attempt then
+counts toward the breaker's window. See [Composition with retry
+budgets](docs/circuitbreaker-tower-comparison.md#composition-with-retry-budgets)
+for the full tradeoff and the recommended `retry_on` predicate to exclude
+circuit-open rejections from consuming retry-budget tokens.
 
 For comprehensive guidance on composing patterns effectively, see:
 
