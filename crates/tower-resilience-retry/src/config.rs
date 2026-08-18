@@ -228,18 +228,21 @@ impl<Req, Res, E> RetryConfigBuilder<Req, Res, E> {
     /// use tower_resilience_retry::{RetryLayer, RetryBudgetBuilder};
     /// use std::time::Duration;
     ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// // Create a token bucket budget: 10 retries/sec, max burst of 100
     /// let budget = RetryBudgetBuilder::new()
     ///     .token_bucket()
     ///     .tokens_per_second(10.0)
     ///     .max_tokens(100)
-    ///     .build();
+    ///     .build()?;
     ///
     /// let layer = RetryLayer::<(), (), std::io::Error>::builder()
     ///     .max_attempts(5)
     ///     .exponential_backoff(Duration::from_millis(100))
     ///     .budget(budget)
     ///     .build();
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn budget(mut self, budget: Arc<dyn RetryBudget>) -> Self {
         self.budget = Some(budget);

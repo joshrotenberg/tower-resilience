@@ -161,7 +161,7 @@ let hedge = HedgeLayer::standard();
 | **Time Limiter** | `fast()` | 1s timeout, cancel on timeout |
 | | `standard()` | 5s timeout, cancel on timeout |
 | | `slow()` | 30s timeout, cancel on timeout |
-| | `streaming()` | 60s timeout, no cancellation |
+| | `detached()` | 60s timeout, continue call in background |
 
 Presets return builders, so you can customize any setting:
 
@@ -663,6 +663,41 @@ let layer = TimeLimiterLayer::builder()
 
 let service = layer.layer(my_service);
 ```
+
+The timeout begins when `Service::call` is invoked. It does not include time
+spent waiting for `poll_ready`, and it ends as soon as the service future
+returns a response or error. In an HTTP service that normally means response
+status and headers are covered, but response-body frames are not.
+
+Use the protocol-agnostic body layers in `tower-http` 0.7+ for streamed bodies:
+
+```rust,ignore
+use std::time::Duration;
+use tower::ServiceBuilder;
+use tower_http::timeout::{ResponseBodyDeadlineLayer, ResponseBodyTimeoutLayer};
+use tower_resilience::timelimiter::TimeLimiterLayer;
+
+let service = ServiceBuilder::new()
+    // Detect a body that produces no frame for 10 seconds.
+    .layer(ResponseBodyTimeoutLayer::new(Duration::from_secs(10)))
+    // Also cap total body transfer time at 60 seconds.
+    .layer(ResponseBodyDeadlineLayer::new(Duration::from_secs(60)))
+    // Time only the service future (typically until response headers).
+    .layer(TimeLimiterLayer::standard().build())
+    .service(my_http_service);
+```
+
+The body idle timer resets after each frame. The body deadline is wall-clock
+time from response-body wrapper construction, so it starts after the response
+is produced rather than sharing TimeLimiter's call deadline. Body timeouts
+preserve the response status and headers and surface an error from the body,
+since those response parts may already have been sent. The analogous
+`RequestBodyTimeoutLayer` and `RequestBodyDeadlineLayer` cover request frames.
+
+`cancel_running_future` controls only the service call future. It does not
+control HTTP bodies after that future returns. The old `streaming()` preset is
+deprecated because it never timed body frames; use `detached()` when the
+intended behavior is to let a timed-out call continue in the background.
 
 **Full examples:** [timelimiter.rs](examples/timelimiter.rs) | [timelimiter_example.rs](crates/tower-resilience-timelimiter/examples/timelimiter_example.rs)
 

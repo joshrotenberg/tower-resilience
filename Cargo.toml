@@ -26,7 +26,7 @@ tower-resilience-coalesce = { path = "crates/tower-resilience-coalesce" }
 tower-resilience-executor = { path = "crates/tower-resilience-executor" }
 tower-resilience-outlier = { path = "crates/tower-resilience-outlier" }
 tower = { workspace = true }
-tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "test-util"] }
 tracing-subscriber = "0.3"
 futures = { workspace = true }
 

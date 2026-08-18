@@ -6,6 +6,34 @@
 //! - Event system for observability (onSuccess, onError, onTimeout)
 //! - Metrics integration
 //!
+//! ## What the timeout covers
+//!
+//! `TimeLimiter` starts its timer when [`Service::call`]
+//! is invoked and stops it when that future returns a response or error.
+//! [`Service::poll_ready`] is delegated directly,
+//! so time spent waiting for readiness is **not** part of the timeout.
+//!
+//! For an HTTP service, returning `http::Response<B>` completes the service
+//! future. Response-body frames produced by `B` afterwards are therefore not
+//! timed. If the service consumes request-body frames before returning its
+//! response, that work remains inside the service future, but TimeLimiter does
+//! not apply an independent timeout between request-body frames.
+//!
+//! For idle or absolute HTTP body limits, compose this layer with `tower-http`
+//! 0.7 or later:
+//!
+//! - `RequestBodyTimeoutLayer` / `ResponseBodyTimeoutLayer` reset their timer
+//!   after every frame and detect idle transfers.
+//! - `RequestBodyDeadlineLayer` / `ResponseBodyDeadlineLayer` use one
+//!   wall-clock timer from body-wrapper construction and cap total transfer
+//!   time.
+//!
+//! A response-body deadline starts after the response is produced; it is not a
+//! continuation of TimeLimiter's service-future deadline. The two layers
+//! intentionally have independent clocks. Body timeout errors are emitted by
+//! the body after the response status and headers already exist, so those
+//! response parts are preserved.
+//!
 //! ## Presets
 //!
 //! ```rust
@@ -14,7 +42,7 @@
 //! let fast = TimeLimiterLayer::fast().build();        // 1s, cancel on timeout
 //! let standard = TimeLimiterLayer::standard().build(); // 5s, cancel on timeout
 //! let slow = TimeLimiterLayer::slow().build();         // 30s, cancel on timeout
-//! let stream = TimeLimiterLayer::streaming().build();  // 60s, no cancellation
+//! let detached = TimeLimiterLayer::detached().build(); // 60s, continue call in background
 //! ```
 //!
 //! Presets return builders, so you can customize further:
@@ -133,7 +161,12 @@ mod error;
 mod events;
 mod layer;
 
-/// A Tower service that applies timeout limiting to an inner service.
+/// A Tower service that applies timeout limiting to an inner service's call future.
+///
+/// The timeout begins in [`Service::call`] and does not include
+/// [`Service::poll_ready`]. It ends when the inner call future yields its
+/// response, so asynchronously produced response data (such as HTTP body
+/// frames) is outside this service's deadline.
 ///
 /// The type parameter `T` is the timeout source:
 /// - `FixedTimeout` - uses the same timeout for all requests
@@ -185,6 +218,8 @@ where
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        // Readiness has no request to inspect and is deliberately outside the
+        // per-call timeout budget.
         self.inner.poll_ready(cx).map_err(TimeLimiterError::Inner)
     }
 

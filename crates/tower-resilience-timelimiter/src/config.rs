@@ -242,7 +242,10 @@ impl<T> TimeLimiterConfigBuilder<T> {
     ///
     /// When true (the default), the future will be dropped on timeout, canceling
     /// ongoing work. When false, the future continues running in the background
-    /// but its result is ignored.
+    /// on a spawned Tokio task but its result is ignored. This setting applies
+    /// only to the future returned by [`tower::Service::call`]. It does not
+    /// control readiness or an HTTP request/response body after the service
+    /// future has completed.
     ///
     /// Default: true
     pub fn cancel_running_future(mut self, cancel: bool) -> Self {
@@ -394,7 +397,13 @@ mod tests {
     }
 
     #[test]
-    fn test_preset_streaming() {
+    fn test_preset_detached() {
+        let _layer = TimeLimiterLayer::detached().build();
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn test_deprecated_streaming_alias() {
         let _layer = TimeLimiterLayer::streaming().build();
     }
 

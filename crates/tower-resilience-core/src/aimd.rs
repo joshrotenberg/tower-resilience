@@ -27,7 +27,7 @@
 //!     .with_increase_by(1)
 //!     .with_decrease_factor(0.5);
 //!
-//! let controller = AimdController::new(config);
+//! let controller = AimdController::new(config)?;
 //!
 //! // On success, limit increases
 //! controller.record_success();
@@ -36,6 +36,7 @@
 //! // On failure, limit decreases by factor
 //! controller.record_failure();
 //! assert_eq!(controller.limit(), 5); // 11 * 0.5 = 5.5 -> 5
+//! # Ok::<(), tower_resilience_core::aimd::AimdConfigError>(())
 //! ```
 
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -106,6 +107,48 @@ impl AimdConfig {
         self.decrease_factor = factor;
         self
     }
+
+    /// Validate this configuration.
+    ///
+    /// Checks, in order:
+    /// - `min_limit` does not exceed `max_limit`
+    /// - `increase_by` is non-zero
+    /// - `decrease_factor` is finite and in `[0.0, 1.0)`
+    pub fn validate(&self) -> Result<(), AimdConfigError> {
+        if self.min_limit > self.max_limit {
+            return Err(AimdConfigError::MinExceedsMax {
+                min_limit: self.min_limit,
+                max_limit: self.max_limit,
+            });
+        }
+        if self.increase_by == 0 {
+            return Err(AimdConfigError::ZeroIncrease);
+        }
+        if !self.decrease_factor.is_finite() || !(0.0..1.0).contains(&self.decrease_factor) {
+            return Err(AimdConfigError::InvalidDecreaseFactor(self.decrease_factor));
+        }
+        Ok(())
+    }
+}
+
+/// Errors that can occur when validating an [`AimdConfig`].
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
+#[non_exhaustive]
+pub enum AimdConfigError {
+    /// `min_limit` is greater than `max_limit`.
+    #[error("min_limit ({min_limit}) must not exceed max_limit ({max_limit})")]
+    MinExceedsMax {
+        /// Configured minimum limit.
+        min_limit: usize,
+        /// Configured maximum limit.
+        max_limit: usize,
+    },
+    /// `increase_by` is zero, which would make the additive increase a no-op.
+    #[error("increase_by must be greater than zero")]
+    ZeroIncrease,
+    /// `decrease_factor` is not finite, or not in the range `[0.0, 1.0)`.
+    #[error("decrease_factor ({0}) must be finite and in the range [0.0, 1.0)")]
+    InvalidDecreaseFactor(f64),
 }
 
 /// Thread-safe AIMD controller.
@@ -116,7 +159,11 @@ impl AimdConfig {
 /// - Rate limiting
 /// - Retry budgets
 ///
-/// The controller is thread-safe and can be shared across tasks.
+/// The controller is thread-safe and can be shared across tasks. Concurrent
+/// observations are applied via compare-and-swap on the underlying atomic:
+/// each call to `record_success`, `record_failure`, or `record_successes`
+/// contributes exactly once, and a success racing a failure resolves to one
+/// of the two possible serial orderings (no lost updates).
 pub struct AimdController {
     /// Current limit value.
     limit: AtomicUsize,
@@ -126,14 +173,20 @@ pub struct AimdController {
 
 impl AimdController {
     /// Create a new AIMD controller with the given configuration.
-    pub fn new(config: AimdConfig) -> Self {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the configuration is invalid (see
+    /// [`AimdConfig::validate`]).
+    pub fn new(config: AimdConfig) -> Result<Self, AimdConfigError> {
+        config.validate()?;
         let initial = config
             .initial_limit
             .clamp(config.min_limit, config.max_limit);
-        Self {
+        Ok(Self {
             limit: AtomicUsize::new(initial),
             config,
-        }
+        })
     }
 
     /// Get the current limit.
@@ -153,27 +206,36 @@ impl AimdController {
 
     /// Record a success - increases the limit additively.
     pub fn record_success(&self) {
-        let current = self.limit.load(Ordering::Relaxed);
-        let new_limit = current
-            .saturating_add(self.config.increase_by)
-            .min(self.config.max_limit);
-        self.limit.store(new_limit, Ordering::Relaxed);
+        let increase_by = self.config.increase_by;
+        let max_limit = self.config.max_limit;
+        self.limit
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+                Some(current.saturating_add(increase_by).min(max_limit))
+            })
+            .expect("update closure always returns Some");
     }
 
     /// Record a failure - decreases the limit multiplicatively.
     pub fn record_failure(&self) {
-        let current = self.limit.load(Ordering::Relaxed);
-        let decreased = (current as f64 * self.config.decrease_factor) as usize;
-        let new_limit = decreased.max(self.config.min_limit);
-        self.limit.store(new_limit, Ordering::Relaxed);
+        let decrease_factor = self.config.decrease_factor;
+        let min_limit = self.config.min_limit;
+        self.limit
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+                let decreased = (current as f64 * decrease_factor) as usize;
+                Some(decreased.max(min_limit))
+            })
+            .expect("update closure always returns Some");
     }
 
     /// Record multiple successes at once.
     pub fn record_successes(&self, count: usize) {
-        let current = self.limit.load(Ordering::Relaxed);
         let increase = self.config.increase_by.saturating_mul(count);
-        let new_limit = current.saturating_add(increase).min(self.config.max_limit);
-        self.limit.store(new_limit, Ordering::Relaxed);
+        let max_limit = self.config.max_limit;
+        self.limit
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+                Some(current.saturating_add(increase).min(max_limit))
+            })
+            .expect("update closure always returns Some");
     }
 
     /// Reset the limit to its initial value.
@@ -242,7 +304,7 @@ mod tests {
     #[test]
     fn test_controller_initial_limit() {
         let config = AimdConfig::default().with_initial_limit(25);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
         assert_eq!(controller.limit(), 25);
     }
 
@@ -251,7 +313,7 @@ mod tests {
         let config = AimdConfig::default()
             .with_initial_limit(200)
             .with_max_limit(50);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
         assert_eq!(controller.limit(), 50);
     }
 
@@ -260,7 +322,7 @@ mod tests {
         let config = AimdConfig::default()
             .with_initial_limit(0)
             .with_min_limit(5);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
         assert_eq!(controller.limit(), 5);
     }
 
@@ -269,7 +331,7 @@ mod tests {
         let config = AimdConfig::default()
             .with_initial_limit(10)
             .with_increase_by(2);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
 
         controller.record_success();
         assert_eq!(controller.limit(), 12);
@@ -284,7 +346,7 @@ mod tests {
             .with_initial_limit(98)
             .with_max_limit(100)
             .with_increase_by(5);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
 
         controller.record_success();
         assert_eq!(controller.limit(), 100); // Clamped to max
@@ -295,7 +357,7 @@ mod tests {
         let config = AimdConfig::default()
             .with_initial_limit(100)
             .with_decrease_factor(0.5);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
 
         controller.record_failure();
         assert_eq!(controller.limit(), 50);
@@ -310,7 +372,7 @@ mod tests {
             .with_initial_limit(10)
             .with_min_limit(5)
             .with_decrease_factor(0.1);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
 
         controller.record_failure();
         assert_eq!(controller.limit(), 5); // Clamped to min
@@ -321,7 +383,7 @@ mod tests {
         let config = AimdConfig::default()
             .with_initial_limit(10)
             .with_increase_by(1);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
 
         controller.record_successes(5);
         assert_eq!(controller.limit(), 15);
@@ -330,7 +392,7 @@ mod tests {
     #[test]
     fn test_reset() {
         let config = AimdConfig::default().with_initial_limit(50);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
 
         controller.record_success();
         controller.record_success();
@@ -349,7 +411,7 @@ mod tests {
             .with_max_limit(100)
             .with_increase_by(1)
             .with_decrease_factor(0.5);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
 
         // Increase 10 times
         for _ in 0..10 {
@@ -375,7 +437,7 @@ mod tests {
     #[test]
     fn test_clone() {
         let config = AimdConfig::default().with_initial_limit(42);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
         controller.record_success();
 
         let cloned = controller.clone();
@@ -390,7 +452,7 @@ mod tests {
     #[test]
     fn test_debug() {
         let config = AimdConfig::default().with_initial_limit(10);
-        let controller = AimdController::new(config);
+        let controller = AimdController::new(config).unwrap();
         let debug_str = format!("{:?}", controller);
         assert!(debug_str.contains("AimdController"));
         assert!(debug_str.contains("10"));
@@ -404,7 +466,7 @@ mod tests {
         let config = AimdConfig::default()
             .with_initial_limit(1000)
             .with_max_limit(10000);
-        let controller = Arc::new(AimdController::new(config));
+        let controller = Arc::new(AimdController::new(config).unwrap());
 
         let mut handles = vec![];
 
@@ -424,5 +486,138 @@ mod tests {
 
         // Should have increased (exact value depends on race conditions)
         assert!(controller.limit() > 1000);
+    }
+
+    #[test]
+    fn test_validate_min_exceeds_max() {
+        let config = AimdConfig::default().with_min_limit(50).with_max_limit(10);
+        let err = AimdController::new(config).unwrap_err();
+        assert_eq!(
+            err,
+            AimdConfigError::MinExceedsMax {
+                min_limit: 50,
+                max_limit: 10,
+            }
+        );
+    }
+
+    #[test]
+    fn test_validate_zero_increase() {
+        let config = AimdConfig::default().with_increase_by(0);
+        let err = AimdController::new(config).unwrap_err();
+        assert_eq!(err, AimdConfigError::ZeroIncrease);
+    }
+
+    #[test]
+    fn test_validate_invalid_decrease_factor() {
+        for factor in [-1.0, 1.0, f64::INFINITY, f64::NAN] {
+            let config = AimdConfig::default().with_decrease_factor(factor);
+            let err = AimdController::new(config).unwrap_err();
+            assert!(matches!(err, AimdConfigError::InvalidDecreaseFactor(_)));
+        }
+    }
+
+    #[test]
+    fn test_concurrent_record_success_no_lost_updates() {
+        use std::sync::Arc;
+
+        const THREADS: usize = 16;
+        const CALLS_PER_THREAD: usize = 2000;
+
+        let config = AimdConfig::default()
+            .with_initial_limit(0)
+            .with_min_limit(0)
+            .with_max_limit(usize::MAX / 2)
+            .with_increase_by(1);
+        let controller = Arc::new(AimdController::new(config).unwrap());
+
+        std::thread::scope(|s| {
+            for _ in 0..THREADS {
+                let c = Arc::clone(&controller);
+                s.spawn(move || {
+                    for _ in 0..CALLS_PER_THREAD {
+                        c.record_success();
+                    }
+                });
+            }
+        });
+
+        // No clamping occurs (max_limit is huge), so every observation must
+        // have been applied for the total to match exactly.
+        assert_eq!(controller.limit(), THREADS * CALLS_PER_THREAD);
+    }
+
+    #[test]
+    fn test_concurrent_record_failure_matches_serial_application() {
+        use std::sync::Arc;
+
+        const THREADS: usize = 16;
+        const CALLS_PER_THREAD: usize = 200;
+
+        let make_config = || {
+            AimdConfig::default()
+                .with_initial_limit(1_000_000)
+                .with_min_limit(1)
+                .with_max_limit(2_000_000)
+                .with_decrease_factor(0.999)
+        };
+
+        let concurrent = Arc::new(AimdController::new(make_config()).unwrap());
+        std::thread::scope(|s| {
+            for _ in 0..THREADS {
+                let c = Arc::clone(&concurrent);
+                s.spawn(move || {
+                    for _ in 0..CALLS_PER_THREAD {
+                        c.record_failure();
+                    }
+                });
+            }
+        });
+
+        let serial = AimdController::new(make_config()).unwrap();
+        for _ in 0..(THREADS * CALLS_PER_THREAD) {
+            serial.record_failure();
+        }
+
+        // Every `record_failure` call applies the same deterministic
+        // multiply-and-clamp function, so applying it N times via any
+        // interleaving of concurrent CAS updates yields the same result as
+        // applying it N times serially.
+        assert_eq!(concurrent.limit(), serial.limit());
+    }
+
+    #[test]
+    fn test_concurrent_mixed_success_and_failure_stays_within_bounds() {
+        use std::sync::Arc;
+
+        const THREADS: usize = 16;
+        const CALLS_PER_THREAD: usize = 500;
+
+        let config = AimdConfig::default()
+            .with_initial_limit(50)
+            .with_min_limit(1)
+            .with_max_limit(100)
+            .with_increase_by(1)
+            .with_decrease_factor(0.5);
+        let controller = Arc::new(AimdController::new(config).unwrap());
+
+        std::thread::scope(|s| {
+            for i in 0..THREADS {
+                let c = Arc::clone(&controller);
+                s.spawn(move || {
+                    for j in 0..CALLS_PER_THREAD {
+                        if (i + j) % 2 == 0 {
+                            c.record_success();
+                        } else {
+                            c.record_failure();
+                        }
+                    }
+                });
+            }
+        });
+
+        let final_limit = controller.limit();
+        assert!(final_limit >= controller.min_limit());
+        assert!(final_limit <= controller.max_limit());
     }
 }
