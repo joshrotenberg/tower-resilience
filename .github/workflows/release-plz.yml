@@ -1,18 +1,29 @@
 name: Release
 
-permissions:
-  pull-requests: write
-  contents: write
-
 on:
   push:
     branches:
       - main
 
+# Split into two jobs (release, release-pr) per the release-plz maintainers'
+# recommended layout, instead of running both commands in a single job.
+# The combined-job form does not carry a concurrency group, so two rapid
+# pushes to main (e.g. successive PR merges) could each start their own
+# release-pr step and race each other, both concluding no release PR was
+# open yet and each opening its own -- producing the kind of stale
+# duplicate release PR cleaned up in #377. Splitting the jobs lets the
+# release-pr job carry its own concurrency group (below) while keeping the
+# release (publish) job unthrottled, since cancelling a pending publish
+# run would risk skipping a release outright.
 jobs:
-  release-plz:
-    name: Release-plz
+  # Publish already-versioned packages: crates.io, git tags, GitHub
+  # releases. No concurrency group here -- see comment above.
+  release-plz-release:
+    name: Release-plz release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -24,6 +35,39 @@ jobs:
 
       - name: Run release-plz
         uses: MarcoIeni/release-plz-action@v0.5
+        with:
+          command: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # Open or update the PR that prepares the next release (version bumps +
+  # changelogs). Serialized via the concurrency group so that overlapping
+  # pushes to main queue instead of racing: only one release-pr run is
+  # ever in flight per ref, and it always sees the previous run's result
+  # before deciding whether a new PR is needed.
+  release-plz-pr:
+    name: Release-plz PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: release-plz-pr-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run release-plz
+        uses: MarcoIeni/release-plz-action@v0.5
+        with:
+          command: release-pr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

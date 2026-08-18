@@ -230,3 +230,17 @@ async fn heavy_skew_routes_correctly() {
     assert_eq!(count_primary.load(Ordering::SeqCst), 99);
     assert_eq!(count_canary.load(Ordering::SeqCst), 1);
 }
+
+#[test]
+#[should_panic(expected = "backend 1 has weight 0; all weights must be positive")]
+fn dynamically_constructed_router_rejects_zero_weight() {
+    let mut builder = WeightedRouter::builder();
+    for weight in [3, 0, 1] {
+        builder = builder.route(
+            counting_svc(Arc::new(AtomicUsize::new(0)), "backend"),
+            weight,
+        );
+    }
+
+    let _ = builder.build();
+}

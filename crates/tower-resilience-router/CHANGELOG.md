@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- share smooth weighted-round-robin progression across router clones, including clone-per-request and concurrent traffic ([#366](https://github.com/joshrotenberg/tower-resilience/issues/366))
+
 ### Removed
 
 - Drop an unused non-dev `tokio` dependency; nothing in the crate's
