@@ -87,9 +87,10 @@ impl<S> WeightedRouterBuilder<S> {
 
     /// Uses deterministic selection (default).
     ///
-    /// Requests are distributed using an atomic counter. With weights
-    /// `[90, 10]`, every 100th request cycle distributes exactly 90
-    /// requests to the first backend and 10 to the second.
+    /// Requests are distributed with smooth weighted round-robin. Weights are
+    /// normalized by their greatest common divisor: `[90, 10]` therefore has
+    /// a 10-request cycle with exactly 9 requests sent to the first backend
+    /// and 1 to the second. Progression is shared across router clones.
     pub fn deterministic(mut self) -> Self {
         self.strategy = SelectionStrategy::Deterministic;
         self
@@ -132,6 +133,7 @@ impl<S> WeightedRouterBuilder<S> {
     /// Panics if:
     /// - No backends have been added
     /// - Any backend has a weight of zero
+    /// - The sum of all weights exceeds [`u64::MAX`]
     pub fn build(self) -> crate::WeightedRouter<S> {
         assert!(
             !self.backends.is_empty(),
@@ -143,6 +145,13 @@ impl<S> WeightedRouterBuilder<S> {
                 "backend {i} has weight 0; all weights must be positive"
             );
         }
+
+        self.backends
+            .iter()
+            .try_fold(0u64, |total, (_, weight)| {
+                total.checked_add(u64::from(*weight))
+            })
+            .expect("sum of backend weights exceeds u64::MAX");
 
         let config = RouterConfig {
             name: self.name,
