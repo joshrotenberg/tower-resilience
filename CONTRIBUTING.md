@@ -288,6 +288,15 @@ same location. If a crate is added, confirm its changelog lands at that
 default path (or add an explicit `[[package]]` entry if it needs a
 different one).
 
+### Downstream users
+
+[`docs/downstream-users.md`](docs/downstream-users.md) tracks verified
+downstream users of this project (currently RMQTT and GovCraft/Acton),
+distinguishes confirmed runtime usage from dev/optional/mention-only
+signals, and holds the outreach draft used to validate breaking changes
+against real integrations before a release. Check it before shipping a
+breaking change to a pattern either project depends on.
+
 ### Runbook: checking for stale release branches/PRs
 
 Run this check whenever the release automation looks off (e.g. a release PR
