@@ -441,6 +441,7 @@ async fn failure_rate_threshold_trips_after_window_fills_and_then_rejects_withou
         .minimum_number_of_calls(4)
         .wait_duration_in_open(Duration::from_secs(60))
         .build()
+        .unwrap()
         .layer(probe);
 
     controller.allow(4);
@@ -499,6 +500,7 @@ async fn consecutive_failures_model_trips_independent_of_sliding_window_gating()
         .consecutive_failures(3)
         .wait_duration_in_open(Duration::from_secs(60))
         .build()
+        .unwrap()
         .layer(probe);
 
     controller.allow(10);
@@ -545,6 +547,7 @@ async fn slow_call_threshold_trips_independent_of_failure_rate() {
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_secs(60))
         .build()
+        .unwrap()
         .layer(probe);
 
     // First call completes immediately: fast, and (trivially) a success.
@@ -592,7 +595,7 @@ async fn closed_circuit_forwards_permanently_pending_inner_without_busy_polling(
     let (controlled, controller) = ControlledService::new(false);
     let probe = ServiceProbe::new(controlled);
     let handle = probe.handle();
-    let service = CircuitBreakerLayer::builder().build().layer(probe);
+    let service = CircuitBreakerLayer::builder().build().unwrap().layer(probe);
 
     // First caller: registers a readiness waker but is never woken.
     let mut first = service.clone();
