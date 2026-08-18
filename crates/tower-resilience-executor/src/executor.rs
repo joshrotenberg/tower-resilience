@@ -41,10 +41,43 @@ impl Executor for tokio::runtime::Handle {
     }
 }
 
-/// An executor that uses `spawn_blocking` for blocking operations.
+/// An executor that runs futures on Tokio's `spawn_blocking` thread pool.
 ///
-/// This is useful for services that perform blocking I/O or CPU-intensive
-/// work that would block the async runtime.
+/// Unlike [`CurrentRuntime`] and `Handle`, which schedule futures on the
+/// runtime's async core worker threads, `BlockingExecutor` reserves a
+/// thread from the runtime's dedicated blocking-task pool (bounded, 512
+/// threads by default) and drives the future to completion there via
+/// [`Handle::block_on`]. This gives services that perform blocking I/O or
+/// CPU-intensive work a real thread-class boundary: that work cannot stall
+/// the async core workers that the rest of the application depends on,
+/// because it never runs on them.
+///
+/// Use this when a wrapped service's future may call blocking APIs
+/// directly (rather than already using `spawn_blocking` internally) --
+/// for example, synchronous file I/O, a blocking database driver, or a
+/// CPU-bound computation without yield points.
+///
+/// # Cancellation
+///
+/// The returned `JoinHandle` supports `.abort()`, but blocking-pool work
+/// cannot be preempted once it starts running: if the future has already
+/// begun executing on its blocking-pool thread, `abort()` does not stop
+/// it -- the future runs to completion (consuming the thread for that
+/// duration) and only then does the handle resolve as cancelled. Abort
+/// only prevents the closure from starting if it has not yet been
+/// scheduled.
+///
+/// # Backpressure and dispatch
+///
+/// Each call to [`Executor::spawn`] draws one thread from Tokio's blocking
+/// pool. The pool is bounded (`max_blocking_threads`, 512 by default): once
+/// exhausted, further work queues for a thread to become available rather
+/// than spawning unbounded OS threads. `BlockingExecutor` itself applies no
+/// additional admission control -- pair it with a
+/// [bulkhead](https://docs.rs/tower-resilience-bulkhead) layer upstream if
+/// you need to cap in-flight requests below the pool's capacity.
+///
+/// [`Handle::block_on`]: tokio::runtime::Handle::block_on
 ///
 /// # Example
 ///
@@ -81,10 +114,14 @@ impl Executor for BlockingExecutor {
         F: Future + Send + 'static,
         F::Output: Send + 'static,
     {
-        // We need to spawn the future on the runtime, then use spawn_blocking
-        // for the actual work. However, spawn_blocking is for sync code.
-        // For async code that may block, we spawn normally but on the dedicated handle.
-        self.handle.spawn(future)
+        // Reserve a thread from the blocking pool and drive the future to
+        // completion there via `Handle::block_on`. This is Tokio's
+        // documented bridge pattern for running a future off the async
+        // core workers: timers, IO, and wakers still route through the
+        // owning runtime, but the future's own polling -- including any
+        // blocking calls it makes -- happens on the dedicated thread.
+        let handle = self.handle.clone();
+        tokio::task::spawn_blocking(move || handle.block_on(future))
     }
 }
 
@@ -149,5 +186,42 @@ mod tests {
         let executor = BlockingExecutor::current();
         let join = executor.spawn(async { 42 });
         assert_eq!(join.await.unwrap(), 42);
+    }
+
+    /// Proves `BlockingExecutor` runs work on a thread separate from the
+    /// runtime's async core workers, not merely on the same worker via an
+    /// ordinary `Handle::spawn`.
+    ///
+    /// With a single-worker-thread runtime, blocking that one core worker
+    /// would delay any other async work scheduled concurrently. This test
+    /// submits a task through `BlockingExecutor` that blocks its OS thread
+    /// with `std::thread::sleep` (not `tokio::time::sleep`, which would
+    /// yield) and asserts that a concurrently-scheduled, quick async task
+    /// on the runtime's own worker still completes promptly -- proving the
+    /// blocking work ran on a separate (blocking-pool) thread.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    async fn test_blocking_executor_isolates_runtime_worker() {
+        use std::time::{Duration, Instant};
+
+        let executor = BlockingExecutor::current();
+        let start = Instant::now();
+
+        // Submit work that blocks its OS thread for a while.
+        let blocking_join = executor.spawn(async {
+            std::thread::sleep(Duration::from_millis(300));
+        });
+
+        // Give the blocking work a moment to start, then confirm the
+        // runtime's single core worker is still responsive to ordinary
+        // async work scheduled on it directly.
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        let responsive_elapsed = start.elapsed();
+        assert!(
+            responsive_elapsed < Duration::from_millis(250),
+            "runtime worker appears stalled by blocking-executor work: {:?}",
+            responsive_elapsed
+        );
+
+        blocking_join.await.unwrap();
     }
 }
