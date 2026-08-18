@@ -186,7 +186,7 @@ mod tests {
     /// was moved or boxed can still serve as a trait-object health trigger.
     #[tokio::test]
     async fn test_health_triggerable_on_handle_opens_and_closes() {
-        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle().unwrap();
 
         assert_eq!(handle.state(), CircuitState::Closed);
 
@@ -201,7 +201,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_health_triggerable_on_handle_via_trait_object() {
-        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle().unwrap();
 
         let trigger: Arc<dyn HealthTriggerable> = Arc::new(handle.clone());
         trigger.trigger_unhealthy();

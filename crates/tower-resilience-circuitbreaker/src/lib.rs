@@ -24,7 +24,8 @@
 //! let circuit_breaker = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_size(100)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(circuit_breaker)
@@ -46,7 +47,8 @@
 //! # async fn example() {
 //! let layer = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(0.5)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let svc = service_fn(|req: String| async move {
 //!     Ok::<String, ()>(req)
@@ -78,7 +80,8 @@
 //!             Err(_) => true,
 //!         }
 //!     })
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -104,7 +107,8 @@
 //! // Classify failures based on response content
 //! let layer = CircuitBreakerLayer::builder()
 //!     .classify_response(|response: &Response| response.status() >= 500)
-//!     .build();
+//!     .build()?;
+//! # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 //! ```
 //!
 //! This is simpler than `failure_classifier()` because you don't need to handle
@@ -135,12 +139,13 @@
 //! // Trip after 5 consecutive failures.
 //! let layer = CircuitBreakerLayer::builder()
 //!     .consecutive_failures(5)
-//!     .build();
+//!     .build()?;
 //!
 //! // Equivalent via the general setter.
 //! let layer = CircuitBreakerLayer::builder()
 //!     .failure_model(FailureModel::ConsecutiveFailures { k: 5 })
-//!     .build();
+//!     .build()?;
+//! # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 //! ```
 //!
 //! ## Time-Based Sliding Window
@@ -158,7 +163,8 @@
 //!     .sliding_window_type(SlidingWindowType::TimeBased)
 //!     .sliding_window_duration(Duration::from_secs(60))  // Last 60 seconds
 //!     .minimum_number_of_calls(10)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -181,7 +187,8 @@
 //!     .slow_call_duration_threshold(Duration::from_secs(2))
 //!     .slow_call_rate_threshold(0.5)  // Open at 50% slow calls
 //!     .sliding_window_size(100)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -213,7 +220,8 @@
 //!     .on_slow_call(|duration| {
 //!         println!("Slow call detected: {:?}", duration);
 //!     })
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -228,7 +236,7 @@
 //! use tower::{Service, ServiceBuilder, service_fn};
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::builder().build();
+//! let layer = CircuitBreakerLayer::builder().build().unwrap();
 //! let mut service = ServiceBuilder::new()
 //!     .layer(layer)
 //!     .service(service_fn(|req: String| async move { Ok::<_, ()>(req) }));
@@ -255,7 +263,7 @@
 //! use tower::service_fn;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::builder().build();
+//! let layer = CircuitBreakerLayer::builder().build().unwrap();
 //! let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
 //! let breaker = layer.layer_fn(svc);
 //!
@@ -285,7 +293,7 @@
 //! use tower::service_fn;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::builder().build();
+//! let layer = CircuitBreakerLayer::builder().build().unwrap();
 //! let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
 //! let breaker = layer.layer_fn(svc);
 //!
@@ -312,7 +320,8 @@
 //! # async fn example() {
 //! let (layer, handle) = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(0.5)
-//!     .build_with_handle();
+//!     .build_with_handle()
+//!     .unwrap();
 //!
 //! // Apply the layer, then move/box the resulting service away...
 //! // let service: BoxCloneService<_, _, _> = ...;
@@ -336,7 +345,8 @@
 //!
 //! let (_layer, _handle) = CircuitBreakerLayer::builder()
 //!     .manual_mode()
-//!     .build_with_handle();
+//!     .build_with_handle()?;
+//! # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 //! ```
 //!
 //! ## Features
@@ -383,7 +393,8 @@ use tracing::debug;
 pub use circuit::{CircuitMetrics, CircuitState};
 pub use classifier::{DefaultClassifier, FailureClassifier, FnClassifier};
 pub use config::{
-    CircuitBreakerConfig, CircuitBreakerConfigBuilder, FailureModel, SlidingWindowType,
+    CircuitBreakerConfig, CircuitBreakerConfigBuilder, CircuitBreakerConfigError, FailureModel,
+    SlidingWindowType,
 };
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
@@ -473,11 +484,12 @@ static METRICS_INIT: Once = Once::new();
 ///
 /// let layer = circuit_breaker_builder()
 ///     .failure_rate_threshold(0.5)
-///     .build();
+///     .build()?;
 ///
 /// let service = ServiceBuilder::new()
 ///     .layer(layer)
 ///     .service(service_fn(|req: String| async move { Ok::<_, ()>(req) }));
+/// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 /// ```
 pub fn circuit_breaker_builder() -> CircuitBreakerConfigBuilder<DefaultClassifier> {
     #[cfg(feature = "metrics")]
@@ -585,7 +597,7 @@ impl<S, C> CircuitBreaker<S, C> {
     /// use futures::future::BoxFuture;
     ///
     /// # async fn example() {
-    /// let layer = CircuitBreakerLayer::builder().build();
+    /// let layer = CircuitBreakerLayer::builder().build().unwrap();
     /// let svc = service_fn(|req: String| async move { Ok::<String, String>(req) });
     ///
     /// let mut service = layer.layer_fn(svc).with_fallback(|_req: String| {
@@ -1178,7 +1190,8 @@ mod tests {
             .sliding_window_size(1)
             .minimum_number_of_calls(1)
             .manual_mode()
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let mut svc = layer.layer_fn(tower::service_fn(|_req: String| async move {
             Err::<String, String>("boom".to_string())
@@ -1422,17 +1435,17 @@ mod tests {
 
     #[test]
     fn test_preset_standard() {
-        let _layer = CircuitBreakerLayer::standard().build();
+        let _layer = CircuitBreakerLayer::standard().build().unwrap();
     }
 
     #[test]
     fn test_preset_fast_fail() {
-        let _layer = CircuitBreakerLayer::fast_fail().build();
+        let _layer = CircuitBreakerLayer::fast_fail().build().unwrap();
     }
 
     #[test]
     fn test_preset_tolerant() {
-        let _layer = CircuitBreakerLayer::tolerant().build();
+        let _layer = CircuitBreakerLayer::tolerant().build().unwrap();
     }
 
     #[test]
@@ -1441,7 +1454,8 @@ mod tests {
         let _layer = CircuitBreakerLayer::standard()
             .name("my-service")
             .failure_rate_threshold(0.6)
-            .build();
+            .build()
+            .unwrap();
     }
 
     #[tokio::test]
@@ -1464,7 +1478,8 @@ mod tests {
             .sliding_window_size(10)
             .minimum_number_of_calls(10)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 
@@ -1495,7 +1510,8 @@ mod tests {
             .wait_duration_in_open(Duration::from_millis(100))
             .permitted_calls_in_half_open(1)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer_fn(service);
 
@@ -1548,7 +1564,8 @@ mod tests {
             .on_call_rejected(move || {
                 rc.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             })
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 
@@ -1607,7 +1624,8 @@ mod tests {
             .wait_duration_in_open(Duration::from_millis(50))
             .permitted_calls_in_half_open(1)
             .failure_classifier_type(RedisFailureClassifier)
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 

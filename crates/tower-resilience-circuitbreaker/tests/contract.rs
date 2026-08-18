@@ -16,8 +16,9 @@ use tower_resilience_core::testing::{ControlledService, ControlledServiceClosed,
 #[tokio::test]
 async fn circuitbreaker_drives_readied_instance() {
     let layer = CircuitBreakerLayer::builder()
-        .failure_rate_threshold(50.0)
-        .build();
+        .failure_rate_threshold(0.5)
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());
@@ -31,8 +32,9 @@ async fn circuitbreaker_drives_readied_instance() {
 async fn circuitbreaker_composes_with_concurrency_limit() {
     let inner = ConcurrencyLimit::new(StatefulInner::new(), 8);
     let layer = CircuitBreakerLayer::builder()
-        .failure_rate_threshold(50.0)
-        .build();
+        .failure_rate_threshold(0.5)
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new().layer(layer).service(inner);
 
     for _ in 0..3 {
@@ -59,7 +61,7 @@ async fn open_rejection_does_not_poll_pending_inner() {
     let (controlled, _controller) = ControlledService::new(false);
     let probe = ServiceProbe::new(controlled);
     let handle = probe.handle();
-    let mut service = pending_probe_layer(false).build().layer(probe);
+    let mut service = pending_probe_layer(false).build().unwrap().layer(probe);
     service.force_open().await;
 
     ServiceExt::<()>::ready(&mut service).await.unwrap();
@@ -80,6 +82,7 @@ async fn open_fallback_does_not_poll_pending_inner() {
     let handle = probe.handle();
     let mut service = pending_probe_layer(false)
         .build()
+        .unwrap()
         .layer(probe)
         .with_fallback(|request: &'static str| Box::pin(async move { Ok(request) }));
     service.force_open().await;
@@ -102,7 +105,7 @@ async fn cloned_open_breakers_reject_without_polling_inner() {
     let (controlled, _controller) = ControlledService::new(false);
     let probe = ServiceProbe::new(controlled);
     let handle = probe.handle();
-    let mut first = pending_probe_layer(false).build().layer(probe);
+    let mut first = pending_probe_layer(false).build().unwrap().layer(probe);
     first.force_open().await;
     let mut second = first.clone();
 
@@ -134,7 +137,7 @@ async fn backpressure_waits_on_circuit_before_pending_inner() {
     let (controlled, _controller) = ControlledService::new(false);
     let probe = ServiceProbe::new(controlled);
     let handle = probe.handle();
-    let mut service = pending_probe_layer(true).build().layer(probe);
+    let mut service = pending_probe_layer(true).build().unwrap().layer(probe);
     service.force_open().await;
 
     let initially_pending = poll_fn(|cx| {
@@ -168,7 +171,7 @@ async fn admitted_inner_readiness_error_is_preserved() {
     let (controlled, controller) = ControlledService::new(true);
     let probe = ServiceProbe::new(controlled);
     let handle = probe.handle();
-    let mut service = pending_probe_layer(false).build().layer(probe);
+    let mut service = pending_probe_layer(false).build().unwrap().layer(probe);
     controller.close();
 
     let error = match ServiceExt::<()>::ready(&mut service).await {
@@ -217,6 +220,7 @@ async fn half_open_admission_never_exceeds_permitted_calls_under_contention() {
     let handle = probe.handle();
     let service = half_open_probe_layer(false, Duration::from_millis(10))
         .build()
+        .unwrap()
         .layer(probe);
     service.force_open().await;
     // Let the open-circuit cooldown elapse so the first admission attempt
@@ -295,6 +299,7 @@ async fn dropped_half_open_probe_future_releases_its_slot_without_recording_a_re
     let handle = probe.handle();
     let service = half_open_probe_layer(false, Duration::from_millis(10))
         .build()
+        .unwrap()
         .layer(probe);
     service.force_open().await;
     tokio::time::sleep(Duration::from_millis(20)).await;
@@ -361,6 +366,7 @@ async fn half_open_backpressure_waiter_wakes_promptly_when_a_slot_frees() {
     let handle = probe.handle();
     let service = half_open_probe_layer(true, WAIT_DURATION_IN_OPEN)
         .build()
+        .unwrap()
         .layer(probe);
     service.force_open().await;
     tokio::time::sleep(WAIT_DURATION_IN_OPEN + Duration::from_millis(10)).await;

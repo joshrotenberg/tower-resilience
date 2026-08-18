@@ -178,7 +178,8 @@ async fn scenario_circuit_breaker() {
         .on_call_rejected(|| {
             println!("[Circuit Breaker] Call rejected - circuit is open, failing fast");
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = circuit_breaker.layer(base_service);
 
@@ -236,7 +237,8 @@ async fn scenario_full_stack() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_secs(3))
         .name("primary-db")
-        .build();
+        .build()
+        .unwrap();
 
     // Compose: base -> retry -> circuit breaker
     let service_with_retry = retry_layer.layer(base_service);

@@ -26,7 +26,8 @@ async fn time_window_fills_and_evaluates() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("time-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -52,7 +53,8 @@ async fn old_records_cleaned_up() {
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_millis(50))
         .name("cleanup-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -76,7 +78,8 @@ async fn old_records_cleaned_up() {
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_millis(50))
         .name("cleanup-test-2")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb_success = layer2.layer(success_service);
 
@@ -106,7 +109,8 @@ async fn time_based_window_with_slow_calls() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_millis(50))
         .name("slow-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -144,7 +148,8 @@ async fn time_based_window_with_failure_rate() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(50))
         .name("failure-rate-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -172,7 +177,8 @@ async fn calls_at_duration_boundary() {
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_millis(50))
         .name("boundary-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -202,7 +208,8 @@ async fn fast_calls_slow_duration() {
         .minimum_number_of_calls(100)
         .wait_duration_in_open(Duration::from_millis(50))
         .name("fast-slow-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -240,7 +247,8 @@ async fn time_based_mixed_results() {
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(50))
         .name("mixed-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -265,7 +273,8 @@ async fn time_based_memory_bounds() {
         .minimum_number_of_calls(50)
         .wait_duration_in_open(Duration::from_millis(50))
         .name("memory-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -298,7 +307,8 @@ async fn time_based_respects_minimum_calls() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(50))
         .name("min-calls-test")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 

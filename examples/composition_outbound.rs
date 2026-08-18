@@ -229,7 +229,8 @@ async fn scenario_circuit_breaker() {
         .on_call_rejected(|| {
             println!("[Circuit Breaker] Call rejected - circuit is open");
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut client = circuit_breaker.layer(base_client);
 
@@ -327,7 +328,8 @@ async fn scenario_full_stack() {
                 from, to
             );
         })
-        .build();
+        .build()
+        .unwrap();
 
     let client = ServiceBuilder::new()
         // 1. Cache (outermost) - Skip everything if cached

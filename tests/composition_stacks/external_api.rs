@@ -138,7 +138,8 @@ async fn standard_stack_compiles() {
 
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
-        .build();
+        .build()
+        .unwrap();
 
     let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(3)
@@ -172,7 +173,8 @@ async fn full_stack_with_fallback_compiles() {
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .wait_duration_in_open(Duration::from_secs(30))
-        .build();
+        .build()
+        .unwrap();
 
     let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(3)
@@ -215,7 +217,8 @@ async fn stack_with_hedging_compiles() {
 
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
-        .build();
+        .build()
+        .unwrap();
 
     let retry = RetryLayer::<ApiRequest, ApiResponse, ApiError>::builder()
         .max_attempts(3)

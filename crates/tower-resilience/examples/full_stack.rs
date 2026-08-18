@@ -88,7 +88,8 @@ async fn demo_circuit_breaker_and_bulkhead() {
     let cb_layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
-        .build();
+        .build()
+        .expect("valid circuit breaker config");
 
     let mut service = cb_layer.layer(service);
 

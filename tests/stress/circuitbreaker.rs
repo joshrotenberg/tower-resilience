@@ -24,7 +24,8 @@ async fn stress_one_million_calls() {
     let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -59,7 +60,8 @@ async fn stress_rapid_state_transitions() {
         .sliding_window_size(10)
         .wait_duration_in_open(Duration::from_millis(10))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -113,7 +115,8 @@ async fn stress_high_concurrency() {
     let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(1000)
-        .build();
+        .build()
+        .unwrap();
 
     let service = layer.layer(svc);
 
@@ -152,7 +155,8 @@ async fn stress_large_sliding_window() {
     let layer = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(10_000)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -197,7 +201,8 @@ async fn stress_time_based_window_high_load() {
         .sliding_window_type(tower_resilience_circuitbreaker::SlidingWindowType::TimeBased)
         .sliding_window_duration(Duration::from_secs(1))
         .minimum_number_of_calls(100)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -252,7 +257,8 @@ async fn stress_mixed_results_high_volume() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
         .wait_duration_in_open(Duration::from_millis(100))
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -297,7 +303,8 @@ async fn stress_memory_stability() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(1000)
         .wait_duration_in_open(Duration::from_millis(50))
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 

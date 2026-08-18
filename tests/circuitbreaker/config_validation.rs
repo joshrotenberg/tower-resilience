@@ -4,6 +4,7 @@ use std::sync::{
 };
 use std::time::Duration;
 use tower::{Layer, Service};
+use tower_resilience_circuitbreaker::CircuitBreakerConfigError;
 use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 use tower_resilience_circuitbreaker::SlidingWindowType;
 
@@ -19,15 +20,18 @@ fn valid_config_values() {
         .wait_duration_in_open(Duration::from_secs(60))
         .permitted_calls_in_half_open(10)
         .name("valid-config")
-        .build();
+        .build()
+        .unwrap();
 }
 
-/// Test edge case: failure rate threshold = 0.0 (never open)
-#[tokio::test]
-async fn failure_rate_threshold_zero() {
-    let service = tower::service_fn(|_req: ()| async { Err::<(), _>("error") });
-
-    let layer = CircuitBreakerLayer::builder()
+/// Test edge case: failure rate threshold = 0.0 is rejected at construction.
+///
+/// A threshold of exactly 0.0 could never be exceeded by any failure rate,
+/// so instead of silently behaving as "always trip", it's now a
+/// construction-time error.
+#[test]
+fn failure_rate_threshold_zero_is_rejected() {
+    let result = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.0)
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
@@ -35,17 +39,9 @@ async fn failure_rate_threshold_zero() {
         .name("threshold-zero")
         .build();
 
-    let mut cb = layer.layer(service);
-
-    // Even with all failures, circuit should open (0% is unreachable)
-    for _ in 0..10 {
-        let _ = cb.call(()).await;
-    }
-
-    // With 0.0 threshold, even 100% failure rate should trip it
     assert_eq!(
-        cb.state().await,
-        tower_resilience_circuitbreaker::CircuitState::Open
+        result.err().unwrap(),
+        CircuitBreakerConfigError::InvalidFailureRateThreshold(0.0)
     );
 }
 
@@ -73,7 +69,8 @@ async fn failure_rate_threshold_one() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("threshold-one")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -90,15 +87,11 @@ async fn failure_rate_threshold_one() {
     );
 }
 
-/// Test edge case: slow call rate threshold = 0.0
-#[tokio::test]
-async fn slow_call_rate_threshold_zero() {
-    let service = tower::service_fn(|_req: ()| async {
-        tokio::time::sleep(Duration::from_millis(200)).await;
-        Ok::<_, String>("success")
-    });
-
-    let layer = CircuitBreakerLayer::builder()
+/// Test edge case: slow call rate threshold = 0.0 is rejected at
+/// construction, for the same reason as `failure_rate_threshold = 0.0`.
+#[test]
+fn slow_call_rate_threshold_zero_is_rejected() {
+    let result = CircuitBreakerLayer::builder()
         .slow_call_duration_threshold(Duration::from_millis(100))
         .slow_call_rate_threshold(0.0)
         .sliding_window_size(5)
@@ -107,16 +100,9 @@ async fn slow_call_rate_threshold_zero() {
         .name("slow-threshold-zero")
         .build();
 
-    let mut cb = layer.layer(service);
-
-    for _ in 0..5 {
-        let _ = cb.call(()).await;
-    }
-
-    // All calls are slow, with 0.0 threshold it should trip
     assert_eq!(
-        cb.state().await,
-        tower_resilience_circuitbreaker::CircuitState::Open
+        result.err().unwrap(),
+        CircuitBreakerConfigError::InvalidSlowCallRateThreshold(0.0)
     );
 }
 
@@ -135,7 +121,8 @@ async fn slow_call_rate_threshold_one() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("slow-threshold-one")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -161,7 +148,8 @@ async fn sliding_window_size_one() {
         .minimum_number_of_calls(1)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("window-one")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -184,7 +172,8 @@ async fn minimum_calls_zero() {
         .minimum_number_of_calls(0)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("min-zero")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -206,7 +195,8 @@ async fn minimum_calls_greater_than_window() {
         .minimum_number_of_calls(10) // More than window size
         .wait_duration_in_open(Duration::from_millis(100))
         .name("min-gt-window")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -243,7 +233,8 @@ async fn minimum_calls_equals_window() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("min-eq-window")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -270,7 +261,8 @@ async fn zero_wait_duration() {
         .wait_duration_in_open(Duration::ZERO)
         .permitted_calls_in_half_open(1)
         .name("zero-wait")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -303,7 +295,8 @@ async fn zero_permitted_calls_half_open() {
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(0) // Weird but valid
         .name("zero-permitted")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -323,18 +316,23 @@ async fn zero_permitted_calls_half_open() {
     let _ = cb.call(()).await;
 }
 
-/// Test time-based window without duration set (should panic)
+/// Test time-based window without duration set: rejected at construction
+/// with a typed error instead of panicking.
 #[test]
-#[should_panic(expected = "sliding_window_duration must be set")]
-fn time_based_without_duration() {
-    let _layer = CircuitBreakerLayer::builder()
+fn time_based_without_duration_is_rejected() {
+    let result = CircuitBreakerLayer::builder()
         .sliding_window_type(SlidingWindowType::TimeBased)
-        // Not setting sliding_window_duration - should panic
+        // Not setting sliding_window_duration - should be rejected
         .failure_rate_threshold(0.5)
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("time-no-duration")
         .build();
+
+    assert_eq!(
+        result.err().unwrap(),
+        CircuitBreakerConfigError::MissingSlidingWindowDuration
+    );
 }
 
 /// Test count-based window with duration set (should be ignored)
@@ -350,7 +348,8 @@ async fn count_based_with_duration() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("count-with-duration")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -376,7 +375,8 @@ async fn very_large_window_size() {
         .failure_rate_threshold(0.5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("large-window")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 

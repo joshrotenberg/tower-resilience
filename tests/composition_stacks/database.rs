@@ -95,7 +95,8 @@ async fn database_with_circuit_breaker_compiles() {
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .minimum_number_of_calls(10)
-        .build();
+        .build()
+        .unwrap();
 
     let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(5))

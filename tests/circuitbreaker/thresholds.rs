@@ -32,7 +32,8 @@ async fn failure_rate_exactly_at_threshold() {
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("exact-threshold")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -68,7 +69,8 @@ async fn failure_rate_just_below_threshold() {
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("below-threshold")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -104,7 +106,8 @@ async fn failure_rate_just_above_threshold() {
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("above-threshold")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -142,7 +145,8 @@ async fn slow_call_rate_exactly_at_threshold() {
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("slow-exact-threshold")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -170,7 +174,8 @@ async fn duration_exactly_at_slow_threshold() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("duration-exact")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -198,7 +203,8 @@ async fn duration_just_below_slow_threshold() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("duration-below")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -226,7 +232,8 @@ async fn duration_just_above_slow_threshold() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("duration-above")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -276,7 +283,8 @@ async fn combined_failure_and_slow_thresholds() {
         .minimum_number_of_calls(10)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("combined-thresholds")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -305,7 +313,8 @@ async fn either_threshold_can_trip() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("either-trips")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -341,7 +350,8 @@ async fn floating_point_precision() {
         .minimum_number_of_calls(3)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("float-precision")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -364,7 +374,8 @@ async fn threshold_small_window() {
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_millis(100))
         .name("small-window")
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 

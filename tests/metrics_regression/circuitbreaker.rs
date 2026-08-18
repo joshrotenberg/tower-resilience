@@ -18,7 +18,8 @@ async fn circuitbreaker_metrics_exist() {
         .sliding_window_size(4)
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_millis(100))
-        .build();
+        .build()
+        .unwrap();
 
     // Create a test service that can succeed or fail
     let success_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
@@ -81,7 +82,8 @@ async fn circuitbreaker_slow_call_metrics() {
         .slow_call_rate_threshold(0.5)
         .sliding_window_size(4)
         .minimum_number_of_calls(2)
-        .build();
+        .build()
+        .unwrap();
 
     let service = tower::service_fn(move |req: u64| async move {
         if req.is_multiple_of(2) {
@@ -118,7 +120,8 @@ async fn circuitbreaker_state_transition_labels() {
         .minimum_number_of_calls(2)
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
 
     let fail_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let fail_count_clone = fail_count.clone();

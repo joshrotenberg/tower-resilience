@@ -296,7 +296,8 @@ async fn scenario_circuit_breaker() {
         .on_call_rejected(|| {
             println!("[Circuit Breaker] Call rejected - circuit open, pausing message processing");
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = circuit_breaker.layer(base_service);
 

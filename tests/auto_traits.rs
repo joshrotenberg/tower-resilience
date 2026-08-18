@@ -63,7 +63,10 @@ fn bulkhead_backpressure_is_send_sync() {
 #[test]
 fn circuitbreaker_is_send_sync() {
     use tower_resilience_circuitbreaker::CircuitBreakerLayer;
-    let svc = CircuitBreakerLayer::builder().build().layer(SyncInner);
+    let svc = CircuitBreakerLayer::builder()
+        .build()
+        .unwrap()
+        .layer(SyncInner);
     assert_send_sync_static(&svc);
 }
 

@@ -136,6 +136,7 @@ async fn demo_circuit_breaker() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .build()
+        .unwrap()
         .layer(base_service);
 
     let mut service = service;
