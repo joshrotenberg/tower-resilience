@@ -316,6 +316,10 @@ let layer = CircuitBreakerLayer::builder()
 let service = layer.layer(my_service);
 ```
 
+See the [Tower circuit breaker comparison](docs/circuitbreaker-tower-comparison.md)
+for how this compares to the upstream `tower-rs/tower#855` proposal, and for
+recommended composition with retry budgets.
+
 **Full examples:** [circuitbreaker.rs](examples/circuitbreaker.rs) | [circuitbreaker_fallback.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_fallback.rs) | [circuitbreaker_health_check.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_health_check.rs)
 
 ### Coalesce
