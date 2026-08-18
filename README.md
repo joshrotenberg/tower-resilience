@@ -316,6 +316,10 @@ let layer = CircuitBreakerLayer::builder()
 let service = layer.layer(my_service);
 ```
 
+See the [Tower circuit breaker comparison](docs/circuitbreaker-tower-comparison.md)
+for how this compares to the upstream `tower-rs/tower#855` proposal, and for
+recommended composition with retry budgets.
+
 **Full examples:** [circuitbreaker.rs](examples/circuitbreaker.rs) | [circuitbreaker_fallback.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_fallback.rs) | [circuitbreaker_health_check.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_health_check.rs)
 
 ### Coalesce
@@ -394,10 +398,15 @@ let layer = FallbackLayer::<Request, Response, MyError>::from_error(|err| {
     Response::error_response(err)
 });
 
-// Or use a backup service
+// Or use an async backup function (no Tower readiness)
 let layer = FallbackLayer::<Request, Response, MyError>::service(|req| async {
     backup_service.call(req).await
 });
+
+// Or preserve a stateful Tower backup service and its readiness contract
+let layer = FallbackLayer::<Request, Response, MyError>::tower_service(
+    stateful_backup_service
+);
 
 let service = layer.layer(primary_service);
 ```
