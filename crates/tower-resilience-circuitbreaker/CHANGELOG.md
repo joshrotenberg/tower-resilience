@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Reserve half-open probe admission atomically with a per-cycle semaphore
+  shared across clones, instead of comparing against completed-call counts.
+  Concurrent clones could previously all observe spare capacity and be
+  admitted before any of them finished, exceeding
+  `permitted_calls_in_half_open`.
+- Dropping an admitted half-open probe's call future before it completes now
+  returns its reservation for reuse and does not record a success or
+  failure for the cancelled attempt.
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-circuitbreaker-v0.11.0...tower-resilience-circuitbreaker-v0.12.0) - 2026-08-17
 
 ### Fixed

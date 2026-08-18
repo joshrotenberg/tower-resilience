@@ -4,7 +4,9 @@ use crate::events::CircuitBreakerEvent;
 use metrics::{counter, gauge, histogram};
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
 /// Represents the state of the circuit breaker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -56,6 +58,21 @@ impl CircuitState {
     }
 }
 
+/// Outcome of an admission attempt made by [`Circuit::try_acquire`].
+pub(crate) enum Admission {
+    /// The call is rejected. No probe reservation was made.
+    Rejected,
+    /// The call is admitted.
+    ///
+    /// `Some(permit)` is a `HalfOpen` admission: the caller must call
+    /// `.forget()` on the permit once the call's result has been recorded
+    /// (permanently consuming the reservation for this half-open cycle), or
+    /// simply drop it if the call is cancelled before completing (returning
+    /// the reservation to the pool without recording a result). `None` is a
+    /// `Closed` admission, which does not consume half-open capacity.
+    Admitted(Option<OwnedSemaphorePermit>),
+}
+
 /// Represents a call record in the time-based sliding window.
 #[derive(Debug, Clone)]
 struct CallRecord {
@@ -78,6 +95,14 @@ pub(crate) struct Circuit {
     // FailureModel::ConsecutiveFailures tracking. Resets to 0 on every
     // success and on every state transition to Closed/HalfOpen.
     consecutive_failures: usize,
+    // Half-open probe admission for the *current* half-open cycle. Reset to
+    // a fresh `Semaphore` (a new `Arc`, not a resized existing one) every
+    // time the circuit transitions into `HalfOpen`. A fresh `Arc` per cycle
+    // means a permit released late by a probe admitted under a previous
+    // cycle (e.g. cancelled well after the circuit moved on) drops into the
+    // old, orphaned semaphore instance and can never leak capacity into the
+    // current cycle.
+    half_open_permits: Arc<Semaphore>,
 }
 
 impl Default for Circuit {
@@ -105,6 +130,10 @@ impl Circuit {
             slow_call_count: 0,
             call_records: VecDeque::new(),
             consecutive_failures: 0,
+            // No half-open cycle is active yet; `transition_to` allocates
+            // the real semaphore the first time the circuit enters
+            // `HalfOpen`.
+            half_open_permits: Arc::new(Semaphore::new(0)),
         }
     }
 
@@ -347,7 +376,7 @@ impl Circuit {
         }
     }
 
-    pub fn try_acquire<C>(&mut self, config: &CircuitBreakerConfig<C>) -> bool {
+    pub fn try_acquire<C>(&mut self, config: &CircuitBreakerConfig<C>) -> Admission {
         match self.state {
             CircuitState::Closed => {
                 config
@@ -357,39 +386,44 @@ impl Circuit {
                         timestamp: Instant::now(),
                         state: self.state,
                     });
-                true
+                Admission::Admitted(None)
             }
             CircuitState::Open => {
                 if self.last_state_change.elapsed() >= config.wait_duration_in_open {
                     self.transition_to(CircuitState::HalfOpen, config);
-                    config
-                        .event_listeners
-                        .emit(&CircuitBreakerEvent::CallPermitted {
-                            pattern_name: config.name.clone(),
-                            timestamp: Instant::now(),
-                            state: self.state,
-                        });
-                    true
+                    // `transition_to` just allocated a fresh half-open
+                    // semaphore; evaluate admission again against the new
+                    // state so the very first probe of the cycle goes
+                    // through the same reservation path as every other one.
+                    self.try_acquire(config)
                 } else {
                     self.record_rejection(config);
-                    false
+                    Admission::Rejected
                 }
             }
             CircuitState::HalfOpen => {
-                let permitted =
-                    self.success_count + self.failure_count < config.permitted_calls_in_half_open;
-                if permitted {
-                    config
-                        .event_listeners
-                        .emit(&CircuitBreakerEvent::CallPermitted {
-                            pattern_name: config.name.clone(),
-                            timestamp: Instant::now(),
-                            state: self.state,
-                        });
-                } else {
-                    self.record_rejection(config);
+                // Reserve a slot atomically. Unlike the old
+                // `success_count + failure_count < permitted` check, this
+                // counts admissions the instant they are granted, not the
+                // instant they complete -- so concurrent clones racing this
+                // call cannot all observe spare capacity before any of them
+                // finishes.
+                match Arc::clone(&self.half_open_permits).try_acquire_owned() {
+                    Ok(permit) => {
+                        config
+                            .event_listeners
+                            .emit(&CircuitBreakerEvent::CallPermitted {
+                                pattern_name: config.name.clone(),
+                                timestamp: Instant::now(),
+                                state: self.state,
+                            });
+                        Admission::Admitted(Some(permit))
+                    }
+                    Err(_) => {
+                        self.record_rejection(config);
+                        Admission::Rejected
+                    }
                 }
-                permitted
             }
         }
     }
@@ -422,11 +456,17 @@ impl Circuit {
                 }
             }
             CircuitState::HalfOpen => {
-                if self.success_count + self.failure_count < config.permitted_calls_in_half_open {
+                if self.half_open_permits.available_permits() > 0 {
                     Ok(())
                 } else {
-                    // Half-open slots full; wait for resolution
-                    Err(config.wait_duration_in_open)
+                    // Half-open batch is fully reserved. A slot can free up
+                    // at any time -- whenever an admitted-but-incomplete
+                    // probe is cancelled -- so this is not tied to the
+                    // open-circuit cooldown timer. Use a short, bounded
+                    // retry instead, the same pattern `poll_circuit_gate`
+                    // already uses for mutex contention, so `poll_ready`
+                    // stays responsive without busy-spinning.
+                    Err(Duration::from_millis(1))
                 }
             }
         }
@@ -499,6 +539,14 @@ impl Circuit {
         self.slow_call_count = 0;
         self.call_records.clear();
         self.consecutive_failures = 0;
+
+        if state == CircuitState::HalfOpen {
+            // Start this half-open cycle with a full, fresh batch of trial
+            // slots. See the `half_open_permits` field doc for why this
+            // must be a new `Arc<Semaphore>` rather than a resized existing
+            // one.
+            self.half_open_permits = Arc::new(Semaphore::new(config.permitted_calls_in_half_open));
+        }
     }
 
     fn evaluate_window<C>(&mut self, config: &CircuitBreakerConfig<C>) {
