@@ -1675,8 +1675,9 @@ pub mod router {
     //!
     //! ## Selection Strategies
     //!
-    //! - **Deterministic** (default): Atomic counter for predictable, repeatable distribution.
-    //!   Best for canary deployments where you want exact traffic ratios and debuggability.
+    //! - **Deterministic** (default): Clone-shared smooth weighted round-robin for a
+    //!   predictable, repeatable distribution without contiguous backend bursts.
+    //!   Every complete normalized cycle has exact traffic ratios.
     //! - **Random**: Per-request weighted random selection. Better for high-volume
     //!   statistical distribution, but shows variance at low traffic.
     //!
@@ -1717,6 +1718,10 @@ pub mod router {
     //!
     //! ## Prior Art
     //!
+    //! - **Tower `Steer`**: Also routes over a fixed set and waits for every backend,
+    //!   but delegates request-aware selection to a picker instead of owning weights
+    //! - **Tower `Balance`**: Uses dynamic discovery and P2C load-aware selection over
+    //!   ready endpoints rather than enforcing a configured traffic split
     //! - **Envoy**: Weighted clusters with traffic shifting for canary deployments
     //! - **Istio**: VirtualService with weighted routing rules
     //! - **Linkerd**: Traffic split via TrafficSplit CRD
