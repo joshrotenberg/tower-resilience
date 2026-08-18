@@ -135,7 +135,3 @@ tower = { version = "0.5", features = ["util"] }
 [[example]]
 name = "combined"
 required-features = ["circuitbreaker", "bulkhead"]
-
-[[example]]
-name = "full_stack"
-required-features = ["full"]

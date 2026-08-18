@@ -241,7 +241,7 @@ let layer = BulkheadLayer::builder()
 let service = layer.layer(my_service);
 ```
 
-**Full examples:** [bulkhead.rs](examples/bulkhead.rs) | [bulkhead_advanced.rs](crates/tower-resilience-bulkhead/examples/bulkhead_advanced.rs)
+**Full examples:** [bulkhead_basic.rs](crates/tower-resilience-bulkhead/examples/bulkhead_basic.rs) | [bulkhead_advanced.rs](crates/tower-resilience-bulkhead/examples/bulkhead_advanced.rs)
 
 ### Cache
 
@@ -264,7 +264,7 @@ let layer = CacheLayer::builder()
 let service = layer.layer(my_service);
 ```
 
-**Full examples:** [cache.rs](examples/cache.rs) | [cache_example.rs](crates/tower-resilience-cache/examples/cache_example.rs)
+**Full examples:** [cache_example.rs](crates/tower-resilience-cache/examples/cache_example.rs)
 
 ### Chaos (Testing Only)
 
@@ -292,7 +292,7 @@ let service = chaos.layer(my_service);
 
 **WARNING**: Only use in development/testing environments. Never in production.
 
-**Full examples:** [chaos.rs](examples/chaos.rs) | [chaos_example.rs](crates/tower-resilience-chaos/examples/chaos_example.rs)
+**Full examples:** [chaos_example.rs](crates/tower-resilience-chaos/examples/chaos_example.rs)
 
 ### Circuit Breaker
 
@@ -320,7 +320,7 @@ See the [Tower circuit breaker comparison](docs/circuitbreaker-tower-comparison.
 for how this compares to the upstream `tower-rs/tower#855` proposal, and for
 recommended composition with retry budgets.
 
-**Full examples:** [circuitbreaker.rs](examples/circuitbreaker.rs) | [circuitbreaker_fallback.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_fallback.rs) | [circuitbreaker_health_check.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_health_check.rs)
+**Full examples:** [circuitbreaker_example.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_example.rs) | [circuitbreaker_fallback.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_fallback.rs) | [circuitbreaker_health_check.rs](crates/tower-resilience-circuitbreaker/examples/circuitbreaker_health_check.rs)
 
 ### Coalesce
 
@@ -544,7 +544,7 @@ let layer = RateLimiterLayer::builder()
 let service = layer.layer(my_service);
 ```
 
-**Full examples:** [ratelimiter.rs](examples/ratelimiter.rs) | [ratelimiter_example.rs](crates/tower-resilience-ratelimiter/examples/ratelimiter_example.rs)
+**Full examples:** [ratelimiter_example.rs](crates/tower-resilience-ratelimiter/examples/ratelimiter_example.rs)
 
 ### Reconnect
 
@@ -586,7 +586,7 @@ already-created service cannot replace a broken connection. See the
 [factory migration guide](docs/reconnect-factory-migration.md) when upgrading
 from the pre-0.12 API.
 
-**Full examples:** [reconnect.rs](examples/reconnect.rs) | [reconnect_basic.rs](crates/tower-resilience-reconnect/examples/reconnect_basic.rs) | [reconnect_custom_policy.rs](crates/tower-resilience-reconnect/examples/reconnect_custom_policy.rs)
+**Full examples:** [reconnect_basic.rs](crates/tower-resilience-reconnect/examples/reconnect_basic.rs) | [reconnect_custom_policy.rs](crates/tower-resilience-reconnect/examples/reconnect_custom_policy.rs)
 
 ### Retry
 
@@ -610,7 +610,7 @@ let layer = RetryLayer::<(), (), MyError>::builder()
 let service = layer.layer(my_service);
 ```
 
-**Full examples:** [retry.rs](examples/retry.rs) | [retry_example.rs](crates/tower-resilience-retry/examples/retry_example.rs)
+**Full examples:** [retry_example.rs](crates/tower-resilience-retry/examples/retry_example.rs)
 
 ### Router
 
@@ -703,7 +703,7 @@ control HTTP bodies after that future returns. The old `streaming()` preset is
 deprecated because it never timed body frames; use `detached()` when the
 intended behavior is to let a timed-out call continue in the background.
 
-**Full examples:** [timelimiter.rs](examples/timelimiter.rs) | [timelimiter_example.rs](crates/tower-resilience-timelimiter/examples/timelimiter_example.rs)
+**Full examples:** [timelimiter_example.rs](crates/tower-resilience-timelimiter/examples/timelimiter_example.rs)
 
 ## Error Handling
 
@@ -855,12 +855,18 @@ cargo bench --bench happy_path_overhead
 ## Examples
 
 ```bash
-cargo run --example circuitbreaker
-cargo run --example bulkhead
-cargo run --example retry
+cargo run --example adaptive
+cargo run --example composition_outbound
+cargo run --example server_api
 ```
 
-See [examples/](examples/) for more.
+Single-pattern examples live alongside each crate (`cargo run --example
+circuitbreaker_example -p tower-resilience-circuitbreaker`, etc.); the root
+[examples/](examples/) directory holds compositions, integrations, and
+patterns without a crate-local example. See [examples/](examples/) and
+[examples/axum-resilient-kv-store](examples/axum-resilient-kv-store) /
+[examples/tonic-resilient-greeter](examples/tonic-resilient-greeter) for
+full framework integrations.
 
 ## Stress Tests
 

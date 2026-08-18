@@ -6,7 +6,7 @@
 //! capabilities using the ReconnectLayer.
 
 use std::time::Duration;
-use tower::{service_fn, Service, ServiceBuilder};
+use tower::{service_fn, Service, ServiceBuilder, ServiceExt};
 use tower_resilience_reconnect::{ReconnectConfig, ReconnectLayer, ReconnectPolicy};
 
 /// Example demonstrating basic reconnection with exponential backoff.
@@ -63,8 +63,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Service created with reconnection capabilities!");
 
-    // Make a test call
-    let response = reconnect_service.call("test".to_string()).await?;
+    // Make a test call. `ReconnectService` requires `poll_ready` to be
+    // driven before `call`, per the Tower service contract -- `ready()`
+    // does that for us.
+    let response = reconnect_service
+        .ready()
+        .await?
+        .call("test".to_string())
+        .await?;
     println!("Received: {}", response);
 
     println!("\nIn a real application, connection failures would trigger automatic");

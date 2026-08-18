@@ -14,6 +14,7 @@ jobs:
   test:
     name: Test
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -28,6 +29,20 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+
+      # The tonic-resilient-greeter workspace example (#388: audited, kept,
+      # and rewritten to use real tower-resilience middleware) compiles
+      # protobufs from source (see examples/tonic-resilient-greeter/build.rs),
+      # and tests/examples_smoke.rs builds and runs it as part of the
+      # integration-tests step below. Cross-platform install since this
+      # job's matrix spans ubuntu/macos/windows; see the protoc note on the
+      # clippy job (#419) for why this isn't apt-get.
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        timeout-minutes: 5
+        with:
+          version: "35.1"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run library tests
         run: cargo test --locked --lib --workspace --all-features
@@ -67,11 +82,11 @@ jobs:
         with:
           components: clippy
 
-      # The tonic workspace example compiles protobufs from source. Keep this
-      # explicit until the examples audit in #388 decides whether it remains.
-      # Installed from GitHub releases rather than apt: untimed apt-get here
-      # stalled CI for 30-70 minutes on four runs on 2026-08-18 (#419). The
-      # step timeout bounds any residual hang.
+      # The tonic-resilient-greeter workspace example (#388: audited, kept,
+      # and rewritten to use real tower-resilience middleware) compiles
+      # protobufs from source. Installed from GitHub releases rather than
+      # apt: untimed apt-get here stalled CI for 30-70 minutes on four runs
+      # on 2026-08-18 (#419). The step timeout bounds any residual hang.
       - name: Install protoc
         uses: arduino/setup-protoc@v3
         timeout-minutes: 5
