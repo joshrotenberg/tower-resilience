@@ -297,6 +297,48 @@
 //! # }
 //! ```
 //!
+//! ## Deterministic Shared Control
+//!
+//! [`CircuitBreakerConfigBuilder::build_with_handle()`] returns a
+//! [`CircuitBreakerHandle`] alongside the layer. The handle can `force_open()`,
+//! `force_closed()`, and `reset()` the circuit deterministically -- once the
+//! call completes, every service produced by the layer observes the new
+//! state, even if the original service has since been moved, boxed, or
+//! dropped:
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+//!
+//! # async fn example() {
+//! let (layer, handle) = CircuitBreakerLayer::builder()
+//!     .failure_rate_threshold(0.5)
+//!     .build_with_handle();
+//!
+//! // Apply the layer, then move/box the resulting service away...
+//! // let service: BoxCloneService<_, _, _> = ...;
+//!
+//! // The handle still controls it deterministically:
+//! handle.force_open().await;
+//! assert!(handle.is_open());
+//! handle.reset().await;
+//! assert!(!handle.is_open());
+//! # let _ = layer;
+//! # }
+//! ```
+//!
+//! Combine with [`CircuitBreakerConfigBuilder::manual_mode()`] for a circuit
+//! that changes state only in response to these explicit calls, never
+//! automatically from inner-service results -- a simple external on/off
+//! switch:
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+//!
+//! let (_layer, _handle) = CircuitBreakerLayer::builder()
+//!     .manual_mode()
+//!     .build_with_handle();
+//! ```
+//!
 //! ## Features
 //! - Count-based and time-based sliding windows
 //! - Configurable failure rate threshold
@@ -304,7 +346,10 @@
 //! - Half-open state for gradual recovery
 //! - Event system for observability
 //! - Optional fallback handling
-//! - Manual state control (force_open, force_closed, reset)
+//! - Manual state control (force_open, force_closed, reset) on the service
+//!   and on the deterministic, shareable [`CircuitBreakerHandle`]
+//! - Manual/external-only mode (`manual_mode()`) for a simple external
+//!   on/off switch that never trips or recovers automatically
 //! - Sync state inspection with `state_sync()`, `is_open()`, and `metrics()`
 //! - Metrics integration via `metrics` feature
 //! - Tracing support via `tracing` feature
@@ -1024,6 +1069,7 @@ mod tests {
             event_listeners: EventListeners::new(),
             name: "test".into(),
             backpressure: false,
+            manual_mode: false,
         }
     }
 
@@ -1067,6 +1113,95 @@ mod tests {
 
         breaker.force_closed().await;
         assert_eq!(breaker.state().await, CircuitState::Closed);
+    }
+
+    #[test]
+    fn manual_mode_ignores_automatic_trip_on_failures() {
+        let mut circuit = Circuit::new();
+        let mut config = dummy_config();
+        config.manual_mode = true;
+
+        // Enough failures (100% rate over a full window) to trip the
+        // circuit automatically under the default sliding-window model.
+        // Manual mode must ignore them.
+        for _ in 0..10 {
+            circuit.record_failure(&config, Duration::from_millis(10));
+        }
+
+        assert_eq!(circuit.state(), CircuitState::Closed);
+    }
+
+    #[test]
+    fn manual_mode_ignores_automatic_recovery_timer() {
+        let mut circuit = Circuit::new();
+        let mut config = dummy_config();
+        config.manual_mode = true;
+        config.wait_duration_in_open = Duration::from_millis(1);
+
+        circuit.force_open(&config);
+        assert_eq!(circuit.state(), CircuitState::Open);
+
+        std::thread::sleep(Duration::from_millis(20));
+
+        // Outside manual mode, `try_acquire` would auto-transition to
+        // HalfOpen once `wait_duration_in_open` elapses. In manual mode the
+        // circuit must stay open (rejecting) regardless of elapsed time.
+        assert!(matches!(circuit.try_acquire(&config), Admission::Rejected));
+        assert_eq!(circuit.state(), CircuitState::Open);
+
+        // check_permitted (the read-only variant used by backpressure mode)
+        // must agree: it never reports the wait as satisfied in manual mode.
+        assert!(circuit.check_permitted(&config).is_err());
+    }
+
+    #[test]
+    fn manual_mode_still_supports_explicit_force_and_reset() {
+        let mut circuit = Circuit::new();
+        let mut config = dummy_config();
+        config.manual_mode = true;
+
+        circuit.force_open(&config);
+        assert_eq!(circuit.state(), CircuitState::Open);
+
+        circuit.reset(&config);
+        assert_eq!(circuit.state(), CircuitState::Closed);
+
+        circuit.force_closed(&config); // no-op, already closed
+        assert_eq!(circuit.state(), CircuitState::Closed);
+    }
+
+    #[tokio::test]
+    async fn manual_mode_end_to_end_via_builder_and_handle() {
+        let (layer, handle) = CircuitBreakerLayer::builder()
+            // Would trip on the very first failure in automatic mode.
+            .failure_rate_threshold(0.01)
+            .sliding_window_size(1)
+            .minimum_number_of_calls(1)
+            .manual_mode()
+            .build_with_handle();
+
+        let mut svc = layer.layer_fn(tower::service_fn(|_req: String| async move {
+            Err::<String, String>("boom".to_string())
+        }));
+
+        for _ in 0..10 {
+            let _ = tower::Service::call(&mut svc, "x".to_string()).await;
+        }
+
+        // Manual mode: results alone never move the circuit.
+        assert_eq!(handle.state(), CircuitState::Closed);
+
+        handle.force_open().await;
+        assert_eq!(handle.state(), CircuitState::Open);
+
+        // Still open after another failing call and after the (default)
+        // wait_duration_in_open would have elapsed -- only an explicit
+        // handle call changes state in manual mode.
+        let _ = tower::Service::call(&mut svc, "y".to_string()).await;
+        assert_eq!(handle.state(), CircuitState::Open);
+
+        handle.force_closed().await;
+        assert_eq!(handle.state(), CircuitState::Closed);
     }
 
     #[test]
@@ -1135,6 +1270,7 @@ mod tests {
             },
             name: "test".into(),
             backpressure: false,
+            manual_mode: false,
         };
 
         let mut circuit = Circuit::new();
@@ -1190,6 +1326,7 @@ mod tests {
             },
             name: "test".into(),
             backpressure: false,
+            manual_mode: false,
         };
 
         let mut circuit = Circuit::new();
