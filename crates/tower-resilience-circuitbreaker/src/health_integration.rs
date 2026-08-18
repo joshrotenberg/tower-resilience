@@ -3,8 +3,22 @@
 //! This module provides `HealthTriggerable` implementations that allow
 //! health check systems to proactively open or close the circuit breaker
 //! based on external health signals.
+//!
+//! `HealthTriggerable`'s `trigger_unhealthy`/`trigger_healthy` methods are
+//! synchronous by contract (callers may not be in an async context), so the
+//! implementations here spawn a detached task to perform the transition:
+//! `trigger_unhealthy()`/`trigger_healthy()` return before the state change
+//! is guaranteed to have happened. When the caller can await completion,
+//! prefer the deterministic, awaitable alternative instead:
+//! [`CircuitBreakerHandle::force_open()`](crate::CircuitBreakerHandle::force_open) /
+//! [`CircuitBreakerHandle::force_closed()`](crate::CircuitBreakerHandle::force_closed)
+//! (or the equivalent methods on [`CircuitBreaker`]/[`CircuitBreakerWithFallback`]
+//! themselves). Awaiting one of those completes only once the underlying
+//! state has actually transitioned, so a subsequent state inspection or
+//! admission check is guaranteed to observe it -- no sleep or poll loop
+//! needed.
 
-use crate::{CircuitBreaker, CircuitBreakerWithFallback};
+use crate::{CircuitBreaker, CircuitBreakerHandle, CircuitBreakerWithFallback};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_resilience_core::HealthTriggerable;
@@ -65,11 +79,31 @@ where
     }
 }
 
+/// Implemented so a [`CircuitBreakerHandle`] retained after the original
+/// service was moved or boxed can still act as a trait-object health
+/// trigger target, matching [`CircuitBreaker`]/[`CircuitBreakerWithFallback`].
+///
+/// See the module docs for why this is fire-and-forget, and
+/// [`CircuitBreakerHandle::force_open`]/[`CircuitBreakerHandle::force_closed`]
+/// for the deterministic, awaitable alternative.
+impl<C> HealthTriggerable for CircuitBreakerHandle<C>
+where
+    C: Send + Sync + 'static,
+{
+    fn trigger_unhealthy(&self) {
+        trigger_unhealthy_impl(Arc::clone(&self.circuit), Arc::clone(&self.config));
+    }
+
+    fn trigger_healthy(&self) {
+        trigger_healthy_impl(Arc::clone(&self.circuit), Arc::clone(&self.config));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::classifier::DefaultClassifier;
-    use crate::CircuitState;
+    use crate::{CircuitBreakerLayer, CircuitState};
     use std::time::Duration;
     use tower_resilience_core::EventListeners;
 
@@ -89,6 +123,7 @@ mod tests {
             event_listeners: EventListeners::new(),
             name: "test".into(),
             backpressure: false,
+            manual_mode: false,
         }
     }
 
@@ -144,5 +179,33 @@ mod tests {
         trigger.trigger_healthy();
         tokio::time::sleep(Duration::from_millis(50)).await;
         assert_eq!(breaker.state_sync(), CircuitState::Closed);
+    }
+
+    /// The deterministic `CircuitBreakerHandle` also implements
+    /// `HealthTriggerable`, so a handle retained after the original service
+    /// was moved or boxed can still serve as a trait-object health trigger.
+    #[tokio::test]
+    async fn test_health_triggerable_on_handle_opens_and_closes() {
+        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+
+        assert_eq!(handle.state(), CircuitState::Closed);
+
+        handle.trigger_unhealthy();
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        assert_eq!(handle.state(), CircuitState::Open);
+
+        handle.trigger_healthy();
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        assert_eq!(handle.state(), CircuitState::Closed);
+    }
+
+    #[tokio::test]
+    async fn test_health_triggerable_on_handle_via_trait_object() {
+        let (_layer, handle) = CircuitBreakerLayer::builder().build_with_handle();
+
+        let trigger: Arc<dyn HealthTriggerable> = Arc::new(handle.clone());
+        trigger.trigger_unhealthy();
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        assert_eq!(handle.state(), CircuitState::Open);
     }
 }

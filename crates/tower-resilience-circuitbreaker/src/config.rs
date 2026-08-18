@@ -101,6 +101,7 @@ pub struct CircuitBreakerConfig<C> {
     pub(crate) event_listeners: EventListeners<CircuitBreakerEvent>,
     pub(crate) name: String,
     pub(crate) backpressure: bool,
+    pub(crate) manual_mode: bool,
 }
 
 /// Builder for configuring and constructing a circuit breaker.
@@ -152,6 +153,7 @@ pub struct CircuitBreakerConfigBuilder<C = DefaultClassifier> {
     event_listeners: EventListeners<CircuitBreakerEvent>,
     name: String,
     backpressure: bool,
+    manual_mode: bool,
 }
 
 impl Default for CircuitBreakerConfigBuilder<DefaultClassifier> {
@@ -181,6 +183,7 @@ impl CircuitBreakerConfigBuilder<DefaultClassifier> {
             event_listeners: EventListeners::new(),
             name: String::from("<unnamed>"),
             backpressure: false,
+            manual_mode: false,
         }
     }
 }
@@ -349,6 +352,48 @@ impl<C> CircuitBreakerConfigBuilder<C> {
         self
     }
 
+    /// Enables manual/external-only control mode.
+    ///
+    /// In manual mode the circuit never trips or recovers on its own:
+    /// `record_success`/`record_failure` still update counters and emit
+    /// their usual [`CircuitBreakerEvent`](crate::CircuitBreakerEvent)s and
+    /// metrics for observability, but the sliding-window evaluation, the
+    /// half-open success/failure thresholds, and the `Open -> HalfOpen`
+    /// recovery timer (`wait_duration_in_open`) are all disabled. Once the
+    /// circuit is opened, it stays open until something explicitly closes
+    /// or resets it.
+    ///
+    /// State changes only in response to an explicit
+    /// [`force_open`](crate::CircuitBreaker::force_open),
+    /// [`force_closed`](crate::CircuitBreaker::force_closed), or
+    /// [`reset`](crate::CircuitBreaker::reset) call -- typically issued
+    /// through a [`CircuitBreakerHandle`](crate::CircuitBreakerHandle)
+    /// shared with an external controller (health checks, admin APIs,
+    /// fleet control). This gives a simple external on/off switch, matching
+    /// the broader circuit-breaker scope requested in
+    /// [tower-rs/tower#855](https://github.com/tower-rs/tower/pull/855).
+    ///
+    /// Default: `false` (automatic trip/recovery)
+    ///
+    /// # Example
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// let (layer, handle) = CircuitBreakerLayer::builder()
+    ///     .manual_mode()
+    ///     .build_with_handle();
+    ///
+    /// // Apply `layer` to a service...
+    /// // The circuit stays closed no matter how the inner service behaves,
+    /// // until something calls `handle.force_open()`.
+    /// let _ = layer;
+    /// let _ = handle;
+    /// ```
+    pub fn manual_mode(mut self) -> Self {
+        self.manual_mode = true;
+        self
+    }
+
     /// Sets a custom failure classifier function.
     ///
     /// The classifier determines which results should be counted as failures
@@ -421,6 +466,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             event_listeners: self.event_listeners,
             name: self.name,
             backpressure: self.backpressure,
+            manual_mode: self.manual_mode,
         }
     }
 
@@ -492,6 +538,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             event_listeners: self.event_listeners,
             name: self.name,
             backpressure: self.backpressure,
+            manual_mode: self.manual_mode,
         }
     }
 
@@ -886,6 +933,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             event_listeners: self.event_listeners,
             name: self.name,
             backpressure: self.backpressure,
+            manual_mode: self.manual_mode,
         }
     }
 }

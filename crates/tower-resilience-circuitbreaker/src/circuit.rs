@@ -282,18 +282,24 @@ impl Circuit {
                 .record(duration.as_secs_f64());
         }
 
-        match self.state {
-            CircuitState::HalfOpen => {
-                let success_count = match config.sliding_window_type {
-                    SlidingWindowType::CountBased => self.success_count,
-                    SlidingWindowType::TimeBased => self.time_based_stats().2,
-                };
-                if success_count >= config.permitted_calls_in_half_open {
-                    self.transition_to(CircuitState::Closed, config);
+        // Manual/external-only mode: the counters, events, and metrics above
+        // are still recorded for observability, but the circuit never trips
+        // or recovers based on the outcome. State only changes via an
+        // explicit force_open/force_closed/reset call.
+        if !config.manual_mode {
+            match self.state {
+                CircuitState::HalfOpen => {
+                    let success_count = match config.sliding_window_type {
+                        SlidingWindowType::CountBased => self.success_count,
+                        SlidingWindowType::TimeBased => self.time_based_stats().2,
+                    };
+                    if success_count >= config.permitted_calls_in_half_open {
+                        self.transition_to(CircuitState::Closed, config);
+                    }
                 }
-            }
-            _ => {
-                self.evaluate_window(config);
+                _ => {
+                    self.evaluate_window(config);
+                }
             }
         }
     }
@@ -366,12 +372,16 @@ impl Circuit {
                 .record(duration.as_secs_f64());
         }
 
-        match self.state {
-            CircuitState::HalfOpen => {
-                self.transition_to(CircuitState::Open, config);
-            }
-            _ => {
-                self.evaluate_window(config);
+        // See the identical guard in `record_success` -- manual/external-only
+        // mode never trips or recovers based on inner-service results.
+        if !config.manual_mode {
+            match self.state {
+                CircuitState::HalfOpen => {
+                    self.transition_to(CircuitState::Open, config);
+                }
+                _ => {
+                    self.evaluate_window(config);
+                }
             }
         }
     }
@@ -389,7 +399,12 @@ impl Circuit {
                 Admission::Admitted(None)
             }
             CircuitState::Open => {
-                if self.last_state_change.elapsed() >= config.wait_duration_in_open {
+                // In manual mode the `wait_duration_in_open` recovery timer
+                // is disabled: the circuit stays open (rejecting) until
+                // something explicitly closes or resets it.
+                if !config.manual_mode
+                    && self.last_state_change.elapsed() >= config.wait_duration_in_open
+                {
                     self.transition_to(CircuitState::HalfOpen, config);
                     // `transition_to` just allocated a fresh half-open
                     // semaphore; evaluate admission again against the new
@@ -447,6 +462,13 @@ impl Circuit {
         match self.state {
             CircuitState::Closed => Ok(()),
             CircuitState::Open => {
+                if config.manual_mode {
+                    // The recovery timer is disabled in manual mode; report
+                    // the configured wait as a heartbeat interval for
+                    // backpressure callers, but the circuit will not open up
+                    // on its own no matter how long they wait.
+                    return Err(config.wait_duration_in_open);
+                }
                 let elapsed = self.last_state_change.elapsed();
                 if elapsed >= config.wait_duration_in_open {
                     // Wait has elapsed; try_acquire will transition to HalfOpen
