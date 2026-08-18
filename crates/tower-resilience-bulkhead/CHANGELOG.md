@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Bulkhead::get_ref()`, `get_mut()`, and `into_inner()` accessors for the
+  wrapped service, matching Tower's own middleware convention.
+
 ### Changed
 
 - Backpressure readiness now polls and reserves semaphore permits directly,

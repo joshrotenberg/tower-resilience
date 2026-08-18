@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Chaos::get_ref()`, `get_mut()`, and `into_inner()` accessors for the
+  wrapped service, matching Tower's own middleware convention.
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-chaos-v0.11.0...tower-resilience-chaos-v0.12.0) - 2026-08-17
 
 ### Fixed

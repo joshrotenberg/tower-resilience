@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Cache::get_ref()`, `get_mut()`, and `into_inner()` accessors for the
+  wrapped service, matching Tower's own middleware convention.
+
+### Removed
+
+- Drop an unused non-dev `tokio` dependency; the cache store's lock is
+  `std::sync::Mutex`, not `tokio::sync::Mutex`, and nothing else in the
+  crate's library code used `tokio` (the only `tokio::` references were
+  in test code, already covered by the dev-dependency).
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-cache-v0.11.0...tower-resilience-cache-v0.12.0) - 2026-08-17
 
 ### Fixed

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `TimeLimiter::get_ref()`, `get_mut()`, and `into_inner()` accessors for
+  the wrapped service, matching Tower's own middleware convention.
+
 ### Changed
 
 - Define TimeLimiter's deadline as covering only the `Service::call` future,

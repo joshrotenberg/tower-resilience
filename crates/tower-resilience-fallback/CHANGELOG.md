@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Fallback::get_ref()`, `get_mut()`, and `into_inner()` accessors for the
+  wrapped service, matching Tower's own middleware convention.
+  `ServiceFallback` gets the same triad for its primary service; the
+  shared backup (behind `Arc<Mutex<B>>` by design) is not exposed by a
+  matching accessor set.
 - Add `FallbackLayer::tower_service` for readiness-aware delegation to an
   arbitrary generic Tower service, including heterogeneous primary/backup
   errors and cancellation-safe shared backup ownership. See the

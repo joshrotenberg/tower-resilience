@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documented as the deterministic, awaitable alternative to the
   fire-and-forget `HealthTriggerable::trigger_unhealthy()`/
   `trigger_healthy()` methods.
+- `get_ref()`, `get_mut()`, and `into_inner()` accessors for the wrapped
+  service on both `CircuitBreaker` and `CircuitBreakerWithFallback`,
+  matching Tower's own middleware convention.
 
 ### Fixed
 

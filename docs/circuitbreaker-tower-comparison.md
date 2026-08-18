@@ -15,7 +15,8 @@ after #381, #382 (PR #407), and #384 (PR #412).
 
 Trait-bound, boxing, allocation, and runtime-coupling analysis (`Send`/`Sync`
 requirements, `Arc<Mutex<_>>` vs. lock-free state, executor assumptions) is
-tracked separately in #376 and is **not** duplicated here.
+tracked separately in [tower-api-surface-audit.md](tower-api-surface-audit.md)
+(#376) and is **not** duplicated here.
 
 See the [Tower contract matrix](tower-contract-matrix.md) for the
 regression-test-level view of the same coverage.

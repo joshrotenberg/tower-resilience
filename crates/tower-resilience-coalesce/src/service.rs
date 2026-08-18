@@ -149,6 +149,26 @@ where
     }
 }
 
+impl<S, K, Req, F> CoalesceService<S, K, Req, F>
+where
+    S: Service<Req>,
+{
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes the coalescing service, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
+}
+
 impl<S, K, Req, F> Clone for CoalesceService<S, K, Req, F>
 where
     S: Service<Req> + Clone,
@@ -322,6 +342,19 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        use crate::CoalesceConfig;
+
+        let inner = tower::service_fn(|req: String| async move { Ok::<_, String>(req) });
+        let config = Arc::new(CoalesceConfig::new(|req: &String| req.clone()));
+        let mut service = CoalesceService::new(inner, config);
+
+        let _: &_ = service.get_ref();
+        let _: &mut _ = service.get_mut();
+        let _inner = service.into_inner();
+    }
 
     #[test]
     fn test_coalesce_error_display() {

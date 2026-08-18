@@ -699,6 +699,21 @@ impl<S, C> CircuitBreaker<S, C> {
             CircuitState::Open => "unhealthy",
         }
     }
+
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes the circuit breaker, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S, C> Clone for CircuitBreaker<S, C>
@@ -915,6 +930,21 @@ impl<S, C, Req, Res, Err> CircuitBreakerWithFallback<S, C, Req, Res, Err> {
             CircuitState::Open => "unhealthy",
         }
     }
+
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes the circuit breaker, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S, C, Req, Res, Err> Clone for CircuitBreakerWithFallback<S, C, Req, Res, Err>
@@ -1125,6 +1155,42 @@ mod tests {
 
         breaker.force_closed().await;
         assert_eq!(breaker.state().await, CircuitState::Closed);
+    }
+
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        use tower::service_fn;
+
+        let config = Arc::new(dummy_config());
+        let mut breaker: CircuitBreaker<_, DefaultClassifier> = CircuitBreaker::new(
+            service_fn(|req: String| async move { Ok::<_, String>(req) }),
+            config,
+        );
+
+        let _: &_ = breaker.get_ref();
+        let _: &mut _ = breaker.get_mut();
+        let _inner = breaker.into_inner();
+    }
+
+    #[test]
+    fn with_fallback_accessors_expose_the_inner_service() {
+        use futures::future::BoxFuture;
+        use tower::service_fn;
+
+        let config = Arc::new(dummy_config());
+        let breaker: CircuitBreaker<_, DefaultClassifier> = CircuitBreaker::new(
+            service_fn(|req: String| async move { Ok::<_, String>(req) }),
+            config,
+        );
+        let mut with_fallback = breaker.with_fallback(
+            |_req: String| -> BoxFuture<'static, Result<String, String>> {
+                Box::pin(async { Ok("fallback".to_string()) })
+            },
+        );
+
+        let _: &_ = with_fallback.get_ref();
+        let _: &mut _ = with_fallback.get_mut();
+        let _inner = with_fallback.into_inner();
     }
 
     #[test]

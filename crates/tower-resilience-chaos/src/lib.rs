@@ -212,6 +212,18 @@ mod tests {
     use std::time::Duration;
     use tower::{Layer, Service, ServiceExt};
 
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        let chaos = ChaosLayer::builder().build();
+        let mut service = chaos.layer(tower::service_fn(|req: String| async move {
+            Ok::<String, ()>(req)
+        }));
+
+        let _: &_ = service.get_ref();
+        let _: &mut _ = service.get_mut();
+        let _inner = service.into_inner();
+    }
+
     #[tokio::test]
     async fn test_no_chaos_passes_through() {
         // Latency-only chaos - no type parameters needed!

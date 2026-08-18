@@ -145,6 +145,25 @@ impl<S, B, Req, Res, E> ServiceFallback<S, B, Req, Res, E> {
             _request: PhantomData,
         }
     }
+
+    /// Returns a reference to the primary inner service.
+    ///
+    /// The backup service is shared across clones behind a lock (see the
+    /// type-level docs) and is intentionally not exposed by a matching
+    /// `get_ref`/`get_mut`/`into_inner` triad.
+    pub fn get_ref(&self) -> &S {
+        &self.primary
+    }
+
+    /// Returns a mutable reference to the primary inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.primary
+    }
+
+    /// Consumes this service, returning the primary inner service.
+    pub fn into_inner(self) -> S {
+        self.primary
+    }
 }
 
 impl<S, B, Req, Res, E> Clone for ServiceFallback<S, B, Req, Res, E>
