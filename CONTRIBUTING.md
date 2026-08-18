@@ -262,6 +262,61 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 5. Ensure all tests pass
 6. Submit a pull request
 
+## Release Process
+
+Releases are automated by [release-plz](https://release-plz.dev) via
+`.github/workflows/release-plz.yml`, which runs on every push to `main` as
+two independent jobs:
+
+- `release-plz-release` publishes any packages whose `Cargo.toml` version has
+  already been bumped on `main` (crates.io, git tags, GitHub releases).
+- `release-plz-pr` opens or updates the PR that prepares the *next* release
+  (version bumps + changelog entries), serialized with a `concurrency` group
+  so overlapping pushes to `main` queue instead of racing each other into
+  opening duplicate release PRs.
+
+All 18 publishable crates under `crates/` use release-plz's default
+per-crate changelog path (`crates/<name>/CHANGELOG.md`). `release-plz.toml`
+sets `changelog_path` explicitly for `tower-resilience-core`,
+`tower-resilience-circuitbreaker`, and `tower-resilience-bulkhead` for
+clarity only; every other crate relies on the default, which resolves to the
+same location. If a crate is added, confirm its changelog lands at that
+default path (or add an explicit `[[package]]` entry if it needs a
+different one).
+
+### Runbook: checking for stale release branches/PRs
+
+Run this check whenever the release automation looks off (e.g. a release PR
+sits open longer than expected, or `main` gets multiple release-plz pushes
+in quick succession), and periodically as part of release hygiene:
+
+1. List open release-plz PRs:
+
+   ```bash
+   gh pr list --search "head:release-plz-" --state open
+   ```
+
+   At most one should be open at a time -- it represents the one active
+   release train. If more than one is open, or an open one targets a
+   version that is already published (check `gh release list` for a
+   matching tag, or query crates.io), the extra PR is stale.
+
+2. Close a stale PR with a factual explanatory comment (state why: the
+   version is already published and on `main` via another PR), and do
+   **not** delete its branch unless you've confirmed it's fully merged or
+   the changes it contains are already obsolete. See PR #355 for the
+   precedent (closed as a stale duplicate of the v0.10.1 release already
+   published and merged via PR #345, tracked in #377).
+
+3. Check for release-plz branches with no corresponding open PR:
+
+   ```bash
+   git branch -r --list 'origin/release-plz-*'
+   ```
+
+   Delete only branches whose PR is merged or closed and whose commits are
+   already fully contained in `main`.
+
 ## Questions?
 
 Feel free to open an issue for questions or discussions.
