@@ -1,19 +1,32 @@
-//! gRPC Server demonstrating server-side resilience patterns
+//! gRPC server demonstrating server-side resilience patterns.
 //!
-//! This server implements:
-//! - Manual concurrency tracking to demonstrate bulkhead-like behavior
-//! - Manual rate limiting tracking to demonstrate rate limiter behavior
-//! - Chaos injection: Random slow responses to trigger client-side timeouts
+//! Real tower-resilience layers protect the greeting logic:
+//! - `RateLimiterLayer` caps the accepted request rate (10 req/sec).
+//! - `BulkheadLayer` caps in-flight concurrent requests (max 5).
+//! - `ChaosLayer` injects latency to exercise the layers above -- and the
+//!   client's circuit breaker. This is a *test fixture* that simulates an
+//!   unreliable backend; it is not itself a resilience pattern.
 //!
-//! Note: Tonic requires services to return `Infallible` errors, so we demonstrate
-//! resilience patterns through manual implementation rather than middleware layers.
+//! Tonic requires `Greeter::say_hello` to return `Result<_, tonic::Status>`,
+//! not the layer-specific error types tower-resilience middleware produces,
+//! so the pipeline below is built once at startup as a real `tower::Service`
+//! and invoked from inside the handler, translating its error into a
+//! `Status`. This mirrors the pattern in `examples/axum-resilient-kv-store`,
+//! which guards a `CircuitBreaker`-wrapped service behind an `Arc<Mutex<_>>`
+//! and calls it manually from the handler.
 //!
 //! Run with: cargo run --bin server
 
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::convert::Infallible;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
 use tonic::{transport::Server, Request, Response, Status};
+use tower::util::BoxService;
+use tower::{Service, ServiceBuilder, ServiceExt};
+use tower_resilience_bulkhead::{BulkheadLayer, BulkheadServiceError};
+use tower_resilience_chaos::ChaosLayer;
+use tower_resilience_ratelimiter::{RateLimiterLayer, RateLimiterServiceError};
 use tracing::{info, warn};
 
 pub mod greeter {
@@ -23,52 +36,88 @@ pub mod greeter {
 use greeter::greeter_server::{Greeter, GreeterServer};
 use greeter::{HelloReply, HelloRequest};
 
-/// Greeter service implementation with manual bulkhead and chaos injection
+/// Error produced by the rate-limiter -> bulkhead -> chaos -> greeting
+/// pipeline. The greeting logic itself never fails (`Infallible`); every
+/// real failure comes from one of the resilience layers.
+type PipelineError = RateLimiterServiceError<BulkheadServiceError<Infallible>>;
+
+type GreetPipeline = BoxService<HelloRequest, HelloReply, PipelineError>;
+
+fn build_pipeline() -> GreetPipeline {
+    let greet = tower::service_fn(|req: HelloRequest| async move {
+        Ok::<HelloReply, Infallible>(HelloReply {
+            message: format!("Hello, {}!", req.name),
+        })
+    });
+
+    let chaos_layer = ChaosLayer::builder()
+        .name("greeter-chaos")
+        .latency_rate(0.2)
+        .min_latency(Duration::from_secs(2))
+        .max_latency(Duration::from_secs(2))
+        .on_latency_injected(|delay| warn!("Chaos: injecting slow response ({:?})", delay))
+        .build();
+
+    let bulkhead_layer = BulkheadLayer::builder()
+        .name("greeter-bulkhead")
+        .max_concurrent_calls(5)
+        .reject_when_full()
+        .on_call_rejected(|active| {
+            warn!(
+                "Bulkhead: request rejected (server at capacity, {} active)",
+                active
+            )
+        })
+        .build();
+
+    let ratelimiter_layer = RateLimiterLayer::builder()
+        .name("greeter-ratelimiter")
+        .limit_for_period(10)
+        .refresh_period(Duration::from_secs(1))
+        .timeout_duration(Duration::ZERO)
+        .on_permit_rejected(|retry_after| {
+            warn!(
+                "RateLimiter: request rejected (retry after {:?})",
+                retry_after
+            )
+        })
+        .build();
+
+    let service = ServiceBuilder::new()
+        .layer(ratelimiter_layer)
+        .layer(bulkhead_layer)
+        .layer(chaos_layer)
+        .service(greet);
+
+    BoxService::new(service)
+}
+
+fn pipeline_error_to_status(err: PipelineError) -> Status {
+    match err {
+        RateLimiterServiceError::RateLimited => Status::resource_exhausted("rate limit exceeded"),
+        RateLimiterServiceError::Inner(BulkheadServiceError::Bulkhead(e)) => {
+            Status::resource_exhausted(format!("server at capacity: {e}"))
+        }
+        RateLimiterServiceError::Inner(BulkheadServiceError::Inner(never)) => match never {},
+    }
+}
+
+/// Greeter service implementation backed by a real tower-resilience pipeline.
 pub struct MyGreeter {
-    /// Track concurrent requests (bulkhead-like behavior)
-    concurrent_requests: Arc<AtomicUsize>,
-    max_concurrent: usize,
+    pipeline: Arc<Mutex<GreetPipeline>>,
 }
 
 impl MyGreeter {
-    fn new(max_concurrent: usize) -> Self {
+    fn new() -> Self {
         Self {
-            concurrent_requests: Arc::new(AtomicUsize::new(0)),
-            max_concurrent,
+            pipeline: Arc::new(Mutex::new(build_pipeline())),
         }
     }
 
-    async fn acquire_slot(&self) -> Result<ConcurrencyGuard, Status> {
-        let current = self.concurrent_requests.fetch_add(1, Ordering::SeqCst);
-
-        if current >= self.max_concurrent {
-            // Reject request - bulkhead is full
-            self.concurrent_requests.fetch_sub(1, Ordering::SeqCst);
-            warn!(
-                "Bulkhead: Request rejected (concurrent: {}, max: {})",
-                current, self.max_concurrent
-            );
-            Err(Status::resource_exhausted(format!(
-                "Server at capacity (max {} concurrent requests)",
-                self.max_concurrent
-            )))
-        } else {
-            info!("Bulkhead: Request permitted (concurrent: {})", current + 1);
-            Ok(ConcurrencyGuard {
-                counter: Arc::clone(&self.concurrent_requests),
-            })
-        }
-    }
-}
-
-/// RAII guard to decrement concurrent request counter
-struct ConcurrencyGuard {
-    counter: Arc<AtomicUsize>,
-}
-
-impl Drop for ConcurrencyGuard {
-    fn drop(&mut self) {
-        self.counter.fetch_sub(1, Ordering::SeqCst);
+    async fn handle(&self, req: HelloRequest) -> Result<HelloReply, Status> {
+        let mut pipeline = self.pipeline.lock().await;
+        let ready = pipeline.ready().await.map_err(pipeline_error_to_status)?;
+        ready.call(req).await.map_err(pipeline_error_to_status)
     }
 }
 
@@ -78,22 +127,10 @@ impl Greeter for MyGreeter {
         &self,
         request: Request<HelloRequest>,
     ) -> Result<Response<HelloReply>, Status> {
-        let name = request.into_inner().name;
-        info!("Received SayHello request for: {}", name);
+        let req = request.into_inner();
+        info!("Received SayHello request for: {}", req.name);
 
-        // Acquire bulkhead slot
-        let _guard = self.acquire_slot().await?;
-
-        // Chaos injection: 20% chance of slow response (2 seconds)
-        if rand::random::<f64>() < 0.2 {
-            warn!("Chaos: Injecting slow response (2s delay)");
-            tokio::time::sleep(Duration::from_secs(2)).await;
-        }
-
-        let reply = HelloReply {
-            message: format!("Hello, {}!", name),
-        };
-
+        let reply = self.handle(req).await?;
         Ok(Response::new(reply))
     }
 
@@ -103,22 +140,19 @@ impl Greeter for MyGreeter {
         &self,
         request: Request<HelloRequest>,
     ) -> Result<Response<Self::SayHelloStreamStream>, Status> {
-        let name = request.into_inner().name;
-        info!("Received SayHelloStream request for: {}", name);
+        let req = request.into_inner();
+        info!("Received SayHelloStream request for: {}", req.name);
 
-        // Acquire bulkhead slot for the stream setup
-        let _guard = self.acquire_slot().await?;
+        // Admission-gate the stream through the same resilience pipeline
+        // used for unary calls (rate limiter, bulkhead, chaos), then stream
+        // the reply messages independently of the pipeline.
+        self.handle(req.clone()).await?;
 
         let (tx, rx) = tokio::sync::mpsc::channel(4);
+        let name = req.name;
 
         tokio::spawn(async move {
             for i in 0..5 {
-                // Chaos injection for streaming too
-                if rand::random::<f64>() < 0.2 {
-                    warn!("Chaos: Injecting slow stream response (2s delay)");
-                    tokio::time::sleep(Duration::from_secs(2)).await;
-                }
-
                 let reply = HelloReply {
                     message: format!("Hello, {} (stream message {})", name, i),
                 };
@@ -139,23 +173,19 @@ impl Greeter for MyGreeter {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Initialize tracing
     tracing_subscriber::fmt()
         .with_target(false)
         .with_level(true)
         .init();
 
     let addr = "[::1]:50051".parse()?;
+    let greeter = MyGreeter::new();
 
-    // Create greeter with manual bulkhead (max 5 concurrent)
-    let greeter = MyGreeter::new(5);
-
-    info!("Starting gRPC server with resilience patterns");
-    info!("  - Manual Bulkhead: max 5 concurrent requests");
-    info!("  - Chaos: 20% slow responses (2s delay)");
+    info!("Starting gRPC server with a real tower-resilience pipeline");
+    info!("  - RateLimiter: 10 requests/sec");
+    info!("  - Bulkhead: max 5 concurrent requests");
+    info!("  - Chaos: 20% chance of 2s injected latency (test fixture, not a resilience pattern)");
     info!("Listening on {}", addr);
-    info!("\nNote: This server demonstrates resilience concepts manually since");
-    info!("Tonic requires Infallible errors. Client uses proper middleware layers.\n");
 
     Server::builder()
         .add_service(GreeterServer::new(greeter))

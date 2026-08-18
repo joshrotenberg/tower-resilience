@@ -2529,6 +2529,7 @@ dependencies = [
  "tonic-prost-build",
  "tower",
  "tower-resilience-bulkhead",
+ "tower-resilience-chaos",
  "tower-resilience-circuitbreaker",
  "tower-resilience-ratelimiter",
  "tower-resilience-retry",
