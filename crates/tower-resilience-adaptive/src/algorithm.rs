@@ -45,7 +45,7 @@ impl Aimd {
     /// Create a new AIMD algorithm with the given configuration.
     pub fn new(config: AimdConfig, latency_threshold: Duration) -> Self {
         Self {
-            controller: AimdController::new(config),
+            controller: AimdController::new(config).expect("invalid AIMD algorithm configuration"),
             latency_threshold,
         }
     }
