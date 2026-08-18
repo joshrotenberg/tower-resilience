@@ -55,7 +55,8 @@ async fn standard_microservices_stack_compiles() {
         .failure_rate_threshold(0.6)
         .slow_call_rate_threshold(0.8)
         .slow_call_duration_threshold(Duration::from_secs(2))
-        .build();
+        .build()
+        .unwrap();
 
     let retry = RetryLayer::<GrpcRequest, GrpcResponse, ServiceError>::builder()
         .max_attempts(2)

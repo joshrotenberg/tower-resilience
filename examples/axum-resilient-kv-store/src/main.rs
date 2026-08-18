@@ -134,7 +134,8 @@ impl AppState {
             .on_call_rejected(|| {
                 tracing::warn!("Circuit breaker rejected call (circuit OPEN)");
             })
-            .build();
+            .build()
+            .expect("valid circuit breaker config");
 
         let db_service = circuit_breaker_layer.layer(base_service);
 
@@ -180,7 +181,7 @@ fn app() -> Router {
     let state = AppState::new();
 
     Router::new()
-        .route("/:key", get(get_key).post(set_key))
+        .route("/{key}", get(get_key).post(set_key))
         .route("/health/ready", get(health_ready))
         .route("/health/live", get(health_live))
         .route("/metrics", get(get_metrics))

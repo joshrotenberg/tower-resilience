@@ -396,7 +396,8 @@ pub mod circuit_breaker {
     //!     .sliding_window_size(100)         // Over last 100 calls
     //!     .minimum_number_of_calls(10)      // Need at least 10 calls
     //!     .wait_duration_in_open(Duration::from_secs(30))  // Stay open 30s
-    //!     .build();
+    //!     .build()
+    //!     .unwrap();
     //!
     //! let service = circuit_breaker.layer(database_client);
     //! # }
@@ -715,8 +716,14 @@ pub mod fallback {
     //! ### FromRequestError
     //! Compute fallback from both request and error. Best for request-specific defaults.
     //!
-    //! ### Service
-    //! Delegate to a fallback service. Best for complex fallback logic or secondary backends.
+    //! ### Async Function
+    //! Delegate to an async closure with `FallbackLayer::service`. Best for
+    //! lightweight fallback logic that does not need Tower readiness.
+    //!
+    //! ### Tower Service
+    //! Delegate to a readiness-aware secondary backend with
+    //! `FallbackLayer::tower_service`. Best for stateful Tower services and
+    //! middleware stacks.
     //!
     //! ### Exception
     //! Transform the error instead of providing a response. Best for error normalization.

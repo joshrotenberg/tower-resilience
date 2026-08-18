@@ -92,7 +92,8 @@ async fn test_circuit_breaker_error_converts() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(5)
         .minimum_number_of_calls(3)
-        .build();
+        .build()
+        .unwrap();
     let layer = ResilienceErrorLayer::<_, AppError>::new(cb);
 
     let mut svc = ServiceBuilder::new().layer(layer).service(svc);
@@ -122,7 +123,8 @@ async fn test_two_layers_stacked() {
         CircuitBreakerLayer::builder()
             .failure_rate_threshold(0.5)
             .sliding_window_size(100)
-            .build(),
+            .build()
+            .unwrap(),
     );
 
     let mut svc = ServiceBuilder::new().layer(cb).layer(bulkhead).service(svc);

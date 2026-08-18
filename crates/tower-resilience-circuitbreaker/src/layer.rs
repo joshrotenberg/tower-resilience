@@ -25,7 +25,8 @@ use tower::Layer;
 ///
 /// let layer = CircuitBreakerLayer::builder()
 ///     .failure_rate_threshold(0.5)
-///     .build();
+///     .build()
+///     .unwrap();
 ///
 /// // Works directly with ServiceBuilder - no .for_request() needed!
 /// let service = ServiceBuilder::new()
@@ -51,7 +52,8 @@ use tower::Layer;
 ///             Err(_) => true,
 ///         }
 ///     })
-///     .build();
+///     .build()
+///     .unwrap();
 ///
 /// let service = ServiceBuilder::new()
 ///     .layer(layer)
@@ -123,7 +125,7 @@ impl<C> CircuitBreakerLayer<C> {
     /// use futures::future::BoxFuture;
     ///
     /// # async fn example() {
-    /// let layer = CircuitBreakerLayer::builder().build();
+    /// let layer = CircuitBreakerLayer::builder().build().unwrap();
     /// let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
     ///
     /// let mut service = layer.layer_fn(svc)
@@ -153,7 +155,8 @@ impl CircuitBreakerLayer<DefaultClassifier> {
     /// let layer = CircuitBreakerLayer::builder()
     ///     .failure_rate_threshold(0.5)
     ///     .sliding_window_size(100)
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     ///
     /// let service = ServiceBuilder::new()
     ///     .layer(layer)
@@ -183,12 +186,13 @@ impl CircuitBreakerLayer<DefaultClassifier> {
     /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
     ///
     /// // Use as-is
-    /// let layer = CircuitBreakerLayer::standard().build();
+    /// let layer = CircuitBreakerLayer::standard().build().unwrap();
     ///
     /// // Or customize further
     /// let layer = CircuitBreakerLayer::standard()
     ///     .name("my-service")
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn standard() -> crate::CircuitBreakerConfigBuilder<DefaultClassifier> {
         use std::time::Duration;
@@ -215,7 +219,7 @@ impl CircuitBreakerLayer<DefaultClassifier> {
     /// ```
     /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
     ///
-    /// let layer = CircuitBreakerLayer::fast_fail().build();
+    /// let layer = CircuitBreakerLayer::fast_fail().build().unwrap();
     /// ```
     pub fn fast_fail() -> crate::CircuitBreakerConfigBuilder<DefaultClassifier> {
         use std::time::Duration;
@@ -242,7 +246,7 @@ impl CircuitBreakerLayer<DefaultClassifier> {
     /// ```
     /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
     ///
-    /// let layer = CircuitBreakerLayer::tolerant().build();
+    /// let layer = CircuitBreakerLayer::tolerant().build().unwrap();
     /// ```
     pub fn tolerant() -> crate::CircuitBreakerConfigBuilder<DefaultClassifier> {
         use std::time::Duration;

@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Deterministic `force_open()`, `force_closed()`, and `reset()` control
+  operations on `CircuitBreakerHandle`. Previously these existed only on
+  the service (`CircuitBreaker`/`CircuitBreakerWithFallback`), which could
+  already have been moved, boxed, or dropped by the time external control
+  was needed. The handle holds its own `Arc` to the circuit shared by
+  every service the associated layer produces, so a retained handle
+  controls all of them deterministically: once a call completes, every
+  subsequent state inspection or admission check observes the new state,
+  with no sleep or poll loop required. Externally initiated transitions
+  emit the same `StateTransition` event and metrics as automatic ones.
+- `manual_mode()` builder option for a manual/external-only circuit that
+  never trips or recovers automatically from inner-service results (or
+  from the `wait_duration_in_open` recovery timer). State changes only via
+  an explicit `force_open`/`force_closed`/`reset` call -- a simple external
+  on/off switch, matching the broader circuit-breaker scope requested in
+  [tower-rs/tower#855](https://github.com/tower-rs/tower/pull/855).
+- `CircuitBreakerHandle` now also implements `HealthTriggerable` (under the
+  `health-integration` feature), so a handle retained after the original
+  service was moved or boxed can still serve as a health-check trigger
+  target. `CircuitBreakerHandle::force_open()`/`force_closed()` are
+  documented as the deterministic, awaitable alternative to the
+  fire-and-forget `HealthTriggerable::trigger_unhealthy()`/
+  `trigger_healthy()` methods.
+
 ### Fixed
 
 - Reserve half-open probe admission atomically with a per-cycle semaphore

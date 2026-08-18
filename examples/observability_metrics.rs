@@ -7,7 +7,7 @@
 //!
 //! Run with:
 //! ```sh
-//! cargo run --example observability_metrics --features metrics,circuitbreaker,bulkhead,retry,ratelimiter,timelimiter,cache
+//! cargo run --example observability_metrics --features metrics
 //! ```
 //!
 //! To collect and visualize these metrics in production:
@@ -136,6 +136,7 @@ async fn demo_circuit_breaker() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(10)
         .build()
+        .unwrap()
         .layer(base_service);
 
     let mut service = service;

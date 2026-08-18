@@ -51,7 +51,8 @@ async fn stress_circuit_breaker_plus_bulkhead() {
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.7)
         .sliding_window_size(100)
-        .build();
+        .build()
+        .unwrap();
 
     // Compose: circuit breaker -> bulkhead -> service
     let service = circuit_breaker.layer(bulkhead.layer(svc));
@@ -164,7 +165,8 @@ async fn stress_two_layer_high_concurrency() {
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.9)
         .sliding_window_size(1000)
-        .build();
+        .build()
+        .unwrap();
 
     let service = circuit_breaker.layer(bulkhead.layer(svc));
 
@@ -206,7 +208,8 @@ async fn stress_composed_memory() {
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(1000)
-        .build();
+        .build()
+        .unwrap();
 
     let service = circuit_breaker.layer(bulkhead.layer(svc));
 
@@ -250,7 +253,8 @@ async fn stress_composed_burst_traffic() {
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.9)
         .sliding_window_size(100)
-        .build();
+        .build()
+        .unwrap();
 
     let service = circuit_breaker.layer(bulkhead.layer(svc));
 
@@ -307,7 +311,8 @@ async fn stress_composed_stability() {
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .sliding_window_size(100)
-        .build();
+        .build()
+        .unwrap();
 
     let service = circuit_breaker.layer(bulkhead.layer(svc));
 

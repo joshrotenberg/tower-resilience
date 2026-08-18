@@ -16,8 +16,9 @@ async fn circuitbreaker_drives_readied_instance() {
     use tower_resilience_circuitbreaker::CircuitBreakerLayer;
 
     let layer = CircuitBreakerLayer::builder()
-        .failure_rate_threshold(50.0)
-        .build();
+        .failure_rate_threshold(0.5)
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());

@@ -24,7 +24,8 @@
 //! let circuit_breaker = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(0.5)
 //!     .sliding_window_size(100)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(circuit_breaker)
@@ -46,7 +47,8 @@
 //! # async fn example() {
 //! let layer = CircuitBreakerLayer::builder()
 //!     .failure_rate_threshold(0.5)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let svc = service_fn(|req: String| async move {
 //!     Ok::<String, ()>(req)
@@ -78,7 +80,8 @@
 //!             Err(_) => true,
 //!         }
 //!     })
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -104,7 +107,8 @@
 //! // Classify failures based on response content
 //! let layer = CircuitBreakerLayer::builder()
 //!     .classify_response(|response: &Response| response.status() >= 500)
-//!     .build();
+//!     .build()?;
+//! # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 //! ```
 //!
 //! This is simpler than `failure_classifier()` because you don't need to handle
@@ -135,12 +139,13 @@
 //! // Trip after 5 consecutive failures.
 //! let layer = CircuitBreakerLayer::builder()
 //!     .consecutive_failures(5)
-//!     .build();
+//!     .build()?;
 //!
 //! // Equivalent via the general setter.
 //! let layer = CircuitBreakerLayer::builder()
 //!     .failure_model(FailureModel::ConsecutiveFailures { k: 5 })
-//!     .build();
+//!     .build()?;
+//! # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 //! ```
 //!
 //! ## Time-Based Sliding Window
@@ -158,7 +163,8 @@
 //!     .sliding_window_type(SlidingWindowType::TimeBased)
 //!     .sliding_window_duration(Duration::from_secs(60))  // Last 60 seconds
 //!     .minimum_number_of_calls(10)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -181,7 +187,8 @@
 //!     .slow_call_duration_threshold(Duration::from_secs(2))
 //!     .slow_call_rate_threshold(0.5)  // Open at 50% slow calls
 //!     .sliding_window_size(100)
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -213,7 +220,8 @@
 //!     .on_slow_call(|duration| {
 //!         println!("Slow call detected: {:?}", duration);
 //!     })
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -228,7 +236,7 @@
 //! use tower::{Service, ServiceBuilder, service_fn};
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::builder().build();
+//! let layer = CircuitBreakerLayer::builder().build().unwrap();
 //! let mut service = ServiceBuilder::new()
 //!     .layer(layer)
 //!     .service(service_fn(|req: String| async move { Ok::<_, ()>(req) }));
@@ -255,7 +263,7 @@
 //! use tower::service_fn;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::builder().build();
+//! let layer = CircuitBreakerLayer::builder().build().unwrap();
 //! let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
 //! let breaker = layer.layer_fn(svc);
 //!
@@ -285,7 +293,7 @@
 //! use tower::service_fn;
 //!
 //! # async fn example() {
-//! let layer = CircuitBreakerLayer::builder().build();
+//! let layer = CircuitBreakerLayer::builder().build().unwrap();
 //! let svc = service_fn(|req: String| async move { Ok::<String, ()>(req) });
 //! let breaker = layer.layer_fn(svc);
 //!
@@ -297,6 +305,50 @@
 //! # }
 //! ```
 //!
+//! ## Deterministic Shared Control
+//!
+//! [`CircuitBreakerConfigBuilder::build_with_handle()`] returns a
+//! [`CircuitBreakerHandle`] alongside the layer. The handle can `force_open()`,
+//! `force_closed()`, and `reset()` the circuit deterministically -- once the
+//! call completes, every service produced by the layer observes the new
+//! state, even if the original service has since been moved, boxed, or
+//! dropped:
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+//!
+//! # async fn example() {
+//! let (layer, handle) = CircuitBreakerLayer::builder()
+//!     .failure_rate_threshold(0.5)
+//!     .build_with_handle()
+//!     .unwrap();
+//!
+//! // Apply the layer, then move/box the resulting service away...
+//! // let service: BoxCloneService<_, _, _> = ...;
+//!
+//! // The handle still controls it deterministically:
+//! handle.force_open().await;
+//! assert!(handle.is_open());
+//! handle.reset().await;
+//! assert!(!handle.is_open());
+//! # let _ = layer;
+//! # }
+//! ```
+//!
+//! Combine with [`CircuitBreakerConfigBuilder::manual_mode()`] for a circuit
+//! that changes state only in response to these explicit calls, never
+//! automatically from inner-service results -- a simple external on/off
+//! switch:
+//!
+//! ```rust
+//! use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+//!
+//! let (_layer, _handle) = CircuitBreakerLayer::builder()
+//!     .manual_mode()
+//!     .build_with_handle()?;
+//! # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
+//! ```
+//!
 //! ## Features
 //! - Count-based and time-based sliding windows
 //! - Configurable failure rate threshold
@@ -304,7 +356,10 @@
 //! - Half-open state for gradual recovery
 //! - Event system for observability
 //! - Optional fallback handling
-//! - Manual state control (force_open, force_closed, reset)
+//! - Manual state control (force_open, force_closed, reset) on the service
+//!   and on the deterministic, shareable [`CircuitBreakerHandle`]
+//! - Manual/external-only mode (`manual_mode()`) for a simple external
+//!   on/off switch that never trips or recovers automatically
 //! - Sync state inspection with `state_sync()`, `is_open()`, and `metrics()`
 //! - Metrics integration via `metrics` feature
 //! - Tracing support via `tracing` feature
@@ -338,7 +393,8 @@ use tracing::debug;
 pub use circuit::{CircuitMetrics, CircuitState};
 pub use classifier::{DefaultClassifier, FailureClassifier, FnClassifier};
 pub use config::{
-    CircuitBreakerConfig, CircuitBreakerConfigBuilder, FailureModel, SlidingWindowType,
+    CircuitBreakerConfig, CircuitBreakerConfigBuilder, CircuitBreakerConfigError, FailureModel,
+    SlidingWindowType,
 };
 pub use error::CircuitBreakerError;
 pub use events::CircuitBreakerEvent;
@@ -428,11 +484,12 @@ static METRICS_INIT: Once = Once::new();
 ///
 /// let layer = circuit_breaker_builder()
 ///     .failure_rate_threshold(0.5)
-///     .build();
+///     .build()?;
 ///
 /// let service = ServiceBuilder::new()
 ///     .layer(layer)
 ///     .service(service_fn(|req: String| async move { Ok::<_, ()>(req) }));
+/// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 /// ```
 pub fn circuit_breaker_builder() -> CircuitBreakerConfigBuilder<DefaultClassifier> {
     #[cfg(feature = "metrics")]
@@ -540,7 +597,7 @@ impl<S, C> CircuitBreaker<S, C> {
     /// use futures::future::BoxFuture;
     ///
     /// # async fn example() {
-    /// let layer = CircuitBreakerLayer::builder().build();
+    /// let layer = CircuitBreakerLayer::builder().build().unwrap();
     /// let svc = service_fn(|req: String| async move { Ok::<String, String>(req) });
     ///
     /// let mut service = layer.layer_fn(svc).with_fallback(|_req: String| {
@@ -1024,6 +1081,7 @@ mod tests {
             event_listeners: EventListeners::new(),
             name: "test".into(),
             backpressure: false,
+            manual_mode: false,
         }
     }
 
@@ -1067,6 +1125,96 @@ mod tests {
 
         breaker.force_closed().await;
         assert_eq!(breaker.state().await, CircuitState::Closed);
+    }
+
+    #[test]
+    fn manual_mode_ignores_automatic_trip_on_failures() {
+        let mut circuit = Circuit::new();
+        let mut config = dummy_config();
+        config.manual_mode = true;
+
+        // Enough failures (100% rate over a full window) to trip the
+        // circuit automatically under the default sliding-window model.
+        // Manual mode must ignore them.
+        for _ in 0..10 {
+            circuit.record_failure(&config, Duration::from_millis(10));
+        }
+
+        assert_eq!(circuit.state(), CircuitState::Closed);
+    }
+
+    #[test]
+    fn manual_mode_ignores_automatic_recovery_timer() {
+        let mut circuit = Circuit::new();
+        let mut config = dummy_config();
+        config.manual_mode = true;
+        config.wait_duration_in_open = Duration::from_millis(1);
+
+        circuit.force_open(&config);
+        assert_eq!(circuit.state(), CircuitState::Open);
+
+        std::thread::sleep(Duration::from_millis(20));
+
+        // Outside manual mode, `try_acquire` would auto-transition to
+        // HalfOpen once `wait_duration_in_open` elapses. In manual mode the
+        // circuit must stay open (rejecting) regardless of elapsed time.
+        assert!(matches!(circuit.try_acquire(&config), Admission::Rejected));
+        assert_eq!(circuit.state(), CircuitState::Open);
+
+        // check_permitted (the read-only variant used by backpressure mode)
+        // must agree: it never reports the wait as satisfied in manual mode.
+        assert!(circuit.check_permitted(&config).is_err());
+    }
+
+    #[test]
+    fn manual_mode_still_supports_explicit_force_and_reset() {
+        let mut circuit = Circuit::new();
+        let mut config = dummy_config();
+        config.manual_mode = true;
+
+        circuit.force_open(&config);
+        assert_eq!(circuit.state(), CircuitState::Open);
+
+        circuit.reset(&config);
+        assert_eq!(circuit.state(), CircuitState::Closed);
+
+        circuit.force_closed(&config); // no-op, already closed
+        assert_eq!(circuit.state(), CircuitState::Closed);
+    }
+
+    #[tokio::test]
+    async fn manual_mode_end_to_end_via_builder_and_handle() {
+        let (layer, handle) = CircuitBreakerLayer::builder()
+            // Would trip on the very first failure in automatic mode.
+            .failure_rate_threshold(0.01)
+            .sliding_window_size(1)
+            .minimum_number_of_calls(1)
+            .manual_mode()
+            .build_with_handle()
+            .unwrap();
+
+        let mut svc = layer.layer_fn(tower::service_fn(|_req: String| async move {
+            Err::<String, String>("boom".to_string())
+        }));
+
+        for _ in 0..10 {
+            let _ = tower::Service::call(&mut svc, "x".to_string()).await;
+        }
+
+        // Manual mode: results alone never move the circuit.
+        assert_eq!(handle.state(), CircuitState::Closed);
+
+        handle.force_open().await;
+        assert_eq!(handle.state(), CircuitState::Open);
+
+        // Still open after another failing call and after the (default)
+        // wait_duration_in_open would have elapsed -- only an explicit
+        // handle call changes state in manual mode.
+        let _ = tower::Service::call(&mut svc, "y".to_string()).await;
+        assert_eq!(handle.state(), CircuitState::Open);
+
+        handle.force_closed().await;
+        assert_eq!(handle.state(), CircuitState::Closed);
     }
 
     #[test]
@@ -1135,6 +1283,7 @@ mod tests {
             },
             name: "test".into(),
             backpressure: false,
+            manual_mode: false,
         };
 
         let mut circuit = Circuit::new();
@@ -1190,6 +1339,7 @@ mod tests {
             },
             name: "test".into(),
             backpressure: false,
+            manual_mode: false,
         };
 
         let mut circuit = Circuit::new();
@@ -1285,17 +1435,17 @@ mod tests {
 
     #[test]
     fn test_preset_standard() {
-        let _layer = CircuitBreakerLayer::standard().build();
+        let _layer = CircuitBreakerLayer::standard().build().unwrap();
     }
 
     #[test]
     fn test_preset_fast_fail() {
-        let _layer = CircuitBreakerLayer::fast_fail().build();
+        let _layer = CircuitBreakerLayer::fast_fail().build().unwrap();
     }
 
     #[test]
     fn test_preset_tolerant() {
-        let _layer = CircuitBreakerLayer::tolerant().build();
+        let _layer = CircuitBreakerLayer::tolerant().build().unwrap();
     }
 
     #[test]
@@ -1304,7 +1454,8 @@ mod tests {
         let _layer = CircuitBreakerLayer::standard()
             .name("my-service")
             .failure_rate_threshold(0.6)
-            .build();
+            .build()
+            .unwrap();
     }
 
     #[tokio::test]
@@ -1327,7 +1478,8 @@ mod tests {
             .sliding_window_size(10)
             .minimum_number_of_calls(10)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 
@@ -1358,7 +1510,8 @@ mod tests {
             .wait_duration_in_open(Duration::from_millis(100))
             .permitted_calls_in_half_open(1)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer_fn(service);
 
@@ -1411,7 +1564,8 @@ mod tests {
             .on_call_rejected(move || {
                 rc.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             })
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 
@@ -1470,7 +1624,8 @@ mod tests {
             .wait_duration_in_open(Duration::from_millis(50))
             .permitted_calls_in_half_open(1)
             .failure_classifier_type(RedisFailureClassifier)
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 

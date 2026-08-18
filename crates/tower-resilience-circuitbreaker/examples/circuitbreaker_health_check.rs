@@ -94,7 +94,8 @@ async fn main() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_secs(2))
         .name("backend-service")
-        .build();
+        .build()
+        .unwrap();
 
     let service = tower::service_fn(backend_service);
     let breaker = Arc::new(Mutex::new(layer.layer(service)));

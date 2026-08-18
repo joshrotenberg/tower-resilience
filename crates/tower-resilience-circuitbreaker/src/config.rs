@@ -40,17 +40,18 @@ pub enum SlidingWindowType {
 /// // Sliding-window failure rate (default).
 /// let layer = CircuitBreakerLayer::builder()
 ///     .failure_rate_threshold(0.5)
-///     .build();
+///     .build()?;
 ///
 /// // Trip after 5 consecutive failures.
 /// let layer = CircuitBreakerLayer::builder()
 ///     .failure_model(FailureModel::ConsecutiveFailures { k: 5 })
-///     .build();
+///     .build()?;
 ///
 /// // Same, via the convenience shortcut.
 /// let layer = CircuitBreakerLayer::builder()
 ///     .consecutive_failures(5)
-///     .build();
+///     .build()?;
+/// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum FailureModel {
@@ -74,7 +75,8 @@ pub enum FailureModel {
     /// sliding-window stats and can still open the circuit independently.
     ConsecutiveFailures {
         /// The number of consecutive failures required to trip the circuit.
-        /// Must be > 0; a builder with `k == 0` panics on `build()`.
+        /// Must be > 0; a builder with `k == 0` returns
+        /// [`CircuitBreakerConfigError::ZeroConsecutiveFailures`] from `build()`.
         k: usize,
     },
 }
@@ -101,6 +103,7 @@ pub struct CircuitBreakerConfig<C> {
     pub(crate) event_listeners: EventListeners<CircuitBreakerEvent>,
     pub(crate) name: String,
     pub(crate) backpressure: bool,
+    pub(crate) manual_mode: bool,
 }
 
 /// Builder for configuring and constructing a circuit breaker.
@@ -118,7 +121,8 @@ pub struct CircuitBreakerConfig<C> {
 /// // No type parameters required!
 /// let layer = CircuitBreakerLayer::builder()
 ///     .failure_rate_threshold(0.5)
-///     .build();
+///     .build()?;
+/// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 /// ```
 ///
 /// # Custom Classifier (types inferred from closure)
@@ -135,7 +139,8 @@ pub struct CircuitBreakerConfig<C> {
 ///             Err(_) => true,
 ///         }
 ///     })
-///     .build();
+///     .build()?;
+/// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
 /// ```
 pub struct CircuitBreakerConfigBuilder<C = DefaultClassifier> {
     failure_rate_threshold: f64,
@@ -152,6 +157,7 @@ pub struct CircuitBreakerConfigBuilder<C = DefaultClassifier> {
     event_listeners: EventListeners<CircuitBreakerEvent>,
     name: String,
     backpressure: bool,
+    manual_mode: bool,
 }
 
 impl Default for CircuitBreakerConfigBuilder<DefaultClassifier> {
@@ -181,6 +187,7 @@ impl CircuitBreakerConfigBuilder<DefaultClassifier> {
             event_listeners: EventListeners::new(),
             name: String::from("<unnamed>"),
             backpressure: false,
+            manual_mode: false,
         }
     }
 }
@@ -281,7 +288,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///
     /// let layer = CircuitBreakerLayer::builder()
     ///     .failure_model(FailureModel::ConsecutiveFailures { k: 5 })
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn failure_model(mut self, model: FailureModel) -> Self {
         self.failure_model = model;
@@ -291,9 +299,10 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     /// Shortcut for [`Self::failure_model`] with
     /// [`FailureModel::ConsecutiveFailures`].
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// The [`build`](Self::build) call panics if `k == 0`.
+    /// The [`build`](Self::build) call returns
+    /// [`CircuitBreakerConfigError::ZeroConsecutiveFailures`] if `k == 0`.
     ///
     /// # Example
     ///
@@ -303,7 +312,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     /// // Trip after 3 consecutive failures.
     /// let layer = CircuitBreakerLayer::builder()
     ///     .consecutive_failures(3)
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn consecutive_failures(mut self, k: usize) -> Self {
         self.failure_model = FailureModel::ConsecutiveFailures { k };
@@ -342,10 +352,54 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     /// let layer = CircuitBreakerLayer::builder()
     ///     .failure_rate_threshold(0.5)
     ///     .backpressure()
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn backpressure(mut self) -> Self {
         self.backpressure = true;
+        self
+    }
+
+    /// Enables manual/external-only control mode.
+    ///
+    /// In manual mode the circuit never trips or recovers on its own:
+    /// `record_success`/`record_failure` still update counters and emit
+    /// their usual [`CircuitBreakerEvent`](crate::CircuitBreakerEvent)s and
+    /// metrics for observability, but the sliding-window evaluation, the
+    /// half-open success/failure thresholds, and the `Open -> HalfOpen`
+    /// recovery timer (`wait_duration_in_open`) are all disabled. Once the
+    /// circuit is opened, it stays open until something explicitly closes
+    /// or resets it.
+    ///
+    /// State changes only in response to an explicit
+    /// [`force_open`](crate::CircuitBreaker::force_open),
+    /// [`force_closed`](crate::CircuitBreaker::force_closed), or
+    /// [`reset`](crate::CircuitBreaker::reset) call -- typically issued
+    /// through a [`CircuitBreakerHandle`](crate::CircuitBreakerHandle)
+    /// shared with an external controller (health checks, admin APIs,
+    /// fleet control). This gives a simple external on/off switch, matching
+    /// the broader circuit-breaker scope requested in
+    /// [tower-rs/tower#855](https://github.com/tower-rs/tower/pull/855).
+    ///
+    /// Default: `false` (automatic trip/recovery)
+    ///
+    /// # Example
+    /// ```rust
+    /// use tower_resilience_circuitbreaker::CircuitBreakerLayer;
+    ///
+    /// let (layer, handle) = CircuitBreakerLayer::builder()
+    ///     .manual_mode()
+    ///     .build_with_handle()?;
+    ///
+    /// // Apply `layer` to a service...
+    /// // The circuit stays closed no matter how the inner service behaves,
+    /// // until something calls `handle.force_open()`.
+    /// let _ = layer;
+    /// let _ = handle;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
+    /// ```
+    pub fn manual_mode(mut self) -> Self {
+        self.manual_mode = true;
         self
     }
 
@@ -373,7 +427,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///             Err(_) => true,
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     ///
     /// # Services with `Error = Infallible`
@@ -397,7 +452,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///             Err(_) => unreachable!(), // Infallible can never be constructed
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn failure_classifier<F, Res, Err>(
         self,
@@ -421,6 +477,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             event_listeners: self.event_listeners,
             name: self.name,
             backpressure: self.backpressure,
+            manual_mode: self.manual_mode,
         }
     }
 
@@ -474,7 +531,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///
     /// let layer = CircuitBreakerLayer::builder()
     ///     .failure_classifier_type(RedisFailureClassifier)
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn failure_classifier_type<C2>(self, classifier: C2) -> CircuitBreakerConfigBuilder<C2> {
         CircuitBreakerConfigBuilder {
@@ -492,6 +550,7 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             event_listeners: self.event_listeners,
             name: self.name,
             backpressure: self.backpressure,
+            manual_mode: self.manual_mode,
         }
     }
 
@@ -522,12 +581,13 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     /// // Classify based on HTTP status code
     /// let layer = CircuitBreakerLayer::builder()
     ///     .classify_response(|response: &Response| response.status() >= 500)
-    ///     .build();
+    ///     .build()?;
     ///
     /// // Or check for error fields in the response
     /// let layer = CircuitBreakerLayer::builder()
     ///     .classify_response(|response: &Response| response.is_error())
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     ///
     /// # Note
@@ -577,7 +637,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///             CircuitState::Closed => println!("Circuit recovered - normal operation"),
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn on_state_transition<F>(mut self, f: F) -> Self
     where
@@ -622,7 +683,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Call #{} permitted in state: {:?}", count + 1, state);
     ///     })
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn on_call_permitted<F>(mut self, f: F) -> Self
     where
@@ -663,7 +725,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Call rejected - circuit is open (total: {})", count + 1);
     ///     })
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn on_call_rejected<F>(mut self, f: F) -> Self
     where
@@ -701,7 +764,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///             _ => {}
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn on_success<F>(mut self, f: F) -> Self
     where
@@ -744,7 +808,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///             println!("Warning: failure during recovery attempt");
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn on_failure<F>(mut self, f: F) -> Self
     where
@@ -787,7 +852,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///             println!("WARNING: Extremely slow call!");
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()?;
+    /// # Ok::<(), tower_resilience_circuitbreaker::CircuitBreakerConfigError>(())
     /// ```
     pub fn on_slow_call<F>(mut self, f: F) -> Self
     where
@@ -804,15 +870,29 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     }
 
     /// Builds the configuration and returns a CircuitBreakerLayer.
-    pub fn build(self) -> crate::layer::CircuitBreakerLayer<C> {
-        let config = self.into_config();
-        crate::layer::CircuitBreakerLayer::new(config)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CircuitBreakerConfigError`] if the configuration is invalid:
+    /// - `sliding_window_type` is `TimeBased` without a `sliding_window_duration`
+    /// - `failure_model` is `ConsecutiveFailures { k: 0 }`
+    /// - `failure_rate_threshold` is not finite or not in `(0.0, 1.0]`
+    /// - `slow_call_rate_threshold` is not finite or not in `(0.0, 1.0]`
+    /// - `sliding_window_size` is zero
+    pub fn build(self) -> Result<crate::layer::CircuitBreakerLayer<C>, CircuitBreakerConfigError> {
+        let config = self.into_config()?;
+        Ok(crate::layer::CircuitBreakerLayer::new(config))
     }
 
     /// Builds the configuration, returning both a layer and an observable handle.
     ///
     /// All services produced by the returned layer share the same circuit state,
     /// and the handle can observe that state from outside the service.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CircuitBreakerConfigError`] under the same conditions as
+    /// [`build`](Self::build).
     ///
     /// # Example
     ///
@@ -821,7 +901,8 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     ///
     /// let (layer, handle) = CircuitBreakerLayer::builder()
     ///     .failure_rate_threshold(0.5)
-    ///     .build_with_handle();
+    ///     .build_with_handle()
+    ///     .unwrap();
     ///
     /// // Apply the layer normally...
     ///
@@ -830,11 +911,14 @@ impl<C> CircuitBreakerConfigBuilder<C> {
     /// ```
     pub fn build_with_handle(
         self,
-    ) -> (
-        crate::layer::CircuitBreakerLayer<C>,
-        CircuitBreakerHandle<C>,
-    ) {
-        let config = Arc::new(self.into_config());
+    ) -> Result<
+        (
+            crate::layer::CircuitBreakerLayer<C>,
+            CircuitBreakerHandle<C>,
+        ),
+        CircuitBreakerConfigError,
+    > {
+        let config = Arc::new(self.into_config()?);
         let state_atomic = Arc::new(AtomicU8::new(CircuitState::Closed as u8));
         let circuit = Arc::new(Mutex::new(Circuit::new_with_atomic(Arc::clone(
             &state_atomic,
@@ -853,23 +937,43 @@ impl<C> CircuitBreakerConfigBuilder<C> {
 
         let layer = crate::layer::CircuitBreakerLayer::new_with_shared(config, shared);
 
-        (layer, handle)
+        Ok((layer, handle))
     }
 
-    fn into_config(self) -> CircuitBreakerConfig<C> {
+    fn into_config(self) -> Result<CircuitBreakerConfig<C>, CircuitBreakerConfigError> {
         // Validate time-based window configuration
         if self.sliding_window_type == SlidingWindowType::TimeBased
             && self.sliding_window_duration.is_none()
         {
-            panic!("sliding_window_duration must be set when using TimeBased sliding window");
+            return Err(CircuitBreakerConfigError::MissingSlidingWindowDuration);
         }
 
         // Validate failure model configuration
         if let FailureModel::ConsecutiveFailures { k } = self.failure_model {
-            assert!(k > 0, "ConsecutiveFailures requires k > 0");
+            if k == 0 {
+                return Err(CircuitBreakerConfigError::ZeroConsecutiveFailures);
+            }
         }
 
-        CircuitBreakerConfig {
+        let rate_valid = |rate: f64| rate.is_finite() && rate > 0.0 && rate <= 1.0;
+
+        if !rate_valid(self.failure_rate_threshold) {
+            return Err(CircuitBreakerConfigError::InvalidFailureRateThreshold(
+                self.failure_rate_threshold,
+            ));
+        }
+
+        if !rate_valid(self.slow_call_rate_threshold) {
+            return Err(CircuitBreakerConfigError::InvalidSlowCallRateThreshold(
+                self.slow_call_rate_threshold,
+            ));
+        }
+
+        if self.sliding_window_size == 0 {
+            return Err(CircuitBreakerConfigError::ZeroSlidingWindowSize);
+        }
+
+        Ok(CircuitBreakerConfig {
             failure_rate_threshold: self.failure_rate_threshold,
             sliding_window_type: self.sliding_window_type,
             sliding_window_size: self.sliding_window_size,
@@ -886,6 +990,154 @@ impl<C> CircuitBreakerConfigBuilder<C> {
             event_listeners: self.event_listeners,
             name: self.name,
             backpressure: self.backpressure,
+            manual_mode: self.manual_mode,
+        })
+    }
+}
+
+/// Errors that can occur when validating a [`CircuitBreakerConfig`] at
+/// construction time.
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
+#[non_exhaustive]
+pub enum CircuitBreakerConfigError {
+    /// `sliding_window_type` was set to `TimeBased` but no
+    /// `sliding_window_duration` was configured.
+    #[error("sliding_window_duration must be set when using TimeBased sliding window")]
+    MissingSlidingWindowDuration,
+    /// `failure_model` was set to `ConsecutiveFailures { k: 0 }`, which could
+    /// never trip.
+    #[error("consecutive_failures requires k > 0, got 0")]
+    ZeroConsecutiveFailures,
+    /// `failure_rate_threshold` is not finite, or not in the range `(0.0, 1.0]`.
+    #[error("failure_rate_threshold ({0}) must be finite and in the range (0.0, 1.0]")]
+    InvalidFailureRateThreshold(f64),
+    /// `slow_call_rate_threshold` is not finite, or not in the range `(0.0, 1.0]`.
+    #[error("slow_call_rate_threshold ({0}) must be finite and in the range (0.0, 1.0]")]
+    InvalidSlowCallRateThreshold(f64),
+    /// `sliding_window_size` is zero, which can never accumulate any calls.
+    #[error("sliding_window_size must be greater than zero")]
+    ZeroSlidingWindowSize,
+}
+
+#[cfg(test)]
+mod config_error_tests {
+    use super::*;
+
+    #[test]
+    fn zero_sliding_window_size_is_rejected() {
+        let result = CircuitBreakerConfigBuilder::<DefaultClassifier>::new()
+            .sliding_window_size(0)
+            .build();
+        assert_eq!(
+            result.err().unwrap(),
+            CircuitBreakerConfigError::ZeroSlidingWindowSize
+        );
+    }
+
+    #[test]
+    fn smallest_valid_sliding_window_size_is_accepted() {
+        let result = CircuitBreakerConfigBuilder::<DefaultClassifier>::new()
+            .sliding_window_size(1)
+            .build();
+        assert!(result.is_ok());
+    }
+
+    /// Table-driven: every non-finite or out-of-range failure rate threshold
+    /// must be rejected with the same typed error, regardless of shape.
+    #[test]
+    fn invalid_failure_rate_thresholds_are_rejected() {
+        for rate in [
+            f64::NAN,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            -1.0,
+            0.0,
+            1.000001,
+            2.0,
+        ] {
+            let result = CircuitBreakerConfigBuilder::<DefaultClassifier>::new()
+                .failure_rate_threshold(rate)
+                .build();
+            assert!(
+                matches!(
+                    result,
+                    Err(CircuitBreakerConfigError::InvalidFailureRateThreshold(_))
+                ),
+                "failure_rate_threshold {rate} should be rejected"
+            );
         }
+    }
+
+    /// Table-driven: the boundary and smallest-above-zero failure rate
+    /// thresholds must be accepted.
+    #[test]
+    fn valid_failure_rate_thresholds_are_accepted() {
+        for rate in [f64::MIN_POSITIVE, 0.0001, 0.5, 1.0] {
+            let result = CircuitBreakerConfigBuilder::<DefaultClassifier>::new()
+                .failure_rate_threshold(rate)
+                .build();
+            assert!(
+                result.is_ok(),
+                "failure_rate_threshold {rate} should be accepted"
+            );
+        }
+    }
+
+    /// Table-driven: every non-finite or out-of-range slow-call rate
+    /// threshold must be rejected with the same typed error.
+    #[test]
+    fn invalid_slow_call_rate_thresholds_are_rejected() {
+        for rate in [
+            f64::NAN,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            -1.0,
+            0.0,
+            1.000001,
+            2.0,
+        ] {
+            let result = CircuitBreakerConfigBuilder::<DefaultClassifier>::new()
+                .slow_call_rate_threshold(rate)
+                .build();
+            assert!(
+                matches!(
+                    result,
+                    Err(CircuitBreakerConfigError::InvalidSlowCallRateThreshold(_))
+                ),
+                "slow_call_rate_threshold {rate} should be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn time_based_without_duration_is_rejected() {
+        let result = CircuitBreakerConfigBuilder::<DefaultClassifier>::new()
+            .sliding_window_type(SlidingWindowType::TimeBased)
+            .build();
+        assert_eq!(
+            result.err().unwrap(),
+            CircuitBreakerConfigError::MissingSlidingWindowDuration
+        );
+    }
+
+    #[test]
+    fn zero_consecutive_failures_is_rejected() {
+        let result = CircuitBreakerConfigBuilder::<DefaultClassifier>::new()
+            .consecutive_failures(0)
+            .build();
+        assert_eq!(
+            result.err().unwrap(),
+            CircuitBreakerConfigError::ZeroConsecutiveFailures
+        );
+    }
+
+    #[test]
+    fn valid_config_builds_successfully() {
+        let result = CircuitBreakerConfigBuilder::<DefaultClassifier>::new()
+            .failure_rate_threshold(0.5)
+            .sliding_window_size(100)
+            .consecutive_failures(1)
+            .build();
+        assert!(result.is_ok());
     }
 }

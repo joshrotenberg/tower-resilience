@@ -35,7 +35,8 @@ async fn multiple_event_listeners() {
         .on_state_transition(move |_from, _to| {
             c3.fetch_add(1, Ordering::Relaxed);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -73,7 +74,8 @@ async fn failure_classifier_all_success() {
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
         .failure_classifier(|_result: &Result<(), &str>| false) // Nothing is a failure
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -97,7 +99,8 @@ async fn failure_classifier_all_failure() {
         .sliding_window_size(10)
         .minimum_number_of_calls(5)
         .failure_classifier(|_result: &Result<(), &str>| true) // Everything is a failure
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -129,7 +132,8 @@ async fn slow_call_exactly_at_threshold() {
         .on_slow_call(move |_duration| {
             sc.fetch_add(1, Ordering::Relaxed);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -160,7 +164,8 @@ async fn slow_call_very_fast_calls() {
         .on_slow_call(move |_duration| {
             sc.fetch_add(1, Ordering::Relaxed);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -206,7 +211,8 @@ async fn failure_classifier_mixed_error_types() {
                 .map(|e| *e == "internal_error")
                 .unwrap_or(false)
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -267,7 +273,8 @@ async fn all_event_types_emitted() {
         .on_state_transition(move |_from, _to| {
             t.fetch_add(1, Ordering::Relaxed);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -310,7 +317,8 @@ async fn sliding_window_size_one() {
         .failure_rate_threshold(0.5)
         .sliding_window_size(1)
         .minimum_number_of_calls(1)
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 
@@ -343,7 +351,8 @@ async fn half_open_one_permitted_call() {
         .minimum_number_of_calls(5)
         .wait_duration_in_open(Duration::from_millis(50))
         .permitted_calls_in_half_open(1)
-        .build();
+        .build()
+        .unwrap();
 
     let mut cb = layer.layer(service);
 

@@ -1,31 +1,34 @@
 # Tonic Resilient Greeter - gRPC with Resilience Patterns
 
-This example demonstrates resilience patterns in a gRPC service using Tonic, showing both **server-side** and **client-side** protection.
+This example demonstrates real tower-resilience middleware wrapping a gRPC
+service built with Tonic, showing both **server-side** and **client-side**
+protection.
 
 ## Architecture
 
 ```
 Client                          Server
   ↓                              ↓
-Circuit Breaker         Rate Limiter (10 req/sec)
+CircuitBreakerLayer         RateLimiterLayer (10 req/sec)
   ↓                              ↓
-Retry (exponential)          Bulkhead (5 concurrent)
+RetryLayer (exponential)    BulkheadLayer (5 concurrent)
   ↓                              ↓
-gRPC Request    ────────→   Chaos (20% slow)
+gRPC request    ────────→   ChaosLayer (20% chance of 2s latency)
                                  ↓
-                            Greeter Service
+                            Greeter logic
 ```
 
 ## Patterns Demonstrated
 
 ### Server-Side (Defensive)
-- **Bulkhead**: Limits concurrent requests to 5 to protect server resources
-- **Rate Limiting**: Conceptually demonstrated (10 req/sec limit)
-- **Chaos Engineering**: 20% of requests experience 2-second delays
+- **`RateLimiterLayer`**: caps accepted requests to 10/sec
+- **`BulkheadLayer`**: caps in-flight concurrent requests to 5
+- **`ChaosLayer`**: injects latency on ~20% of requests -- a test fixture
+  that simulates an unreliable backend, not a resilience pattern itself
 
 ### Client-Side (Offensive)
-- **Circuit Breaker**: Opens at 50% failure rate (window: 10 calls, min: 3)
-- **Retry**: Exponential backoff (max 3 attempts, starting at 100ms)
+- **`CircuitBreakerLayer`**: opens at 50% failure rate (window: 10 calls, min: 3)
+- **`RetryLayer`**: exponential backoff (max 3 attempts, starting at 100ms)
 
 ## Running the Example
 
@@ -57,79 +60,41 @@ cargo run --bin client
 
 The client makes 20 requests and demonstrates:
 - Successful requests
-- Retries on transient failures
-- Circuit breaker opening when failures exceed threshold
-- Circuit breaker rejecting requests when open
-- Recovery after circuit breaker timeout
-
-## Expected Output
-
-### Server Output
-```
-Server listening on [::1]:50051
-  Bulkhead limit: 5 concurrent requests
-  Chaos enabled: 20% slow responses (2s delay)
-
-Received request from: Alice (concurrent: 1/5)
-[CHAOS] Injecting slow response for: Alice
-Request completed for: Alice (took: 2001ms)
-```
-
-### Client Output
-```
-Starting resilient gRPC client
-Making 20 requests to demonstrate resilience patterns...
-
-Request 1: Success - "Hello Alice!" (117ms)
-Request 2: [RETRY 1/3] RPC failed, retrying after 100ms...
-Request 2: Success after retry - "Hello Alice!" (2234ms)
-...
-Request 8: Circuit breaker opened! (failure rate: 60%)
-Request 9: [CIRCUIT OPEN] Request rejected
-...
-Request 15: Circuit breaker attempting recovery (half-open)
-Request 15: Success - circuit breaker closed
-```
+- Retries on transient failures (the chaos-injected latency causes the
+  client's 500ms channel timeout to fire, which `RetryLayer` retries)
+- Circuit breaker opening when failures exceed the configured threshold
+- Circuit breaker rejecting requests while open
 
 ## Implementation Notes
 
-### Why Manual Implementation?
+### Why the resilience layers live inside the handler, not around the whole service
 
-The resilience patterns are implemented manually rather than using Tower middleware layers because:
+Tonic's generated server trait requires `say_hello` to return
+`Result<Response<HelloReply>, tonic::Status>`; tower-resilience middleware
+produces its own error types (`BulkheadServiceError`, `RateLimiterServiceError`,
+`CircuitBreakerError`) when wrapped around a service with `tower::Layer`.
+Rather than fighting that mismatch by wiring the layers around the entire
+`GreeterServer`/`Channel` (the raw HTTP transport, whose request bodies
+aren't `Clone`), this example builds a small, real `tower::Service` per side
+-- `Service<HelloRequest>` -- stacks the resilience layers around it with
+`ServiceBuilder`, and calls it explicitly from inside the handler, mapping
+the resulting error into a `Status`/log line.
 
-1. **Server Constraints**: Tonic requires services to return `Infallible` errors for proper gRPC error handling. Tower middleware produces typed errors (`BulkheadError`, `RateLimiterError`) that are incompatible with this requirement.
+This is the same shape used by
+[`examples/axum-resilient-kv-store`](../axum-resilient-kv-store): a
+resilience-wrapped service held behind an `Arc<Mutex<_>>` (server) or cloned
+per call (client), invoked manually, with its error variants matched
+explicitly. It is real tower-resilience middleware -- `CircuitBreakerLayer`,
+`RetryLayer`, `BulkheadLayer`, `RateLimiterLayer`, `ChaosLayer` are all
+imported and doing the actual admission control, backoff, and latency
+injection; nothing here is a hand-rolled reimplementation of those patterns.
 
-2. **Client Constraints**: Tonic's request bodies are non-Clone (they contain streaming bodies). The retry middleware requires cloneable requests to retry them.
+### Server-side chaos as a test fixture
 
-The manual implementations demonstrate the same concepts (state machines, exponential backoff, concurrency limiting) in a Tonic-compatible way.
-
-### Patterns vs Tower Middleware
-
-| Pattern | Tower Middleware | This Example | Reason |
-|---------|-----------------|--------------|--------|
-| Circuit Breaker | `CircuitBreakerLayer` | Manual state machine | Shows concept without middleware complexity |
-| Retry | `RetryLayer` | Manual exponential backoff | Non-Clone request bodies |
-| Bulkhead | `BulkheadLayer` | Manual semaphore | Infallible error requirement |
-| Rate Limiter | `RateLimiterLayer` | Manual tracking | Infallible error requirement |
-
-## Real-World Usage
-
-For production gRPC services with tower-resilience patterns, consider:
-
-1. **Client-Side**: Use our middleware in a dedicated Tower service layer before calling Tonic
-2. **Server-Side**: Implement resilience at the infrastructure level (load balancer, service mesh) or use custom interceptors
-3. **Observability**: Add metrics collection to track circuit breaker states, retry counts, and bulkhead utilization
-
-## Testing Different Scenarios
-
-### High Load (Trip Bulkhead)
-Modify client to make 10 concurrent requests to see bulkhead rejections.
-
-### Force Circuit Open
-Modify chaos rate to 90% to quickly trip the circuit breaker.
-
-### Retry Success
-The 20% slow rate naturally demonstrates retry behavior - some requests fail on first attempt but succeed after retry.
+The `ChaosLayer` is not a resilience pattern -- it exists to make the
+server's responses unreliable enough that the client's retry and circuit
+breaker layers have something real to react to. It is the innermost layer
+in the server pipeline, closest to the greeting logic it perturbs.
 
 ## Proto Definition
 
@@ -140,4 +105,7 @@ service Greeter {
 }
 ```
 
-The example focuses on `SayHello` for simplicity. The streaming RPC demonstrates how bulkheads protect against long-running operations.
+`SayHello` is gated through the full resilience pipeline. `SayHelloStream`
+is admission-gated through the same pipeline before the stream is spawned;
+the streamed replies themselves are generated independently of the pipeline
+call that gated the stream's start.

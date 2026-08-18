@@ -136,6 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let compute_runtime = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(2)
         .thread_name("compute-worker")
+        .enable_time()
         .build()?;
 
     let layer = ExecutorLayer::new(compute_runtime.handle().clone());
@@ -159,8 +160,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Shutdown the dedicated runtime
-    compute_runtime.shutdown_timeout(Duration::from_secs(1));
+    // Shutdown the dedicated runtime. `shutdown_timeout` blocks the calling
+    // thread and panics if called from within an async context (we're
+    // inside `#[tokio::main]`), so use the non-blocking variant instead.
+    compute_runtime.shutdown_background();
 
     println!("\n=== Example Complete ===");
     println!("\nKey takeaways:");

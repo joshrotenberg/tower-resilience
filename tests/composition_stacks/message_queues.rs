@@ -82,7 +82,8 @@ async fn consumer_stack_compiles() {
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
         .wait_duration_in_open(Duration::from_secs(60))
-        .build();
+        .build()
+        .unwrap();
 
     let retry = RetryLayer::<Message, ProcessResult, MessageError>::builder()
         .max_attempts(5)

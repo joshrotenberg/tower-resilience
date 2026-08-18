@@ -78,7 +78,8 @@ fn bench_circuit_breaker(c: &mut Criterion) {
             let layer = CircuitBreakerLayer::builder()
                 .failure_rate_threshold(0.5)
                 .sliding_window_size(100)
-                .build();
+                .build()
+                .unwrap();
             let mut service = layer.layer(BaselineService);
 
             let response = service
@@ -356,7 +357,8 @@ fn bench_composition_simple(c: &mut Criterion) {
             // returns BulkheadServiceError<S::Error> instead of S::Error
             let cb_layer = CircuitBreakerLayer::builder()
                 .failure_rate_threshold(0.5)
-                .build();
+                .build()
+                .unwrap();
             let bh_config = BulkheadLayer::builder().max_concurrent_calls(100).build();
 
             let mut service = cb_layer.layer(
