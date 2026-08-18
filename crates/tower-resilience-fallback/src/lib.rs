@@ -61,9 +61,10 @@
 //! });
 //! ```
 //!
-//! ## Backup Service
+//! ## Async Backup Function
 //!
-//! Route to an alternative service (async):
+//! Route to an async closure. This preserves the original API, but closures do
+//! not have Tower readiness:
 //!
 //! ```rust
 //! use tower_resilience_fallback::FallbackLayer;
@@ -74,6 +75,35 @@
 //!     Ok::<_, MyError>(format!("backup: {}", req))
 //! });
 //! ```
+//!
+//! ## Generic Tower Backup Service
+//!
+//! Use `tower_service` when the backup is a stateful Tower service whose
+//! readiness must be driven before it is called:
+//!
+//! ```rust
+//! use tower::{service_fn, Layer, ServiceExt};
+//! use tower_resilience_fallback::FallbackLayer;
+//!
+//! # #[derive(Debug)]
+//! # struct PrimaryError;
+//! # async fn example() {
+//! let primary = service_fn(|request: String| async move {
+//!     Err::<String, PrimaryError>(PrimaryError)
+//! });
+//! let backup = service_fn(|request: String| async move {
+//!     Ok::<String, std::convert::Infallible>(format!("backup: {request}"))
+//! });
+//!
+//! let service = FallbackLayer::<String, String, PrimaryError>::tower_service(backup)
+//!     .layer(primary);
+//! assert_eq!(service.oneshot("request".into()).await.unwrap(), "backup: request");
+//! # }
+//! ```
+//!
+//! The request is cloned once before the primary call so the same logical
+//! request can be sent to the backup. Backup readiness and call errors use the
+//! second error parameter of [`FallbackError`].
 //!
 //! ## Error Transformation
 //!
@@ -134,18 +164,20 @@
 //! - `Success`: Inner service succeeded, no fallback needed
 //! - `FailedAttempt`: Inner service failed, fallback will be attempted
 //! - `Applied`: Fallback was successfully applied
-//! - `Failed`: Fallback itself failed (service fallback only)
+//! - `Failed`: A closure or Tower service fallback itself failed
 //! - `Skipped`: Error didn't match predicate, propagated as-is
 
 mod config;
 mod error;
 mod events;
 mod layer;
+mod service;
 
 pub use config::{FallbackConfig, FallbackConfigBuilder};
 pub use error::FallbackError;
 pub use events::FallbackEvent;
 pub use layer::FallbackLayer;
+pub use service::{ServiceFallback, ServiceFallbackLayer};
 
 use futures::future::BoxFuture;
 use std::sync::Arc;
@@ -161,6 +193,16 @@ use std::sync::Once;
 
 #[cfg(feature = "metrics")]
 static METRICS_INIT: Once = Once::new();
+
+pub(crate) fn init_metrics() {
+    #[cfg(feature = "metrics")]
+    METRICS_INIT.call_once(|| {
+        describe_counter!(
+            "fallback_calls_total",
+            "Total number of fallback operations"
+        );
+    });
+}
 
 /// Function that produces a fallback value (no Clone required).
 pub type ValueFn<Res> = Arc<dyn Fn() -> Res + Send + Sync>;
@@ -236,14 +278,7 @@ pub struct Fallback<S, Req, Res, E> {
 impl<S, Req, Res, E> Fallback<S, Req, Res, E> {
     /// Creates a new `Fallback` service wrapping the given service.
     pub fn new(inner: S, config: Arc<FallbackConfig<Req, Res, E>>) -> Self {
-        #[cfg(feature = "metrics")]
-        METRICS_INIT.call_once(|| {
-            describe_counter!(
-                "fallback_calls_total",
-                "Total number of fallback operations"
-            );
-        });
-
+        init_metrics();
         Self { inner, config }
     }
 }

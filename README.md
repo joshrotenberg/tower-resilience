@@ -394,10 +394,15 @@ let layer = FallbackLayer::<Request, Response, MyError>::from_error(|err| {
     Response::error_response(err)
 });
 
-// Or use a backup service
+// Or use an async backup function (no Tower readiness)
 let layer = FallbackLayer::<Request, Response, MyError>::service(|req| async {
     backup_service.call(req).await
 });
+
+// Or preserve a stateful Tower backup service and its readiness contract
+let layer = FallbackLayer::<Request, Response, MyError>::tower_service(
+    stateful_backup_service
+);
 
 let service = layer.layer(primary_service);
 ```

@@ -2,18 +2,22 @@
 
 use std::fmt;
 
-/// Error type for the fallback service.
+/// Error type for fallback middleware.
+///
+/// `E` is the primary service error. `FallbackE` is the backup service error
+/// and defaults to `E` so existing value, function, and closure-backed fallback
+/// APIs retain their original `FallbackError<E>` type.
 #[derive(Debug)]
-pub enum FallbackError<E> {
+pub enum FallbackError<E, FallbackE = E> {
     /// The inner service failed and no fallback was applied (predicate didn't match),
     /// or the error was transformed via the exception strategy.
     Inner(E),
 
     /// The fallback service itself failed.
-    FallbackFailed(E),
+    FallbackFailed(FallbackE),
 }
 
-impl<E> FallbackError<E> {
+impl<E, FallbackE> FallbackError<E, FallbackE> {
     /// Returns `true` if this is an inner service error.
     pub fn is_inner(&self) -> bool {
         matches!(self, Self::Inner(_))
@@ -24,17 +28,57 @@ impl<E> FallbackError<E> {
         matches!(self, Self::FallbackFailed(_))
     }
 
-    /// Converts into the inner error.
-    pub fn into_inner(self) -> E {
+    /// Returns the primary error when fallback was skipped.
+    pub fn primary_error(&self) -> Option<&E> {
         match self {
-            Self::Inner(e) | Self::FallbackFailed(e) => e,
+            Self::Inner(error) => Some(error),
+            Self::FallbackFailed(_) => None,
         }
     }
 
-    /// Returns a reference to the inner error.
+    /// Returns the backup service error when fallback was attempted and failed.
+    pub fn fallback_error(&self) -> Option<&FallbackE> {
+        match self {
+            Self::Inner(_) => None,
+            Self::FallbackFailed(error) => Some(error),
+        }
+    }
+
+    /// Maps the primary error while preserving any backup error.
+    pub fn map_primary<F, U>(self, f: F) -> FallbackError<U, FallbackE>
+    where
+        F: FnOnce(E) -> U,
+    {
+        match self {
+            Self::Inner(error) => FallbackError::Inner(f(error)),
+            Self::FallbackFailed(error) => FallbackError::FallbackFailed(error),
+        }
+    }
+
+    /// Maps the backup error while preserving any primary error.
+    pub fn map_fallback<F, U>(self, f: F) -> FallbackError<E, U>
+    where
+        F: FnOnce(FallbackE) -> U,
+    {
+        match self {
+            Self::Inner(error) => FallbackError::Inner(error),
+            Self::FallbackFailed(error) => FallbackError::FallbackFailed(f(error)),
+        }
+    }
+}
+
+impl<E> FallbackError<E, E> {
+    /// Converts into the contained primary or fallback error.
+    pub fn into_inner(self) -> E {
+        match self {
+            Self::Inner(error) | Self::FallbackFailed(error) => error,
+        }
+    }
+
+    /// Returns the contained primary or fallback error.
     pub fn inner(&self) -> &E {
         match self {
-            Self::Inner(e) | Self::FallbackFailed(e) => e,
+            Self::Inner(error) | Self::FallbackFailed(error) => error,
         }
     }
 
@@ -50,7 +94,7 @@ impl<E> FallbackError<E> {
     }
 }
 
-impl<E: Clone> Clone for FallbackError<E> {
+impl<E: Clone, FallbackE: Clone> Clone for FallbackError<E, FallbackE> {
     fn clone(&self) -> Self {
         match self {
             Self::Inner(e) => Self::Inner(e.clone()),
@@ -59,7 +103,7 @@ impl<E: Clone> Clone for FallbackError<E> {
     }
 }
 
-impl<E: fmt::Display> fmt::Display for FallbackError<E> {
+impl<E: fmt::Display, FallbackE: fmt::Display> fmt::Display for FallbackError<E, FallbackE> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Inner(e) => write!(f, "inner service error: {}", e),
@@ -68,10 +112,15 @@ impl<E: fmt::Display> fmt::Display for FallbackError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for FallbackError<E> {
+impl<E, FallbackE> std::error::Error for FallbackError<E, FallbackE>
+where
+    E: std::error::Error + 'static,
+    FallbackE: std::error::Error + 'static,
+{
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Inner(e) | Self::FallbackFailed(e) => Some(e),
+            Self::Inner(error) => Some(error),
+            Self::FallbackFailed(error) => Some(error),
         }
     }
 }
