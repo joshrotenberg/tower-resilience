@@ -292,7 +292,8 @@ impl AimdBudget {
 
         Self {
             tokens: AtomicU64::new(max_budget as u64),
-            limit_controller: AimdController::new(config),
+            limit_controller: AimdController::new(config)
+                .expect("invalid AIMD budget configuration"),
             deposit_amount: deposit_amount as u64,
             withdraw_amount: withdraw_amount as u64,
         }
