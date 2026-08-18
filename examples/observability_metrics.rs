@@ -1,9 +1,16 @@
-//! Comprehensive metrics example showing all resilience patterns.
+//! Metrics example covering the patterns with the richest metric coverage.
 //!
 //! This example demonstrates:
-//! - Enabling metrics for all patterns
+//! - Enabling metrics for several resilience patterns
 //! - Instance naming for multi-instance tracking
 //! - How metrics are recorded during operations
+//!
+//! Not every pattern is demonstrated here (this keeps the example short); see
+//! the [full metrics guide](https://docs.rs/tower-resilience/latest/tower_resilience/observability/metrics/)
+//! for the complete list of metric names per pattern, including `chaos`,
+//! `coalesce`, `fallback`, and `router`, which also emit metrics but aren't
+//! demoed below. `adaptive`, `executor`, `hedge`, `outlier`, and `reconnect`
+//! accept the `metrics` feature but do not yet emit metrics of their own.
 //!
 //! Run with:
 //! ```sh
@@ -92,6 +99,15 @@ async fn main() {
     println!("   Cache:");
     println!("     - cache_requests_total{{cache=\"data-cache\",result=\"hit|miss\"}}");
     println!("     - cache_size{{cache=\"data-cache\"}}");
+    println!("\n   Not demonstrated above, but also instrumented (see the metrics guide):");
+    println!("   Chaos:");
+    println!("     - chaos.errors_injected{{layer}}, chaos.latency_injections{{layer}}");
+    println!("   Coalesce:");
+    println!("     - coalesce_requests_total{{coalesce,role=\"leader|waiter\"}}");
+    println!("   Fallback:");
+    println!("     - fallback_calls_total{{fallback,result,strategy}}");
+    println!("   Router:");
+    println!("     - router_requests_routed_total{{router,backend}}");
     println!("\n📊 Example Prometheus Queries:");
     println!("   Failure Rate:");
     println!(

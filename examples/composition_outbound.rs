@@ -1,13 +1,22 @@
 //! Outbound client with full resilience stack
 //!
-//! This example demonstrates best practices for composing resilience patterns
-//! in an outbound HTTP/API client. The pattern composition order matters!
+//! This example demonstrates composing resilience patterns in an outbound
+//! HTTP/API client. The pattern composition order matters!
 //!
-//! Recommended client stack (outside to inside):
+//! Client stack used below (outside to inside):
 //! 1. Cache - Try cache first to avoid unnecessary calls
 //! 2. Timeout - Don't wait forever for responses
 //! 3. Circuit Breaker - Fail fast when service is down
 //! 4. Retry - Handle transient failures
+//!
+//! This puts the circuit breaker outside retry (retry innermost), so the
+//! breaker only sees each request's fully-adjudicated final outcome, not
+//! individual retry attempts. `docs/circuitbreaker-tower-comparison.md`'s
+//! "Recommended default ordering" instead recommends retry wrapping the
+//! breaker (breaker innermost) as the default, so every retry attempt counts
+//! toward the breaker's window -- see that doc for the full tradeoff. This
+//! example keeps circuit breaker outside retry because it composes more
+//! simply here; treat it as one valid ordering, not the default recommendation.
 //!
 //! Run with: cargo run --example composition_outbound
 

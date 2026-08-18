@@ -42,8 +42,7 @@
 //! #     }))
 //! # });
 //! let service = ServiceBuilder::new()
-//!     // Outer: Retry transient request errors
-//!     // (future: use tower_resilience_retry when available)
+//!     // Outer: Retry transient request errors (tower_resilience_retry::RetryLayer)
 //!     // Inner: Reconnect on connection failures
 //!     .layer(ReconnectLayer::new(
 //!         ReconnectConfig::builder()

@@ -639,8 +639,11 @@ pub mod executor {
     //! ❌ **Too many runtimes**: Resource fragmentation
     //! ✅ Use 2-3 runtimes max, sized appropriately
     //!
-    //! ❌ **Blocking in executor**: Starves worker threads
-    //! ✅ Use spawn_blocking for blocking operations
+    //! ❌ **Blocking in a `Handle`-based executor**: `ExecutorLayer::new(handle)`/
+    //! `::current()` spawn on that runtime's ordinary async core workers, so a
+    //! future that blocks without yielding still starves whichever worker runs it
+    //! ✅ Use [`BlockingExecutor`](https://docs.rs/tower-resilience-executor/latest/tower_resilience_executor/struct.BlockingExecutor.html),
+    //! which reserves a thread from Tokio's `spawn_blocking` pool instead
     //!
     //! ## Example
     //!
@@ -687,6 +690,35 @@ pub mod executor {
     //! # }
     //! # }
     //! ```
+    //!
+    //! ## Example: Blocking Work
+    //!
+    //! `ExecutorLayer::new(handle)`/`::current()` spawn on the target runtime's
+    //! ordinary async core workers -- fine for I/O-bound work, but a service that
+    //! calls blocking APIs directly (synchronous file I/O, a blocking database
+    //! driver, CPU-bound work without yield points) still stalls whichever
+    //! worker thread runs it. [`BlockingExecutor`] runs each request on Tokio's
+    //! dedicated `spawn_blocking` pool instead, giving it a real thread-class
+    //! boundary from the rest of the application:
+    //!
+    //! ```rust,no_run
+    //! # #[cfg(feature = "executor")]
+    //! # {
+    //! use tower_resilience::executor::{BlockingExecutor, ExecutorLayer};
+    //! use tower::ServiceBuilder;
+    //!
+    //! # async fn example() {
+    //! # let my_service = tower::service_fn(|_req: ()| async { Ok::<_, std::io::Error>(()) });
+    //! let layer = ExecutorLayer::new(BlockingExecutor::current());
+    //!
+    //! let service = ServiceBuilder::new()
+    //!     .layer(layer)
+    //!     .service(my_service);
+    //! # }
+    //! # }
+    //! ```
+    //!
+    //! [`BlockingExecutor`]: https://docs.rs/tower-resilience-executor/latest/tower_resilience_executor/struct.BlockingExecutor.html
 }
 
 pub mod fallback {
@@ -1623,6 +1655,12 @@ pub mod retry {
     //! ❌ **Retrying 4xx errors**: Client errors won't succeed on retry
     //! ✅ Use retry predicate to only retry 5xx, network errors
     //!
+    //! ❌ **Uncapped total retry volume**: Every caller retrying independently
+    //! amplifies load exactly when a downstream is struggling
+    //! ✅ Attach a `.budget(...)` (token-bucket or AIMD, shared across every
+    //! clone of the layer) so retries are capped in aggregate, not just per
+    //! request -- see [`RetryBudgetBuilder`](https://docs.rs/tower-resilience-retry/latest/tower_resilience_retry/struct.RetryBudgetBuilder.html)
+    //!
     //! ## Example
     //!
     //! ```rust,no_run
@@ -1772,6 +1810,19 @@ pub mod time_limiter {
     //!
     //! ❌ **Same timeout everywhere**: Different operations need different limits
     //! ✅ Configure per-endpoint or per-operation
+    //!
+    //! ## What the timeout covers
+    //!
+    //! The timer starts when `Service::call` is invoked and stops as soon as the
+    //! service future resolves -- for an HTTP client or server that typically means
+    //! response status and headers, not response-body frames produced afterward.
+    //! `cancel_running_future` only controls that service-call future; it does not
+    //! bound how long a streamed body takes to finish. Compose with `tower-http`
+    //! 0.7+'s `RequestBodyTimeoutLayer`/`ResponseBodyTimeoutLayer` (idle detection,
+    //! resets per frame) and `RequestBodyDeadlineLayer`/`ResponseBodyDeadlineLayer`
+    //! (wall-clock cap on total transfer time) to bound body frames independently.
+    //! See the [crate-level docs](https://docs.rs/tower-resilience-timelimiter) for
+    //! the full phase breakdown and a composed example.
     //!
     //! ## Presets
     //!
