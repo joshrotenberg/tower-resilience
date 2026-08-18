@@ -58,6 +58,7 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
@@ -68,8 +69,15 @@ jobs:
 
       # The tonic workspace example compiles protobufs from source. Keep this
       # explicit until the examples audit in #388 decides whether it remains.
+      # Installed from GitHub releases rather than apt: untimed apt-get here
+      # stalled CI for 30-70 minutes on four runs on 2026-08-18 (#419). The
+      # step timeout bounds any residual hang.
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        uses: arduino/setup-protoc@v3
+        timeout-minutes: 5
+        with:
+          version: "35.1"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run clippy
         run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
@@ -126,14 +134,20 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      # See the protoc note on the clippy job (#419, #388).
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        uses: arduino/setup-protoc@v3
+        timeout-minutes: 5
+        with:
+          version: "35.1"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check documentation
         run: cargo doc --locked --workspace --all-features --no-deps
