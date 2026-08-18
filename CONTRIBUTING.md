@@ -262,6 +262,12 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 5. Ensure all tests pass
 6. Submit a pull request
 
+## Release Process
+
+Before cutting a release, review the [upstream Tower crossover
+watchlist](docs/upstream-watchlist.md) and update any row whose upstream or
+local status has changed since the last review.
+
 ## Questions?
 
 Feel free to open an issue for questions or discussions.
