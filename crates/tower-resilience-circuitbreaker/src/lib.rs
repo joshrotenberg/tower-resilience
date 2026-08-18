@@ -321,7 +321,7 @@
 //! - `circuitbreaker_fallback.rs` - Fallback strategies for graceful degradation
 //! - `circuitbreaker_health_check.rs` - Health check endpoints and monitoring
 
-use crate::circuit::Circuit;
+use crate::circuit::{Admission, Circuit};
 use futures::future::BoxFuture;
 use futures::Future;
 #[cfg(feature = "metrics")]
@@ -719,13 +719,16 @@ where
                 );
             }
 
-            let permitted = if reject_without_inner {
+            let (permitted, half_open_permit) = if reject_without_inner {
                 let circuit = circuit.lock().await;
                 circuit.record_rejection(&config);
-                false
+                (false, None)
             } else {
                 let mut circuit = circuit.lock().await;
-                circuit.try_acquire(&config)
+                match circuit.try_acquire(&config) {
+                    Admission::Admitted(permit) => (true, permit),
+                    Admission::Rejected => (false, None),
+                }
             };
 
             #[cfg(feature = "tracing")]
@@ -759,6 +762,19 @@ where
                 circuit.record_failure(&config, duration);
             } else {
                 circuit.record_success(&config, duration);
+            }
+            drop(circuit);
+
+            // The probe's outcome is now recorded via `success_count` /
+            // `failure_count`. Permanently consume its half-open
+            // reservation so the slot cannot also be returned to the pool.
+            // If this future is dropped before reaching this point
+            // (cancellation), `half_open_permit` -- still `Some` -- drops
+            // along with it and its slot returns to the current half-open
+            // cycle's semaphore automatically; no result is recorded for
+            // it.
+            if let Some(permit) = half_open_permit {
+                permit.forget();
             }
 
             result.map_err(CircuitBreakerError::Inner)
@@ -920,13 +936,16 @@ where
                 );
             }
 
-            let permitted = if reject_without_inner {
+            let (permitted, half_open_permit) = if reject_without_inner {
                 let circuit = circuit.lock().await;
                 circuit.record_rejection(&config);
-                false
+                (false, None)
             } else {
                 let mut circuit = circuit.lock().await;
-                circuit.try_acquire(&config)
+                match circuit.try_acquire(&config) {
+                    Admission::Admitted(permit) => (true, permit),
+                    Admission::Rejected => (false, None),
+                }
             };
 
             #[cfg(feature = "tracing")]
@@ -966,6 +985,15 @@ where
                 circuit.record_failure(&config, duration);
             } else {
                 circuit.record_success(&config, duration);
+            }
+            drop(circuit);
+
+            // See `CircuitBreaker::call` for why this permanently consumes
+            // the reservation only after the result is recorded, and why a
+            // cancelled future (dropped before this point) returns its slot
+            // instead.
+            if let Some(permit) = half_open_permit {
+                permit.forget();
             }
 
             result.map_err(CircuitBreakerError::Inner)
@@ -1126,8 +1154,8 @@ mod tests {
         assert_eq!(successes.load(Ordering::SeqCst), 4);
 
         // Try acquiring (should be rejected)
-        let permitted = circuit.try_acquire(&config);
-        assert!(!permitted);
+        let admission = circuit.try_acquire(&config);
+        assert!(matches!(admission, crate::circuit::Admission::Rejected));
         assert_eq!(call_rejected.load(Ordering::SeqCst), 1);
     }
 
