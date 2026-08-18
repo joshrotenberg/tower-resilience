@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Drop an unused non-dev `tokio` dependency; nothing in the crate's
+  library code used it (the only `tokio::` references were in test code,
+  already covered by the dev-dependency).
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-router-v0.11.0...tower-resilience-router-v0.12.0) - 2026-08-17
 
 ### Fixed

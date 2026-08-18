@@ -327,6 +327,21 @@ impl<S> RateLimiter<S> {
             permit_acquired: false,
         }
     }
+
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes the rate limiter, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S> Clone for RateLimiter<S>
@@ -508,6 +523,21 @@ mod tests {
     use std::time::Duration;
     use tower::service_fn;
     use tower::{Layer, ServiceExt};
+
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        let layer = RateLimiterLayer::builder()
+            .limit_for_period(10)
+            .refresh_period(Duration::from_secs(1))
+            .build();
+        let mut limiter = layer.layer(service_fn(|_: String| async {
+            Ok::<_, std::io::Error>(())
+        }));
+
+        let _: &_ = limiter.get_ref();
+        let _: &mut _ = limiter.get_mut();
+        let _inner = limiter.into_inner();
+    }
 
     #[tokio::test]
     async fn test_allows_requests_within_limit() {

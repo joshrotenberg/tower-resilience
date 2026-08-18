@@ -202,6 +202,21 @@ impl<S, T> TimeLimiter<S, T> {
 
         Self { inner, config }
     }
+
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes the time limiter, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S, T, Req> Service<Req> for TimeLimiter<S, T>
@@ -343,6 +358,20 @@ mod tests {
     use std::time::Duration;
     use tokio::time::sleep;
     use tower::{service_fn, Layer, ServiceExt};
+
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        let layer = TimeLimiterLayer::builder()
+            .timeout_duration(Duration::from_millis(100))
+            .build();
+        let mut service = layer.layer(service_fn(|_req: ()| async {
+            Ok::<_, std::convert::Infallible>(())
+        }));
+
+        let _: &_ = service.get_ref();
+        let _: &mut _ = service.get_mut();
+        let _inner = service.into_inner();
+    }
 
     #[tokio::test(start_paused = true)]
     async fn test_success_within_timeout() {

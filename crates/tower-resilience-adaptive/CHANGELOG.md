@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `AdaptiveService::get_ref()` and `get_mut()` accessors for the wrapped
+  service, matching Tower's own middleware convention. `into_inner()` is
+  intentionally omitted: `AdaptiveService` has a custom `Drop` impl (to
+  release a reserved semaphore permit), and Rust's partial-move rules
+  forbid moving a field out of a type with a manual `Drop` impl without
+  `unsafe` code -- see `docs/tower-api-surface-audit.md`.
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-adaptive-v0.11.0...tower-resilience-adaptive-v0.12.0) - 2026-08-17
 
 ### Fixed

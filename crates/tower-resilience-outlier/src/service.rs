@@ -38,6 +38,21 @@ impl<S, C> OutlierDetectionService<S, C> {
     pub fn is_ejected(&self) -> bool {
         self.config.detector.is_ejected(&self.config.instance_name)
     }
+
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes this service, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S: Clone, C: Clone> Clone for OutlierDetectionService<S, C> {
@@ -141,6 +156,17 @@ mod tests {
         }
         let layer = builder.build();
         tower::Layer::layer(&layer, boxed)
+    }
+
+    #[tokio::test]
+    async fn accessors_expose_the_inner_service() {
+        let detector = OutlierDetector::new();
+        detector.register("backend-1", 5);
+
+        let mut svc = make_service(detector, "backend-1", false).await;
+        let _: &_ = svc.get_ref();
+        let _: &mut _ = svc.get_mut();
+        let _inner = svc.into_inner();
     }
 
     #[tokio::test]

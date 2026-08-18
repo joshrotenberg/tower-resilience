@@ -138,6 +138,23 @@ where
     }
 }
 
+impl<S, Req, K, Resp> Cache<S, Req, K, Resp> {
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes the cache, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
+}
+
 impl<S, Req, K, Resp> Clone for Cache<S, Req, K, Resp>
 where
     S: Clone,
@@ -264,6 +281,22 @@ mod tests {
     use tower::service_fn;
     use tower::Layer;
     use tower::ServiceExt;
+
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        let layer = CacheLayer::builder()
+            .max_size(10)
+            .key_extractor(|req: &String| req.clone())
+            .build()
+            .unwrap();
+        let mut service = layer.layer(service_fn(|req: String| async move {
+            Ok::<_, std::io::Error>(req)
+        }));
+
+        let _: &_ = service.get_ref();
+        let _: &mut _ = service.get_mut();
+        let _inner = service.into_inner();
+    }
 
     #[tokio::test]
     async fn cache_hit_returns_cached_response() {

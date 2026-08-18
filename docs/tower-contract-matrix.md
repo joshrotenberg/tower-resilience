@@ -8,7 +8,10 @@ observe internal attempts, cancellation, in-flight admission, wakeups, and
 value preservation deterministically.
 
 Use the companion [Tower service review checklist](tower-service-review-checklist.md)
-for the human review pass on each implementation.
+for the human review pass on each implementation, and the
+[Tower API surface audit](tower-api-surface-audit.md) for the
+trait-bound/boxing/allocation/Tokio-coupling/accessor comparison against
+core Tower (a different axis than the behavioral coverage below).
 
 `Gap` is intentional and links to the ordered issue that must turn the cell
 into a regression test. It does **not** mean the behavior is assumed correct.

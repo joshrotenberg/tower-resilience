@@ -15,7 +15,6 @@ categories = ["asynchronous", "network-programming", "caching"]
 tower-resilience-core = { workspace = true }
 tower = { workspace = true }
 futures = { workspace = true }
-tokio = { workspace = true, features = ["sync", "time"] }
 lru = "0.18.0"
 
 # Optional dependencies

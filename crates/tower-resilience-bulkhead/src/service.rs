@@ -64,6 +64,21 @@ impl<S> Bulkhead<S> {
             permit: None,
         }
     }
+
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes the bulkhead, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S, Request> Service<Request> for Bulkhead<S>
@@ -366,6 +381,16 @@ mod tests {
         fn call(&mut self, (): ()) -> Self::Future {
             ready(Ok(()))
         }
+    }
+
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        let layer = BulkheadLayer::builder().max_concurrent_calls(1).build();
+        let mut bulkhead = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
+
+        let _: &_ = bulkhead.get_ref();
+        let _: &mut _ = bulkhead.get_mut();
+        let _inner = bulkhead.into_inner();
     }
 
     #[tokio::test]

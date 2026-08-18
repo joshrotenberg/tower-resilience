@@ -76,6 +76,27 @@ where
     }
 }
 
+impl<S, A> AdaptiveService<S, A> {
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    // No `into_inner`: `AdaptiveService` has a custom `Drop` impl (below) that
+    // releases a reserved semaphore permit, and Rust's partial-move rules
+    // (E0509) forbid moving a field out of a type with a manual `Drop` impl.
+    // Working around that would require `unsafe` (`ManuallyDrop` plus a
+    // hand-written re-implementation of `Drop::drop` for the remaining
+    // fields) for a single accessor method; not worth the risk here. This is
+    // the one wrapper in the crate set without the full `get_ref`/`get_mut`/
+    // `into_inner` triad -- see `docs/tower-api-surface-audit.md`.
+}
+
 impl<S, A> Clone for AdaptiveService<S, A>
 where
     S: Clone,
@@ -293,6 +314,17 @@ mod tests {
     use super::*;
     use crate::Aimd;
     use std::time::Duration;
+
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        let service = tower::service_fn(|req: i32| async move { Ok::<_, &str>(req * 2) });
+        let algorithm = Aimd::builder().initial_limit(10).build();
+        let mut service = AdaptiveService::new(service, Arc::new(algorithm));
+
+        // No `into_inner`: see the comment on the accessor impl block.
+        let _: &_ = service.get_ref();
+        let _: &mut _ = service.get_mut();
+    }
 
     #[tokio::test]
     async fn test_service_basic() {

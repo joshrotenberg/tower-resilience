@@ -191,6 +191,21 @@ impl<S, P> Hedge<S, P> {
             policy,
         }
     }
+
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes the hedge, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S: Clone, P> Clone for Hedge<S, P> {
@@ -483,6 +498,20 @@ mod tests {
 
     #[derive(Clone, Debug)]
     struct TestError;
+
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        let layer = HedgeLayer::builder()
+            .delay(Duration::from_millis(100))
+            .build();
+        let mut service = layer.layer(tower::service_fn(|_req: String| async {
+            Ok::<_, TestError>(())
+        }));
+
+        let _: &_ = service.get_ref();
+        let _: &mut _ = service.get_mut();
+        let _inner = service.into_inner();
+    }
 
     #[tokio::test]
     async fn test_primary_succeeds_no_hedge() {

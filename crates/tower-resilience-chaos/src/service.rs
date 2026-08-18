@@ -32,6 +32,21 @@ impl<S, E> Chaos<S, E> {
             rng: Arc::new(Mutex::new(rng)),
         }
     }
+
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes this service, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S, E, Req, Res, Err> Service<Req> for Chaos<S, E>

@@ -281,6 +281,21 @@ impl<S, Req, Res, E> Fallback<S, Req, Res, E> {
         init_metrics();
         Self { inner, config }
     }
+
+    /// Returns a reference to the inner service.
+    pub fn get_ref(&self) -> &S {
+        &self.inner
+    }
+
+    /// Returns a mutable reference to the inner service.
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.inner
+    }
+
+    /// Consumes the fallback, returning the inner service.
+    pub fn into_inner(self) -> S {
+        self.inner
+    }
 }
 
 impl<S, Req, Res, E> Clone for Fallback<S, Req, Res, E>
@@ -788,6 +803,35 @@ mod tests {
             .unwrap();
 
         assert_eq!(response, "fallback for: my-request");
+    }
+
+    #[test]
+    fn accessors_expose_the_inner_service() {
+        let layer = FallbackLayer::<String, String, TestError>::builder()
+            .value("fallback".to_string())
+            .build();
+        let mut service = layer.layer(service_fn(|_req: String| async move {
+            Err::<String, _>(TestError::new("primary failed"))
+        }));
+
+        let _: &_ = service.get_ref();
+        let _: &mut _ = service.get_mut();
+        let _inner = service.into_inner();
+    }
+
+    #[test]
+    fn service_fallback_accessors_expose_the_primary_service() {
+        let layer =
+            FallbackLayer::<String, String, TestError>::service(|_req: String| async move {
+                Ok::<_, TestError>("backup".to_string())
+            });
+        let mut service = layer.layer(service_fn(|_req: String| async move {
+            Err::<String, _>(TestError::new("primary failed"))
+        }));
+
+        let _: &_ = service.get_ref();
+        let _: &mut _ = service.get_mut();
+        let _inner = service.into_inner();
     }
 
     #[tokio::test]
