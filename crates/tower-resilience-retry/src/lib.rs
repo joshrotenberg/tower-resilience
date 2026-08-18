@@ -164,7 +164,9 @@ mod policy;
 pub use backoff::{
     ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval, IntervalFunction,
 };
-pub use budget::{AimdBudget, RetryBudget, RetryBudgetBuilder, TokenBucketBudget};
+pub use budget::{
+    AimdBudget, RetryBudget, RetryBudgetBuilder, RetryBudgetConfigError, TokenBucketBudget,
+};
 pub use config::{MaxAttemptsSource, RetryConfig, RetryConfigBuilder};
 pub use events::RetryEvent;
 pub use layer::RetryLayer;
@@ -667,12 +669,15 @@ mod tests {
         let cc = Arc::clone(&call_count);
         let bec = Arc::clone(&budget_exhausted_count);
 
-        // Create a budget with only 1 token
+        // Create a budget with only 1 token. Disable time-based refill so the
+        // test only exercises token-count accounting, not elapsed-time refill.
         let budget = RetryBudgetBuilder::new()
             .token_bucket()
+            .tokens_per_second(0.0)
             .max_tokens(1)
             .initial_tokens(1)
-            .build();
+            .build()
+            .unwrap();
 
         let service = service_fn(move |_req: String| {
             let cc = Arc::clone(&cc);
@@ -711,9 +716,11 @@ mod tests {
     async fn budget_replenishes_on_success() {
         let budget = RetryBudgetBuilder::new()
             .token_bucket()
+            .tokens_per_second(0.0) // Only exercise deposit()/try_withdraw() accounting
             .max_tokens(10)
             .initial_tokens(0) // Start empty
-            .build();
+            .build()
+            .unwrap();
 
         // Budget starts empty
         assert_eq!(budget.balance(), 0);
