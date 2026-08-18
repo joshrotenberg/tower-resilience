@@ -26,6 +26,8 @@ tower-resilience-circuitbreaker = { path = "../../crates/tower-resilience-circui
 tower-resilience-bulkhead = { path = "../../crates/tower-resilience-bulkhead", features = ["tracing"] }
 tower-resilience-retry = { path = "../../crates/tower-resilience-retry", features = ["tracing"] }
 tower-resilience-ratelimiter = { path = "../../crates/tower-resilience-ratelimiter", features = ["tracing"] }
+# Latency-injection test fixture for the server (not itself a resilience pattern)
+tower-resilience-chaos = { path = "../../crates/tower-resilience-chaos" }
 
 # Utilities
 tracing = "0.1"

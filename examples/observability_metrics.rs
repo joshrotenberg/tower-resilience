@@ -7,7 +7,7 @@
 //!
 //! Run with:
 //! ```sh
-//! cargo run --example observability_metrics --features metrics,circuitbreaker,bulkhead,retry,ratelimiter,timelimiter,cache
+//! cargo run --example observability_metrics --features metrics
 //! ```
 //!
 //! To collect and visualize these metrics in production:

@@ -92,9 +92,13 @@ cargo run --example ratelimiter_example -p tower-resilience-ratelimiter
 cargo run --example timelimiter_example -p tower-resilience-timelimiter
 cargo run --example chaos_example -p tower-resilience-chaos
 
-# Meta-crate examples (pattern composition)
-cargo run --example full_stack -p tower-resilience
+# Meta-crate examples (pattern composition, via the facade crate)
 cargo run --example combined -p tower-resilience
+
+# Composition and framework-integration examples (workspace root)
+cargo run --example composition_outbound
+cargo run --example server_api
+cargo run --example healthcheck_circuitbreaker
 ```
 
 ## Project Structure

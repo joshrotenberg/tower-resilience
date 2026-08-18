@@ -1059,13 +1059,9 @@ pub mod advanced {
     //!
     //! - [`examples/composition_outbound.rs`] - Client-side resilience stack
     //! - [`examples/server_api.rs`] - Server-side protection
-    //! - [`examples/database_client.rs`] - Database client with retry + circuit breaker
-    //! - [`examples/message_queue_worker.rs`] - Message processing with bulkhead + retry
     //!
     //! [`examples/composition_outbound.rs`]: https://github.com/joshrotenberg/tower-resilience/blob/main/examples/composition_outbound.rs
     //! [`examples/server_api.rs`]: https://github.com/joshrotenberg/tower-resilience/blob/main/examples/server_api.rs
-    //! [`examples/database_client.rs`]: https://github.com/joshrotenberg/tower-resilience/blob/main/examples/database_client.rs
-    //! [`examples/message_queue_worker.rs`]: https://github.com/joshrotenberg/tower-resilience/blob/main/examples/message_queue_worker.rs
 }
 
 pub mod references {
