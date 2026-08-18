@@ -264,6 +264,10 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 ## Release Process
 
+Before cutting a release, review the [upstream Tower crossover
+watchlist](docs/upstream-watchlist.md) and update any row whose upstream or
+local status has changed since the last review.
+
 Releases are automated by [release-plz](https://release-plz.dev) via
 `.github/workflows/release-plz.yml`, which runs on every push to `main` as
 two independent jobs:
