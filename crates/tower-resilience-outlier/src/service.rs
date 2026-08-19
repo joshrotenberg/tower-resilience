@@ -13,8 +13,7 @@ use tower_resilience_core::classifier::FailureClassifier;
 /// A Tower Service that applies outlier detection to an inner service.
 ///
 /// This wraps a single backend instance. The shared
-/// [`OutlierDetector`](crate::OutlierDetector) coordinates ejection state
-/// across all instances.
+/// [`OutlierDetector`] coordinates ejection state across all instances.
 ///
 /// # Backpressure vs Error Mode
 ///
