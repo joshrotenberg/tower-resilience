@@ -68,7 +68,8 @@ fn build_pipeline() -> GreetPipeline {
                 active
             )
         })
-        .build();
+        .build()
+        .expect("valid bulkhead config");
 
     let ratelimiter_layer = RateLimiterLayer::builder()
         .name("greeter-ratelimiter")

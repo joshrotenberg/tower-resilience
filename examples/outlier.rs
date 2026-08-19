@@ -46,7 +46,8 @@ async fn main() {
         .detector(detector.clone())
         .instance_name("backend-1")
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     let ok_svc = tower::util::BoxCloneService::new(tower::service_fn(|req: String| async move {
         Ok::<_, std::io::Error>(format!("OK: {}", req))
@@ -64,7 +65,8 @@ async fn main() {
         .detector(detector.clone())
         .instance_name("backend-2")
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     let fail_svc =
         tower::util::BoxCloneService::new(tower::service_fn(|_req: String| async move {

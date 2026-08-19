@@ -19,7 +19,8 @@ async fn test_aimd_limit_increases_on_fast_responses() {
         .initial_limit(10)
         .increase_by(1)
         .latency_threshold(Duration::from_secs(1))
-        .build();
+        .build()
+        .unwrap();
 
     let _initial_limit = algorithm.limit();
 
@@ -57,7 +58,8 @@ async fn test_aimd_limit_decreases_on_errors() {
                 .initial_limit(20)
                 .decrease_factor(0.5)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -92,7 +94,8 @@ async fn test_aimd_respects_min_limit() {
                 .min_limit(2)
                 .decrease_factor(0.5)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -119,7 +122,8 @@ async fn test_aimd_respects_max_limit() {
                 .max_limit(10)
                 .increase_by(5)
                 .latency_threshold(Duration::from_secs(10))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -143,7 +147,12 @@ async fn test_vegas_basic_operation() {
 
     let mut service = ServiceBuilder::new()
         .layer(AdaptiveLimiterLayer::new(
-            Vegas::builder().initial_limit(10).alpha(3).beta(6).build(),
+            Vegas::builder()
+                .initial_limit(10)
+                .alpha(3)
+                .beta(6)
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -170,7 +179,8 @@ async fn test_vegas_with_custom_parameters() {
                 .max_limit(20)
                 .alpha(2)
                 .beta(4)
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -187,7 +197,8 @@ async fn test_algorithm_enum_aimd() {
         Aimd::builder()
             .initial_limit(10)
             .latency_threshold(Duration::from_secs(1))
-            .build(),
+            .build()
+            .unwrap(),
     );
 
     let mut service = ServiceBuilder::new()
@@ -202,7 +213,7 @@ async fn test_algorithm_enum_aimd() {
 async fn test_algorithm_enum_vegas() {
     let service = tower::service_fn(|req: i32| async move { Ok::<_, &str>(req) });
 
-    let algorithm = Algorithm::Vegas(Vegas::builder().initial_limit(10).build());
+    let algorithm = Algorithm::Vegas(Vegas::builder().initial_limit(10).build().unwrap());
 
     let mut service = ServiceBuilder::new()
         .layer(AdaptiveLimiterLayer::new(algorithm))
@@ -226,7 +237,8 @@ async fn test_aimd_slow_response_decreases_limit() {
                 .initial_limit(10)
                 .latency_threshold(Duration::from_millis(50))
                 .decrease_factor(0.9)
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 

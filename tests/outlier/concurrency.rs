@@ -15,7 +15,8 @@ async fn concurrent_failures_eject_correctly() {
         .detector(detector.clone())
         .instance_name("backend-1")
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     let fail_svc =
         tower::util::BoxCloneService::new(tower::service_fn(|_req: String| async move {
@@ -65,7 +66,8 @@ async fn concurrent_successes_prevent_ejection() {
         .detector(detector.clone())
         .instance_name("backend-1")
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     let ok_svc = tower::util::BoxCloneService::new(tower::service_fn(move |req: String| {
         let c = Arc::clone(&sc);

@@ -45,6 +45,7 @@ fn bulkhead_is_send_sync() {
     let svc = BulkheadLayer::builder()
         .max_concurrent_calls(2)
         .build()
+        .unwrap()
         .layer(SyncInner);
     assert_send_sync_static(&svc);
 }
@@ -56,6 +57,7 @@ fn bulkhead_backpressure_is_send_sync() {
         .max_concurrent_calls(2)
         .backpressure()
         .build()
+        .unwrap()
         .layer(SyncInner);
     assert_send_sync_static(&svc);
 }
@@ -117,7 +119,8 @@ fn adaptive_is_send_sync() {
         Aimd::builder()
             .initial_limit(8)
             .latency_threshold(Duration::from_secs(1))
-            .build(),
+            .build()
+            .unwrap(),
     )
     .layer(SyncInner);
     assert_send_sync_static(&svc);
@@ -201,6 +204,7 @@ fn outlier_is_send_sync() {
         .detector(detector)
         .instance_name("inner")
         .build()
+        .unwrap()
         .layer(SyncInner);
     assert_send_sync_static(&svc);
 }
@@ -253,6 +257,7 @@ async fn bulkhead_composes_under_arc_like_tonic() {
         .max_concurrent_calls(2)
         .backpressure()
         .build()
+        .unwrap()
         .layer(SyncInner);
 
     // The shape tonic generates: Arc<MyService>, where MyService holds the

@@ -25,7 +25,8 @@ async fn test_concurrent_requests_within_limit() {
             Aimd::builder()
                 .initial_limit(20)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -65,7 +66,8 @@ async fn test_concurrent_requests_exceeding_limit() {
             Aimd::builder()
                 .initial_limit(5)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -106,7 +108,7 @@ async fn test_vegas_concurrent_requests() {
 
     let service = ServiceBuilder::new()
         .layer(AdaptiveLimiterLayer::new(
-            Vegas::builder().initial_limit(10).build(),
+            Vegas::builder().initial_limit(10).build().unwrap(),
         ))
         .service(service);
 
@@ -149,7 +151,8 @@ async fn test_concurrent_mixed_success_and_failure() {
             Aimd::builder()
                 .initial_limit(10)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -196,7 +199,8 @@ async fn test_high_concurrency_stress() {
                 .initial_limit(50)
                 .max_limit(100)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -237,7 +241,8 @@ async fn test_limit_adapts_under_varying_load() {
             Aimd::builder()
                 .initial_limit(10)
                 .latency_threshold(Duration::from_millis(50))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 

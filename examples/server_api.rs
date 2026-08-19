@@ -195,7 +195,8 @@ async fn scenario_bulkhead() {
                 max
             );
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = bulkhead.layer(base_service);
 
@@ -258,7 +259,8 @@ async fn scenario_full_server_stack() {
                 .on_call_rejected(|max| {
                     println!("[Bulkhead] Call rejected (max: {})", max);
                 })
-                .build(),
+                .build()
+                .unwrap(),
         )
         .service_fn(move |req: Request| {
             let count = request_count.fetch_add(1, Ordering::SeqCst) + 1;

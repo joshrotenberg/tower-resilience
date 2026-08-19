@@ -131,6 +131,7 @@ pub mod adaptive {
     //!         .decrease_factor(0.5)
     //!         .latency_threshold(Duration::from_millis(100))
     //!         .build()
+    //!         .unwrap()
     //! );
     //!
     //! let service = ServiceBuilder::new()
@@ -158,6 +159,7 @@ pub mod adaptive {
     //!         .alpha(3)   // Increase when queue < 3
     //!         .beta(6)    // Decrease when queue > 6
     //!         .build()
+    //!         .unwrap()
     //! );
     //!
     //! let service = ServiceBuilder::new()
@@ -246,7 +248,8 @@ pub mod bulkhead {
     //!     .on_call_rejected(|max| {
     //!         eprintln!("Bulkhead exhausted (max: {})", max);
     //!     })
-    //!     .build();
+    //!     .build()
+    //!     .unwrap();
     //!
     //! let service = tower::ServiceBuilder::new()
     //!     .layer(bulkhead)
@@ -1406,7 +1409,8 @@ pub mod outlier_detection {
     //! let layer = OutlierDetectionLayer::builder()
     //!     .detector(detector.clone())
     //!     .instance_name("backend-1")
-    //!     .build();
+    //!     .build()
+    //!     .unwrap();
     //!
     //! let service = ServiceBuilder::new()
     //!     .layer(layer)

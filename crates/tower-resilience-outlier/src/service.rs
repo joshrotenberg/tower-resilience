@@ -154,7 +154,7 @@ mod tests {
         if !backpressure {
             builder = builder.error_on_ejection();
         }
-        let layer = builder.build();
+        let layer = builder.build().unwrap();
         tower::Layer::layer(&layer, boxed)
     }
 
@@ -197,7 +197,8 @@ mod tests {
             .detector(detector.clone())
             .instance_name("backend-1")
             .error_on_ejection()
-            .build();
+            .build()
+            .unwrap();
         let mut svc = tower::Layer::layer(&layer, boxed);
 
         // First call fails (inner error) and triggers ejection
@@ -250,7 +251,8 @@ mod tests {
             .instance_name("backend-1")
             .error_on_ejection()
             .failure_classifier_type(RedisFailureClassifier)
-            .build();
+            .build()
+            .unwrap();
         let mut svc = tower::Layer::layer(&layer, boxed);
 
         // First call fails (inner error) and triggers ejection.

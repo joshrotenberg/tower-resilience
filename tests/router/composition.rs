@@ -137,7 +137,10 @@ async fn router_with_bulkhead_per_backend() {
     let count = Arc::new(AtomicUsize::new(0));
     let c = Arc::clone(&count);
 
-    let bh = BulkheadLayer::builder().max_concurrent_calls(10).build();
+    let bh = BulkheadLayer::builder()
+        .max_concurrent_calls(10)
+        .build()
+        .unwrap();
 
     let svc = tower::service_fn(move |req: String| {
         let c = Arc::clone(&c);

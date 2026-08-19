@@ -46,7 +46,7 @@
 //!             .min_limit(1)
 //!             .max_limit(100)
 //!             .latency_threshold(Duration::from_millis(100))
-//!             .build()
+//!             .build()?
 //!     ))
 //!     .service(service);
 //!
@@ -68,6 +68,7 @@
 //!         .alpha(3)  // Increase when queue < 3
 //!         .beta(6)   // Decrease when queue > 6
 //!         .build()
+//!         .unwrap()
 //! );
 //! ```
 //!
@@ -102,9 +103,12 @@ mod algorithm;
 mod layer;
 mod service;
 
-pub use algorithm::{Aimd, AimdBuilder, Algorithm, ConcurrencyAlgorithm, Vegas, VegasBuilder};
+pub use algorithm::{
+    Aimd, AimdBuilder, Algorithm, ConcurrencyAlgorithm, Vegas, VegasBuilder, VegasConfigError,
+};
 pub use layer::{AdaptiveLimiterLayer, AdaptiveLimiterLayerBuilder, IntoLayer};
 pub use service::{AdaptiveError, AdaptiveFuture, AdaptiveService};
+pub use tower_resilience_core::aimd::AimdConfigError;
 
 #[cfg(test)]
 mod tests {
@@ -123,7 +127,8 @@ mod tests {
                 Aimd::builder()
                     .initial_limit(10)
                     .latency_threshold(Duration::from_secs(1))
-                    .build(),
+                    .build()
+                    .unwrap(),
             ))
             .service(service);
 
@@ -142,7 +147,8 @@ mod tests {
             .initial_limit(10)
             .increase_by(1)
             .latency_threshold(Duration::from_secs(1))
-            .build();
+            .build()
+            .unwrap();
 
         let initial_limit = algorithm.limit();
         let algorithm = Arc::new(algorithm);
@@ -178,7 +184,8 @@ mod tests {
             .initial_limit(20)
             .decrease_factor(0.5)
             .latency_threshold(Duration::from_secs(1))
-            .build();
+            .build()
+            .unwrap();
 
         let algorithm = Arc::new(algorithm);
         let mut service = AdaptiveService::new(service, Arc::clone(&algorithm));
@@ -203,7 +210,7 @@ mod tests {
 
         let mut service = ServiceBuilder::new()
             .layer(AdaptiveLimiterLayer::new(
-                Vegas::builder().initial_limit(10).build(),
+                Vegas::builder().initial_limit(10).build().unwrap(),
             ))
             .service(service);
 
@@ -223,7 +230,8 @@ mod tests {
                 Aimd::builder()
                     .initial_limit(5)
                     .latency_threshold(Duration::from_secs(1))
-                    .build(),
+                    .build()
+                    .unwrap(),
             ))
             .service(service);
 
@@ -247,7 +255,7 @@ mod tests {
         let service = tower::service_fn(|req: i32| async move { Ok::<_, &str>(req) });
 
         // Test with Algorithm enum
-        let algorithm = Algorithm::Aimd(Aimd::builder().initial_limit(10).build());
+        let algorithm = Algorithm::Aimd(Aimd::builder().initial_limit(10).build().unwrap());
 
         let mut service = ServiceBuilder::new()
             .layer(AdaptiveLimiterLayer::new(algorithm))

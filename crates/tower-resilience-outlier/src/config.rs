@@ -59,7 +59,8 @@ impl OutlierDetectionConfigBuilder<DefaultClassifier> {
     ///             Err(e) => e.kind() == std::io::ErrorKind::ConnectionRefused,
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn failure_classifier<F>(self, f: F) -> OutlierDetectionConfigBuilder<FnClassifier<F>> {
         OutlierDetectionConfigBuilder {
@@ -165,7 +166,8 @@ impl<C> OutlierDetectionConfigBuilder<C> {
     ///     .detector(detector)
     ///     .instance_name("backend-1")
     ///     .failure_classifier_type(RedisFailureClassifier)
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn failure_classifier_type<C2>(self, classifier: C2) -> OutlierDetectionConfigBuilder<C2> {
         OutlierDetectionConfigBuilder {
@@ -178,25 +180,63 @@ impl<C> OutlierDetectionConfigBuilder<C> {
 
     /// Builds the `OutlierDetectionLayer`.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if no detector was provided.
-    pub fn build(self) -> OutlierDetectionLayer<C> {
+    /// Returns [`OutlierDetectionConfigError::MissingDetector`] if no
+    /// detector was provided.
+    pub fn build(self) -> Result<OutlierDetectionLayer<C>, OutlierDetectionConfigError> {
         let detector = self
             .detector
-            .expect("OutlierDetectionConfigBuilder requires a detector");
+            .ok_or(OutlierDetectionConfigError::MissingDetector)?;
         let config = OutlierDetectionConfig {
             detector,
             instance_name: self.instance_name,
             classifier: self.classifier,
             backpressure: self.backpressure,
         };
-        OutlierDetectionLayer::new(config)
+        Ok(OutlierDetectionLayer::new(config))
     }
 }
 
 impl Default for OutlierDetectionConfigBuilder<DefaultClassifier> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Errors that can occur when validating an [`OutlierDetectionConfig`] at
+/// construction time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum OutlierDetectionConfigError {
+    /// No [`OutlierDetector`] was provided via
+    /// [`OutlierDetectionConfigBuilder::detector`].
+    #[error("OutlierDetectionConfigBuilder requires a detector")]
+    MissingDetector,
+}
+
+#[cfg(test)]
+mod config_error_tests {
+    use super::*;
+
+    #[test]
+    fn missing_detector_is_rejected() {
+        let result = OutlierDetectionLayer::builder().build();
+        assert_eq!(
+            result.err().unwrap(),
+            OutlierDetectionConfigError::MissingDetector
+        );
+    }
+
+    #[test]
+    fn detector_present_builds_successfully() {
+        let detector = OutlierDetector::new();
+        detector.register("backend-1", 5);
+
+        let result = OutlierDetectionLayer::builder()
+            .detector(detector)
+            .instance_name("backend-1")
+            .build();
+        assert!(result.is_ok());
     }
 }

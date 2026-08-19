@@ -60,7 +60,8 @@ impl BulkheadConfigBuilder {
     /// let layer = BulkheadLayer::builder()
     ///     .max_concurrent_calls(10)
     ///     .max_wait_duration(Duration::from_secs(5))
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn max_wait_duration(mut self, duration: Duration) -> Self {
         self.max_wait_duration = Some(duration);
@@ -85,7 +86,8 @@ impl BulkheadConfigBuilder {
     /// let layer = BulkheadLayer::builder()
     ///     .max_concurrent_calls(100)
     ///     .reject_when_full()
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     ///
     /// This addresses the use case described in [tower-rs/tower#793](https://github.com/tower-rs/tower/issues/793),
@@ -120,7 +122,8 @@ impl BulkheadConfigBuilder {
     /// let layer = BulkheadLayer::builder()
     ///     .max_concurrent_calls(10)
     ///     .backpressure()
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn backpressure(mut self) -> Self {
         self.backpressure = true;
@@ -157,7 +160,8 @@ impl BulkheadConfigBuilder {
     ///             println!("Warning: approaching capacity!");
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_call_permitted<F>(mut self, f: F) -> Self
     where
@@ -200,7 +204,8 @@ impl BulkheadConfigBuilder {
     ///         println!("Call rejected - bulkhead at capacity ({} max), total rejections: {}",
     ///                  max_capacity, count + 1);
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_call_rejected<F>(mut self, f: F) -> Self
     where
@@ -241,7 +246,8 @@ impl BulkheadConfigBuilder {
     ///             println!("Warning: slow call detected");
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_call_finished<F>(mut self, f: F) -> Self
     where
@@ -281,7 +287,8 @@ impl BulkheadConfigBuilder {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Call failed after {:?} (total failures: {})", duration, count + 1);
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_call_failed<F>(mut self, f: F) -> Self
     where
@@ -296,15 +303,26 @@ impl BulkheadConfigBuilder {
     }
 
     /// Builds the configuration and returns a BulkheadLayer.
-    pub fn build(self) -> crate::layer::BulkheadLayer {
-        let config = self.into_config();
-        crate::layer::BulkheadLayer::new(config)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BulkheadConfigError::ZeroMaxConcurrentCalls`] if
+    /// `max_concurrent_calls` is zero -- a semaphore with zero permits could
+    /// never admit a call.
+    pub fn build(self) -> Result<crate::layer::BulkheadLayer, BulkheadConfigError> {
+        let config = self.into_config()?;
+        Ok(crate::layer::BulkheadLayer::new(config))
     }
 
     /// Builds the configuration, returning both a layer and an observable handle.
     ///
     /// All services produced by the returned layer share the same semaphore,
     /// and the handle can observe concurrency state from outside the service.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BulkheadConfigError`] under the same conditions as
+    /// [`build`](Self::build).
     ///
     /// # Example
     ///
@@ -313,13 +331,17 @@ impl BulkheadConfigBuilder {
     ///
     /// let (layer, handle) = BulkheadLayer::builder()
     ///     .max_concurrent_calls(10)
-    ///     .build_with_handle();
+    ///     .build_with_handle()
+    ///     .unwrap();
     ///
     /// assert_eq!(handle.max_concurrent(), 10);
     /// assert_eq!(handle.active_calls(), 0);
     /// ```
-    pub fn build_with_handle(self) -> (crate::layer::BulkheadLayer, crate::handle::BulkheadHandle) {
-        let config = self.into_config();
+    pub fn build_with_handle(
+        self,
+    ) -> Result<(crate::layer::BulkheadLayer, crate::handle::BulkheadHandle), BulkheadConfigError>
+    {
+        let config = self.into_config()?;
         let config = std::sync::Arc::new(config);
         let semaphore =
             std::sync::Arc::new(tokio::sync::Semaphore::new(config.max_concurrent_calls));
@@ -334,22 +356,85 @@ impl BulkheadConfigBuilder {
             shared: Some((semaphore, config)),
         };
 
-        (layer, handle)
+        Ok((layer, handle))
     }
 
-    fn into_config(self) -> BulkheadConfig {
-        BulkheadConfig {
+    fn into_config(self) -> Result<BulkheadConfig, BulkheadConfigError> {
+        if self.max_concurrent_calls == 0 {
+            return Err(BulkheadConfigError::ZeroMaxConcurrentCalls);
+        }
+
+        Ok(BulkheadConfig {
             max_concurrent_calls: self.max_concurrent_calls,
             max_wait_duration: self.max_wait_duration,
             backpressure: self.backpressure,
             name: self.name,
             event_listeners: self.event_listeners,
-        }
+        })
     }
 }
 
 impl Default for BulkheadConfigBuilder {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Errors that can occur when validating a [`BulkheadConfig`] at
+/// construction time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum BulkheadConfigError {
+    /// `max_concurrent_calls` is zero, which would create a semaphore with
+    /// no permits that could never admit any call.
+    #[error("max_concurrent_calls must be greater than zero")]
+    ZeroMaxConcurrentCalls,
+}
+
+#[cfg(test)]
+mod config_error_tests {
+    use super::*;
+    use crate::layer::BulkheadLayer;
+
+    #[test]
+    fn zero_max_concurrent_calls_is_rejected() {
+        let result = BulkheadLayer::builder().max_concurrent_calls(0).build();
+        assert_eq!(
+            result.err().unwrap(),
+            BulkheadConfigError::ZeroMaxConcurrentCalls
+        );
+    }
+
+    /// Table-driven: the smallest valid value and a handful of larger ones
+    /// must all be accepted.
+    #[test]
+    fn nonzero_max_concurrent_calls_is_accepted() {
+        for max in [1, 2, 10, 1000] {
+            let result = BulkheadLayer::builder().max_concurrent_calls(max).build();
+            assert!(
+                result.is_ok(),
+                "max_concurrent_calls {max} should be accepted"
+            );
+        }
+    }
+
+    #[test]
+    fn zero_max_concurrent_calls_is_rejected_with_handle() {
+        let result = BulkheadLayer::builder()
+            .max_concurrent_calls(0)
+            .build_with_handle();
+        assert_eq!(
+            result.err().unwrap(),
+            BulkheadConfigError::ZeroMaxConcurrentCalls
+        );
+    }
+
+    #[test]
+    fn valid_config_builds_successfully() {
+        let result = BulkheadLayer::builder()
+            .max_concurrent_calls(25)
+            .name("test-bulkhead")
+            .build();
+        assert!(result.is_ok());
     }
 }

@@ -75,7 +75,8 @@ async fn adaptive_drives_readied_instance() {
         Aimd::builder()
             .initial_limit(8)
             .latency_threshold(Duration::from_secs(1))
-            .build(),
+            .build()
+            .unwrap(),
     );
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
@@ -93,7 +94,8 @@ async fn adaptive_composes_with_concurrency_limit() {
         Aimd::builder()
             .initial_limit(8)
             .latency_threshold(Duration::from_secs(1))
-            .build(),
+            .build()
+            .unwrap(),
     );
     let mut svc = tower::ServiceBuilder::new().layer(layer).service(inner);
 
@@ -111,7 +113,8 @@ async fn adaptive_reserves_capacity_across_clones() {
         .initial_limit(2)
         .min_limit(2)
         .max_limit(2)
-        .build();
+        .build()
+        .unwrap();
     let service = AdaptiveService::new(inner, Arc::new(algorithm));
 
     let mut tasks = Vec::new();

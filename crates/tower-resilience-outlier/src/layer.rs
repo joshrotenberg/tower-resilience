@@ -25,7 +25,8 @@ use tower_resilience_core::classifier::DefaultClassifier;
 /// let layer = OutlierDetectionLayer::builder()
 ///     .detector(detector)
 ///     .instance_name("backend-1")
-///     .build();
+///     .build()
+///     .unwrap();
 ///
 /// let service = ServiceBuilder::new()
 ///     .layer(layer)

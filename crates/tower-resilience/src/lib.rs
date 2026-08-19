@@ -27,7 +27,8 @@
 //!     .layer(circuit_breaker)
 //!     .layer(BulkheadLayer::builder()
 //!         .max_concurrent_calls(10)
-//!         .build())
+//!         .build()
+//!         .unwrap())
 //!     .service(my_service);
 //! # }
 //! ```

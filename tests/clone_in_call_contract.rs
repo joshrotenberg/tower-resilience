@@ -35,7 +35,8 @@ async fn bulkhead_rejection_drives_readied_instance() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(4)
         .reject_when_full()
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());
@@ -52,7 +53,8 @@ async fn bulkhead_backpressure_drives_readied_instance() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(4)
         .backpressure()
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());
@@ -203,7 +205,8 @@ async fn outlier_drives_readied_instance() {
     let layer = OutlierDetectionLayer::builder()
         .detector(detector)
         .instance_name("inner")
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());
@@ -221,7 +224,8 @@ async fn adaptive_drives_readied_instance() {
         Aimd::builder()
             .initial_limit(8)
             .latency_threshold(Duration::from_secs(1))
-            .build(),
+            .build()
+            .unwrap(),
     );
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)

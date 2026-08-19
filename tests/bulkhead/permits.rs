@@ -21,7 +21,8 @@ async fn test_permits_released_after_success() {
         .on_call_permitted(move |_| {
             p.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -69,7 +70,8 @@ async fn test_permits_released_after_error() {
         .on_call_failed(move |_| {
             f.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let call_count = Arc::new(AtomicUsize::new(0));
     let c = call_count.clone();
@@ -110,7 +112,8 @@ async fn test_permits_released_after_panic() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("permit-panic-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let panic_count = Arc::new(AtomicUsize::new(0));
     let c = panic_count.clone();
@@ -157,7 +160,8 @@ async fn test_permit_reuse() {
         .on_call_permitted(move |_| {
             p.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -199,7 +203,8 @@ async fn test_permits_not_leaked_on_timeout() {
         .on_call_rejected(move |_| {
             r.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -246,7 +251,8 @@ async fn test_rapid_permit_acquisition_release() {
         .on_call_permitted(move |_| {
             p.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -281,7 +287,8 @@ async fn test_permit_fifo_fairness() {
         .on_call_permitted(move |_| {
             // This doesn't help us track order, so we'll track in the service
         })
-        .build();
+        .build()
+        .unwrap();
 
     let order_for_service = order.clone();
     let service = ServiceBuilder::new()
@@ -343,7 +350,8 @@ async fn test_concurrent_permit_requests() {
         .on_call_finished(move |_| {
             f.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -397,7 +405,8 @@ async fn test_permits_with_mixed_outcomes() {
         .on_call_failed(move |_| {
             fail.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let call_count = Arc::new(AtomicUsize::new(0));
     let c = call_count.clone();
@@ -438,7 +447,8 @@ async fn test_starvation_prevention() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(2)
         .name("starvation-prevention-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)

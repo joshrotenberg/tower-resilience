@@ -259,7 +259,8 @@ fn bench_bulkhead_full(c: &mut Criterion) {
             let config = BulkheadLayer::builder()
                 .max_concurrent_calls(1) // Very limited
                 .max_wait_duration(Duration::from_millis(1)) // Short timeout
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = ServiceBuilder::new().layer(config).service(BaselineService);
 
@@ -482,7 +483,10 @@ fn bench_full_stack_composition(c: &mut Criterion) {
 
     c.bench_function("composition_three_layers", |b| {
         b.to_async(&runtime).iter(|| async {
-            let bh_layer = BulkheadLayer::builder().max_concurrent_calls(100).build();
+            let bh_layer = BulkheadLayer::builder()
+                .max_concurrent_calls(100)
+                .build()
+                .unwrap();
 
             let rl_layer = RateLimiterLayer::builder()
                 .limit_for_period(1000)

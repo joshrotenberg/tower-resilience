@@ -26,7 +26,10 @@ impl std::error::Error for AppError {}
 async fn test_single_layer_unified() {
     let svc = tower::service_fn(|req: String| async move { Ok::<_, AppError>(req.to_uppercase()) });
 
-    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(10).build();
+    let bulkhead = BulkheadLayer::builder()
+        .max_concurrent_calls(10)
+        .build()
+        .unwrap();
     let layer = ResilienceErrorLayer::<_, AppError>::new(bulkhead);
 
     let mut svc = ServiceBuilder::new().layer(layer).service(svc);
@@ -45,7 +48,8 @@ async fn test_bulkhead_error_converts() {
     let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Duration::from_millis(1))
-        .build();
+        .build()
+        .unwrap();
     let layer = ResilienceErrorLayer::<_, AppError>::new(bulkhead);
 
     let mut svc = ServiceBuilder::new().layer(layer).service(svc);
@@ -117,7 +121,10 @@ async fn test_two_layers_stacked() {
     let svc = tower::service_fn(|req: String| async move { Ok::<_, AppError>(req.to_uppercase()) });
 
     let bulkhead = ResilienceErrorLayer::<_, AppError>::new(
-        BulkheadLayer::builder().max_concurrent_calls(50).build(),
+        BulkheadLayer::builder()
+            .max_concurrent_calls(50)
+            .build()
+            .unwrap(),
     );
     let cb = ResilienceErrorLayer::<_, AppError>::new(
         CircuitBreakerLayer::builder()
@@ -144,7 +151,10 @@ async fn test_three_layers_stacked() {
             .build(),
     );
     let bulkhead = ResilienceErrorLayer::<_, AppError>::new(
-        BulkheadLayer::builder().max_concurrent_calls(50).build(),
+        BulkheadLayer::builder()
+            .max_concurrent_calls(50)
+            .build()
+            .unwrap(),
     );
     let timeout = ResilienceErrorLayer::<_, AppError>::new(
         TimeLimiterLayer::builder()
@@ -173,6 +183,7 @@ async fn test_unified_extension_trait() {
             BulkheadLayer::builder()
                 .max_concurrent_calls(50)
                 .build()
+                .unwrap()
                 .unified::<AppError>(),
         )
         .service(svc);
@@ -188,7 +199,10 @@ async fn test_application_error_preserved() {
     });
 
     let bulkhead = ResilienceErrorLayer::<_, AppError>::new(
-        BulkheadLayer::builder().max_concurrent_calls(10).build(),
+        BulkheadLayer::builder()
+            .max_concurrent_calls(10)
+            .build()
+            .unwrap(),
     );
 
     let mut svc = ServiceBuilder::new().layer(bulkhead).service(svc);

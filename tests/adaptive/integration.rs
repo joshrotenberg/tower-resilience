@@ -24,7 +24,8 @@ async fn test_basic_request_passes_through() {
             Aimd::builder()
                 .initial_limit(10)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -58,7 +59,8 @@ async fn test_multiple_sequential_requests() {
             Aimd::builder()
                 .initial_limit(10)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -79,7 +81,8 @@ async fn test_error_propagates() {
             Aimd::builder()
                 .initial_limit(10)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -106,7 +109,8 @@ async fn test_service_clone() {
             Aimd::builder()
                 .initial_limit(10)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(service);
 
@@ -139,7 +143,7 @@ async fn test_with_vegas_algorithm() {
 
     let mut service = ServiceBuilder::new()
         .layer(AdaptiveLimiterLayer::new(
-            Vegas::builder().initial_limit(10).build(),
+            Vegas::builder().initial_limit(10).build().unwrap(),
         ))
         .service(service);
 
@@ -159,7 +163,8 @@ async fn test_layer_builder() {
             .increase_by(2)
             .decrease_factor(0.75)
             .latency_threshold(Duration::from_millis(500))
-            .build(),
+            .build()
+            .unwrap(),
     );
 
     let mut service = layer.layer(service);

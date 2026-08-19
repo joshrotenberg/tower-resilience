@@ -23,7 +23,8 @@ async fn high_concurrency_stress_test() {
         .layer(
             BulkheadLayer::builder()
                 .max_concurrent_calls(max_allowed)
-                .build(),
+                .build()
+                .unwrap(),
         )
         .service_fn(move |_req: ()| {
             let counter = Arc::clone(&counter_clone);
@@ -72,7 +73,8 @@ async fn concurrent_requests_respect_limit() {
         .layer(
             BulkheadLayer::builder()
                 .max_concurrent_calls(max_allowed)
-                .build(),
+                .build()
+                .unwrap(),
         )
         .service_fn(move |_req: ()| {
             let counter = Arc::clone(&counter_clone);
@@ -114,7 +116,8 @@ async fn rejection_under_load_with_timeout() {
             BulkheadLayer::builder()
                 .max_concurrent_calls(2)
                 .max_wait_duration(Duration::from_millis(10))
-                .build(),
+                .build()
+                .unwrap(),
         )
         .service_fn(|_req: ()| async {
             sleep(Duration::from_millis(200)).await;
@@ -155,7 +158,12 @@ async fn single_permit_bulkhead_serializes_requests() {
     let max_clone = Arc::clone(&max_concurrent);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadLayer::builder().max_concurrent_calls(1).build())
+        .layer(
+            BulkheadLayer::builder()
+                .max_concurrent_calls(1)
+                .build()
+                .unwrap(),
+        )
         .service_fn(move |_req: ()| {
             let counter = Arc::clone(&counter_clone);
             let max = Arc::clone(&max_clone);
@@ -193,7 +201,12 @@ async fn mixed_fast_and_slow_requests() {
     let slow_clone = Arc::clone(&slow_count);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadLayer::builder().max_concurrent_calls(5).build())
+        .layer(
+            BulkheadLayer::builder()
+                .max_concurrent_calls(5)
+                .build()
+                .unwrap(),
+        )
         .service_fn(move |req: bool| {
             let fast = Arc::clone(&fast_clone);
             let slow = Arc::clone(&slow_clone);
@@ -244,7 +257,12 @@ async fn burst_traffic_pattern() {
     let conc_clone = Arc::clone(&concurrent);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadLayer::builder().max_concurrent_calls(5).build())
+        .layer(
+            BulkheadLayer::builder()
+                .max_concurrent_calls(5)
+                .build()
+                .unwrap(),
+        )
         .service_fn(move |_req: ()| {
             let proc = Arc::clone(&proc_clone);
             let max = Arc::clone(&max_clone);
@@ -283,7 +301,12 @@ async fn burst_traffic_pattern() {
 #[tokio::test]
 async fn concurrent_with_varied_delays() {
     let service = ServiceBuilder::new()
-        .layer(BulkheadLayer::builder().max_concurrent_calls(10).build())
+        .layer(
+            BulkheadLayer::builder()
+                .max_concurrent_calls(10)
+                .build()
+                .unwrap(),
+        )
         .service_fn(|delay_ms: u64| async move {
             sleep(Duration::from_millis(delay_ms)).await;
             Ok::<_, TestError>(delay_ms)
@@ -310,22 +333,18 @@ async fn concurrent_with_varied_delays() {
     }
 }
 
+/// `max_concurrent_calls(0)` used to silently build a permit-less semaphore
+/// that could never admit a call (an eternal-timeout footgun). It's now
+/// rejected at construction time with a typed error instead.
 #[tokio::test]
-async fn zero_concurrent_immediately_rejects() {
-    let service = ServiceBuilder::new()
-        .layer(
-            BulkheadLayer::builder()
-                .max_concurrent_calls(0)
-                .max_wait_duration(Duration::from_millis(10))
-                .build(),
-        )
-        .service_fn(|_req: ()| async { Ok::<_, TestError>(()) });
+async fn zero_concurrent_calls_is_rejected_at_construction() {
+    let result = BulkheadLayer::builder()
+        .max_concurrent_calls(0)
+        .max_wait_duration(Duration::from_millis(10))
+        .build();
 
-    let mut svc = service.clone();
-    let result = svc.ready().await.unwrap().call(()).await;
-
-    assert!(matches!(
-        result,
-        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
-    ));
+    assert_eq!(
+        result.err().unwrap(),
+        tower_resilience_bulkhead::BulkheadConfigError::ZeroMaxConcurrentCalls
+    );
 }

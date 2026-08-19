@@ -22,7 +22,12 @@ async fn test_bulkhead_limits_concurrency() {
     let max_clone = Arc::clone(&max_concurrent);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadLayer::builder().max_concurrent_calls(5).build())
+        .layer(
+            BulkheadLayer::builder()
+                .max_concurrent_calls(5)
+                .build()
+                .unwrap(),
+        )
         .service_fn(move |_req: ()| {
             let counter = Arc::clone(&counter_clone);
             let max = Arc::clone(&max_clone);
@@ -59,7 +64,8 @@ async fn test_bulkhead_rejects_when_full_with_timeout() {
             BulkheadLayer::builder()
                 .max_concurrent_calls(2)
                 .max_wait_duration(Duration::from_millis(10))
-                .build(),
+                .build()
+                .unwrap(),
         )
         .service_fn(|_req: ()| async {
             sleep(Duration::from_millis(100)).await;
@@ -106,7 +112,8 @@ async fn test_bulkhead_event_listeners() {
                 .on_call_finished(move |_| {
                     f_clone.fetch_add(1, Ordering::SeqCst);
                 })
-                .build(),
+                .build()
+                .unwrap(),
         )
         .service_fn(|_req: ()| async { Ok::<_, TestError>(()) });
 
@@ -132,7 +139,12 @@ async fn test_bulkhead_releases_on_error() {
     let counter_clone = Arc::clone(&concurrent_counter);
 
     let service = ServiceBuilder::new()
-        .layer(BulkheadLayer::builder().max_concurrent_calls(2).build())
+        .layer(
+            BulkheadLayer::builder()
+                .max_concurrent_calls(2)
+                .build()
+                .unwrap(),
+        )
         .service_fn(move |_req: ()| {
             let counter = Arc::clone(&counter_clone);
             async move {
@@ -171,7 +183,8 @@ async fn test_bulkhead_without_timeout_waits() {
             BulkheadLayer::builder()
                 .max_concurrent_calls(1)
                 // Default: wait indefinitely
-                .build(),
+                .build()
+                .unwrap(),
         )
         .service_fn(|_req: ()| async {
             sleep(Duration::from_millis(50)).await;

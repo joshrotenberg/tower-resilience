@@ -19,6 +19,7 @@ tower-service = { workspace = true }
 tokio = { workspace = true, features = ["sync", "time"] }
 tokio-util.workspace = true
 pin-project-lite = { workspace = true }
+thiserror = { workspace = true }
 
 # Optional dependencies
 tracing = { workspace = true, optional = true }

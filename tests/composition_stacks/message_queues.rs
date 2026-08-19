@@ -105,7 +105,10 @@ async fn consumer_stack_compiles() {
 /// Producer stack: Timeout + Retry + Bulkhead
 #[tokio::test]
 async fn producer_stack_compiles() {
-    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(50).build();
+    let bulkhead = BulkheadLayer::builder()
+        .max_concurrent_calls(50)
+        .build()
+        .unwrap();
 
     let retry = RetryLayer::<PublishRequest, PublishResult, MessageError>::builder()
         .max_attempts(3)

@@ -72,13 +72,15 @@ async fn shared_detector_across_multiple_services() {
         .detector(detector.clone())
         .instance_name("backend-1")
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     let layer2 = OutlierDetectionLayer::builder()
         .detector(detector.clone())
         .instance_name("backend-2")
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     let mut svc1 = layer1.layer(make_fail_svc());
     let mut svc2 = layer2.layer(make_fail_svc());

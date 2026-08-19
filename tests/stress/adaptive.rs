@@ -29,7 +29,8 @@ async fn stress_sequential_high_volume() {
             Aimd::builder()
                 .initial_limit(100)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(svc);
 
@@ -80,7 +81,8 @@ async fn stress_high_concurrency_aimd() {
                 .initial_limit(50)
                 .max_limit(100)
                 .latency_threshold(Duration::from_millis(500))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(svc);
 
@@ -135,7 +137,11 @@ async fn stress_high_concurrency_vegas() {
 
     let service = ServiceBuilder::new()
         .layer(AdaptiveLimiterLayer::new(
-            Vegas::builder().initial_limit(50).max_limit(100).build(),
+            Vegas::builder()
+                .initial_limit(50)
+                .max_limit(100)
+                .build()
+                .unwrap(),
         ))
         .service(svc);
 
@@ -194,7 +200,8 @@ async fn stress_latency_adaptation() {
                 .latency_threshold(Duration::from_millis(50))
                 .increase_by(2)
                 .decrease_factor(0.8)
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(svc);
 
@@ -278,7 +285,8 @@ async fn stress_error_adaptation() {
                 .min_limit(2)
                 .decrease_factor(0.5)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(svc);
 
@@ -334,7 +342,8 @@ async fn stress_sustained_load() {
             Aimd::builder()
                 .initial_limit(50)
                 .latency_threshold(Duration::from_millis(10))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(svc);
 
@@ -388,7 +397,8 @@ async fn stress_memory_stability() {
             Aimd::builder()
                 .initial_limit(100)
                 .latency_threshold(Duration::from_secs(1))
-                .build(),
+                .build()
+                .unwrap(),
         ))
         .service(svc);
 
@@ -465,7 +475,8 @@ async fn stress_algorithm_comparison() {
                 Aimd::builder()
                     .initial_limit(20)
                     .latency_threshold(Duration::from_millis(50))
-                    .build(),
+                    .build()
+                    .unwrap(),
             ))
             .service(svc);
 
@@ -515,7 +526,7 @@ async fn stress_algorithm_comparison() {
 
         let service = ServiceBuilder::new()
             .layer(AdaptiveLimiterLayer::new(
-                Vegas::builder().initial_limit(20).build(),
+                Vegas::builder().initial_limit(20).build().unwrap(),
             ))
             .service(svc);
 
