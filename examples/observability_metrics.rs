@@ -295,6 +295,7 @@ async fn demo_rate_limiter() {
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_millis(50))
         .build()
+        .unwrap()
         .layer(base_service);
 
     let mut service = service;

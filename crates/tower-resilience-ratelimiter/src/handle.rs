@@ -18,7 +18,8 @@ use std::sync::Arc;
 ///
 /// let (layer, handle) = RateLimiterLayer::builder()
 ///     .limit_for_period(100)
-///     .build_with_handle();
+///     .build_with_handle()
+///     .unwrap();
 ///
 /// // Apply the layer to a service...
 ///
@@ -109,7 +110,8 @@ mod tests {
     async fn test_handle_initial_state() {
         let (_layer, handle) = RateLimiterLayer::builder()
             .limit_for_period(10)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         assert_eq!(handle.available_permits(), 10);
         assert!(!handle.is_throttling());
@@ -121,7 +123,8 @@ mod tests {
     async fn test_handle_observes_permit_usage() {
         let (layer, handle) = RateLimiterLayer::builder()
             .limit_for_period(3)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let mut svc = layer.layer(OkService);
 
@@ -138,7 +141,8 @@ mod tests {
     async fn test_handle_shared_across_services() {
         let (layer, handle) = RateLimiterLayer::builder()
             .limit_for_period(4)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let mut svc1 = layer.layer(OkService);
         let mut svc2 = layer.layer(OkService);
@@ -154,7 +158,8 @@ mod tests {
     async fn test_handle_clone() {
         let (_layer, handle) = RateLimiterLayer::builder()
             .limit_for_period(10)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let handle2 = handle.clone();
         assert_eq!(handle.available_permits(), handle2.available_permits());

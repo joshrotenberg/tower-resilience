@@ -55,7 +55,7 @@
 //! let breaker = CircuitBreakerLayer::standard().build();
 //!
 //! // Rate limiter: 100 requests per second
-//! let limiter = RateLimiterLayer::per_second(100).build();
+//! let limiter = RateLimiterLayer::per_second(100).build().unwrap();
 //!
 //! // Bulkhead: 50 concurrent calls
 //! let bulkhead = BulkheadLayer::medium().build();

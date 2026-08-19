@@ -1505,7 +1505,8 @@ pub mod rate_limiter {
     //!     .limit_for_period(100)                    // 100 requests
     //!     .refresh_period(Duration::from_secs(1))   // per second
     //!     .timeout_duration(Duration::from_millis(100))  // Wait up to 100ms
-    //!     .build();
+    //!     .build()
+    //!     .unwrap();
     //!
     //! let service = tower::ServiceBuilder::new()
     //!     .layer(rate_limiter)

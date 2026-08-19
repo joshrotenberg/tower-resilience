@@ -21,7 +21,8 @@ async fn sliding_log_allows_requests_within_limit() {
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_millis(50))
         .window_type(WindowType::SlidingLog)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -42,7 +43,8 @@ async fn sliding_log_rejects_over_limit() {
         .refresh_period(Duration::from_secs(10))
         .timeout_duration(Duration::from_millis(10))
         .window_type(WindowType::SlidingLog)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -72,7 +74,8 @@ async fn sliding_log_expires_old_requests() {
         .refresh_period(Duration::from_millis(100))
         .timeout_duration(Duration::from_millis(50))
         .window_type(WindowType::SlidingLog)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -111,7 +114,8 @@ async fn sliding_log_prevents_boundary_burst() {
         .refresh_period(Duration::from_millis(100))
         .timeout_duration(Duration::from_millis(10))
         .window_type(WindowType::SlidingLog)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -156,7 +160,8 @@ async fn sliding_log_rolling_window_behavior() {
         .refresh_period(Duration::from_millis(100))
         .timeout_duration(Duration::from_millis(10))
         .window_type(WindowType::SlidingLog)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -201,7 +206,8 @@ async fn sliding_log_event_listeners() {
         .on_permit_rejected(move |_| {
             rej.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -229,7 +235,8 @@ async fn sliding_log_concurrent_requests() {
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_millis(100))
         .window_type(WindowType::SlidingLog)
-        .build();
+        .build()
+        .unwrap();
 
     let service = layer.layer(svc);
 

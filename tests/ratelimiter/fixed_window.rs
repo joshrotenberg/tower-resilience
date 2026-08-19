@@ -21,7 +21,8 @@ async fn fixed_window_allows_requests_within_limit() {
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_millis(50))
         .window_type(WindowType::Fixed)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -42,7 +43,8 @@ async fn fixed_window_rejects_over_limit() {
         .refresh_period(Duration::from_secs(10))
         .timeout_duration(Duration::from_millis(10))
         .window_type(WindowType::Fixed)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -72,7 +74,8 @@ async fn fixed_window_refreshes_permits() {
         .refresh_period(Duration::from_millis(100))
         .timeout_duration(Duration::from_millis(50))
         .window_type(WindowType::Fixed)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -110,7 +113,8 @@ async fn fixed_window_allows_burst_at_boundary() {
         .refresh_period(Duration::from_millis(100))
         .timeout_duration(Duration::from_millis(50))
         .window_type(WindowType::Fixed)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -153,7 +157,8 @@ async fn fixed_window_event_listeners() {
         .on_permit_rejected(move |_| {
             rej.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 

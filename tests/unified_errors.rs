@@ -148,7 +148,8 @@ async fn test_three_layers_stacked() {
         RateLimiterLayer::builder()
             .limit_for_period(1000)
             .refresh_period(Duration::from_secs(1))
-            .build(),
+            .build()
+            .unwrap(),
     );
     let bulkhead = ResilienceErrorLayer::<_, AppError>::new(
         BulkheadLayer::builder()

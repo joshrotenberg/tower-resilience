@@ -16,7 +16,8 @@ async fn ratelimiter_metrics_exist() {
         .name("test_ratelimiter")
         .limit_for_period(10)
         .refresh_period(Duration::from_secs(1))
-        .build();
+        .build()
+        .unwrap();
 
     let service = tower::service_fn(|_: u64| async { Ok::<_, &'static str>("success") });
 
@@ -50,7 +51,8 @@ async fn ratelimiter_rejection_metrics() {
         .name("reject_ratelimiter")
         .limit_for_period(2)
         .refresh_period(Duration::from_secs(10))
-        .build();
+        .build()
+        .unwrap();
 
     let service = tower::service_fn(|_: u64| async { Ok::<_, &'static str>("success") });
 

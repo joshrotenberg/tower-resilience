@@ -62,7 +62,8 @@ async fn server_side_stack_compiles() {
     let rate_limiter = RateLimiterLayer::builder()
         .limit_for_period(1000)
         .refresh_period(Duration::from_secs(1))
-        .build();
+        .build()
+        .unwrap();
 
     let handler = mock_handler();
 
@@ -82,7 +83,8 @@ async fn rate_limiter_only_compiles() {
         .limit_for_period(100)
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_millis(100)) // Wait up to 100ms for permit
-        .build();
+        .build()
+        .unwrap();
 
     let handler = mock_handler();
 

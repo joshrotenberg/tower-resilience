@@ -82,7 +82,8 @@ fn build_pipeline() -> GreetPipeline {
                 retry_after
             )
         })
-        .build();
+        .build()
+        .expect("valid ratelimiter config");
 
     let service = ServiceBuilder::new()
         .layer(ratelimiter_layer)

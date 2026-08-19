@@ -141,7 +141,8 @@ async fn scenario_rate_limiting() {
         .on_permit_rejected(|_wait_duration| {
             println!("[Rate Limiter] Request rejected - rate limit exceeded");
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = rate_limiter.layer(base_service);
 

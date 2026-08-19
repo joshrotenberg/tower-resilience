@@ -183,7 +183,8 @@ fn bench_rate_limiter(c: &mut Criterion) {
             let layer = RateLimiterLayer::builder()
                 .limit_for_period(1000)
                 .refresh_period(Duration::from_secs(1))
-                .build();
+                .build()
+                .unwrap();
             let mut service = layer.layer(BaselineService);
 
             let response = service

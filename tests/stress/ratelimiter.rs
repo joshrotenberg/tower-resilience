@@ -68,7 +68,8 @@ async fn stress_one_million_calls_no_throttling() {
         .limit_for_period(1_000_000) // Very high limit
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_secs(1))
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -111,7 +112,8 @@ async fn stress_rate_limit_enforcement() {
         .limit_for_period(LIMIT)
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(TIMEOUT) // Short timeout
-        .build();
+        .build()
+        .unwrap();
 
     let service = layer.layer(svc);
 
@@ -163,7 +165,8 @@ async fn stress_high_concurrency_rate_limited() {
         .limit_for_period(1000)
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(Duration::from_secs(5))
-        .build();
+        .build()
+        .unwrap();
 
     let service = layer.layer(svc);
 
@@ -218,7 +221,8 @@ async fn stress_burst_traffic() {
         .limit_for_period(LIMIT)
         .refresh_period(REFRESH_PERIOD)
         .timeout_duration(Duration::from_millis(5))
-        .build();
+        .build()
+        .unwrap();
 
     let service = layer.layer(svc);
 
@@ -280,7 +284,8 @@ async fn stress_permit_refresh_timing() {
         .refresh_period(REFRESH_PERIOD)
         // Wide enough that no caller times out while waiting out refreshes.
         .timeout_duration(Duration::from_secs(2))
-        .build();
+        .build()
+        .unwrap();
 
     let service = layer.layer(svc);
 
@@ -320,7 +325,8 @@ async fn stress_memory_stability() {
         .limit_for_period(1000)
         .refresh_period(Duration::from_millis(100))
         .timeout_duration(Duration::from_millis(50))
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -381,7 +387,8 @@ async fn stress_timeout_behavior() {
         .limit_for_period(LIMIT)
         .refresh_period(Duration::from_secs(1))
         .timeout_duration(TIMEOUT) // Very short timeout
-        .build();
+        .build()
+        .unwrap();
 
     let service = layer.layer(svc);
 
@@ -423,7 +430,8 @@ async fn stress_multiple_rate_limiters() {
             .limit_for_period(limit)
             .refresh_period(Duration::from_millis(100))
             .timeout_duration(Duration::from_millis(50))
-            .build();
+            .build()
+            .unwrap();
 
         layer.layer(svc)
     };

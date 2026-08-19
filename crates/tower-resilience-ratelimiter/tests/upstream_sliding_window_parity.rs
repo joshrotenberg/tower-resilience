@@ -31,6 +31,7 @@ fn immediate_layer(window_type: WindowType, limit: usize, period: Duration) -> R
         .timeout_duration(Duration::ZERO)
         .window_type(window_type)
         .build()
+        .unwrap()
 }
 
 /// tower-rs/tower#842 opens with this exact scenario as the motivating case
