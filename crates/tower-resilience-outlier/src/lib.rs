@@ -85,6 +85,6 @@ pub use detector::OutlierDetector;
 pub use error::{OutlierDetectionError, OutlierDetectionServiceError};
 pub use events::OutlierDetectionEvent;
 pub use layer::OutlierDetectionLayer;
-pub use service::OutlierDetectionService;
+pub use service::{OutlierDetectionFuture, OutlierDetectionService};
 pub use strategy::{ConsecutiveErrors, EjectionStrategy};
 pub use tower_resilience_core::classifier::{DefaultClassifier, FailureClassifier, FnClassifier};
