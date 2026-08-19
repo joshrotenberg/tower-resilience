@@ -2792,9 +2792,9 @@ dependencies = [
 name = "tower-resilience-outlier"
 version = "0.12.0"
 dependencies = [
- "futures",
  "metrics",
  "metrics-util",
+ "pin-project-lite",
  "thiserror 2.0.17",
  "tokio",
  "tower",
