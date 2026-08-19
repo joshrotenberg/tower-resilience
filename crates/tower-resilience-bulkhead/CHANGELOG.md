@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Bulkhead::get_ref()`, `get_mut()`, and `into_inner()` accessors for the
   wrapped service, matching Tower's own middleware convention.
+- Real `tracing` instrumentation alongside the existing metrics: `debug!`
+  on permitted/finished/failed calls, `warn!` on rejected calls
+  ([#428](https://github.com/joshrotenberg/tower-resilience/issues/428)).
 
 ### Changed
 

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Real `metrics`/`tracing` instrumentation: `executor_tasks_spawned_total`,
+  `executor_task_duration_seconds`, and `executor_tasks_cancelled_total`,
+  plus `tracing::debug!`/`warn!` at spawn and cancellation. Metrics are not
+  yet labeled by instance name -- `executor` has no per-instance naming
+  concept ([#428](https://github.com/joshrotenberg/tower-resilience/issues/428)).
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-executor-v0.11.0...tower-resilience-executor-v0.12.0) - 2026-08-17
 
 ### Fixed

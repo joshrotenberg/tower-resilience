@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Hedge::get_ref()`, `get_mut()`, and `into_inner()` accessors for the
   wrapped service, matching Tower's own middleware convention.
+- Real `metrics`/`tracing` instrumentation: `hedge_attempts_total`,
+  `hedge_calls_total{result}`, and `hedge_call_duration_seconds`, plus
+  `tracing::debug!`/`warn!` at hedge starts and terminal outcomes
+  ([#428](https://github.com/joshrotenberg/tower-resilience/issues/428)).
 
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-hedge-v0.11.0...tower-resilience-hedge-v0.12.0) - 2026-08-17
 
