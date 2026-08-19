@@ -403,7 +403,8 @@ mod tests {
             .initial_limit(10)
             .increase_by(1)
             .latency_threshold(Duration::from_secs(1))
-            .build();
+            .build()
+            .unwrap();
         let mut service = AdaptiveService::new(service, Arc::new(algorithm));
 
         use tower::ServiceExt;

@@ -616,7 +616,8 @@ mod tests {
         // semaphore forces `call()` down the immediate-rejection branch.
         let (layer, handle) = BulkheadLayer::builder()
             .max_concurrent_calls(1)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
         let mut service = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
         handle.semaphore.close();
 
