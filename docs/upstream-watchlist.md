@@ -15,7 +15,7 @@ upstream and local state, not the date the row was created.
 | Upstream | What it threatens or offers | Local owner | Status | Last reviewed |
 | --- | --- | --- | --- | --- |
 | [tower#855] | Upstream circuit breaker proposal; could commoditize our headline circuit-breaker differentiator | [circuitbreaker-tower-comparison.md], [#382], [#384] | Resolved | 2026-08-18 |
-| [tower#880], [tower#842], [tower#794] | Rate-limiter accessor API, sliding-window algorithm, and clone-shared state -- accessors and shared-clone admission overlap our rate limiter | [#277] (PR [#279]) for accessors; [#363] (PR [#394]) for shared-clone admission; sliding-window algorithm has **no local coverage** | Partial (gap: sliding window) | 2026-08-18 |
+| [tower#880], [tower#842], [tower#794] | Rate-limiter accessor API, sliding-window algorithm, and clone-shared state -- accessors and shared-clone admission overlap our rate limiter | [#277] (PR [#279]) for accessors; [#363] (PR [#394]) for shared-clone admission; [#430] (parity tests in `crates/tower-resilience-ratelimiter/tests/upstream_sliding_window_parity.rs`) for the sliding-window algorithm | Resolved | 2026-08-18 |
 | [tower#857], [tower#863] | Retry TPS budget semantics; upstream `TpsBudget` design could set the parity bar for our retry budget | [#370] | Resolved | 2026-08-18 |
 | [tower#862], [tower#864] | Hedge validation: idempotency/eligibility gating and losing-attempt cancellation | [#369] (PR [#393]) | Resolved | 2026-08-18 |
 | [tower#793] | Reject-now (fail-fast) concurrency limiting, as an alternative to Tower's queue-on-full `ConcurrencyLimit` | [#168] (doc), implemented by PR [#170] (`reject_when_full()`) | Resolved | 2026-08-18 |
@@ -91,6 +91,7 @@ upstream and local state, not the date the row was created.
 [#401]: https://github.com/joshrotenberg/tower-resilience/pull/401
 [#403]: https://github.com/joshrotenberg/tower-resilience/pull/403
 [#415]: https://github.com/joshrotenberg/tower-resilience/pull/415
+[#430]: https://github.com/joshrotenberg/tower-resilience/issues/430
 
 [circuitbreaker-tower-comparison.md]: circuitbreaker-tower-comparison.md
 [reconnect-factory-migration.md]: reconnect-factory-migration.md
