@@ -2810,6 +2810,7 @@ version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
+ "thiserror 2.0.17",
  "tokio",
  "tower",
  "tower-resilience-core",

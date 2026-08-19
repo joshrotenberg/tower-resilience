@@ -59,7 +59,8 @@ async fn demo_fixed_window() {
         .on_permit_rejected(move |_| {
             r.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = tower::service_fn(|_req: ()| async { Ok::<_, std::convert::Infallible>("OK") });
     let mut svc = ServiceBuilder::new().layer(layer).service(service);
@@ -101,7 +102,8 @@ async fn demo_sliding_log() {
         .on_permit_rejected(move |_| {
             r.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = tower::service_fn(|_req: ()| async { Ok::<_, std::convert::Infallible>("OK") });
     let mut svc = ServiceBuilder::new().layer(layer).service(service);
@@ -143,7 +145,8 @@ async fn demo_sliding_counter() {
         .on_permit_rejected(move |_| {
             r.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = tower::service_fn(|_req: ()| async { Ok::<_, std::convert::Infallible>("OK") });
     let mut svc = ServiceBuilder::new().layer(layer).service(service);
@@ -178,7 +181,8 @@ async fn demo_boundary_comparison() {
             .refresh_period(Duration::from_millis(200))
             .timeout_duration(Duration::from_millis(10))
             .window_type(WindowType::Fixed)
-            .build();
+            .build()
+            .unwrap();
 
         let service = tower::service_fn(move |_req: ()| {
             c.fetch_add(1, Ordering::SeqCst);
@@ -220,7 +224,8 @@ async fn demo_boundary_comparison() {
             .refresh_period(Duration::from_millis(200))
             .timeout_duration(Duration::from_millis(10))
             .window_type(WindowType::SlidingLog)
-            .build();
+            .build()
+            .unwrap();
 
         let service = tower::service_fn(move |_req: ()| {
             c.fetch_add(1, Ordering::SeqCst);

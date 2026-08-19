@@ -167,7 +167,8 @@ impl RateLimiterConfigBuilder {
     ///     .limit_for_period(100)
     ///     .refresh_period(Duration::from_secs(1))
     ///     .backpressure()
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn backpressure(mut self) -> Self {
         self.backpressure = true;
@@ -196,7 +197,8 @@ impl RateLimiterConfigBuilder {
     ///     .limit_for_period(100)
     ///     .refresh_period(Duration::from_secs(1))
     ///     .window_type(WindowType::SlidingLog)
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn window_type(mut self, window_type: WindowType) -> Self {
         self.window_type = window_type;
@@ -243,7 +245,8 @@ impl RateLimiterConfigBuilder {
     ///             println!("Permit immediately available");
     ///         }
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_permit_acquired<F>(mut self, f: F) -> Self
     where
@@ -283,7 +286,8 @@ impl RateLimiterConfigBuilder {
     ///         let count = counter.fetch_add(1, Ordering::SeqCst);
     ///         println!("Request rejected after {:?} timeout (total: {})", timeout, count + 1);
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_permit_rejected<F>(mut self, f: F) -> Self
     where
@@ -321,7 +325,8 @@ impl RateLimiterConfigBuilder {
     ///     .on_permits_refreshed(|available| {
     ///         println!("Rate limiter refreshed: {} permits now available", available);
     ///     })
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn on_permits_refreshed<F>(mut self, f: F) -> Self
     where
@@ -339,15 +344,28 @@ impl RateLimiterConfigBuilder {
     }
 
     /// Builds the rate limiter layer.
-    pub fn build(self) -> crate::RateLimiterLayer {
-        let config = self.into_config();
-        crate::RateLimiterLayer::new(config)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RateLimiterConfigError::ZeroLimitForPeriod`] if
+    /// `limit_for_period` is zero, [`RateLimiterConfigError::ZeroRefreshPeriod`]
+    /// if `refresh_period` is zero, or
+    /// [`RateLimiterConfigError::BurstCapacityOverflow`] if
+    /// `limit_for_period + burst_size` overflows `usize`.
+    pub fn build(self) -> Result<crate::RateLimiterLayer, RateLimiterConfigError> {
+        let config = self.into_config()?;
+        Ok(crate::RateLimiterLayer::new(config))
     }
 
     /// Builds the rate limiter layer and returns an observable handle.
     ///
     /// All services produced by the returned layer share the same rate limiter
     /// state, and the handle can observe that state from outside the service.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RateLimiterConfigError`] under the same conditions as
+    /// [`build`](Self::build).
     ///
     /// # Example
     ///
@@ -356,12 +374,15 @@ impl RateLimiterConfigBuilder {
     ///
     /// let (layer, handle) = RateLimiterLayer::builder()
     ///     .limit_for_period(100)
-    ///     .build_with_handle();
+    ///     .build_with_handle()
+    ///     .unwrap();
     ///
     /// assert_eq!(handle.available_permits(), 100);
     /// ```
-    pub fn build_with_handle(self) -> (crate::RateLimiterLayer, crate::RateLimiterHandle) {
-        let config = self.into_config();
+    pub fn build_with_handle(
+        self,
+    ) -> Result<(crate::RateLimiterLayer, crate::RateLimiterHandle), RateLimiterConfigError> {
+        let config = self.into_config()?;
 
         let limiter = crate::limiter::SharedRateLimiter::new(
             config.window_type,
@@ -383,25 +404,26 @@ impl RateLimiterConfigBuilder {
             shared_limiter: Some(limiter),
         };
 
-        (layer, handle)
+        Ok((layer, handle))
     }
 
-    fn into_config(self) -> RateLimiterConfig {
-        assert!(
-            self.limit_for_period > 0,
-            "limit_for_period must be greater than zero"
-        );
-        assert!(
-            !self.refresh_period.is_zero(),
-            "refresh_period must be greater than zero"
-        );
+    fn into_config(self) -> Result<RateLimiterConfig, RateLimiterConfigError> {
+        if self.limit_for_period == 0 {
+            return Err(RateLimiterConfigError::ZeroLimitForPeriod);
+        }
+        if self.refresh_period.is_zero() {
+            return Err(RateLimiterConfigError::ZeroRefreshPeriod);
+        }
         if let Some(burst_size) = self.burst_size {
-            self.limit_for_period
-                .checked_add(burst_size)
-                .expect("limit_for_period + burst_size must not overflow");
+            self.limit_for_period.checked_add(burst_size).ok_or(
+                RateLimiterConfigError::BurstCapacityOverflow {
+                    limit_for_period: self.limit_for_period,
+                    burst_size,
+                },
+            )?;
         }
 
-        RateLimiterConfig {
+        Ok(RateLimiterConfig {
             limit_for_period: self.limit_for_period,
             refresh_period: self.refresh_period,
             timeout_duration: self.timeout_duration,
@@ -410,8 +432,31 @@ impl RateLimiterConfigBuilder {
             backpressure: self.backpressure,
             event_listeners: self.event_listeners,
             name: self.name,
-        }
+        })
     }
+}
+
+/// Errors that can occur when validating a [`RateLimiterConfig`] at
+/// construction time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum RateLimiterConfigError {
+    /// `limit_for_period` is zero, which would create a rate limiter that
+    /// never admits any request.
+    #[error("limit_for_period must be greater than zero")]
+    ZeroLimitForPeriod,
+    /// `refresh_period` is zero, which would create a rate limiter with no
+    /// meaningful refresh interval.
+    #[error("refresh_period must be greater than zero")]
+    ZeroRefreshPeriod,
+    /// `limit_for_period + burst_size` overflows `usize`.
+    #[error("limit_for_period ({limit_for_period}) + burst_size ({burst_size}) overflows usize")]
+    BurstCapacityOverflow {
+        /// The configured `limit_for_period`.
+        limit_for_period: usize,
+        /// The configured `burst_size`.
+        burst_size: usize,
+    },
 }
 
 #[cfg(test)]
@@ -421,7 +466,7 @@ mod tests {
 
     #[test]
     fn test_builder_defaults() {
-        let _layer = RateLimiterLayer::builder().build();
+        let _layer = RateLimiterLayer::builder().build().unwrap();
         // If this compiles and doesn't panic, the builder works
     }
 
@@ -432,7 +477,8 @@ mod tests {
             .refresh_period(Duration::from_secs(2))
             .timeout_duration(Duration::from_millis(500))
             .name("test-limiter")
-            .build();
+            .build()
+            .unwrap();
         // If this compiles and doesn't panic, the builder works
     }
 
@@ -441,23 +487,26 @@ mod tests {
         let _layer = RateLimiterLayer::builder()
             .on_permit_acquired(|_| {})
             .on_permit_rejected(|_| {})
-            .build();
+            .build()
+            .unwrap();
         // If this compiles and doesn't panic, the event listener registration works
     }
 
     #[test]
     fn test_preset_per_second() {
-        let _layer = RateLimiterLayer::per_second(100).build();
+        let _layer = RateLimiterLayer::per_second(100).build().unwrap();
     }
 
     #[test]
     fn test_preset_per_minute() {
-        let _layer = RateLimiterLayer::per_minute(1000).build();
+        let _layer = RateLimiterLayer::per_minute(1000).build().unwrap();
     }
 
     #[test]
     fn test_preset_burst() {
-        let (layer, handle) = RateLimiterLayer::burst(100, 50).build_with_handle();
+        let (layer, handle) = RateLimiterLayer::burst(100, 50)
+            .build_with_handle()
+            .unwrap();
         assert_eq!(layer.config.burst_size, Some(50));
         assert_eq!(handle.limit_for_period(), 100);
         assert_eq!(handle.burst_size(), 50);
@@ -466,23 +515,90 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "limit_for_period must be greater than zero")]
     fn test_zero_limit_is_rejected_at_build() {
-        let _ = RateLimiterLayer::builder().limit_for_period(0).build();
+        let result = RateLimiterLayer::builder().limit_for_period(0).build();
+        assert_eq!(
+            result.err(),
+            Some(RateLimiterConfigError::ZeroLimitForPeriod)
+        );
     }
 
     #[test]
-    #[should_panic(expected = "refresh_period must be greater than zero")]
     fn test_zero_refresh_period_is_rejected_at_build() {
-        let _ = RateLimiterLayer::builder()
+        let result = RateLimiterLayer::builder()
             .refresh_period(Duration::ZERO)
             .build();
+        assert_eq!(
+            result.err(),
+            Some(RateLimiterConfigError::ZeroRefreshPeriod)
+        );
     }
 
     #[test]
-    #[should_panic(expected = "limit_for_period + burst_size must not overflow")]
     fn test_overflowing_burst_capacity_is_rejected_at_build() {
-        let _ = RateLimiterLayer::burst(usize::MAX, 1).build();
+        let result = RateLimiterLayer::burst(usize::MAX, 1).build();
+        assert_eq!(
+            result.err(),
+            Some(RateLimiterConfigError::BurstCapacityOverflow {
+                limit_for_period: usize::MAX,
+                burst_size: 1,
+            })
+        );
+    }
+
+    /// Table-driven: the smallest valid `limit_for_period` and a handful of
+    /// larger values must all be accepted.
+    #[test]
+    fn nonzero_limit_for_period_is_accepted() {
+        for limit in [1, 2, 10, 1000] {
+            let result = RateLimiterLayer::builder().limit_for_period(limit).build();
+            assert!(
+                result.is_ok(),
+                "limit_for_period {limit} should be accepted"
+            );
+        }
+    }
+
+    /// Table-driven: the smallest valid `refresh_period` and a handful of
+    /// larger values must all be accepted.
+    #[test]
+    fn nonzero_refresh_period_is_accepted() {
+        for millis in [1, 10, 1000, 60_000] {
+            let result = RateLimiterLayer::builder()
+                .refresh_period(Duration::from_millis(millis))
+                .build();
+            assert!(
+                result.is_ok(),
+                "refresh_period {millis}ms should be accepted"
+            );
+        }
+    }
+
+    /// Table-driven: burst sizes that keep `limit_for_period + burst_size`
+    /// within `usize` bounds must all be accepted, including zero.
+    #[test]
+    fn non_overflowing_burst_capacity_is_accepted() {
+        for (limit, burst) in [(1, 0), (100, 50), (usize::MAX - 1, 1), (usize::MAX, 0)] {
+            let result = RateLimiterLayer::builder()
+                .limit_for_period(limit)
+                .burst_size(burst)
+                .build();
+            assert!(
+                result.is_ok(),
+                "limit_for_period {limit} + burst_size {burst} should be accepted"
+            );
+        }
+    }
+
+    #[test]
+    fn zero_limit_is_rejected_at_build_with_handle() {
+        let result = RateLimiterLayer::builder()
+            .limit_for_period(0)
+            .build_with_handle();
+        assert_eq!(
+            result.err(),
+            Some(RateLimiterConfigError::ZeroLimitForPeriod)
+        );
     }
 
     #[test]
@@ -491,6 +607,7 @@ mod tests {
         let _layer = RateLimiterLayer::per_second(100)
             .timeout_duration(Duration::from_secs(2))
             .name("custom")
-            .build();
+            .build()
+            .unwrap();
     }
 }

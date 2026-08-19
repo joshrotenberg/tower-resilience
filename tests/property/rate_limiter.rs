@@ -40,7 +40,8 @@ proptest! {
                 .refresh_period(Duration::from_secs(60)) // Long period so no refresh
                 .timeout_duration(Duration::from_millis(1))
                 .window_type(WindowType::Fixed)
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(svc);
 
@@ -84,7 +85,8 @@ proptest! {
                 .refresh_period(Duration::from_secs(60))
                 .timeout_duration(Duration::from_millis(1))
                 .window_type(WindowType::SlidingLog)
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(svc);
 
@@ -128,7 +130,8 @@ proptest! {
                 .refresh_period(Duration::from_secs(60))
                 .timeout_duration(Duration::from_millis(1))
                 .window_type(WindowType::SlidingCounter)
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(svc);
 
@@ -178,7 +181,8 @@ proptest! {
                 .refresh_period(Duration::from_millis(50))
                 .timeout_duration(Duration::from_millis(1))
                 .window_type(window_type)
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(svc);
 
@@ -233,7 +237,8 @@ proptest! {
                 .limit_for_period(limit)
                 .refresh_period(Duration::from_secs(60))
                 .timeout_duration(Duration::from_millis(10))
-                .build();
+                .build()
+                .unwrap();
 
             let service = layer.layer(svc);
 

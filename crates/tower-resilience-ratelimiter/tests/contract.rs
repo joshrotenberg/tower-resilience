@@ -13,7 +13,8 @@ async fn ratelimiter_rejection_drives_readied_instance() {
     let layer = RateLimiterLayer::builder()
         .limit_for_period(1000)
         .refresh_period(Duration::from_secs(1))
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());
@@ -29,7 +30,8 @@ async fn ratelimiter_backpressure_drives_readied_instance() {
         .limit_for_period(1000)
         .refresh_period(Duration::from_secs(1))
         .backpressure()
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());
@@ -45,7 +47,8 @@ async fn ratelimiter_rejection_composes_with_concurrency_limit() {
     let layer = RateLimiterLayer::builder()
         .limit_for_period(1000)
         .refresh_period(Duration::from_secs(1))
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new().layer(layer).service(inner);
 
     for _ in 0..3 {
@@ -60,7 +63,8 @@ async fn ratelimiter_backpressure_composes_with_concurrency_limit() {
         .limit_for_period(1000)
         .refresh_period(Duration::from_secs(1))
         .backpressure()
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new().layer(layer).service(inner);
 
     for _ in 0..3 {

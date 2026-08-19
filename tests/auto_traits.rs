@@ -79,6 +79,7 @@ fn ratelimiter_is_send_sync() {
         .limit_for_period(100)
         .refresh_period(Duration::from_secs(1))
         .build()
+        .unwrap()
         .layer(SyncInner);
     assert_send_sync_static(&svc);
 }
@@ -91,6 +92,7 @@ fn ratelimiter_backpressure_is_send_sync() {
         .refresh_period(Duration::from_secs(1))
         .backpressure()
         .build()
+        .unwrap()
         .layer(SyncInner);
     assert_send_sync_static(&svc);
 }

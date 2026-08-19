@@ -48,7 +48,7 @@
 //!     .on_permit_rejected(|timeout| {
 //!         println!("Rate limited! Timeout: {:?}", timeout);
 //!     })
-//!     .build();
+//!     .build()?;
 //!
 //! // Apply to a service
 //! let service = ServiceBuilder::new()
@@ -77,7 +77,7 @@
 //!     .refresh_period(Duration::from_secs(1))
 //!     .window_type(WindowType::SlidingLog)
 //!     .timeout_duration(Duration::from_millis(500))
-//!     .build();
+//!     .build()?;
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(rate_limiter)
@@ -104,7 +104,7 @@
 //!     .refresh_period(Duration::from_secs(1))
 //!     .window_type(WindowType::SlidingCounter)
 //!     .timeout_duration(Duration::from_millis(100))
-//!     .build();
+//!     .build()?;
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(rate_limiter)
@@ -131,7 +131,7 @@
 //!     .limit_for_period(10)
 //!     .refresh_period(Duration::from_secs(1))
 //!     .timeout_duration(Duration::from_millis(100))
-//!     .build();
+//!     .build()?;
 //!
 //! let mut service = ServiceBuilder::new()
 //!     .layer(rate_limiter)
@@ -165,7 +165,7 @@
 //!     .limit_for_period(10)
 //!     .refresh_period(Duration::from_secs(1))
 //!     .timeout_duration(Duration::from_millis(50))
-//!     .build();
+//!     .build()?;
 //!
 //! let mut service = ServiceBuilder::new()
 //!     .layer(rate_limiter)
@@ -198,7 +198,7 @@
 //!     .limit_for_period(100)
 //!     .refresh_period(Duration::from_secs(1))
 //!     .timeout_duration(Duration::from_millis(10)) // Short timeout = fast rejection
-//!     .build();
+//!     .build()?;
 //!
 //! let mut service = ServiceBuilder::new()
 //!     .layer(rate_limiter)
@@ -222,7 +222,7 @@ mod handle;
 mod layer;
 mod limiter;
 
-pub use config::{RateLimiterConfig, RateLimiterConfigBuilder, WindowType};
+pub use config::{RateLimiterConfig, RateLimiterConfigBuilder, RateLimiterConfigError, WindowType};
 pub use error::{RateLimiterError, RateLimiterServiceError};
 pub use events::RateLimiterEvent;
 pub use handle::RateLimiterHandle;
@@ -529,7 +529,8 @@ mod tests {
         let layer = RateLimiterLayer::builder()
             .limit_for_period(10)
             .refresh_period(Duration::from_secs(1))
-            .build();
+            .build()
+            .unwrap();
         let mut limiter = layer.layer(service_fn(|_: String| async {
             Ok::<_, std::io::Error>(())
         }));
@@ -556,7 +557,8 @@ mod tests {
             .limit_for_period(10)
             .refresh_period(Duration::from_secs(1))
             .timeout_duration(Duration::from_millis(100))
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -584,7 +586,8 @@ mod tests {
             .limit_for_period(2)
             .refresh_period(Duration::from_secs(10))
             .timeout_duration(Duration::from_millis(10))
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -630,7 +633,8 @@ mod tests {
             .limit_for_period(2)
             .refresh_period(Duration::from_millis(100))
             .timeout_duration(Duration::from_millis(200))
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -685,7 +689,8 @@ mod tests {
             .on_permit_rejected(move |_| {
                 rc.fetch_add(1, Ordering::SeqCst);
             })
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -707,7 +712,8 @@ mod tests {
             .limit_for_period(1)
             .refresh_period(Duration::from_millis(50))
             .timeout_duration(Duration::from_millis(100)) // Can wait through one refresh
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -748,7 +754,8 @@ mod tests {
             .limit_for_period(10)
             .refresh_period(Duration::from_secs(1))
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -774,7 +781,8 @@ mod tests {
             .limit_for_period(1)
             .refresh_period(Duration::from_millis(50))
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -805,7 +813,8 @@ mod tests {
             .limit_for_period(1)
             .refresh_period(Duration::from_millis(50))
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -837,7 +846,8 @@ mod tests {
             .on_permit_rejected(move |_| {
                 rc.fetch_add(1, Ordering::SeqCst);
             })
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -859,7 +869,8 @@ mod tests {
             .refresh_period(Duration::from_millis(50))
             .window_type(WindowType::SlidingLog)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -879,7 +890,8 @@ mod tests {
             .refresh_period(Duration::from_millis(50))
             .window_type(WindowType::SlidingCounter)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(service);
 
@@ -912,6 +924,7 @@ mod tests {
                 .timeout_duration(Duration::from_secs(5))
                 .window_type(window_type)
                 .build()
+                .unwrap()
                 .layer(inner);
             let barrier = Arc::new(Barrier::new(CALLERS + 1));
             let started_at = tokio::time::Instant::now();

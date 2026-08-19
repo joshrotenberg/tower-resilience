@@ -310,7 +310,8 @@ fn bench_rate_limiter_exhausted(c: &mut Criterion) {
                 .limit_for_period(1) // Very limited
                 .refresh_period(Duration::from_secs(60)) // Long refresh
                 .timeout_duration(Duration::from_millis(1)) // Short timeout
-                .build();
+                .build()
+                .unwrap();
 
             let mut service = layer.layer(BaselineService);
 
@@ -491,7 +492,8 @@ fn bench_full_stack_composition(c: &mut Criterion) {
             let rl_layer = RateLimiterLayer::builder()
                 .limit_for_period(1000)
                 .refresh_period(Duration::from_secs(1))
-                .build();
+                .build()
+                .unwrap();
 
             let tl_layer = TimeLimiterLayer::builder()
                 .timeout_duration(Duration::from_secs(30))

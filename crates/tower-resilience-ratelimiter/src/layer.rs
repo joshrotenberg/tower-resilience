@@ -20,7 +20,8 @@ use tower::Layer;
 ///     .limit_for_period(100)
 ///     .refresh_period(Duration::from_secs(1))
 ///     .timeout_duration(Duration::from_millis(100))
-///     .build();
+///     .build()
+///     .unwrap();
 ///
 /// let service = ServiceBuilder::new()
 ///     .layer(rate_limiter)
@@ -57,7 +58,8 @@ impl RateLimiterLayer {
     /// let layer = RateLimiterLayer::builder()
     ///     .limit_for_period(100)
     ///     .refresh_period(Duration::from_secs(1))
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn builder() -> crate::RateLimiterConfigBuilder {
         crate::RateLimiterConfigBuilder::new()
@@ -79,12 +81,13 @@ impl RateLimiterLayer {
     /// use tower_resilience_ratelimiter::RateLimiterLayer;
     ///
     /// // Allow 100 requests per second
-    /// let layer = RateLimiterLayer::per_second(100).build();
+    /// let layer = RateLimiterLayer::per_second(100).build().unwrap();
     ///
     /// // Customize further
     /// let layer = RateLimiterLayer::per_second(100)
     ///     .timeout_duration(std::time::Duration::from_millis(500))
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn per_second(limit: usize) -> crate::RateLimiterConfigBuilder {
         use std::time::Duration;
@@ -106,7 +109,7 @@ impl RateLimiterLayer {
     /// use tower_resilience_ratelimiter::RateLimiterLayer;
     ///
     /// // Allow 1000 requests per minute
-    /// let layer = RateLimiterLayer::per_minute(1000).build();
+    /// let layer = RateLimiterLayer::per_minute(1000).build().unwrap();
     /// ```
     pub fn per_minute(limit: usize) -> crate::RateLimiterConfigBuilder {
         use std::time::Duration;
@@ -135,7 +138,7 @@ impl RateLimiterLayer {
     /// use tower_resilience_ratelimiter::RateLimiterLayer;
     ///
     /// // Allow 100 requests/sec sustained with burst up to 150
-    /// let layer = RateLimiterLayer::burst(100, 50).build();
+    /// let layer = RateLimiterLayer::burst(100, 50).build().unwrap();
     /// ```
     pub fn burst(rate_per_second: usize, burst_size: usize) -> crate::RateLimiterConfigBuilder {
         use std::time::Duration;

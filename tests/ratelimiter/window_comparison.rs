@@ -14,6 +14,7 @@ fn create_limiter(window_type: WindowType, limit: usize, period_ms: u64) -> Rate
         .timeout_duration(Duration::from_millis(10))
         .window_type(window_type)
         .build()
+        .unwrap()
 }
 
 #[tokio::test]
@@ -129,7 +130,8 @@ async fn default_is_fixed_window() {
         .refresh_period(Duration::from_millis(100))
         .timeout_duration(Duration::from_millis(10))
         // No .window_type() call - should default to Fixed
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = layer.layer(svc);
 
@@ -165,7 +167,8 @@ async fn window_type_can_be_changed() {
             .refresh_period(Duration::from_secs(1))
             .timeout_duration(Duration::from_millis(10))
             .window_type(window_type)
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = layer.layer(svc);
 
