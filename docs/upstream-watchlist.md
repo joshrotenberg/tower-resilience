@@ -23,7 +23,7 @@ upstream and local state, not the date the row was created.
 | [tower#807] | Arbitrary executor delegation for blocking/parallel work | [#371] (PR [#415]) | Resolved | 2026-08-18 |
 | [tower#60] | Reconnect backoff via a connection factory | [#361] (PR [#391]), [reconnect-factory-migration.md] | Resolved | 2026-08-18 |
 | [tower#682] | Retry ergonomics (non-`Clone` errors, readiness-before-retry) | [#346] (PR [#350]), [#362] (PR [#392]) | Resolved | 2026-08-18 |
-| [tower#696], [tower#859], [tower#866] | Weighted P2C routing and empty-`Steer` validation semantics | [#366] (open), PR [#401] (draft) | In progress | 2026-08-18 |
+| [tower#696], [tower#859], [tower#866] | Weighted P2C routing and empty-`Steer` validation semantics | [#366] (closed), PR [#401] (merged 2026-08-18) | Resolved | 2026-08-19 |
 | [tower-http#688] | Body-frame deadlines for streamed HTTP request/response bodies | [#373] (PR [#403]) | Resolved | 2026-08-18 |
 
 ## Maintenance rules
@@ -94,4 +94,4 @@ upstream and local state, not the date the row was created.
 [#430]: https://github.com/joshrotenberg/tower-resilience/issues/430
 
 [circuitbreaker-tower-comparison.md]: circuitbreaker-tower-comparison.md
-[reconnect-factory-migration.md]: reconnect-factory-migration.md
+[reconnect-factory-migration.md]: ../crates/tower-resilience-reconnect/MIGRATION.md

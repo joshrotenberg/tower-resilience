@@ -122,6 +122,10 @@ mod policy;
 mod service;
 mod state;
 
+/// Migration guide for the post-0.11 factory-backed reconnect API.
+#[doc = include_str!("../MIGRATION.md")]
+pub mod migration {}
+
 pub use config::{ReconnectConfig, ReconnectConfigBuilder, ReconnectPredicate};
 pub use layer::ReconnectLayer;
 pub use policy::ReconnectPolicy;

@@ -450,8 +450,8 @@ let service = layer.layer(primary_service);
 layer (the backup need only be `Send`, not `Clone`), and `Request` must
 implement `Clone` since a backup attempt needs the same logical request the
 primary consumed. See the [generic fallback-service migration
-guide](docs/fallback-service-migration.md) for readiness, sharing, and
-error-selection details.
+guide](crates/tower-resilience-fallback/MIGRATION.md) for readiness, sharing,
+and error-selection details.
 
 ### Hedge
 
@@ -625,8 +625,8 @@ let service = layer.layer(make_service);
 
 Unlike retry middleware, reconnect must own a service factory; wrapping one
 already-created service cannot replace a broken connection. See the
-[factory migration guide](docs/reconnect-factory-migration.md) when upgrading
-from the pre-0.12 API.
+[factory migration guide](crates/tower-resilience-reconnect/MIGRATION.md)
+when upgrading from the pre-0.12 API.
 
 **Full examples:** [reconnect_basic.rs](crates/tower-resilience-reconnect/examples/reconnect_basic.rs) | [reconnect_custom_policy.rs](crates/tower-resilience-reconnect/examples/reconnect_custom_policy.rs)
 
