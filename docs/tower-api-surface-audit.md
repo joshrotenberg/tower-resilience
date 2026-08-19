@@ -31,7 +31,7 @@ workspace depends on).
 | executor | Named (`ExecutorFuture`) | Yes | Pre-existing (only crate that already had the full triad before this PR) | `tokio::runtime::Handle` (pluggable `Executor` trait, not hardwired) |
 | fallback | `BoxFuture` (both `Fallback` and `ServiceFallback`) | Yes | Added in this PR (`ServiceFallback` exposes the primary only -- see [below](#the-servicefallback-primary-only-accessor)) | none beyond `#[tokio::test]`; `ServiceFallback`'s shared backup uses `futures::lock::Mutex`, not Tokio's |
 | hedge | `BoxFuture` | Yes | Added in this PR | `tokio::time::sleep` (hedge delay) |
-| outlier | `BoxFuture` | Yes | Added in this PR | None -- had an unused non-dev `tokio` dependency, removed in this PR (see [below](#three-crates-had-an-unused-non-dev-tokio-dependency)) |
+| outlier | Named (`OutlierDetectionFuture`) -- de-boxed in #426 | No -- see [below](#de-boxing-prototype-outlier-426) | Added in the #376 PR | None -- had an unused non-dev `tokio` dependency, removed in the #376 PR (see [below](#three-crates-had-an-unused-non-dev-tokio-dependency)) |
 | ratelimiter | `BoxFuture` | Yes | Added in this PR | `tokio::time::Sleep` (backpressure mode) |
 | reconnect | Named (`ReconnectFuture`) | No -- see [below](#reconnect-and-router-no-single-inner-service) | Not applicable -- see [below](#reconnect-and-router-no-single-inner-service) | `tokio::time::Sleep` (reconnect backoff) |
 | retry | `BoxFuture` | Yes | Added in this PR | `tokio::time::sleep` (backoff delay) |
@@ -43,13 +43,13 @@ not a `tower::Service`), matching the contract matrix.
 
 ## Boxing and trait bounds
 
-10 of the 15 `Service`-implementing crates (`bulkhead`, `cache`, `chaos`,
-`circuitbreaker` x2, `fallback` x2, `hedge`, `outlier`, `ratelimiter`,
-`retry`, `timelimiter`) set `type Future = BoxFuture<'static, Result<...>>`
+9 of the 15 `Service`-implementing crates (`bulkhead`, `cache`, `chaos`,
+`circuitbreaker` x2, `fallback` x2, `hedge`, `ratelimiter`, `retry`,
+`timelimiter`) set `type Future = BoxFuture<'static, Result<...>>`
 (`futures::future::BoxFuture`, i.e. `Pin<Box<dyn Future<Output = ...> +
 Send>>`). Boxing a trait object requires the boxed future to be `Send +
 'static`, and Rust's type system propagates that requirement outward to
-every type that future is built from -- which is why every one of those ten
+every type that future is built from -- which is why every one of those nine
 crates' `Service` impl also requires `S: Send + 'static`, `S::Future: Send +
 'static`, `Req: Send + 'static`, and usually `S::Response`/`S::Error: Send +
 'static` too. For example (`crates/tower-resilience-ratelimiter/src/lib.rs`):
@@ -91,28 +91,34 @@ S, Request>` state machine with three states (`Called`/`Waiting`/`Retrying`)
 -- compare to this crate's `tower-resilience-retry::Retry`, whose bound set
 above is a direct consequence of `BoxFuture`.
 
-Four crates already avoid this: `adaptive` (`AdaptiveFuture`), `coalesce`
-(`CoalesceFuture`), `executor` (`ExecutorFuture`), and `reconnect`
+Five crates already avoid this: `adaptive` (`AdaptiveFuture`), `coalesce`
+(`CoalesceFuture`), `executor` (`ExecutorFuture`), `outlier`
+(`OutlierDetectionFuture`, de-boxed in #426 -- see
+[below](#de-boxing-prototype-outlier-426)), and `reconnect`
 (`ReconnectFuture`) each hand-write a named future type via `pin_project!`
 or manual `Future` impls, matching Tower's own approach. `router` goes
 further and doesn't wrap the future at all (`type Future = S::Future`),
 identical in shape to `tower::limit::rate::RateLimit`.
 
-### Is de-boxing the other ten crates an "avoidable restriction"?
+### Is de-boxing the other nine crates an "avoidable restriction"?
 
-Given the above, `Send + 'static` on `S`/`Req` in the ten `BoxFuture` crates
-is a direct, mechanical consequence of the boxing choice, not an
-independently-chosen restriction -- so it is not something that can be
-"removed" in isolation; removing it requires removing the boxing itself.
-Doing that properly (a hand-written `pin_project!` state machine per crate,
-each with its own poll-loop shape -- rejection vs backpressure branching,
-sliding-window/circuit-state interaction, cache-store locking, and so on) is
-a substantial, per-crate redesign with real correctness risk (the four
-crates that already do this run a meaningfully larger state machine than a
-`Box::pin(async move { ... })` body). That is a bigger, riskier change than
-belongs in this PR, which is scoped to auditing plus the genuinely
-zero-risk fixes (accessors, below). #426 tracks de-boxing as future work,
-crate by crate, starting with whichever crate's call-path is simplest.
+Given the above, `Send + 'static` on `S`/`Req` in the nine remaining
+`BoxFuture` crates is a direct, mechanical consequence of the boxing
+choice, not an independently-chosen restriction -- so it is not something
+that can be "removed" in isolation; removing it requires removing the
+boxing itself. Doing that properly (a hand-written `pin_project!` state
+machine per crate, each with its own poll-loop shape -- rejection vs
+backpressure branching, sliding-window/circuit-state interaction,
+cache-store locking, and so on) is a substantial, per-crate redesign with
+real correctness risk for some of the nine (see the
+[difficulty assessment](#remaining-crates-difficulty-and-recommendation)
+below) -- which is why the original #376 PR scoped itself to auditing plus
+the genuinely zero-risk fixes (accessors, below) and left this as follow-up
+work. #426 explored that follow-up: it de-boxed `outlier` as a proof of the
+pattern (the crate whose `call()` had the fewest branches and no internal
+timer/lock state) and assessed the rest -- some are worth doing next, two
+are probably not worth it on their own. See
+[below](#de-boxing-prototype-outlier-426) for both.
 
 ### Bounds driven by spawning, not boxing
 
@@ -273,3 +279,72 @@ implement, so none are flagged as restrictions to remove.
 future types) crate by crate, as a follow-up to this audit -- mirroring how
 #372's construction-time-validation audit scoped its first fix to
 `circuitbreaker` (#417) and tracked the rest in #422.
+
+### De-boxing prototype: `outlier` (#426)
+
+`outlier` was chosen as the first de-boxing candidate: its `call()` has
+exactly one branch point (error mode's pre-ejected immediate-error path
+versus the normal wrapped-inner-future path) and no internal timer, lock, or
+multi-attempt state, so it needed only a two-variant `pin_project!` enum
+(`OutlierDetectionFuture<F, C>` in
+`crates/tower-resilience-outlier/src/service.rs`) rather than a bespoke
+poll-loop. The `Service` impl's bound list dropped from `S: Send + 'static,
+S::Future: Send + 'static, S::Response: Send + 'static, S::Error: Send +
+'static, C: ... + Send + 'static, Request: Send + 'static` down to just `S:
+Service<Request> + Clone, C: FailureClassifier<S::Response, S::Error> +
+Clone` -- the same bound set `tower::limit::rate::RateLimit` and this
+workspace's other named-future crates carry.
+
+**Allocation evidence.** `tests/outlier_deboxing_allocation_evidence.rs`
+installs a counting `#[global_allocator]` in its own test binary (so it
+cannot affect any other test's allocator) and measures one `call()` on the
+de-boxed implementation against a byte-for-byte reconstruction of the
+pre-#426 `BoxFuture`-based implementation (same clone/classify/record work,
+differing only in `Box::pin` vs the named enum). Result, stable across five
+repeated runs: **1 allocation per call de-boxed, versus 2 boxed** -- exactly
+the `Box::pin` heap frame eliminated, with the remaining allocation being the
+`instance_name: String` clone both implementations pay identically. This is
+a small, real, per-call win, not a measurement artifact; the takeaway for
+the crates below is that the boxing removal itself is worth roughly one
+allocation per call, and the harder or riskier state-machine rewrites (which
+some of the remaining nine are) should be weighed against that -- not
+against some larger allocation-elimination number.
+
+### Remaining crates: difficulty and recommendation
+
+Assessed by reading each crate's `call()` body and existing state (not just
+the summary table above). Ordered roughly easiest to hardest:
+
+| Crate | Shape | Difficulty | Notes |
+| --- | --- | --- | --- |
+| `cache` | Two branches: cache hit (immediate `Ok(response)`, no inner future) vs. cache miss (wrap inner future, insert on completion). | Low | Structurally identical to `outlier`'s prototype -- a two-variant enum, no timers or locks held across `.await`. Good second candidate. |
+| `bulkhead` | Backpressure/non-backpressure entry, one wrapped inner future with a semaphore permit released on completion, plus a "not ready" immediate-error branch. | Low-medium | Same overall shape as `outlier` (permit bookkeeping is synchronous, not something the future itself has to drive across polls). |
+| `ratelimiter` | Backpressure mode wraps the inner future with permit/window bookkeeping; the harder admission decisions (token bucket, sliding window) already happen in `poll_ready`, not in the future. | Medium | Similar to `bulkhead` in shape; the existing `RateLimiterHandle` plumbing needs checking for anything that assumes a `'static` future. |
+| `timelimiter` | Two independent modes: `cancel_running_future` (default) can reuse `tokio::time::timeout()`'s own named `Timeout<F>` type directly with no new code; `detached` mode spawns and races a `oneshot::Receiver` against a `Sleep`, the same shape `executor`'s `ExecutorFuture` already has plus one extra field. | Medium | Two variants, both with local precedent already in this workspace (`tokio::time::Timeout`, `ExecutorFuture`). Not hard, just two future types instead of one. |
+| `chaos` | Sequential: optional injected latency (`tokio::time::sleep`) before calling inner, or immediate fault-injection error, or a direct pass-through. | Medium | A 2-3 variant enum with a `Sleep` field for the latency-injection case; no loops or shared locks. |
+| `retry` | Multi-attempt loop: call, evaluate policy, optionally sleep for backoff, call again, up to `max_attempts`. | Medium | Core Tower's own `tower::retry::Retry` (`tower-0.5.3/src/retry/mod.rs`) already solves this exact shape with a 3-state `pin_project!` enum (`Called`/`Waiting`/`Retrying`) that this crate's version could mirror closely -- a proven template lowers the risk relative to its apparent complexity. |
+| `fallback` (`Fallback` and `ServiceFallback`) | Two-phase sequential: await primary, and on a fallback-triggering result, await backup. `ServiceFallback`'s backup is behind `Arc<Mutex<B>>` (`futures::lock::Mutex`, itself poll-based), so the backup phase is its own nested lock-then-call sub-state-machine. | Medium-high | `Fallback`'s value/closure backup path is simpler (no second service future to project, no lock). `ServiceFallback` is harder because the async-mutex-guarded backup call needs its own state (acquire lock, then poll the locked service's future) layered inside the outer Primary/Backup enum. |
+| `circuitbreaker` (`CircuitBreaker` and `CircuitBreakerWithFallback`) | Already the most complex `call()` in the workspace even in its current boxed form: a `tokio::sync::Mutex` for circuit state, a `tokio::sync::Semaphore` for half-open admission, and an `Option<Pin<Box<tokio::time::Sleep>>>` for backpressure mode, combined per-call. | High | The crate already hand-manages a boxed `Sleep` internally, which is a signal of real state-machine complexity, not just future-wrapping. `CircuitBreakerWithFallback` adds a second service future on top. This is the crate the original #376 audit explicitly called out as carrying the most correctness risk, and that assessment holds. |
+| `hedge` | Races up to `max_hedged_attempts` inner-service calls concurrently via `FuturesUnordered` + `tokio::select!` against per-attempt delays, cancelling losers when a winner completes. | High | A hand-rolled equivalent needs to reimplement `FuturesUnordered`'s poll-many-and-remove-completed behavior manually, or restrict itself to a small `SmallVec`/array of `Option<Pin<&mut F>>` slots polled in a fixed-size loop (which pin-projects awkwardly for a runtime-determined `max_hedged_attempts`). Racing an unbounded set of heterogeneous futures without a heap-allocated collection is the least precedented shape in this workspace. |
+
+**Recommendation:** `cache` and `bulkhead` are the next two candidates --
+same low-risk shape as this PR's `outlier` prototype, each worth its own PR
+per the per-crate-PR discipline above. `chaos`, `timelimiter`, and
+`ratelimiter` are reasonable medium-difficulty follow-ups once the pattern
+is well-worn. `retry` is medium risk but has a direct upstream template to
+mirror (`tower::retry::Retry`), which is worth leaning on rather than
+inventing a new shape.
+
+`circuitbreaker` and `hedge` are the two crates most likely **not** worth
+de-boxing on their own merits: both already carry meaningfully more
+per-call state-machine complexity than a `Box::pin` removal saves (roughly
+one allocation, per the measurement above), and `circuitbreaker` in
+particular is under active, carefully-scoped work already (#372, #417,
+#422) where introducing a hand-written poll loop is a correctness risk this
+audit is not positioned to take on. If either is revisited, it should be
+its own dedicated design effort weighing the one-allocation-per-call win
+against the state-machine rewrite risk explicitly, not bundled into the
+mechanical "de-box the next crate" pattern this table otherwise describes.
+`fallback`'s `ServiceFallback` sits in between -- worth attempting after the
+low-risk crates are done, but should budget for the nested lock-then-call
+sub-state-machine, not just a plain enum.

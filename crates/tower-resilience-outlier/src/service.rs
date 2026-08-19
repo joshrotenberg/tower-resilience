@@ -1,8 +1,11 @@
 //! Tower Service implementation for outlier detection.
 
 use crate::config::OutlierDetectionConfig;
+use crate::detector::OutlierDetector;
 use crate::error::{OutlierDetectionError, OutlierDetectionServiceError};
-use futures::future::BoxFuture;
+use pin_project_lite::pin_project;
+use std::future::Future;
+use std::pin::Pin;
 use std::task::{Context, Poll};
 use tower::Service;
 use tower_resilience_core::classifier::FailureClassifier;
@@ -66,16 +69,12 @@ impl<S: Clone, C: Clone> Clone for OutlierDetectionService<S, C> {
 
 impl<S, C, Request> Service<Request> for OutlierDetectionService<S, C>
 where
-    S: Service<Request> + Clone + Send + 'static,
-    S::Future: Send + 'static,
-    S::Response: Send + 'static,
-    S::Error: Send + 'static,
-    C: FailureClassifier<S::Response, S::Error> + Clone + Send + 'static,
-    Request: Send + 'static,
+    S: Service<Request> + Clone,
+    C: FailureClassifier<S::Response, S::Error> + Clone,
 {
     type Response = S::Response;
     type Error = OutlierDetectionServiceError<S::Error>;
-    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+    type Future = OutlierDetectionFuture<S::Future, C>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         // In backpressure mode, return Pending when ejected
@@ -103,32 +102,85 @@ where
 
         // In error mode, check ejection in call()
         if !backpressure && detector.is_ejected(&instance_name) {
-            return Box::pin(async move {
-                Err(OutlierDetectionServiceError::OutlierDetection(
-                    OutlierDetectionError::Ejected {
-                        name: instance_name,
-                    },
-                ))
-            });
+            return OutlierDetectionFuture::Rejected {
+                name: Some(instance_name),
+            };
         }
 
         let clone = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
 
-        Box::pin(async move {
-            let result = inner.call(request).await;
+        OutlierDetectionFuture::Called {
+            future: inner.call(request),
+            instance_name,
+            detector,
+            classifier,
+        }
+    }
+}
 
-            // Classify the result
-            let is_failure = classifier.classify(&result);
+pin_project! {
+    #[project = OutlierDetectionFutureProj]
+    /// Future returned by [`OutlierDetectionService::call`].
+    ///
+    /// Wraps the inner service's future directly (no heap allocation) with
+    /// one exception: error mode's pre-ejected path, which is a plain
+    /// already-computed result and needs no inner future at all.
+    pub enum OutlierDetectionFuture<F, C> {
+        /// Error mode already determined the instance is ejected in `call()`;
+        /// there is no inner future to drive.
+        Rejected {
+            name: Option<String>,
+        },
+        /// The inner future is being driven; its result is classified and
+        /// recorded against the shared detector when it completes.
+        Called {
+            #[pin]
+            future: F,
+            instance_name: String,
+            detector: OutlierDetector,
+            classifier: C,
+        },
+    }
+}
 
-            if is_failure {
-                detector.record_failure(&instance_name);
-            } else {
-                detector.record_success(&instance_name);
+impl<F, C, Res, E> Future for OutlierDetectionFuture<F, C>
+where
+    F: Future<Output = Result<Res, E>>,
+    C: FailureClassifier<Res, E>,
+{
+    type Output = Result<Res, OutlierDetectionServiceError<E>>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        match self.project() {
+            OutlierDetectionFutureProj::Rejected { name } => {
+                let name = name
+                    .take()
+                    .expect("OutlierDetectionFuture polled after completion");
+                Poll::Ready(Err(OutlierDetectionServiceError::OutlierDetection(
+                    OutlierDetectionError::Ejected { name },
+                )))
             }
+            OutlierDetectionFutureProj::Called {
+                future,
+                instance_name,
+                detector,
+                classifier,
+            } => match future.poll(cx) {
+                Poll::Pending => Poll::Pending,
+                Poll::Ready(result) => {
+                    let is_failure = classifier.classify(&result);
 
-            result.map_err(OutlierDetectionServiceError::Inner)
-        })
+                    if is_failure {
+                        detector.record_failure(instance_name);
+                    } else {
+                        detector.record_success(instance_name);
+                    }
+
+                    Poll::Ready(result.map_err(OutlierDetectionServiceError::Inner))
+                }
+            },
+        }
     }
 }
 

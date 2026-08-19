@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** `OutlierDetectionService::Future` is now a named,
+  `pin_project!`-based `OutlierDetectionFuture<F, C>` instead of
+  `BoxFuture<'static, Result<...>>`. This removes one `Box::pin` heap
+  allocation per call and, as a direct consequence, drops the `S: Send +
+  'static`, `S::Future: Send + 'static`, `Req: Send + 'static`, and `C:
+  Send + 'static` bounds from the `Service` impl -- only `S: Service<Req>
+  + Clone` and `C: FailureClassifier<S::Response, S::Error> + Clone` are
+  required now. Code that names the concrete future type (rare; most
+  callers only `.await` it) needs to update to the new type. See
+  `docs/tower-api-surface-audit.md` for the allocation-count evidence and
+  the crate-by-crate follow-up plan (#426).
+
 ### Added
 
 - `OutlierDetectionService::get_ref()`, `get_mut()`, and `into_inner()`
@@ -23,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drop an unused non-dev `tokio` dependency; nothing in the crate's
   library code used it (the only `tokio::` references were in test code,
   already covered by the dev-dependency).
+- Drop the `futures` dependency; no longer needed now that
+  `Service::Future` is not `BoxFuture`-based.
 
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-outlier-v0.11.0...tower-resilience-outlier-v0.12.0) - 2026-08-17
 
