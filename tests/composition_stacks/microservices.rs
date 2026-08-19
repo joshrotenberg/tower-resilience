@@ -82,7 +82,7 @@ async fn microservices_with_adaptive_concurrency_compiles() {
         .max_attempts(2)
         .build();
 
-    let adaptive = AdaptiveLimiterLayer::new(Vegas::builder().build());
+    let adaptive = AdaptiveLimiterLayer::new(Vegas::builder().build().unwrap());
 
     let timeout = TimeLimiterLayer::builder()
         .timeout_duration(Duration::from_secs(5))

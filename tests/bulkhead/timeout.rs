@@ -14,7 +14,8 @@ async fn test_zero_timeout() {
         .max_concurrent_calls(1)
         .max_wait_duration(Duration::ZERO)
         .name("zero-timeout-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -64,7 +65,8 @@ async fn test_very_short_timeout() {
         .max_concurrent_calls(1)
         .max_wait_duration(Duration::from_millis(1))
         .name("short-timeout-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -121,7 +123,8 @@ async fn test_long_timeout() {
         .max_concurrent_calls(1)
         .max_wait_duration(Duration::from_secs(5))
         .name("long-timeout-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -171,7 +174,8 @@ async fn test_no_timeout_none() {
         .max_concurrent_calls(1)
         // Default: wait indefinitely (no timeout)
         .name("no-timeout-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -218,7 +222,8 @@ async fn test_timeout_precision() {
         .max_concurrent_calls(1)
         .max_wait_duration(timeout_duration)
         .name("precision-timeout-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -277,7 +282,8 @@ async fn test_multiple_timeouts() {
         .on_call_rejected(move |_| {
             r.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -330,7 +336,8 @@ async fn test_timeout_then_success() {
         .max_concurrent_calls(1)
         .max_wait_duration(Duration::from_millis(50))
         .name("timeout-success-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -391,7 +398,8 @@ async fn test_concurrent_timeouts() {
         .max_concurrent_calls(2)
         .max_wait_duration(Duration::from_millis(50))
         .name("concurrent-timeout-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -444,7 +452,8 @@ async fn test_timeout_boundary_conditions() {
         .max_concurrent_calls(1)
         .max_wait_duration(Duration::from_secs(120))
         .name("boundary-timeout-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = ServiceBuilder::new()
         .layer(layer)
@@ -470,13 +479,15 @@ async fn test_changing_timeout_behavior() {
         .max_concurrent_calls(1)
         .max_wait_duration(Duration::from_millis(10))
         .name("short-timeout")
-        .build();
+        .build()
+        .unwrap();
 
     let long_timeout = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .max_wait_duration(Duration::from_millis(200))
         .name("long-timeout")
-        .build();
+        .build()
+        .unwrap();
 
     let service_short =
         ServiceBuilder::new()

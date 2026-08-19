@@ -385,7 +385,10 @@ mod tests {
 
     #[test]
     fn accessors_expose_the_inner_service() {
-        let layer = BulkheadLayer::builder().max_concurrent_calls(1).build();
+        let layer = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .build()
+            .unwrap();
         let mut bulkhead = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
 
         let _: &_ = bulkhead.get_ref();
@@ -400,7 +403,8 @@ mod tests {
         let layer = BulkheadLayer::builder()
             .max_concurrent_calls(1)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
         let mut service = layer.layer(service_fn(move |()| {
             observed.fetch_add(1, Ordering::SeqCst);
             async { Ok::<_, Infallible>(()) }
@@ -419,7 +423,8 @@ mod tests {
         let (layer, handle) = BulkheadLayer::builder()
             .max_concurrent_calls(1)
             .backpressure()
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
         let mut service = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
         handle.semaphore.close();
 
@@ -438,7 +443,8 @@ mod tests {
         let (layer, handle) = BulkheadLayer::builder()
             .max_concurrent_calls(1)
             .backpressure()
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
         let mut service = layer.layer(ReadinessError);
 
         let error = match service.ready().await {
@@ -457,7 +463,8 @@ mod tests {
         let (layer, handle) = BulkheadLayer::builder()
             .max_concurrent_calls(1)
             .backpressure()
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
         let service = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
         let mut reserved = service.clone();
         let mut waiter = service.clone();
@@ -485,7 +492,8 @@ mod tests {
         let layer = BulkheadLayer::builder()
             .max_concurrent_calls(1)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
         let service = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
         let mut reserved = service.clone();
         let mut next = service.clone();
@@ -509,7 +517,8 @@ mod tests {
         let (layer, handle) = BulkheadLayer::builder()
             .max_concurrent_calls(1)
             .backpressure()
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
         let service = layer.layer(service_fn(|()| pending::<Result<(), Infallible>>()));
         let mut first = service.clone();
         let mut second = service.clone();

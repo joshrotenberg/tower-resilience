@@ -55,7 +55,8 @@ async fn main() {
             fail.fetch_add(1, Ordering::SeqCst);
             println!("  ⚠ Call failed ({:?})", duration);
         })
-        .build();
+        .build()
+        .unwrap();
 
     // Create a service that simulates work
     let service = tower::service_fn(|req: (usize, Duration, bool)| async move {

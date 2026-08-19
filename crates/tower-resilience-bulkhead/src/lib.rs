@@ -16,7 +16,7 @@
 //! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(10)
 //!     .name("my-bulkhead")
-//!     .build();
+//!     .build().unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -46,7 +46,7 @@
 //!         BulkheadLayer::builder()
 //!             .max_concurrent_calls(10)
 //!             .backpressure()
-//!             .build(),
+//!             .build().unwrap(),
 //!     )
 //!     .service_fn(|request: String| async move { Ok::<_, ()>(request) });
 //! ```
@@ -68,7 +68,7 @@
 //! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(100)
 //!     .reject_when_full()
-//!     .build();
+//!     .build().unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -92,7 +92,7 @@
 //!     .max_concurrent_calls(5)
 //!     .max_wait_duration(Duration::from_secs(2))
 //!     .name("timeout-bulkhead")
-//!     .build();
+//!     .build().unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -127,7 +127,7 @@
 //!     .on_call_finished(|duration| {
 //!         println!("Call finished in {:?}", duration);
 //!     })
-//!     .build();
+//!     .build().unwrap();
 //! # }
 //! ```
 //!
@@ -147,7 +147,7 @@
 //! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(5)
 //!     .max_wait_duration(Duration::from_millis(100))
-//!     .build();
+//!     .build()?;
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -189,7 +189,7 @@
 //! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(10)
 //!     .max_wait_duration(Duration::from_millis(50))
-//!     .build();
+//!     .build()?;
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -227,7 +227,7 @@
 //! let layer = BulkheadLayer::builder()
 //!     .max_concurrent_calls(5)
 //!     .max_wait_duration(Duration::from_millis(10))
-//!     .build();
+//!     .build()?;
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -264,7 +264,7 @@
 //!     .on_call_rejected(move |_| {
 //!         r.fetch_add(1, Ordering::SeqCst);
 //!     })
-//!     .build();
+//!     .build().unwrap();
 //!
 //! let service = ServiceBuilder::new()
 //!     .layer(layer)
@@ -289,7 +289,7 @@ pub mod layer;
 /// Tower `Service` implementation for the bulkhead.
 pub mod service;
 
-pub use config::{BulkheadConfig, BulkheadConfigBuilder};
+pub use config::{BulkheadConfig, BulkheadConfigBuilder, BulkheadConfigError};
 pub use error::{BulkheadError, BulkheadServiceError, Result};
 pub use events::BulkheadEvent;
 pub use handle::BulkheadHandle;
@@ -306,7 +306,7 @@ mod tests {
 
     #[test]
     fn test_config_builder_defaults() {
-        let _config = BulkheadLayer::builder().build();
+        let _config = BulkheadLayer::builder().build().unwrap();
         // Layer is built, so we can't inspect config directly
         // This test just ensures the builder works
     }
@@ -323,7 +323,8 @@ mod tests {
             .on_call_permitted(move |_| {
                 c.fetch_add(1, Ordering::SeqCst);
             })
-            .build();
+            .build()
+            .unwrap();
 
         // Builder accepts all parameters without panic
     }
@@ -382,17 +383,17 @@ mod tests {
 
     #[test]
     fn test_preset_small() {
-        let _layer = BulkheadLayer::small().build();
+        let _layer = BulkheadLayer::small().build().unwrap();
     }
 
     #[test]
     fn test_preset_medium() {
-        let _layer = BulkheadLayer::medium().build();
+        let _layer = BulkheadLayer::medium().build().unwrap();
     }
 
     #[test]
     fn test_preset_large() {
-        let _layer = BulkheadLayer::large().build();
+        let _layer = BulkheadLayer::large().build().unwrap();
     }
 
     #[test]
@@ -401,7 +402,8 @@ mod tests {
         let _layer = BulkheadLayer::small()
             .max_wait_duration(Duration::from_secs(5))
             .name("custom")
-            .build();
+            .build()
+            .unwrap();
     }
 
     #[tokio::test]
@@ -420,7 +422,8 @@ mod tests {
         let layer = BulkheadLayer::builder()
             .max_concurrent_calls(5)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 
@@ -447,7 +450,8 @@ mod tests {
         let layer = BulkheadLayer::builder()
             .max_concurrent_calls(1)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 
@@ -480,7 +484,8 @@ mod tests {
         let layer = BulkheadLayer::builder()
             .max_concurrent_calls(1)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 
@@ -513,7 +518,8 @@ mod tests {
             .on_call_rejected(move |_| {
                 rc.fetch_add(1, Ordering::SeqCst);
             })
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = tower::ServiceBuilder::new().layer(layer).service(service);
 

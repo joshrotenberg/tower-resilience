@@ -15,7 +15,8 @@ async fn outlier_drives_readied_instance() {
     let layer = OutlierDetectionLayer::builder()
         .detector(detector)
         .instance_name("inner")
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());
@@ -34,7 +35,8 @@ async fn outlier_composes_with_concurrency_limit() {
     let layer = OutlierDetectionLayer::builder()
         .detector(detector)
         .instance_name("inner")
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new().layer(layer).service(inner);
 
     for _ in 0..3 {

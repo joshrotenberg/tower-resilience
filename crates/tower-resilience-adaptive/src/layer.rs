@@ -20,6 +20,7 @@ use tower_layer::Layer;
 ///         .initial_limit(10)
 ///         .latency_threshold(Duration::from_millis(100))
 ///         .build()
+///         .unwrap()
 /// );
 /// ```
 pub struct AdaptiveLimiterLayer<A> {
@@ -127,14 +128,19 @@ mod tests {
         let algorithm = Aimd::builder()
             .initial_limit(10)
             .latency_threshold(Duration::from_millis(100))
-            .build();
+            .build()
+            .unwrap();
         let layer = AdaptiveLimiterLayer::new(algorithm);
         let _ = layer.clone();
     }
 
     #[test]
     fn test_into_layer() {
-        let layer = Aimd::builder().initial_limit(10).build().into_layer();
+        let layer = Aimd::builder()
+            .initial_limit(10)
+            .build()
+            .unwrap()
+            .into_layer();
         let _ = layer.clone();
     }
 }

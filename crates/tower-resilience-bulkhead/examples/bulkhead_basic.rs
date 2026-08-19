@@ -16,7 +16,8 @@ async fn main() {
     let config = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("api-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     // Create a simple service
     let service = tower::service_fn(|req: String| async move {

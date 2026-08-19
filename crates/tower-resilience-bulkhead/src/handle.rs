@@ -18,7 +18,8 @@ use tokio::sync::Semaphore;
 ///
 /// let (layer, handle) = BulkheadLayer::builder()
 ///     .max_concurrent_calls(10)
-///     .build_with_handle();
+///     .build_with_handle()
+///     .unwrap();
 ///
 /// // Apply the layer to a service...
 ///
@@ -97,7 +98,8 @@ mod tests {
     async fn test_handle_initial_state() {
         let (_layer, handle) = BulkheadLayer::builder()
             .max_concurrent_calls(10)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         assert_eq!(handle.active_calls(), 0);
         assert_eq!(handle.max_concurrent(), 10);
@@ -109,7 +111,8 @@ mod tests {
     async fn test_handle_observes_active_calls() {
         let (layer, handle) = BulkheadLayer::builder()
             .max_concurrent_calls(5)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let mut svc = layer.layer(SlowService);
 
@@ -130,7 +133,8 @@ mod tests {
     async fn test_handle_shared_across_services() {
         let (layer, handle) = BulkheadLayer::builder()
             .max_concurrent_calls(10)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let mut svc1 = layer.layer(SlowService);
         let mut svc2 = layer.layer(SlowService);
@@ -151,7 +155,8 @@ mod tests {
     async fn test_handle_clone() {
         let (_layer, handle) = BulkheadLayer::builder()
             .max_concurrent_calls(10)
-            .build_with_handle();
+            .build_with_handle()
+            .unwrap();
 
         let handle2 = handle.clone();
         assert_eq!(handle.active_calls(), handle2.active_calls());

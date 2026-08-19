@@ -5,7 +5,7 @@
 
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::Duration;
-use tower_resilience_core::aimd::{AimdConfig, AimdController};
+use tower_resilience_core::aimd::{AimdConfig, AimdConfigError, AimdController};
 
 /// Trait for adaptive concurrency control algorithms.
 pub trait ConcurrencyAlgorithm: Send + Sync {
@@ -43,11 +43,16 @@ pub struct Aimd {
 
 impl Aimd {
     /// Create a new AIMD algorithm with the given configuration.
-    pub fn new(config: AimdConfig, latency_threshold: Duration) -> Self {
-        Self {
-            controller: AimdController::new(config).expect("invalid AIMD algorithm configuration"),
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AimdConfigError`] if `config` is invalid (see
+    /// [`AimdConfig::validate`](tower_resilience_core::aimd::AimdConfig::validate)).
+    pub fn new(config: AimdConfig, latency_threshold: Duration) -> Result<Self, AimdConfigError> {
+        Ok(Self {
+            controller: AimdController::new(config)?,
             latency_threshold,
-        }
+        })
     }
 
     /// Create a builder for configuring AIMD.
@@ -151,7 +156,13 @@ impl AimdBuilder {
     }
 
     /// Build the AIMD algorithm.
-    pub fn build(self) -> Aimd {
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AimdConfigError`] if the configuration is invalid:
+    /// `min_limit` exceeds `max_limit`, `increase_by` is zero, or
+    /// `decrease_factor` is not finite or not in `[0.0, 1.0)`.
+    pub fn build(self) -> Result<Aimd, AimdConfigError> {
         let config = AimdConfig::new()
             .with_initial_limit(self.initial_limit)
             .with_min_limit(self.min_limit)
@@ -195,14 +206,26 @@ pub struct Vegas {
 
 impl Vegas {
     /// Create a new Vegas algorithm.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VegasConfigError::MinExceedsMax`] if `min_limit` is greater
+    /// than `max_limit`.
     pub fn new(
         initial_limit: usize,
         min_limit: usize,
         max_limit: usize,
         alpha: usize,
         beta: usize,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, VegasConfigError> {
+        if min_limit > max_limit {
+            return Err(VegasConfigError::MinExceedsMax {
+                min_limit,
+                max_limit,
+            });
+        }
+
+        Ok(Self {
             limit: AtomicUsize::new(initial_limit.clamp(min_limit, max_limit)),
             min_limit,
             max_limit,
@@ -213,7 +236,7 @@ impl Vegas {
             smoothed_rtt_nanos: AtomicU64::new(0),
             sample_count: AtomicUsize::new(0),
             min_samples: 10,
-        }
+        })
     }
 
     /// Create a builder for Vegas.
@@ -378,7 +401,12 @@ impl VegasBuilder {
     }
 
     /// Build the Vegas algorithm.
-    pub fn build(self) -> Vegas {
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VegasConfigError::MinExceedsMax`] if `min_limit` is greater
+    /// than `max_limit`.
+    pub fn build(self) -> Result<Vegas, VegasConfigError> {
         Vegas::new(
             self.initial_limit,
             self.min_limit,
@@ -387,6 +415,21 @@ impl VegasBuilder {
             self.beta,
         )
     }
+}
+
+/// Errors that can occur when validating a [`Vegas`] configuration at
+/// construction time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum VegasConfigError {
+    /// `min_limit` is greater than `max_limit`.
+    #[error("min_limit ({min_limit}) must not exceed max_limit ({max_limit})")]
+    MinExceedsMax {
+        /// Configured minimum limit.
+        min_limit: usize,
+        /// Configured maximum limit.
+        max_limit: usize,
+    },
 }
 
 /// Algorithm selection enum for the adaptive limiter.
@@ -454,7 +497,8 @@ mod tests {
             .increase_by(2)
             .decrease_factor(0.75)
             .latency_threshold(Duration::from_millis(50))
-            .build();
+            .build()
+            .unwrap();
 
         assert_eq!(aimd.limit(), 20);
         assert_eq!(aimd.min_limit(), 5);
@@ -467,7 +511,8 @@ mod tests {
             .initial_limit(10)
             .increase_by(1)
             .latency_threshold(Duration::from_millis(100))
-            .build();
+            .build()
+            .unwrap();
 
         // Fast request - should increase
         aimd.record_success(Duration::from_millis(50));
@@ -480,7 +525,8 @@ mod tests {
             .initial_limit(10)
             .decrease_factor(0.5)
             .latency_threshold(Duration::from_millis(100))
-            .build();
+            .build()
+            .unwrap();
 
         // Slow request - should decrease
         aimd.record_success(Duration::from_millis(150));
@@ -492,7 +538,8 @@ mod tests {
         let aimd = Aimd::builder()
             .initial_limit(10)
             .decrease_factor(0.5)
-            .build();
+            .build()
+            .unwrap();
 
         aimd.record_failure();
         assert_eq!(aimd.limit(), 5);
@@ -506,7 +553,8 @@ mod tests {
             .max_limit(200)
             .alpha(2)
             .beta(8)
-            .build();
+            .build()
+            .unwrap();
 
         assert_eq!(vegas.limit(), 20);
         assert_eq!(vegas.min_limit(), 5);
@@ -515,7 +563,11 @@ mod tests {
 
     #[test]
     fn test_vegas_failure_decreases() {
-        let vegas = Vegas::builder().initial_limit(20).min_limit(1).build();
+        let vegas = Vegas::builder()
+            .initial_limit(20)
+            .min_limit(1)
+            .build()
+            .unwrap();
 
         vegas.record_failure();
         assert_eq!(vegas.limit(), 10);
@@ -523,7 +575,7 @@ mod tests {
 
     #[test]
     fn test_vegas_min_rtt_tracking() {
-        let vegas = Vegas::builder().initial_limit(10).build();
+        let vegas = Vegas::builder().initial_limit(10).build().unwrap();
 
         vegas.record_success(Duration::from_millis(100));
         vegas.record_success(Duration::from_millis(50));
@@ -536,10 +588,126 @@ mod tests {
 
     #[test]
     fn test_algorithm_enum() {
-        let aimd = Algorithm::Aimd(Aimd::builder().initial_limit(10).build());
+        let aimd = Algorithm::Aimd(Aimd::builder().initial_limit(10).build().unwrap());
         assert_eq!(aimd.limit(), 10);
 
-        let vegas = Algorithm::Vegas(Vegas::builder().initial_limit(20).build());
+        let vegas = Algorithm::Vegas(Vegas::builder().initial_limit(20).build().unwrap());
         assert_eq!(vegas.limit(), 20);
+    }
+}
+
+#[cfg(test)]
+mod config_error_tests {
+    use super::*;
+
+    #[test]
+    fn aimd_min_exceeds_max_is_rejected() {
+        let result = Aimd::builder().min_limit(100).max_limit(10).build();
+        assert_eq!(
+            result.err().unwrap(),
+            AimdConfigError::MinExceedsMax {
+                min_limit: 100,
+                max_limit: 10
+            }
+        );
+    }
+
+    #[test]
+    fn aimd_zero_increase_by_is_rejected() {
+        let result = Aimd::builder().increase_by(0).build();
+        assert_eq!(result.err().unwrap(), AimdConfigError::ZeroIncrease);
+    }
+
+    /// Table-driven: every non-finite or out-of-range decrease factor must be
+    /// rejected with the same typed error.
+    #[test]
+    fn aimd_invalid_decrease_factor_is_rejected() {
+        for factor in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, -1.0, 1.0, 2.0] {
+            let result = Aimd::builder().decrease_factor(factor).build();
+            assert!(
+                matches!(result, Err(AimdConfigError::InvalidDecreaseFactor(_))),
+                "decrease_factor {factor} should be rejected"
+            );
+        }
+    }
+
+    /// Table-driven: valid decrease factors (including the boundary at 0.0)
+    /// must be accepted.
+    #[test]
+    fn aimd_valid_decrease_factor_is_accepted() {
+        for factor in [0.0, 0.1, 0.5, 0.999] {
+            let result = Aimd::builder().decrease_factor(factor).build();
+            assert!(
+                result.is_ok(),
+                "decrease_factor {factor} should be accepted"
+            );
+        }
+    }
+
+    #[test]
+    fn aimd_valid_config_builds_successfully() {
+        let result = Aimd::builder()
+            .initial_limit(10)
+            .min_limit(1)
+            .max_limit(100)
+            .increase_by(1)
+            .decrease_factor(0.5)
+            .build();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn vegas_min_exceeds_max_is_rejected() {
+        let result = Vegas::builder().min_limit(100).max_limit(10).build();
+        assert_eq!(
+            result.err().unwrap(),
+            VegasConfigError::MinExceedsMax {
+                min_limit: 100,
+                max_limit: 10
+            }
+        );
+    }
+
+    #[test]
+    fn vegas_min_equals_max_is_accepted() {
+        let result = Vegas::builder().min_limit(10).max_limit(10).build();
+        assert!(result.is_ok());
+    }
+
+    /// Table-driven: `min_limit` values at or below `max_limit` must all be
+    /// accepted.
+    #[test]
+    fn vegas_valid_bounds_are_accepted() {
+        for (min, max) in [(1, 100), (10, 10), (0, 1)] {
+            let result = Vegas::builder().min_limit(min).max_limit(max).build();
+            assert!(
+                result.is_ok(),
+                "min_limit {min}, max_limit {max} should be accepted"
+            );
+        }
+    }
+
+    #[test]
+    fn vegas_valid_config_builds_successfully() {
+        let result = Vegas::builder()
+            .initial_limit(10)
+            .min_limit(1)
+            .max_limit(100)
+            .alpha(3)
+            .beta(6)
+            .build();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn vegas_new_rejects_min_exceeds_max_directly() {
+        let result = Vegas::new(10, 100, 10, 3, 6);
+        assert_eq!(
+            result.err().unwrap(),
+            VegasConfigError::MinExceedsMax {
+                min_limit: 100,
+                max_limit: 10
+            }
+        );
     }
 }

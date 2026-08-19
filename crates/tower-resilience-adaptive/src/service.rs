@@ -318,7 +318,7 @@ mod tests {
     #[test]
     fn accessors_expose_the_inner_service() {
         let service = tower::service_fn(|req: i32| async move { Ok::<_, &str>(req * 2) });
-        let algorithm = Aimd::builder().initial_limit(10).build();
+        let algorithm = Aimd::builder().initial_limit(10).build().unwrap();
         let mut service = AdaptiveService::new(service, Arc::new(algorithm));
 
         // No `into_inner`: see the comment on the accessor impl block.
@@ -333,7 +333,8 @@ mod tests {
         let algorithm = Aimd::builder()
             .initial_limit(10)
             .latency_threshold(Duration::from_secs(1))
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = AdaptiveService::new(service, Arc::new(algorithm));
 
@@ -349,7 +350,7 @@ mod tests {
             Ok::<_, &str>(())
         });
 
-        let algorithm = Aimd::builder().initial_limit(10).build();
+        let algorithm = Aimd::builder().initial_limit(10).build().unwrap();
         let service = AdaptiveService::new(service, Arc::new(algorithm));
 
         assert_eq!(service.in_flight(), 0);

@@ -2628,6 +2628,7 @@ version = "0.12.0"
 dependencies = [
  "metrics",
  "pin-project-lite",
+ "thiserror 2.0.17",
  "tokio",
  "tokio-util",
  "tower",

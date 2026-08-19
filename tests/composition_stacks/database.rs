@@ -68,7 +68,8 @@ fn mock_db_client() -> impl Service<Query, Response = QueryResult, Error = DbErr
 async fn standard_database_stack_compiles() {
     let bulkhead = BulkheadLayer::builder()
         .max_concurrent_calls(20) // Match connection pool size
-        .build();
+        .build()
+        .unwrap();
 
     let retry = RetryLayer::<Query, QueryResult, DbError>::builder()
         .max_attempts(2)
@@ -90,7 +91,10 @@ async fn standard_database_stack_compiles() {
 /// Database stack with circuit breaker (for replicas)
 #[tokio::test]
 async fn database_with_circuit_breaker_compiles() {
-    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(20).build();
+    let bulkhead = BulkheadLayer::builder()
+        .max_concurrent_calls(20)
+        .build()
+        .unwrap();
 
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)

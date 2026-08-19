@@ -253,6 +253,7 @@ async fn demo_bulkhead() {
         .max_concurrent_calls(2)
         .max_wait_duration(Duration::from_millis(100))
         .build()
+        .unwrap()
         .layer(base_service);
 
     // Make concurrent calls

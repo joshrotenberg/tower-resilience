@@ -19,7 +19,8 @@ async fn bulkhead_rejection_drives_readied_instance() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(4)
         .reject_when_full()
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());
@@ -34,7 +35,8 @@ async fn bulkhead_backpressure_drives_readied_instance() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(4)
         .backpressure()
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new()
         .layer(layer)
         .service(StatefulInner::new());
@@ -55,7 +57,8 @@ async fn bulkhead_rejection_composes_with_concurrency_limit() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(4)
         .reject_when_full()
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new().layer(layer).service(inner);
 
     for _ in 0..3 {
@@ -69,7 +72,8 @@ async fn bulkhead_backpressure_composes_with_concurrency_limit() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(4)
         .backpressure()
-        .build();
+        .build()
+        .unwrap();
     let mut svc = tower::ServiceBuilder::new().layer(layer).service(inner);
 
     for _ in 0..3 {

@@ -65,7 +65,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .increase_by(1)
             .decrease_factor(0.5)
             .latency_threshold(Duration::from_millis(50))
-            .build(),
+            .build()
+            .unwrap(),
     );
 
     let mut aimd_service = ServiceBuilder::new()
@@ -105,7 +106,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .max_limit(50)
             .alpha(2) // Increase when queue < 2
             .beta(4) // Decrease when queue > 4
-            .build(),
+            .build()
+            .unwrap(),
     );
 
     let mut vegas_service = ServiceBuilder::new()
@@ -143,7 +145,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .min_limit(1)
             .max_limit(20)
             .latency_threshold(Duration::from_millis(100))
-            .build(),
+            .build()
+            .unwrap(),
     );
 
     let service = ServiceBuilder::new()

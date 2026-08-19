@@ -45,7 +45,10 @@ async fn stress_circuit_breaker_plus_bulkhead() {
         }
     });
 
-    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(20).build();
+    let bulkhead = BulkheadLayer::builder()
+        .max_concurrent_calls(20)
+        .build()
+        .unwrap();
 
     // CircuitBreaker now wraps BulkheadServiceError<InnerError>
     let circuit_breaker = CircuitBreakerLayer::builder()
@@ -109,12 +112,14 @@ async fn stress_nested_bulkheads() {
     let bulkhead1 = BulkheadLayer::builder()
         .name("outer")
         .max_concurrent_calls(50)
-        .build();
+        .build()
+        .unwrap();
 
     let bulkhead2 = BulkheadLayer::builder()
         .name("inner")
         .max_concurrent_calls(20)
-        .build();
+        .build()
+        .unwrap();
 
     let service = bulkhead1.layer(bulkhead2.layer(svc));
 
@@ -160,7 +165,10 @@ async fn stress_two_layer_high_concurrency() {
         }
     });
 
-    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(100).build();
+    let bulkhead = BulkheadLayer::builder()
+        .max_concurrent_calls(100)
+        .build()
+        .unwrap();
 
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.9)
@@ -203,7 +211,10 @@ async fn stress_composed_memory() {
 
     let svc = tower::service_fn(|_req: u32| async move { Ok::<_, TestError>(()) });
 
-    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(100).build();
+    let bulkhead = BulkheadLayer::builder()
+        .max_concurrent_calls(100)
+        .build()
+        .unwrap();
 
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)
@@ -248,7 +259,10 @@ async fn stress_composed_burst_traffic() {
         }
     });
 
-    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(50).build();
+    let bulkhead = BulkheadLayer::builder()
+        .max_concurrent_calls(50)
+        .build()
+        .unwrap();
 
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.9)
@@ -306,7 +320,10 @@ async fn stress_composed_stability() {
         }
     });
 
-    let bulkhead = BulkheadLayer::builder().max_concurrent_calls(20).build();
+    let bulkhead = BulkheadLayer::builder()
+        .max_concurrent_calls(20)
+        .build()
+        .unwrap();
 
     let circuit_breaker = CircuitBreakerLayer::builder()
         .failure_rate_threshold(0.5)

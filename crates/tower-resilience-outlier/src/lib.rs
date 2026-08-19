@@ -30,12 +30,14 @@
 //! let layer1 = OutlierDetectionLayer::builder()
 //!     .detector(detector.clone())
 //!     .instance_name("backend-1")
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! let layer2 = OutlierDetectionLayer::builder()
 //!     .detector(detector.clone())
 //!     .instance_name("backend-2")
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //!
 //! // Apply to services
 //! let svc1 = ServiceBuilder::new()
@@ -57,7 +59,8 @@
 //!     .detector(detector)
 //!     .instance_name("backend-1")
 //!     .error_on_ejection()
-//!     .build();
+//!     .build()
+//!     .unwrap();
 //! ```
 
 /// Configuration types for outlier detection.
@@ -75,7 +78,9 @@ pub mod service;
 /// Ejection strategies (e.g., consecutive errors).
 pub mod strategy;
 
-pub use config::{OutlierDetectionConfig, OutlierDetectionConfigBuilder};
+pub use config::{
+    OutlierDetectionConfig, OutlierDetectionConfigBuilder, OutlierDetectionConfigError,
+};
 pub use detector::OutlierDetector;
 pub use error::{OutlierDetectionError, OutlierDetectionServiceError};
 pub use events::OutlierDetectionEvent;

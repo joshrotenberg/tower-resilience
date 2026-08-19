@@ -42,7 +42,8 @@ fn make_instance(detector: OutlierDetector, name: &str, healthy: Arc<AtomicBool>
         .detector(detector)
         .instance_name(name)
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     BoxCloneService::new(layer.layer(inner))
 }

@@ -13,7 +13,8 @@ async fn test_max_concurrent_calls_one() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("single-call-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -63,7 +64,8 @@ async fn test_max_concurrent_calls_large_value() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(large_limit)
         .name("large-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -93,36 +95,27 @@ async fn test_max_concurrent_calls_large_value() {
     }
 }
 
+/// `max_concurrent_calls(0)` used to build a bulkhead whose every call timed
+/// out immediately (a permit-less semaphore). It's now rejected at
+/// construction time with a typed error instead.
 #[tokio::test]
-async fn test_max_concurrent_calls_zero() {
-    // Zero concurrent calls means all calls should be rejected immediately
-    let layer = BulkheadLayer::builder()
+async fn test_max_concurrent_calls_zero_is_rejected_at_construction() {
+    let result = BulkheadLayer::builder()
         .max_concurrent_calls(0)
         .max_wait_duration(Duration::from_millis(10))
         .name("zero-capacity-bulkhead")
         .build();
 
-    let mut service = ServiceBuilder::new()
-        .layer(layer)
-        .service_fn(|_req: String| async move { Ok::<_, TestError>("ok".to_string()) });
-
-    // Any call should timeout immediately
-    let result = service
-        .ready()
-        .await
-        .unwrap()
-        .call("request".to_string())
-        .await;
-    assert!(matches!(
-        result,
-        Err(BulkheadServiceError::Bulkhead(BulkheadError::Timeout))
-    ));
+    assert_eq!(
+        result.err().unwrap(),
+        tower_resilience_bulkhead::BulkheadConfigError::ZeroMaxConcurrentCalls
+    );
 }
 
 #[tokio::test]
 async fn test_default_config() {
     // Test that default config works
-    let layer = BulkheadLayer::builder().build();
+    let layer = BulkheadLayer::builder().build().unwrap();
 
     let mut service = ServiceBuilder::new()
         .layer(layer)
@@ -154,7 +147,8 @@ async fn test_config_with_event_listeners() {
         .on_call_finished(move |_| {
             f.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -196,7 +190,8 @@ async fn test_config_with_multiple_event_listeners() {
         .on_call_permitted(move |_| {
             c2.fetch_add(10, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = ServiceBuilder::new()
         .layer(layer)
@@ -221,13 +216,15 @@ async fn test_config_timeout_some_vs_none() {
         .max_concurrent_calls(1)
         .max_wait_duration(Duration::from_millis(50))
         .name("timeout-some")
-        .build();
+        .build()
+        .unwrap();
 
     // Config with no timeout (default: wait indefinitely)
     let layer_none = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("timeout-none")
-        .build();
+        .build()
+        .unwrap();
 
     let service_some =
         ServiceBuilder::new()
@@ -286,7 +283,8 @@ async fn test_builder_pattern_chaining() {
         .on_call_rejected(|_| {})
         .on_call_finished(|_| {})
         .on_call_failed(|_| {})
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = ServiceBuilder::new()
         .layer(layer)
@@ -308,12 +306,14 @@ async fn test_config_independent_instances() {
     let layer1 = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("bulkhead-1")
-        .build();
+        .build()
+        .unwrap();
 
     let layer2 = BulkheadLayer::builder()
         .max_concurrent_calls(1)
         .name("bulkhead-2")
-        .build();
+        .build()
+        .unwrap();
 
     let service1 = ServiceBuilder::new()
         .layer(layer1)
@@ -360,7 +360,8 @@ async fn test_config_name_normal() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("my-service-bulkhead")
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = ServiceBuilder::new()
         .layer(layer)
@@ -380,7 +381,8 @@ async fn test_config_name_empty() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name("")
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = ServiceBuilder::new()
         .layer(layer)
@@ -401,7 +403,8 @@ async fn test_config_name_very_long() {
     let layer = BulkheadLayer::builder()
         .max_concurrent_calls(5)
         .name(long_name)
-        .build();
+        .build()
+        .unwrap();
 
     let mut service = ServiceBuilder::new()
         .layer(layer)
@@ -444,7 +447,8 @@ async fn test_config_with_all_options() {
         .on_call_failed(move |_| {
             fail.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .unwrap();
 
     let service = ServiceBuilder::new()
         .layer(layer)
@@ -496,7 +500,8 @@ async fn test_config_different_timeouts() {
             .max_concurrent_calls(5)
             .max_wait_duration(*timeout)
             .name(format!("bulkhead-{}", idx))
-            .build();
+            .build()
+            .unwrap();
 
         let mut service = ServiceBuilder::new()
             .layer(layer)

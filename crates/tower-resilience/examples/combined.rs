@@ -80,7 +80,8 @@ async fn main() {
         .on_call_rejected(move |_| {
             bulkhead_clone.fetch_add(1, Ordering::SeqCst);
         })
-        .build();
+        .build()
+        .expect("valid bulkhead config");
 
     let service = bulkhead_layer.layer(service);
 

@@ -30,7 +30,8 @@ async fn healthy_instance_passes_through() {
         .detector(detector)
         .instance_name("backend-1")
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     let mut svc = layer.layer(make_ok_svc());
 
@@ -48,7 +49,8 @@ async fn consecutive_errors_trigger_ejection() {
         .detector(detector.clone())
         .instance_name("backend-1")
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     let mut svc = layer.layer(make_fail_svc());
 
@@ -177,7 +179,8 @@ async fn error_on_ejection_returns_outlier_error() {
         .detector(detector.clone())
         .instance_name("backend-1")
         .error_on_ejection()
-        .build();
+        .build()
+        .unwrap();
 
     let mut svc = layer.layer(make_fail_svc());
 

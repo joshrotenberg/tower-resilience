@@ -69,7 +69,8 @@ async fn bulkhead_backpressure_matches_tower_single_permit_admission() {
             BulkheadLayer::builder()
                 .max_concurrent_calls(1)
                 .backpressure()
-                .build(),
+                .build()
+                .unwrap(),
         )
         .service(bulkhead_probe);
 

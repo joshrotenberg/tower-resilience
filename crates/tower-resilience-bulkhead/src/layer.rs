@@ -42,7 +42,8 @@ impl BulkheadLayer {
     /// let layer = BulkheadLayer::builder()
     ///     .max_concurrent_calls(10)
     ///     .max_wait_duration(Duration::from_secs(5))
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn builder() -> crate::BulkheadConfigBuilder {
         #[cfg(feature = "metrics")]
@@ -99,12 +100,13 @@ impl BulkheadLayer {
     /// ```
     /// use tower_resilience_bulkhead::BulkheadLayer;
     ///
-    /// let layer = BulkheadLayer::small().build();
+    /// let layer = BulkheadLayer::small().build().unwrap();
     ///
     /// // Or customize further
     /// let layer = BulkheadLayer::small()
     ///     .max_wait_duration(std::time::Duration::from_secs(5))
-    ///     .build();
+    ///     .build()
+    ///     .unwrap();
     /// ```
     pub fn small() -> crate::BulkheadConfigBuilder {
         Self::builder().max_concurrent_calls(10).reject_when_full()
@@ -123,7 +125,7 @@ impl BulkheadLayer {
     /// ```
     /// use tower_resilience_bulkhead::BulkheadLayer;
     ///
-    /// let layer = BulkheadLayer::medium().build();
+    /// let layer = BulkheadLayer::medium().build().unwrap();
     /// ```
     pub fn medium() -> crate::BulkheadConfigBuilder {
         Self::builder().max_concurrent_calls(50).reject_when_full()
@@ -143,7 +145,7 @@ impl BulkheadLayer {
     /// ```
     /// use tower_resilience_bulkhead::BulkheadLayer;
     ///
-    /// let layer = BulkheadLayer::large().build();
+    /// let layer = BulkheadLayer::large().build().unwrap();
     /// ```
     pub fn large() -> crate::BulkheadConfigBuilder {
         Self::builder().max_concurrent_calls(200).reject_when_full()

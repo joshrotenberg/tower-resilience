@@ -98,7 +98,10 @@ fn bench_bulkhead(c: &mut Criterion) {
 
     c.bench_function("bulkhead_permits_available", |b| {
         b.to_async(&runtime).iter(|| async {
-            let config = BulkheadLayer::builder().max_concurrent_calls(100).build();
+            let config = BulkheadLayer::builder()
+                .max_concurrent_calls(100)
+                .build()
+                .unwrap();
             let mut service = ServiceBuilder::new().layer(config).service(BaselineService);
 
             let response = service
@@ -115,7 +118,8 @@ fn bench_bulkhead(c: &mut Criterion) {
         let layer = BulkheadLayer::builder()
             .max_concurrent_calls(100)
             .backpressure()
-            .build();
+            .build()
+            .unwrap();
 
         b.to_async(&runtime).iter_batched(
             || layer.layer(BaselineService),
@@ -251,7 +255,8 @@ fn bench_adaptive_limiter(c: &mut Criterion) {
                 Aimd::builder()
                     .initial_limit(100)
                     .latency_threshold(Duration::from_secs(1))
-                    .build(),
+                    .build()
+                    .unwrap(),
             );
             let mut service = ServiceBuilder::new().layer(layer).service(BaselineService);
 
@@ -359,7 +364,10 @@ fn bench_composition_simple(c: &mut Criterion) {
                 .failure_rate_threshold(0.5)
                 .build()
                 .unwrap();
-            let bh_config = BulkheadLayer::builder().max_concurrent_calls(100).build();
+            let bh_config = BulkheadLayer::builder()
+                .max_concurrent_calls(100)
+                .build()
+                .unwrap();
 
             let mut service = cb_layer.layer(
                 ServiceBuilder::new()
