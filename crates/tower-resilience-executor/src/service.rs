@@ -8,6 +8,9 @@ use std::task::{Context, Poll};
 use tokio::sync::oneshot;
 use tower_service::Service;
 
+#[cfg(feature = "tracing")]
+use tracing::{debug, warn};
+
 /// A service that delegates request processing to an executor.
 ///
 /// Each request is spawned as a new task on the executor, allowing
@@ -80,10 +83,23 @@ where
         let mut service = std::mem::replace(&mut self.inner, clone);
         let (tx, rx) = oneshot::channel();
 
+        #[cfg(feature = "metrics")]
+        let spawn_start = std::time::Instant::now();
+
+        #[cfg(feature = "tracing")]
+        debug!("Task spawned");
+
+        #[cfg(feature = "metrics")]
+        metrics::counter!("executor_tasks_spawned_total").increment(1);
+
         // Spawn the request processing on the executor
         let _handle = self.executor.spawn(async move {
             // Call the service
             let result = service.call(req).await;
+
+            #[cfg(feature = "metrics")]
+            metrics::histogram!("executor_task_duration_seconds")
+                .record(spawn_start.elapsed().as_secs_f64());
 
             // Send the result back
             // The send may fail if the receiver is dropped (caller cancelled)
@@ -137,7 +153,15 @@ impl<T, E> Future for ExecutorFuture<T, E> {
         let this = self.project();
         match this.rx.poll(cx) {
             Poll::Ready(Ok(result)) => Poll::Ready(result),
-            Poll::Ready(Err(_)) => Poll::Ready(Err(ExecutorError::TaskCancelled)),
+            Poll::Ready(Err(_)) => {
+                #[cfg(feature = "tracing")]
+                warn!("Executor task cancelled (spawned task dropped its sender)");
+
+                #[cfg(feature = "metrics")]
+                metrics::counter!("executor_tasks_cancelled_total").increment(1);
+
+                Poll::Ready(Err(ExecutorError::TaskCancelled))
+            }
             Poll::Pending => Poll::Pending,
         }
     }
@@ -162,5 +186,43 @@ mod tests {
         let err3: ExecutorError<&str> = ExecutorError::Service("test");
         let err4: ExecutorError<&str> = ExecutorError::Service("test");
         assert_eq!(err3, err4);
+    }
+
+    #[cfg(feature = "metrics")]
+    #[tokio::test]
+    async fn spawning_a_task_emits_metrics() {
+        use crate::ExecutorLayer;
+        use metrics::set_global_recorder;
+        use metrics_util::debugging::{DebugValue, DebuggingRecorder};
+        use std::convert::Infallible;
+        use std::sync::LazyLock;
+        use tower::{Layer, ServiceExt};
+
+        static RECORDER: LazyLock<DebuggingRecorder> = LazyLock::new(DebuggingRecorder::default);
+        let _ = set_global_recorder(&*RECORDER);
+
+        let layer = ExecutorLayer::current();
+        let mut service = layer.layer(tower::service_fn(|req: i32| async move {
+            Ok::<_, Infallible>(req * 2)
+        }));
+
+        let response = service.ready().await.unwrap().call(21).await.unwrap();
+        assert_eq!(response, 42);
+
+        let snapshot = RECORDER.snapshotter().snapshot().into_vec();
+
+        let spawned = snapshot.iter().any(|(key, _, _, value)| {
+            key.key().name() == "executor_tasks_spawned_total"
+                && matches!(value, DebugValue::Counter(v) if *v >= 1)
+        });
+        let duration_recorded = snapshot
+            .iter()
+            .any(|(key, _, _, _)| key.key().name() == "executor_task_duration_seconds");
+
+        assert!(spawned, "expected executor_tasks_spawned_total > 0");
+        assert!(
+            duration_recorded,
+            "expected an executor_task_duration_seconds histogram entry"
+        );
     }
 }

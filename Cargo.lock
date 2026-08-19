@@ -2627,6 +2627,7 @@ name = "tower-resilience-adaptive"
 version = "0.12.0"
 dependencies = [
  "metrics",
+ "metrics-util",
  "pin-project-lite",
  "thiserror 2.0.17",
  "tokio",
@@ -2733,6 +2734,7 @@ name = "tower-resilience-executor"
 version = "0.12.0"
 dependencies = [
  "metrics",
+ "metrics-util",
  "pin-project-lite",
  "tokio",
  "tower",
@@ -2776,6 +2778,7 @@ version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
+ "metrics-util",
  "pin-project-lite",
  "tokio",
  "tower",
@@ -2791,6 +2794,7 @@ version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
+ "metrics-util",
  "thiserror 2.0.17",
  "tokio",
  "tower",
@@ -2818,6 +2822,7 @@ version = "0.12.0"
 dependencies = [
  "futures",
  "metrics",
+ "metrics-util",
  "thiserror 2.0.17",
  "tokio",
  "tokio-test",

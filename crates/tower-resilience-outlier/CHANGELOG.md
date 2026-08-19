@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OutlierDetectionService::get_ref()`, `get_mut()`, and `into_inner()`
   accessors for the wrapped service, matching Tower's own middleware
   convention.
+- Real `metrics`/`tracing` instrumentation: `outlier_ejections_total`,
+  `outlier_recoveries_total`, `outlier_ejection_skipped_total`, and
+  `outlier_ejected_instances`, plus `tracing::warn!`/`info!`/`debug!` at
+  ejection, recovery, and skipped-ejection
+  ([#428](https://github.com/joshrotenberg/tower-resilience/issues/428)).
 
 ### Removed
 

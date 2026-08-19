@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Real `metrics`/`tracing` instrumentation: `reconnect_attempts_total`,
+  `reconnect_transitions_total{from, to}`, and `reconnect_state{state}`,
+  plus `tracing::debug!`/`warn!` at state transitions and reconnection
+  attempts. Metrics are not yet labeled by instance name -- `reconnect`
+  has no per-instance naming concept ([#428](https://github.com/joshrotenberg/tower-resilience/issues/428)).
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-reconnect-v0.11.0...tower-resilience-reconnect-v0.12.0) - 2026-08-17
 
 ### Fixed

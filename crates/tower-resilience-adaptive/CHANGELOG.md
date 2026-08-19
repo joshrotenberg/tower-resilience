@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   release a reserved semaphore permit), and Rust's partial-move rules
   forbid moving a field out of a type with a manual `Drop` impl without
   `unsafe` code -- see `docs/tower-api-surface-audit.md`.
+- Real `metrics`/`tracing` instrumentation: `adaptive_limit_changes_total`,
+  `adaptive_limit`, and `adaptive_rtt_seconds`, plus `tracing::debug!` on
+  limit changes. Metrics are not yet labeled by instance name -- `adaptive`
+  has no per-instance naming concept ([#428](https://github.com/joshrotenberg/tower-resilience/issues/428)).
 
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-adaptive-v0.11.0...tower-resilience-adaptive-v0.12.0) - 2026-08-17
 

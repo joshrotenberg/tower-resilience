@@ -11,6 +11,12 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tower_resilience_core::events::EventListeners;
 
+#[cfg(feature = "tracing")]
+use tracing::{debug, info, warn};
+
+#[cfg(feature = "metrics")]
+use metrics::{counter, gauge};
+
 /// State for a single instance tracked by the detector.
 struct InstanceState {
     /// Whether this instance is currently ejected.
@@ -235,6 +241,18 @@ impl OutlierDetector {
                 current_ejection_percent: (currently_ejected as f64 / total as f64) * 100.0,
             };
             inner.event_listeners.emit(&event);
+
+            #[cfg(feature = "tracing")]
+            debug!(
+                outlier = %inner.pattern_name,
+                instance_name = %name,
+                "Ejection skipped: max_ejection_percent would be exceeded"
+            );
+
+            #[cfg(feature = "metrics")]
+            counter!("outlier_ejection_skipped_total", "outlier" => inner.pattern_name.clone())
+                .increment(1);
+
             return false;
         }
 
@@ -253,13 +271,29 @@ impl OutlierDetector {
         instance.ejection_duration = ejection_duration;
 
         let event = OutlierDetectionEvent::Ejected {
-            pattern_name,
+            pattern_name: pattern_name.clone(),
             timestamp: Instant::now(),
             instance_name: name.to_string(),
             consecutive_errors: failure_count,
             ejection_duration,
         };
         inner.event_listeners.emit(&event);
+
+        #[cfg(feature = "tracing")]
+        warn!(
+            outlier = %pattern_name,
+            instance_name = %name,
+            consecutive_errors = failure_count,
+            "Instance ejected"
+        );
+
+        #[cfg(feature = "metrics")]
+        {
+            let ejected_instances = inner.instances.values().filter(|i| i.ejected).count();
+            counter!("outlier_ejections_total", "outlier" => pattern_name.clone()).increment(1);
+            gauge!("outlier_ejected_instances", "outlier" => pattern_name)
+                .set(ejected_instances as f64);
+        }
 
         true
     }
@@ -291,13 +325,31 @@ impl OutlierDetector {
             instance.ejected_at = None;
             instance.strategy.reset();
 
+            let pattern_name = inner.pattern_name.clone();
             let event = OutlierDetectionEvent::Recovered {
-                pattern_name: inner.pattern_name.clone(),
+                pattern_name: pattern_name.clone(),
                 timestamp: Instant::now(),
                 instance_name: name.to_string(),
                 ejected_duration,
             };
             inner.event_listeners.emit(&event);
+
+            #[cfg(feature = "tracing")]
+            info!(
+                outlier = %pattern_name,
+                instance_name = %name,
+                ejected_duration_ms = ejected_duration.as_millis() as u64,
+                "Instance recovered"
+            );
+
+            #[cfg(feature = "metrics")]
+            {
+                counter!("outlier_recoveries_total", "outlier" => pattern_name.clone())
+                    .increment(1);
+                let ejected_instances = inner.instances.values().filter(|i| i.ejected).count();
+                gauge!("outlier_ejected_instances", "outlier" => pattern_name)
+                    .set(ejected_instances as f64);
+            }
 
             return false;
         }
@@ -457,5 +509,45 @@ mod tests {
         let detector = OutlierDetector::new();
         assert!(!detector.is_ejected("unknown"));
         assert!(!detector.record_failure("unknown"));
+    }
+
+    #[cfg(feature = "metrics")]
+    #[test]
+    fn ejection_and_recovery_emit_metrics() {
+        use metrics::set_global_recorder;
+        use metrics_util::debugging::DebugValue;
+        use metrics_util::debugging::DebuggingRecorder;
+        use std::sync::LazyLock;
+
+        static RECORDER: LazyLock<DebuggingRecorder> = LazyLock::new(DebuggingRecorder::default);
+        let _ = set_global_recorder(&*RECORDER);
+
+        let detector = OutlierDetector::new()
+            .name("metrics-test")
+            .base_ejection_duration(Duration::from_millis(10))
+            .max_ejection_percent(100);
+        detector.register("backend-1", 1);
+
+        assert!(detector.record_failure("backend-1"));
+        assert!(detector.is_ejected("backend-1"));
+
+        std::thread::sleep(Duration::from_millis(20));
+        assert!(!detector.is_ejected("backend-1"));
+
+        let snapshot = RECORDER.snapshotter().snapshot().into_vec();
+
+        let has_metric = |name: &str| {
+            snapshot.iter().any(|(key, _, _, value)| {
+                key.key().name() == name
+                    && matches!(value, DebugValue::Counter(v) if *v >= 1)
+                    && key
+                        .key()
+                        .labels()
+                        .any(|label| label.key() == "outlier" && label.value() == "metrics-test")
+            })
+        };
+
+        assert!(has_metric("outlier_ejections_total"));
+        assert!(has_metric("outlier_recoveries_total"));
     }
 }

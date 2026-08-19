@@ -9,6 +9,12 @@ use tower::Service;
 
 use crate::{config::ReconnectConfig, state::ReconnectState};
 
+#[cfg(feature = "tracing")]
+use tracing::{debug, warn};
+
+#[cfg(feature = "metrics")]
+use metrics::{counter, gauge};
+
 /// A Tower service that owns a service factory and replaces failed connections.
 ///
 /// `M` is a `MakeService`-style factory: a `Service<Target>` whose response is
@@ -449,6 +455,15 @@ where
     mark_disconnected(config, state);
     state.increment_attempts();
 
+    #[cfg(feature = "metrics")]
+    counter!("reconnect_attempts_total").increment(1);
+
+    #[cfg(feature = "tracing")]
+    warn!(
+        attempt = shared.factory_attempts,
+        "Reconnection attempt scheduled"
+    );
+
     let Some(delay) = config
         .policy
         .delay_for_attempt(shared.factory_attempts as usize)
@@ -482,6 +497,13 @@ where
 
     mark_disconnected(config, state);
     state.increment_attempts();
+
+    #[cfg(feature = "metrics")]
+    counter!("reconnect_attempts_total").increment(1);
+
+    #[cfg(feature = "tracing")]
+    warn!(attempt, "Reconnection attempt scheduled");
+
     let Some(delay) = config.policy.delay_for_attempt(attempt as usize) else {
         shared.phase = ConnectionPhase::Idle;
         shared.generation = shared.generation.wrapping_add(1);
@@ -559,11 +581,28 @@ fn notify_state_change(
     }
 
     #[cfg(feature = "tracing")]
+    debug!(from = ?previous, to = ?current, "Reconnect state transition");
+
+    #[cfg(feature = "metrics")]
+    {
+        counter!(
+            "reconnect_transitions_total",
+            "from" => format!("{previous:?}"),
+            "to" => format!("{current:?}")
+        )
+        .increment(1);
+        gauge!("reconnect_state", "state" => format!("{current:?}")).set(1.0);
+    }
+
+    #[cfg(feature = "tracing")]
     if let Some(callback) = config.on_state_change.as_ref() {
         callback(previous, current);
     }
 
-    #[cfg(not(feature = "tracing"))]
+    #[cfg(not(any(feature = "tracing", feature = "metrics")))]
+    let _ = config;
+
+    #[cfg(all(feature = "metrics", not(feature = "tracing")))]
     let _ = config;
 }
 
@@ -623,5 +662,92 @@ where
             | Self::ConnectionFailedNoRetry(error)
             | Self::ServiceError(error) => Some(error),
         }
+    }
+}
+
+#[cfg(all(test, feature = "metrics"))]
+mod tests {
+    use crate::{ReconnectConfig, ReconnectLayer, ReconnectPolicy};
+    use metrics::set_global_recorder;
+    use metrics_util::debugging::{DebugValue, DebuggingRecorder};
+    use std::io;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, LazyLock};
+    use std::time::Duration;
+    use tower::{service_fn, Layer, Service, ServiceExt};
+
+    #[derive(Clone)]
+    struct Connection {
+        ready: bool,
+    }
+
+    impl Service<()> for Connection {
+        type Response = ();
+        type Error = io::Error;
+        type Future = std::future::Ready<Result<(), io::Error>>;
+
+        fn poll_ready(
+            &mut self,
+            _cx: &mut std::task::Context<'_>,
+        ) -> std::task::Poll<Result<(), Self::Error>> {
+            self.ready = true;
+            std::task::Poll::Ready(Ok(()))
+        }
+
+        fn call(&mut self, (): ()) -> Self::Future {
+            self.ready = false;
+            std::future::ready(Ok(()))
+        }
+    }
+
+    #[tokio::test]
+    async fn factory_retries_emit_attempt_and_transition_metrics() {
+        static RECORDER: LazyLock<DebuggingRecorder> = LazyLock::new(DebuggingRecorder::default);
+        let _ = set_global_recorder(&*RECORDER);
+
+        let factory_calls = Arc::new(AtomicUsize::new(0));
+        let calls = Arc::clone(&factory_calls);
+        let factory = service_fn(move |(): ()| {
+            let attempt = calls.fetch_add(1, Ordering::SeqCst) + 1;
+            async move {
+                if attempt < 2 {
+                    Err(io::Error::new(
+                        io::ErrorKind::ConnectionRefused,
+                        "factory unavailable",
+                    ))
+                } else {
+                    Ok(Connection { ready: false })
+                }
+            }
+        });
+
+        let config = ReconnectConfig::builder()
+            .policy(ReconnectPolicy::fixed(Duration::from_millis(1)))
+            .max_attempts(3)
+            .build();
+        let mut service = ReconnectLayer::new(config).layer(factory);
+
+        service.ready().await.unwrap().call(()).await.unwrap();
+
+        let snapshot = RECORDER.snapshotter().snapshot().into_vec();
+
+        let attempts_recorded = snapshot.iter().any(|(key, _, _, value)| {
+            key.key().name() == "reconnect_attempts_total"
+                && matches!(value, DebugValue::Counter(v) if *v >= 1)
+        });
+        let transition_recorded = snapshot.iter().any(|(key, _, _, value)| {
+            key.key().name() == "reconnect_transitions_total"
+                && matches!(value, DebugValue::Counter(v) if *v >= 1)
+                && key
+                    .key()
+                    .labels()
+                    .any(|label| label.key() == "to" && label.value() == "Connected")
+        });
+
+        assert!(attempts_recorded, "expected reconnect_attempts_total > 0");
+        assert!(
+            transition_recorded,
+            "expected a reconnect_transitions_total{{to=\"Connected\"}} entry"
+        );
     }
 }

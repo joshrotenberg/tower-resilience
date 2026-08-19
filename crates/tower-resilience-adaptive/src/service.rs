@@ -11,6 +11,9 @@ use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tokio_util::sync::PollSemaphore;
 use tower_service::Service;
 
+#[cfg(feature = "tracing")]
+use tracing::debug;
+
 #[derive(Debug)]
 struct CapacityState {
     desired_limit: usize,
@@ -130,14 +133,50 @@ where
     let limit = algorithm.limit();
 
     if limit > state.desired_limit {
+        #[cfg(feature = "tracing")]
+        let old_limit = state.desired_limit;
+
         let increase = limit - state.desired_limit;
         let cancelled_debt = increase.min(state.shrink_debt);
         state.shrink_debt -= cancelled_debt;
         semaphore.add_permits(increase - cancelled_debt);
+
+        #[cfg(feature = "tracing")]
+        debug!(
+            old_limit,
+            new_limit = limit,
+            direction = "increase",
+            "Adaptive concurrency limit changed"
+        );
+
+        #[cfg(feature = "metrics")]
+        {
+            metrics::counter!("adaptive_limit_changes_total", "direction" => "increase")
+                .increment(1);
+            metrics::gauge!("adaptive_limit").set(limit as f64);
+        }
     } else if limit < state.desired_limit {
+        #[cfg(feature = "tracing")]
+        let old_limit = state.desired_limit;
+
         let decrease = state.desired_limit - limit;
         let removed = semaphore.forget_permits(decrease);
         state.shrink_debt += decrease - removed;
+
+        #[cfg(feature = "tracing")]
+        debug!(
+            old_limit,
+            new_limit = limit,
+            direction = "decrease",
+            "Adaptive concurrency limit changed"
+        );
+
+        #[cfg(feature = "metrics")]
+        {
+            metrics::counter!("adaptive_limit_changes_total", "direction" => "decrease")
+                .increment(1);
+            metrics::gauge!("adaptive_limit").set(limit as f64);
+        }
     }
 
     state.desired_limit = limit;
@@ -255,6 +294,9 @@ where
                 let result = future.await;
                 let latency = start.elapsed();
 
+                #[cfg(feature = "metrics")]
+                metrics::histogram!("adaptive_rtt_seconds").record(latency.as_secs_f64());
+
                 match &result {
                     Ok(_) => algorithm.record_success(latency),
                     Err(_) => algorithm.record_failure(),
@@ -341,6 +383,56 @@ mod tests {
         use tower::ServiceExt;
         let response = service.ready().await.unwrap().call(21).await.unwrap();
         assert_eq!(response, 42);
+    }
+
+    #[cfg(feature = "metrics")]
+    #[tokio::test]
+    async fn successful_calls_emit_metrics() {
+        use metrics::set_global_recorder;
+        use metrics_util::debugging::{DebugValue, DebuggingRecorder};
+        use std::sync::LazyLock;
+
+        static RECORDER: LazyLock<DebuggingRecorder> = LazyLock::new(DebuggingRecorder::default);
+        let _ = set_global_recorder(&*RECORDER);
+
+        let service = tower::service_fn(|req: i32| async move { Ok::<_, &str>(req * 2) });
+
+        // A fast, well-under-threshold success grows the AIMD limit by
+        // `increase_by` (1 by default), guaranteeing a limit-change event.
+        let algorithm = Aimd::builder()
+            .initial_limit(10)
+            .increase_by(1)
+            .latency_threshold(Duration::from_secs(1))
+            .build();
+        let mut service = AdaptiveService::new(service, Arc::new(algorithm));
+
+        use tower::ServiceExt;
+        let response = service.ready().await.unwrap().call(21).await.unwrap();
+        assert_eq!(response, 42);
+        assert_eq!(service.limit(), 11);
+
+        let snapshot = RECORDER.snapshotter().snapshot().into_vec();
+
+        let increase_recorded = snapshot.iter().any(|(key, _, _, value)| {
+            key.key().name() == "adaptive_limit_changes_total"
+                && matches!(value, DebugValue::Counter(v) if *v >= 1)
+                && key
+                    .key()
+                    .labels()
+                    .any(|label| label.key() == "direction" && label.value() == "increase")
+        });
+        let rtt_recorded = snapshot
+            .iter()
+            .any(|(key, _, _, _)| key.key().name() == "adaptive_rtt_seconds");
+
+        assert!(
+            increase_recorded,
+            "expected adaptive_limit_changes_total{{direction=\"increase\"}} > 0"
+        );
+        assert!(
+            rtt_recorded,
+            "expected an adaptive_rtt_seconds histogram entry"
+        );
     }
 
     #[tokio::test]

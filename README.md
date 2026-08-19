@@ -100,15 +100,14 @@ tower-resilience = { version = "0.12", features = ["full"] }
 
 `metrics` and `tracing` use weak feature activation, so they only turn on
 observability for the patterns you've already enabled - they never pull in a
-pattern on their own. Not every pattern emits metrics or tracing yet:
-`bulkhead`, `cache`, `chaos`, `circuitbreaker`, `coalesce`, `fallback`,
-`ratelimiter`, `retry`, `router`, and `timelimiter` emit metrics today (see
-the [metrics guide](https://docs.rs/tower-resilience/latest/tower_resilience/observability/metrics/)
-for the full list of metric names per pattern); all of those except
-`bulkhead` also emit `tracing` spans/events. `adaptive`, `executor`, `hedge`,
-`outlier`, and `reconnect` accept the `metrics`/`tracing` Cargo features
-(they compile cleanly) but do not yet instrument any calls; see
-[#428](https://github.com/joshrotenberg/tower-resilience/issues/428).
+pattern on their own. Every pattern that declares a `metrics`/`tracing`
+Cargo feature emits real metrics/tracing through it (see the
+[metrics guide](https://docs.rs/tower-resilience/latest/tower_resilience/observability/metrics/)
+for the full list of metric names per pattern). `adaptive`, `executor`, and
+`reconnect` don't yet have a per-instance naming concept, so their metrics
+aren't labeled by instance name the way the other patterns are. The one
+remaining exception is `healthcheck`'s `tracing` feature, which is a
+documented placeholder for future implementation (see its `Cargo.toml`).
 
 To get all patterns with observability:
 

@@ -5,11 +5,12 @@
 pub mod metrics {
     //! # Metrics Guide
     //!
-    //! Most resilience patterns support optional Prometheus-compatible metrics via the
-    //! `metrics` feature; see [Available Metrics by Pattern](#available-metrics-by-pattern)
-    //! below for exactly which patterns currently emit metrics. `adaptive`, `executor`,
-    //! `hedge`, `outlier`, and `reconnect` accept the `metrics` Cargo feature (it compiles
-    //! cleanly) but do not yet emit any metrics of their own.
+    //! Every resilience pattern that declares a `metrics` Cargo feature emits real
+    //! Prometheus-compatible metrics via it; see
+    //! [Available Metrics by Pattern](#available-metrics-by-pattern) below for the full
+    //! list of metric names per pattern. `adaptive`, `executor`, and `reconnect` have no
+    //! per-instance naming concept yet, so their metrics are not labeled by instance name
+    //! the way the other patterns are; see the per-pattern notes below.
     //!
     //! ## Enabling Metrics
     //!
@@ -106,6 +107,49 @@ pub mod metrics {
     //!
     //! - `router_requests_routed_total{router, backend}` - Requests routed, by
     //!   backend index
+    //!
+    //! ### Adaptive
+    //!
+    //! - `adaptive_limit_changes_total{direction}` - Concurrency limit adjustments
+    //!   (`direction` is `increase`/`decrease`)
+    //! - `adaptive_limit` - Current concurrency limit gauge
+    //! - `adaptive_rtt_seconds` - Per-call latency histogram (recorded for both
+    //!   successes and failures, matching how `circuitbreaker_call_duration_seconds`
+    //!   blends outcomes)
+    //!
+    //! Not labeled by instance name: `adaptive` has no per-instance naming concept yet.
+    //!
+    //! ### Executor
+    //!
+    //! - `executor_tasks_spawned_total` - Tasks spawned onto the executor
+    //! - `executor_task_duration_seconds` - Spawn-to-completion duration histogram
+    //! - `executor_tasks_cancelled_total` - Spawned tasks whose result could not be
+    //!   delivered (the spawned task's sender was dropped)
+    //!
+    //! Not labeled by instance name: `executor` has no per-instance naming concept yet.
+    //!
+    //! ### Hedge
+    //!
+    //! - `hedge_attempts_total{hedge}` - Hedge attempts fired
+    //! - `hedge_calls_total{hedge, result}` - Terminal outcomes (`result` is
+    //!   `primary`/`hedge`/`failed`)
+    //! - `hedge_call_duration_seconds{hedge}` - Duration until a terminal outcome
+    //!
+    //! ### Outlier
+    //!
+    //! - `outlier_ejections_total{outlier}` - Instances ejected
+    //! - `outlier_recoveries_total{outlier}` - Instances recovered
+    //! - `outlier_ejection_skipped_total{outlier}` - Ejections skipped because
+    //!   `max_ejection_percent` would have been exceeded
+    //! - `outlier_ejected_instances{outlier}` - Currently-ejected instance count gauge
+    //!
+    //! ### Reconnect
+    //!
+    //! - `reconnect_attempts_total` - Reconnection attempts scheduled
+    //! - `reconnect_transitions_total{from, to}` - Connection state transitions
+    //! - `reconnect_state{state}` - Current connection state gauge
+    //!
+    //! Not labeled by instance name: `reconnect` has no per-instance naming concept yet.
     //!
     //! ## Example Prometheus Queries
     //!
