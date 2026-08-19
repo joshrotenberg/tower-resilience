@@ -14,6 +14,9 @@ use tower::Service;
 #[cfg(feature = "metrics")]
 use metrics::{counter, gauge, histogram};
 
+#[cfg(feature = "tracing")]
+use tracing::{debug, warn};
+
 /// Bulkhead service that limits concurrent calls.
 pub struct Bulkhead<S> {
     inner: S,
@@ -144,6 +147,9 @@ where
             };
             config.event_listeners.emit(&event);
 
+            #[cfg(feature = "tracing")]
+            debug!(bulkhead = %config.name, concurrent_calls, "Call permitted");
+
             #[cfg(feature = "metrics")]
             {
                 counter!("bulkhead_calls_permitted_total", "bulkhead" => config.name.clone())
@@ -168,6 +174,9 @@ where
                         };
                         config.event_listeners.emit(&event);
 
+                        #[cfg(feature = "tracing")]
+                        debug!(bulkhead = %config.name, duration_ms = duration.as_millis() as u64, "Call finished");
+
                         #[cfg(feature = "metrics")]
                         {
                             counter!("bulkhead_calls_finished_total", "bulkhead" => config.name.clone())
@@ -183,6 +192,9 @@ where
                             duration,
                         };
                         config.event_listeners.emit(&event);
+
+                        #[cfg(feature = "tracing")]
+                        debug!(bulkhead = %config.name, duration_ms = duration.as_millis() as u64, "Call failed");
 
                         #[cfg(feature = "metrics")]
                         {
@@ -232,6 +244,9 @@ where
                             };
                             config.event_listeners.emit(&event);
 
+                            #[cfg(feature = "tracing")]
+                            warn!(bulkhead = %config.name, max_concurrent_calls = config.max_concurrent_calls, "Call rejected");
+
                             #[cfg(feature = "metrics")]
                             counter!("bulkhead_calls_rejected_total", "bulkhead" => config.name.clone())
                                 .increment(1);
@@ -246,6 +261,9 @@ where
                                 max_concurrent_calls: config.max_concurrent_calls,
                             };
                             config.event_listeners.emit(&event);
+
+                            #[cfg(feature = "tracing")]
+                            warn!(bulkhead = %config.name, max_concurrent_calls = config.max_concurrent_calls, "Call rejected");
 
                             #[cfg(feature = "metrics")]
                             counter!("bulkhead_calls_rejected_total", "bulkhead" => config.name.clone())
@@ -268,6 +286,9 @@ where
                             };
                             config.event_listeners.emit(&event);
 
+                            #[cfg(feature = "tracing")]
+                            warn!(bulkhead = %config.name, max_concurrent_calls = config.max_concurrent_calls, "Call rejected");
+
                             #[cfg(feature = "metrics")]
                             counter!("bulkhead_calls_rejected_total", "bulkhead" => config.name.clone())
                                 .increment(1);
@@ -287,6 +308,9 @@ where
                 concurrent_calls,
             };
             config.event_listeners.emit(&event);
+
+            #[cfg(feature = "tracing")]
+            debug!(bulkhead = %config.name, concurrent_calls, "Call permitted");
 
             #[cfg(feature = "metrics")]
             {
@@ -317,6 +341,9 @@ where
                     };
                     config.event_listeners.emit(&event);
 
+                    #[cfg(feature = "tracing")]
+                    debug!(bulkhead = %config.name, duration_ms = duration.as_millis() as u64, "Call finished");
+
                     #[cfg(feature = "metrics")]
                     {
                         counter!("bulkhead_calls_finished_total", "bulkhead" => config.name.clone())
@@ -332,6 +359,9 @@ where
                         duration,
                     };
                     config.event_listeners.emit(&event);
+
+                    #[cfg(feature = "tracing")]
+                    debug!(bulkhead = %config.name, duration_ms = duration.as_millis() as u64, "Call failed");
 
                     #[cfg(feature = "metrics")]
                     {
@@ -524,5 +554,70 @@ mod tests {
             .await
             .expect("dropping the response future must release its permit")
             .unwrap();
+    }
+
+    #[cfg(feature = "tracing")]
+    #[tokio::test]
+    async fn call_rejected_emits_tracing_event() {
+        use std::sync::Mutex;
+        use tracing::field::{Field, Visit};
+        use tracing::span::{Attributes, Id, Record};
+        use tracing::{Event, Metadata, Subscriber};
+
+        #[derive(Default)]
+        struct Captured {
+            messages: Vec<String>,
+        }
+
+        struct CaptureSubscriber(Arc<Mutex<Captured>>);
+
+        struct MessageVisitor(String);
+        impl Visit for MessageVisitor {
+            fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+                if field.name() == "message" {
+                    self.0 = format!("{value:?}");
+                }
+            }
+        }
+
+        impl Subscriber for CaptureSubscriber {
+            fn enabled(&self, _metadata: &Metadata<'_>) -> bool {
+                true
+            }
+            fn new_span(&self, _span: &Attributes<'_>) -> Id {
+                Id::from_u64(1)
+            }
+            fn record(&self, _span: &Id, _values: &Record<'_>) {}
+            fn record_follows_from(&self, _span: &Id, _follows: &Id) {}
+            fn event(&self, event: &Event<'_>) {
+                let mut visitor = MessageVisitor(String::new());
+                event.record(&mut visitor);
+                self.0.lock().unwrap().messages.push(visitor.0);
+            }
+            fn enter(&self, _span: &Id) {}
+            fn exit(&self, _span: &Id) {}
+        }
+
+        let captured = Arc::new(Mutex::new(Captured::default()));
+        let subscriber = CaptureSubscriber(Arc::clone(&captured));
+        let _guard = tracing::subscriber::set_default(subscriber);
+
+        // Default (non-backpressure/rejection) mode: poll_ready forwards to
+        // the inner service, so readiness always succeeds. Closing the
+        // semaphore forces `call()` down the immediate-rejection branch.
+        let (layer, handle) = BulkheadLayer::builder()
+            .max_concurrent_calls(1)
+            .build_with_handle();
+        let mut service = layer.layer(service_fn(|()| async { Ok::<_, Infallible>(()) }));
+        handle.semaphore.close();
+
+        let result = service.ready().await.unwrap().call(()).await;
+        assert!(result.is_err(), "closed semaphore must reject the call");
+
+        let messages = captured.lock().unwrap().messages.clone();
+        assert!(
+            messages.iter().any(|m| m.to_lowercase().contains("reject")),
+            "expected a tracing event mentioning rejection, got: {messages:?}"
+        );
     }
 }

@@ -161,6 +161,12 @@ use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
 use tower::{Service, ServiceExt};
 
+#[cfg(feature = "tracing")]
+use tracing::{debug, warn};
+
+#[cfg(feature = "metrics")]
+use metrics::{counter, histogram};
+
 /// Hedging service that wraps an inner service.
 ///
 /// This service executes parallel redundant requests to reduce tail latency.
@@ -300,6 +306,11 @@ where
     };
     let start = Instant::now();
 
+    // Label shared by every metrics/tracing call site below; mirrors the
+    // fallback `HedgeEvent::pattern_name()` already uses in `events.rs`.
+    #[cfg(any(feature = "metrics", feature = "tracing"))]
+    let label = config.name.as_deref().unwrap_or("hedge");
+
     // Emit primary started event
     config.listeners.emit(&HedgeEvent::PrimaryStarted {
         name: config.name.clone(),
@@ -348,6 +359,13 @@ where
                 delay: Duration::ZERO,
                 timestamp: Instant::now(),
             });
+
+            #[cfg(feature = "tracing")]
+            debug!(hedge = %label, attempt, delay_ms = 0u64, "Hedge attempt started");
+
+            #[cfg(feature = "metrics")]
+            counter!("hedge_attempts_total", "hedge" => label.to_string()).increment(1);
+
             attempts.push(attempt_future(
                 hedge_template
                     .as_ref()
@@ -404,6 +422,13 @@ where
                     delay: elapsed_delay,
                     timestamp: Instant::now(),
                 });
+
+                #[cfg(feature = "tracing")]
+                debug!(hedge = %label, attempt, delay_ms = elapsed_delay.as_millis() as u64, "Hedge attempt started");
+
+                #[cfg(feature = "metrics")]
+                counter!("hedge_attempts_total", "hedge" => label.to_string()).increment(1);
+
                 attempts.push(attempt_future(
                     hedge_template
                         .as_ref()
@@ -462,6 +487,17 @@ where
                         hedges_cancelled,
                         timestamp: Instant::now(),
                     });
+
+                    #[cfg(feature = "tracing")]
+                    debug!(hedge = %label, duration_ms = duration.as_millis() as u64, hedges_cancelled, "Primary succeeded");
+
+                    #[cfg(feature = "metrics")]
+                    {
+                        counter!("hedge_calls_total", "hedge" => label.to_string(), "result" => "primary")
+                            .increment(1);
+                        histogram!("hedge_call_duration_seconds", "hedge" => label.to_string())
+                            .record(duration.as_secs_f64());
+                    }
                 } else {
                     config.listeners.emit(&HedgeEvent::HedgeSucceeded {
                         name: config.name.clone(),
@@ -470,6 +506,17 @@ where
                         primary_cancelled,
                         timestamp: Instant::now(),
                     });
+
+                    #[cfg(feature = "tracing")]
+                    debug!(hedge = %label, attempt, duration_ms = duration.as_millis() as u64, primary_cancelled, "Hedge attempt won");
+
+                    #[cfg(feature = "metrics")]
+                    {
+                        counter!("hedge_calls_total", "hedge" => label.to_string(), "result" => "hedge")
+                            .increment(1);
+                        histogram!("hedge_call_duration_seconds", "hedge" => label.to_string())
+                            .record(duration.as_secs_f64());
+                    }
                 }
                 return Ok(response);
             }
@@ -482,6 +529,18 @@ where
         attempts: max_attempts,
         timestamp: Instant::now(),
     });
+
+    #[cfg(feature = "tracing")]
+    warn!(hedge = %label, attempts = max_attempts, "All hedge attempts failed");
+
+    #[cfg(feature = "metrics")]
+    {
+        let duration = start.elapsed();
+        counter!("hedge_calls_total", "hedge" => label.to_string(), "result" => "failed")
+            .increment(1);
+        histogram!("hedge_call_duration_seconds", "hedge" => label.to_string())
+            .record(duration.as_secs_f64());
+    }
 
     Err(HedgeError::AllAttemptsFailed(
         primary_error
@@ -621,6 +680,71 @@ mod tests {
 
         // Both were called; the slow primary was dropped before return.
         assert_eq!(call_count.load(Ordering::SeqCst), 2);
+    }
+
+    #[cfg(feature = "metrics")]
+    #[tokio::test]
+    async fn hedging_emits_metrics() {
+        use metrics::set_global_recorder;
+        use metrics_util::debugging::DebugValue;
+        use metrics_util::debugging::DebuggingRecorder;
+        use std::sync::LazyLock;
+
+        static RECORDER: LazyLock<DebuggingRecorder> = LazyLock::new(DebuggingRecorder::default);
+        let _ = set_global_recorder(&*RECORDER);
+
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let cc = Arc::clone(&call_count);
+
+        let service = tower::service_fn(move |_req: String| {
+            let cc = Arc::clone(&cc);
+            async move {
+                let count = cc.fetch_add(1, Ordering::SeqCst);
+                if count == 0 {
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                }
+                Ok::<_, TestError>("success".to_string())
+            }
+        });
+
+        let layer = HedgeLayer::builder()
+            .name("metrics-test")
+            .delay(Duration::from_millis(20))
+            .max_hedged_attempts(2)
+            .build();
+
+        let mut service = layer.layer(service);
+        let result = service
+            .ready()
+            .await
+            .unwrap()
+            .call("test".to_string())
+            .await;
+        assert!(result.is_ok());
+
+        let snapshot = RECORDER.snapshotter().snapshot().into_vec();
+
+        let has_metric_with_label = |name: &str, label_key: &str, label_value: &str| {
+            snapshot.iter().any(|(key, _, _, value)| {
+                key.key().name() == name
+                    && matches!(value, DebugValue::Counter(v) if *v >= 1)
+                    && key
+                        .key()
+                        .labels()
+                        .any(|label| label.key() == label_key && label.value() == label_value)
+            })
+        };
+
+        assert!(has_metric_with_label(
+            "hedge_attempts_total",
+            "hedge",
+            "metrics-test"
+        ));
+        assert!(has_metric_with_label(
+            "hedge_calls_total",
+            "hedge",
+            "metrics-test"
+        ));
     }
 
     #[tokio::test]
