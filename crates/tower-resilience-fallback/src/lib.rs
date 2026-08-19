@@ -173,6 +173,11 @@ mod events;
 mod layer;
 mod service;
 
+/// Migration guide for delegating to an arbitrary generic Tower service via
+/// [`FallbackLayer::tower_service`].
+#[doc = include_str!("../MIGRATION.md")]
+pub mod migration {}
+
 pub use config::{FallbackConfig, FallbackConfigBuilder};
 pub use error::FallbackError;
 pub use events::FallbackEvent;

@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `FallbackLayer::tower_service` for readiness-aware delegation to an
   arbitrary generic Tower service, including heterogeneous primary/backup
   errors and cancellation-safe shared backup ownership. See the
-  [migration guide](../../docs/fallback-service-migration.md).
+  [migration guide](MIGRATION.md).
 
 ## [0.10.1](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-fallback-v0.10.0...tower-resilience-fallback-v0.10.1) - 2026-07-27
 
