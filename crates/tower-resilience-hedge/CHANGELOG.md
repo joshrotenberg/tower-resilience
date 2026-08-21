@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-hedge-v0.12.0...tower-resilience-hedge-v0.13.0) - 2026-08-21
+
+### Added
+
+- *(observability)* implement metrics/tracing for adaptive, executor, hedge, outlier, reconnect (closes #428) ([#432](https://github.com/joshrotenberg/tower-resilience/pull/432))
+
+### Fixed
+
+- compose generic errors with Tower BoxError ([#445](https://github.com/joshrotenberg/tower-resilience/pull/445))
+
+### Other
+
+- clean unused workspace dependencies ([#453](https://github.com/joshrotenberg/tower-resilience/pull/453))
+- add workspace publish preflight ([#452](https://github.com/joshrotenberg/tower-resilience/pull/452))
+- consolidate docs/ around audience and reduce drift surface (closes #439) ([#440](https://github.com/joshrotenberg/tower-resilience/pull/440))
+- reconcile README, rustdoc, and examples with verified behavior (closes #380) ([#429](https://github.com/joshrotenberg/tower-resilience/pull/429))
+- audit Tower API surface for genericity and runtime coupling (closes #376) ([#424](https://github.com/joshrotenberg/tower-resilience/pull/424))
+
 ### Added
 
 - `Hedge::get_ref()`, `get_mut()`, and `into_inner()` accessors for the

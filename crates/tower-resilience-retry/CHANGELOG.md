@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.12.0...tower-resilience-retry-v0.13.0) - 2026-08-21
+
+### Added
+
+- *(observability)* implement metrics/tracing for adaptive, executor, hedge, outlier, reconnect (closes #428) ([#432](https://github.com/joshrotenberg/tower-resilience/pull/432))
+- *(fallback)* support generic backup services ([#413](https://github.com/joshrotenberg/tower-resilience/pull/413))
+
+### Fixed
+
+- *(retry)* [**breaking**] validate backoff configuration ([#441](https://github.com/joshrotenberg/tower-resilience/pull/441))
+- *(router)* preserve distribution across clones ([#401](https://github.com/joshrotenberg/tower-resilience/pull/401))
+- *(retry)* implement TPS-based budget replenishment with atomic accounting (closes #370) ([#411](https://github.com/joshrotenberg/tower-resilience/pull/411))
+- *(core)* make shared AIMD controller updates atomic and drop-safe (closes #368) ([#406](https://github.com/joshrotenberg/tower-resilience/pull/406))
+- *(timelimiter)* define streamed HTTP timeout phases ([#403](https://github.com/joshrotenberg/tower-resilience/pull/403))
+
+### Other
+
+- add complete 0.13 migration guide ([#451](https://github.com/joshrotenberg/tower-resilience/pull/451))
+- consolidate docs/ around audience and reduce drift surface (closes #439) ([#440](https://github.com/joshrotenberg/tower-resilience/pull/440))
+- reconcile README, rustdoc, and examples with verified behavior (closes #380) ([#429](https://github.com/joshrotenberg/tower-resilience/pull/429))
+- audit Tower API surface for genericity and runtime coupling (closes #376) ([#424](https://github.com/joshrotenberg/tower-resilience/pull/424))
+- audit and consolidate examples around real tower-resilience usage (closes #388) ([#420](https://github.com/joshrotenberg/tower-resilience/pull/420))
+- *(circuitbreaker)* validate circuit breaker against tower-rs/tower#855 (closes #375) ([#418](https://github.com/joshrotenberg/tower-resilience/pull/418))
+
 ### Added
 
 - `Retry::get_ref()`, `get_mut()`, and `into_inner()` accessors for the

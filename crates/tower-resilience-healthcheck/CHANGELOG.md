@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-healthcheck-v0.12.0...tower-resilience-healthcheck-v0.13.0) - 2026-08-21
+
+### Other
+
+- clean unused workspace dependencies ([#453](https://github.com/joshrotenberg/tower-resilience/pull/453))
+- add workspace publish preflight ([#452](https://github.com/joshrotenberg/tower-resilience/pull/452))
+
 ## [0.10.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-healthcheck-v0.9.4...tower-resilience-healthcheck-v0.10.0) - 2026-06-10
 
 ### Other
