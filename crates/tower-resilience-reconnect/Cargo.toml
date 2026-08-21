@@ -12,7 +12,7 @@ categories = ["asynchronous", "network-programming"]
 keywords = ["tower", "reconnect", "resilience", "middleware", "connection"]
 
 [dependencies]
-tower-resilience-retry = { version = "0.12.0", path = "../tower-resilience-retry" }
+tower-resilience-retry = { version = "0.13.0", path = "../tower-resilience-retry" }
 tower = { workspace = true, features = ["make"] }
 futures = { workspace = true }
 tokio = { workspace = true }

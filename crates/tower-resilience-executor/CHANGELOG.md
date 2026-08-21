@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-executor-v0.12.0...tower-resilience-executor-v0.13.0) - 2026-08-21
+
+### Added
+
+- *(observability)* implement metrics/tracing for adaptive, executor, hedge, outlier, reconnect (closes #428) ([#432](https://github.com/joshrotenberg/tower-resilience/pull/432))
+- *(fallback)* support generic backup services ([#413](https://github.com/joshrotenberg/tower-resilience/pull/413))
+
+### Fixed
+
+- compose generic errors with Tower BoxError ([#445](https://github.com/joshrotenberg/tower-resilience/pull/445))
+- *(router)* preserve distribution across clones ([#401](https://github.com/joshrotenberg/tower-resilience/pull/401))
+- *(executor)* give BlockingExecutor truthful blocking semantics (closes #371) ([#415](https://github.com/joshrotenberg/tower-resilience/pull/415))
+- *(timelimiter)* define streamed HTTP timeout phases ([#403](https://github.com/joshrotenberg/tower-resilience/pull/403))
+
+### Other
+
+- consolidate docs/ around audience and reduce drift surface (closes #439) ([#440](https://github.com/joshrotenberg/tower-resilience/pull/440))
+- reconcile README, rustdoc, and examples with verified behavior (closes #380) ([#429](https://github.com/joshrotenberg/tower-resilience/pull/429))
+- audit and consolidate examples around real tower-resilience usage (closes #388) ([#420](https://github.com/joshrotenberg/tower-resilience/pull/420))
+- *(circuitbreaker)* validate circuit breaker against tower-rs/tower#855 (closes #375) ([#418](https://github.com/joshrotenberg/tower-resilience/pull/418))
+
 ### Added
 
 - Real `metrics`/`tracing` instrumentation: `executor_tasks_spawned_total`,
