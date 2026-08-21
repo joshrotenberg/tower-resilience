@@ -35,6 +35,7 @@ RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-de
 rustup run 1.85.0 cargo check --locked -p tower-resilience --all-features
 cargo machete --with-metadata
 cargo audit
+python3 scripts/public_api.py check
 ```
 
 `Cargo.lock` is committed for reproducible workspace, example, and security
@@ -49,6 +50,14 @@ the owning manifest's `[package.metadata.cargo-machete]` table with a nearby
 reason; do not add workspace-wide exceptions. The current audit and its
 classifications are recorded in
 [`docs/dependency-hygiene.md`](docs/dependency-hygiene.md).
+
+Public API changes must update the checked-in snapshots in the same pull
+request after their compatibility impact is reviewed. Install the pinned
+nightly and `cargo-public-api`, then run `python3 scripts/public_api.py check`.
+For an intentional change, update migration/release notes and run
+`python3 scripts/public_api.py update`. The complete procedure, including the
+published-release diff command, is in
+[`docs/public-api-review.md`](docs/public-api-review.md).
 
 Nightly stress tests are opt-in locally but gating in their GitHub Actions
 workflow:

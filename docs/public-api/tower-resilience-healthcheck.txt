@@ -1,0 +1,177 @@
+pub mod tower_resilience_healthcheck
+pub enum tower_resilience_healthcheck::HealthStatus
+pub tower_resilience_healthcheck::HealthStatus::Degraded
+pub tower_resilience_healthcheck::HealthStatus::Healthy
+pub tower_resilience_healthcheck::HealthStatus::Unhealthy
+pub tower_resilience_healthcheck::HealthStatus::Unknown
+impl tower_resilience_healthcheck::HealthStatus
+pub fn tower_resilience_healthcheck::HealthStatus::is_healthy(&self) -> bool
+pub fn tower_resilience_healthcheck::HealthStatus::is_usable(&self) -> bool
+impl core::clone::Clone for tower_resilience_healthcheck::HealthStatus
+pub fn tower_resilience_healthcheck::HealthStatus::clone(&self) -> tower_resilience_healthcheck::HealthStatus
+impl core::cmp::Eq for tower_resilience_healthcheck::HealthStatus
+impl core::cmp::PartialEq for tower_resilience_healthcheck::HealthStatus
+pub fn tower_resilience_healthcheck::HealthStatus::eq(&self, &tower_resilience_healthcheck::HealthStatus) -> bool
+impl core::convert::From<tower_resilience_healthcheck::HealthStatus> for tower_resilience_core::health_integration::TriggerHealth
+pub fn tower_resilience_core::health_integration::TriggerHealth::from(tower_resilience_healthcheck::HealthStatus) -> Self
+impl core::convert::From<tower_resilience_healthcheck::HealthStatus> for u8
+pub fn u8::from(tower_resilience_healthcheck::HealthStatus) -> u8
+impl core::convert::From<u8> for tower_resilience_healthcheck::HealthStatus
+pub fn tower_resilience_healthcheck::HealthStatus::from(u8) -> Self
+impl core::fmt::Debug for tower_resilience_healthcheck::HealthStatus
+pub fn tower_resilience_healthcheck::HealthStatus::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_healthcheck::HealthStatus
+impl core::marker::StructuralPartialEq for tower_resilience_healthcheck::HealthStatus
+impl core::marker::Freeze for tower_resilience_healthcheck::HealthStatus
+impl core::marker::Send for tower_resilience_healthcheck::HealthStatus
+impl core::marker::Sync for tower_resilience_healthcheck::HealthStatus
+impl core::marker::Unpin for tower_resilience_healthcheck::HealthStatus
+impl core::marker::UnsafeUnpin for tower_resilience_healthcheck::HealthStatus
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_healthcheck::HealthStatus
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_healthcheck::HealthStatus
+pub enum tower_resilience_healthcheck::SelectionStrategy
+pub tower_resilience_healthcheck::SelectionStrategy::Custom(alloc::sync::Arc<(dyn core::ops::function::Fn(&[tower_resilience_healthcheck::HealthStatus]) -> core::option::Option<usize> + core::marker::Send + core::marker::Sync)>)
+pub tower_resilience_healthcheck::SelectionStrategy::FirstAvailable
+pub tower_resilience_healthcheck::SelectionStrategy::PreferHealthy
+pub tower_resilience_healthcheck::SelectionStrategy::Random
+pub tower_resilience_healthcheck::SelectionStrategy::RoundRobin
+impl core::clone::Clone for tower_resilience_healthcheck::SelectionStrategy
+pub fn tower_resilience_healthcheck::SelectionStrategy::clone(&self) -> tower_resilience_healthcheck::SelectionStrategy
+impl core::default::Default for tower_resilience_healthcheck::SelectionStrategy
+pub fn tower_resilience_healthcheck::SelectionStrategy::default() -> tower_resilience_healthcheck::SelectionStrategy
+impl core::marker::Freeze for tower_resilience_healthcheck::SelectionStrategy
+impl core::marker::Send for tower_resilience_healthcheck::SelectionStrategy
+impl core::marker::Sync for tower_resilience_healthcheck::SelectionStrategy
+impl core::marker::Unpin for tower_resilience_healthcheck::SelectionStrategy
+impl core::marker::UnsafeUnpin for tower_resilience_healthcheck::SelectionStrategy
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_healthcheck::SelectionStrategy
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_healthcheck::SelectionStrategy
+pub struct tower_resilience_healthcheck::HealthCheckConfig
+impl tower_resilience_healthcheck::HealthCheckConfig
+pub fn tower_resilience_healthcheck::HealthCheckConfig::builder() -> tower_resilience_healthcheck::HealthCheckConfigBuilder
+pub fn tower_resilience_healthcheck::HealthCheckConfig::failure_threshold(&self) -> u32
+pub fn tower_resilience_healthcheck::HealthCheckConfig::initial_delay(&self) -> core::time::Duration
+pub fn tower_resilience_healthcheck::HealthCheckConfig::interval(&self) -> core::time::Duration
+pub fn tower_resilience_healthcheck::HealthCheckConfig::success_threshold(&self) -> u32
+pub fn tower_resilience_healthcheck::HealthCheckConfig::timeout(&self) -> core::time::Duration
+impl core::clone::Clone for tower_resilience_healthcheck::HealthCheckConfig
+pub fn tower_resilience_healthcheck::HealthCheckConfig::clone(&self) -> tower_resilience_healthcheck::HealthCheckConfig
+impl core::default::Default for tower_resilience_healthcheck::HealthCheckConfig
+pub fn tower_resilience_healthcheck::HealthCheckConfig::default() -> Self
+impl core::marker::Freeze for tower_resilience_healthcheck::HealthCheckConfig
+impl core::marker::Send for tower_resilience_healthcheck::HealthCheckConfig
+impl core::marker::Sync for tower_resilience_healthcheck::HealthCheckConfig
+impl core::marker::Unpin for tower_resilience_healthcheck::HealthCheckConfig
+impl core::marker::UnsafeUnpin for tower_resilience_healthcheck::HealthCheckConfig
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_healthcheck::HealthCheckConfig
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_healthcheck::HealthCheckConfig
+pub struct tower_resilience_healthcheck::HealthCheckConfigBuilder
+impl tower_resilience_healthcheck::HealthCheckConfigBuilder
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::build(self) -> tower_resilience_healthcheck::HealthCheckConfig
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::failure_threshold(self, u32) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::initial_delay(self, core::time::Duration) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::interval(self, core::time::Duration) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::on_check_failed<F>(self, F) -> Self where F: core::ops::function::Fn(&str, &dyn core::error::Error) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::on_health_change<F>(self, F) -> Self where F: core::ops::function::Fn(&str, tower_resilience_healthcheck::HealthStatus, tower_resilience_healthcheck::HealthStatus) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::selection_strategy(self, tower_resilience_healthcheck::SelectionStrategy) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::success_threshold(self, u32) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::timeout(self, core::time::Duration) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::with_trigger(self, tower_resilience_core::health_integration::SharedHealthTrigger) -> Self
+impl core::default::Default for tower_resilience_healthcheck::HealthCheckConfigBuilder
+pub fn tower_resilience_healthcheck::HealthCheckConfigBuilder::default() -> Self
+impl core::marker::Freeze for tower_resilience_healthcheck::HealthCheckConfigBuilder
+impl core::marker::Send for tower_resilience_healthcheck::HealthCheckConfigBuilder
+impl core::marker::Sync for tower_resilience_healthcheck::HealthCheckConfigBuilder
+impl core::marker::Unpin for tower_resilience_healthcheck::HealthCheckConfigBuilder
+impl core::marker::UnsafeUnpin for tower_resilience_healthcheck::HealthCheckConfigBuilder
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_healthcheck::HealthCheckConfigBuilder
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_healthcheck::HealthCheckConfigBuilder
+pub struct tower_resilience_healthcheck::HealthCheckWrapper<T, C>
+impl<T, C> tower_resilience_healthcheck::HealthCheckWrapper<T, C> where T: core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, C: tower_resilience_healthcheck::HealthChecker<T> + 'static
+pub fn tower_resilience_healthcheck::HealthCheckWrapper<T, C>::builder() -> tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>
+pub async fn tower_resilience_healthcheck::HealthCheckWrapper<T, C>::get_all_statuses(&self) -> alloc::vec::Vec<(alloc::string::String, tower_resilience_healthcheck::HealthStatus)>
+pub async fn tower_resilience_healthcheck::HealthCheckWrapper<T, C>::get_health_details(&self) -> alloc::vec::Vec<tower_resilience_healthcheck::HealthDetail>
+pub async fn tower_resilience_healthcheck::HealthCheckWrapper<T, C>::get_healthy(&self) -> core::option::Option<T>
+pub async fn tower_resilience_healthcheck::HealthCheckWrapper<T, C>::get_status(&self, &str) -> core::option::Option<tower_resilience_healthcheck::HealthStatus>
+pub async fn tower_resilience_healthcheck::HealthCheckWrapper<T, C>::get_usable(&self) -> core::option::Option<T>
+pub async fn tower_resilience_healthcheck::HealthCheckWrapper<T, C>::start(&self)
+pub async fn tower_resilience_healthcheck::HealthCheckWrapper<T, C>::stop(&self)
+impl<T, C> core::ops::drop::Drop for tower_resilience_healthcheck::HealthCheckWrapper<T, C>
+pub fn tower_resilience_healthcheck::HealthCheckWrapper<T, C>::drop(&mut self)
+impl<T, C> core::marker::Freeze for tower_resilience_healthcheck::HealthCheckWrapper<T, C>
+impl<T, C> core::marker::Send for tower_resilience_healthcheck::HealthCheckWrapper<T, C> where C: core::marker::Sync + core::marker::Send, T: core::marker::Send + core::marker::Sync
+impl<T, C> core::marker::Sync for tower_resilience_healthcheck::HealthCheckWrapper<T, C> where C: core::marker::Sync + core::marker::Send, T: core::marker::Send + core::marker::Sync
+impl<T, C> core::marker::Unpin for tower_resilience_healthcheck::HealthCheckWrapper<T, C>
+impl<T, C> core::marker::UnsafeUnpin for tower_resilience_healthcheck::HealthCheckWrapper<T, C>
+impl<T, C> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_healthcheck::HealthCheckWrapper<T, C>
+impl<T, C> !core::panic::unwind_safe::UnwindSafe for tower_resilience_healthcheck::HealthCheckWrapper<T, C>
+pub struct tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>
+impl<T, C> tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C> where T: core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, C: tower_resilience_healthcheck::HealthChecker<T> + 'static
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::build(self) -> tower_resilience_healthcheck::HealthCheckWrapper<T, C>
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::new() -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_checker(self, C) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_config(self, tower_resilience_healthcheck::HealthCheckConfig) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_context(self, T, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_failure_threshold(self, u32) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_initial_delay(self, core::time::Duration) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_interval(self, core::time::Duration) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_selection_strategy(self, tower_resilience_healthcheck::SelectionStrategy) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_success_threshold(self, u32) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_timeout(self, core::time::Duration) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::with_trigger(self, tower_resilience_core::health_integration::SharedHealthTrigger) -> Self
+impl<T, C> core::default::Default for tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C> where T: core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, C: tower_resilience_healthcheck::HealthChecker<T> + 'static
+pub fn tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>::default() -> Self
+impl<T, C> core::marker::Freeze for tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C> where C: core::marker::Freeze
+impl<T, C> core::marker::Send for tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C> where C: core::marker::Send, T: core::marker::Send
+impl<T, C> core::marker::Sync for tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C> where C: core::marker::Sync, T: core::marker::Sync
+impl<T, C> core::marker::Unpin for tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C> where C: core::marker::Unpin, T: core::marker::Unpin
+impl<T, C> core::marker::UnsafeUnpin for tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C> where C: core::marker::UnsafeUnpin
+impl<T, C> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>
+impl<T, C> !core::panic::unwind_safe::UnwindSafe for tower_resilience_healthcheck::HealthCheckWrapperBuilder<T, C>
+pub struct tower_resilience_healthcheck::HealthCheckedContext<T>
+pub tower_resilience_healthcheck::HealthCheckedContext::context: T
+pub tower_resilience_healthcheck::HealthCheckedContext::name: alloc::string::String
+impl<T> tower_resilience_healthcheck::HealthCheckedContext<T>
+pub fn tower_resilience_healthcheck::HealthCheckedContext<T>::consecutive_failures(&self) -> u64
+pub fn tower_resilience_healthcheck::HealthCheckedContext<T>::consecutive_successes(&self) -> u64
+pub fn tower_resilience_healthcheck::HealthCheckedContext<T>::get_extension<V>(&self, &str) -> core::option::Option<V> where V: core::any::Any + core::marker::Send + core::marker::Sync + core::clone::Clone
+pub fn tower_resilience_healthcheck::HealthCheckedContext<T>::last_check(&self) -> u64
+pub fn tower_resilience_healthcheck::HealthCheckedContext<T>::new(T, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_healthcheck::HealthCheckedContext<T>::set_extension(&self, impl core::convert::Into<alloc::string::String>, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
+pub fn tower_resilience_healthcheck::HealthCheckedContext<T>::status(&self) -> tower_resilience_healthcheck::HealthStatus
+impl<T: core::clone::Clone> core::clone::Clone for tower_resilience_healthcheck::HealthCheckedContext<T>
+pub fn tower_resilience_healthcheck::HealthCheckedContext<T>::clone(&self) -> Self
+impl<T: core::fmt::Debug> core::fmt::Debug for tower_resilience_healthcheck::HealthCheckedContext<T>
+pub fn tower_resilience_healthcheck::HealthCheckedContext<T>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<T> core::marker::Freeze for tower_resilience_healthcheck::HealthCheckedContext<T> where T: core::marker::Freeze
+impl<T> core::marker::Send for tower_resilience_healthcheck::HealthCheckedContext<T> where T: core::marker::Send
+impl<T> core::marker::Sync for tower_resilience_healthcheck::HealthCheckedContext<T> where T: core::marker::Sync
+impl<T> core::marker::Unpin for tower_resilience_healthcheck::HealthCheckedContext<T> where T: core::marker::Unpin
+impl<T> core::marker::UnsafeUnpin for tower_resilience_healthcheck::HealthCheckedContext<T> where T: core::marker::UnsafeUnpin
+impl<T> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_healthcheck::HealthCheckedContext<T> where T: core::panic::unwind_safe::RefUnwindSafe
+impl<T> core::panic::unwind_safe::UnwindSafe for tower_resilience_healthcheck::HealthCheckedContext<T> where T: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_healthcheck::HealthDetail
+pub tower_resilience_healthcheck::HealthDetail::consecutive_failures: u64
+pub tower_resilience_healthcheck::HealthDetail::consecutive_successes: u64
+pub tower_resilience_healthcheck::HealthDetail::last_check_millis: u64
+pub tower_resilience_healthcheck::HealthDetail::name: alloc::string::String
+pub tower_resilience_healthcheck::HealthDetail::status: tower_resilience_healthcheck::HealthStatus
+impl core::clone::Clone for tower_resilience_healthcheck::HealthDetail
+pub fn tower_resilience_healthcheck::HealthDetail::clone(&self) -> tower_resilience_healthcheck::HealthDetail
+impl core::fmt::Debug for tower_resilience_healthcheck::HealthDetail
+pub fn tower_resilience_healthcheck::HealthDetail::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_healthcheck::HealthDetail
+impl core::marker::Send for tower_resilience_healthcheck::HealthDetail
+impl core::marker::Sync for tower_resilience_healthcheck::HealthDetail
+impl core::marker::Unpin for tower_resilience_healthcheck::HealthDetail
+impl core::marker::UnsafeUnpin for tower_resilience_healthcheck::HealthDetail
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_healthcheck::HealthDetail
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_healthcheck::HealthDetail
+pub trait tower_resilience_healthcheck::HealthChecker<T>: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_healthcheck::HealthChecker::check(&self, &T) -> impl core::future::future::Future<Output = tower_resilience_healthcheck::HealthStatus> + core::marker::Send
+impl<T, F, Fut> tower_resilience_healthcheck::HealthChecker<T> for F where F: core::ops::function::Fn(&T) -> Fut + core::marker::Send + core::marker::Sync, Fut: core::future::future::Future<Output = tower_resilience_healthcheck::HealthStatus> + core::marker::Send
+pub fn F::check(&self, &T) -> impl core::future::future::Future<Output = tower_resilience_healthcheck::HealthStatus> + core::marker::Send
+pub trait tower_resilience_healthcheck::Selector<T>: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_healthcheck::Selector::select(&self, &[tower_resilience_healthcheck::HealthCheckedContext<T>]) -> core::option::Option<usize>
+impl<T, F> tower_resilience_healthcheck::Selector<T> for F where F: core::ops::function::Fn(&[tower_resilience_healthcheck::HealthCheckedContext<T>]) -> core::option::Option<usize> + core::marker::Send + core::marker::Sync
+pub fn F::select(&self, &[tower_resilience_healthcheck::HealthCheckedContext<T>]) -> core::option::Option<usize>

@@ -1,0 +1,375 @@
+pub mod tower_resilience_bulkhead
+pub mod tower_resilience_bulkhead::config
+#[non_exhaustive] pub enum tower_resilience_bulkhead::config::BulkheadConfigError
+pub tower_resilience_bulkhead::config::BulkheadConfigError::ZeroMaxConcurrentCalls
+impl core::clone::Clone for tower_resilience_bulkhead::config::BulkheadConfigError
+pub fn tower_resilience_bulkhead::config::BulkheadConfigError::clone(&self) -> tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::cmp::Eq for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::cmp::PartialEq for tower_resilience_bulkhead::config::BulkheadConfigError
+pub fn tower_resilience_bulkhead::config::BulkheadConfigError::eq(&self, &tower_resilience_bulkhead::config::BulkheadConfigError) -> bool
+impl core::error::Error for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::fmt::Debug for tower_resilience_bulkhead::config::BulkheadConfigError
+pub fn tower_resilience_bulkhead::config::BulkheadConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_bulkhead::config::BulkheadConfigError
+pub fn tower_resilience_bulkhead::config::BulkheadConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::StructuralPartialEq for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::Freeze for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::Send for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::Sync for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::Unpin for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::config::BulkheadConfigError
+pub struct tower_resilience_bulkhead::config::BulkheadConfig
+impl core::clone::Clone for tower_resilience_bulkhead::config::BulkheadConfig
+pub fn tower_resilience_bulkhead::config::BulkheadConfig::clone(&self) -> tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::Freeze for tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::Send for tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::Sync for tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::Unpin for tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::config::BulkheadConfig
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::config::BulkheadConfig
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::config::BulkheadConfig
+pub struct tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::backpressure(self) -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::build(self) -> core::result::Result<tower_resilience_bulkhead::layer::BulkheadLayer, tower_resilience_bulkhead::config::BulkheadConfigError>
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::build_with_handle(self) -> core::result::Result<(tower_resilience_bulkhead::layer::BulkheadLayer, tower_resilience_bulkhead::BulkheadHandle), tower_resilience_bulkhead::config::BulkheadConfigError>
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::max_concurrent_calls(self, usize) -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::max_wait_duration(self, core::time::Duration) -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::new() -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::on_call_failed<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::on_call_finished<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::on_call_permitted<F>(self, F) -> Self where F: core::ops::function::Fn(usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::on_call_rejected<F>(self, F) -> Self where F: core::ops::function::Fn(usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::reject_when_full(self) -> Self
+impl core::default::Default for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::default() -> Self
+impl core::marker::Freeze for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::marker::Send for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::marker::Sync for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::marker::Unpin for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub mod tower_resilience_bulkhead::error
+pub enum tower_resilience_bulkhead::error::BulkheadError
+pub tower_resilience_bulkhead::error::BulkheadError::BulkheadFull
+pub tower_resilience_bulkhead::error::BulkheadError::BulkheadFull::max_concurrent_calls: usize
+pub tower_resilience_bulkhead::error::BulkheadError::Closed
+pub tower_resilience_bulkhead::error::BulkheadError::NotReady
+pub tower_resilience_bulkhead::error::BulkheadError::Timeout
+impl core::clone::Clone for tower_resilience_bulkhead::error::BulkheadError
+pub fn tower_resilience_bulkhead::error::BulkheadError::clone(&self) -> tower_resilience_bulkhead::error::BulkheadError
+impl core::error::Error for tower_resilience_bulkhead::error::BulkheadError
+impl core::fmt::Debug for tower_resilience_bulkhead::error::BulkheadError
+pub fn tower_resilience_bulkhead::error::BulkheadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_bulkhead::error::BulkheadError
+pub fn tower_resilience_bulkhead::error::BulkheadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadError> for tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::from(tower_resilience_bulkhead::error::BulkheadError) -> Self
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadError> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_bulkhead::error::BulkheadError) -> Self
+impl core::marker::Freeze for tower_resilience_bulkhead::error::BulkheadError
+impl core::marker::Send for tower_resilience_bulkhead::error::BulkheadError
+impl core::marker::Sync for tower_resilience_bulkhead::error::BulkheadError
+impl core::marker::Unpin for tower_resilience_bulkhead::error::BulkheadError
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::error::BulkheadError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::error::BulkheadError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::error::BulkheadError
+pub enum tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub tower_resilience_bulkhead::error::BulkheadServiceError::Bulkhead(tower_resilience_bulkhead::error::BulkheadError)
+pub tower_resilience_bulkhead::error::BulkheadServiceError::Inner(E)
+impl<E> tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::bulkhead_error(&self) -> core::option::Option<&tower_resilience_bulkhead::error::BulkheadError>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::into_inner(self) -> core::option::Option<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::is_bulkhead(&self) -> bool
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::is_inner(&self) -> bool
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadError> for tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::from(tower_resilience_bulkhead::error::BulkheadError) -> Self
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadServiceError<E>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_bulkhead::error::BulkheadServiceError<E>) -> Self
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadServiceError<tower_resilience_core::error::ResilienceError<E>>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_bulkhead::error::BulkheadServiceError<tower_resilience_core::error::ResilienceError<E>>) -> Self
+impl<E> core::error::Error for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::fmt::Debug + core::fmt::Display
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl<E> core::marker::Freeze for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub type tower_resilience_bulkhead::error::Result<T> = core::result::Result<T, tower_resilience_bulkhead::error::BulkheadError>
+pub mod tower_resilience_bulkhead::events
+pub enum tower_resilience_bulkhead::events::BulkheadEvent
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallFailed
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallFailed::duration: core::time::Duration
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallFailed::pattern_name: alloc::string::String
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallFailed::timestamp: std::time::Instant
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallFinished
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallFinished::duration: core::time::Duration
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallFinished::pattern_name: alloc::string::String
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallFinished::timestamp: std::time::Instant
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallPermitted
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallPermitted::concurrent_calls: usize
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallPermitted::pattern_name: alloc::string::String
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallPermitted::timestamp: std::time::Instant
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallRejected
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallRejected::max_concurrent_calls: usize
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallRejected::pattern_name: alloc::string::String
+pub tower_resilience_bulkhead::events::BulkheadEvent::CallRejected::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_bulkhead::events::BulkheadEvent
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::clone(&self) -> tower_resilience_bulkhead::events::BulkheadEvent
+impl core::fmt::Debug for tower_resilience_bulkhead::events::BulkheadEvent
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_bulkhead::events::BulkheadEvent
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::marker::Send for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::marker::Sync for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::marker::Unpin for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::events::BulkheadEvent
+pub mod tower_resilience_bulkhead::layer
+pub struct tower_resilience_bulkhead::layer::BulkheadLayer
+impl tower_resilience_bulkhead::layer::BulkheadLayer
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::builder() -> tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::large() -> tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::medium() -> tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::new(tower_resilience_bulkhead::config::BulkheadConfig) -> Self
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::small() -> tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::clone::Clone for tower_resilience_bulkhead::layer::BulkheadLayer
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::clone(&self) -> tower_resilience_bulkhead::layer::BulkheadLayer
+impl<S> tower_layer::Layer<S> for tower_resilience_bulkhead::layer::BulkheadLayer
+pub type tower_resilience_bulkhead::layer::BulkheadLayer::Service = tower_resilience_bulkhead::service::Bulkhead<S>
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::layer(&self, S) -> Self::Service
+impl core::marker::Freeze for tower_resilience_bulkhead::layer::BulkheadLayer
+impl core::marker::Send for tower_resilience_bulkhead::layer::BulkheadLayer
+impl core::marker::Sync for tower_resilience_bulkhead::layer::BulkheadLayer
+impl core::marker::Unpin for tower_resilience_bulkhead::layer::BulkheadLayer
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::layer::BulkheadLayer
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::layer::BulkheadLayer
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::layer::BulkheadLayer
+pub mod tower_resilience_bulkhead::service
+pub struct tower_resilience_bulkhead::service::Bulkhead<S>
+impl<S> tower_resilience_bulkhead::service::Bulkhead<S>
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::get_ref(&self) -> &S
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::into_inner(self) -> S
+impl<S, Request> tower_service::Service<Request> for tower_resilience_bulkhead::service::Bulkhead<S> where S: tower_service::Service<Request> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, <S as tower_service::Service>::Response: core::marker::Send + 'static, <S as tower_service::Service>::Error: core::marker::Send + 'static, Request: core::marker::Send + 'static
+pub type tower_resilience_bulkhead::service::Bulkhead<S>::Error = tower_resilience_bulkhead::error::BulkheadServiceError<<S as tower_service::Service<Request>>::Error>
+pub type tower_resilience_bulkhead::service::Bulkhead<S>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_bulkhead::service::Bulkhead<S> as tower_service::Service<Request>>::Response, <tower_resilience_bulkhead::service::Bulkhead<S> as tower_service::Service<Request>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_bulkhead::service::Bulkhead<S>::Response = <S as tower_service::Service<Request>>::Response
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone> core::clone::Clone for tower_resilience_bulkhead::service::Bulkhead<S>
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::clone(&self) -> Self
+impl<S> core::marker::Freeze for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::Freeze
+impl<S> core::marker::Send for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::Send
+impl<S> core::marker::Sync for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::Sync
+impl<S> core::marker::Unpin for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::Unpin
+impl<S> core::marker::UnsafeUnpin for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::UnsafeUnpin
+impl<S> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::service::Bulkhead<S>
+impl<S> !core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::service::Bulkhead<S>
+#[non_exhaustive] pub enum tower_resilience_bulkhead::BulkheadConfigError
+pub tower_resilience_bulkhead::BulkheadConfigError::ZeroMaxConcurrentCalls
+impl core::clone::Clone for tower_resilience_bulkhead::config::BulkheadConfigError
+pub fn tower_resilience_bulkhead::config::BulkheadConfigError::clone(&self) -> tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::cmp::Eq for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::cmp::PartialEq for tower_resilience_bulkhead::config::BulkheadConfigError
+pub fn tower_resilience_bulkhead::config::BulkheadConfigError::eq(&self, &tower_resilience_bulkhead::config::BulkheadConfigError) -> bool
+impl core::error::Error for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::fmt::Debug for tower_resilience_bulkhead::config::BulkheadConfigError
+pub fn tower_resilience_bulkhead::config::BulkheadConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_bulkhead::config::BulkheadConfigError
+pub fn tower_resilience_bulkhead::config::BulkheadConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::StructuralPartialEq for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::Freeze for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::Send for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::Sync for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::Unpin for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::config::BulkheadConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::config::BulkheadConfigError
+pub enum tower_resilience_bulkhead::BulkheadError
+pub tower_resilience_bulkhead::BulkheadError::BulkheadFull
+pub tower_resilience_bulkhead::BulkheadError::BulkheadFull::max_concurrent_calls: usize
+pub tower_resilience_bulkhead::BulkheadError::Closed
+pub tower_resilience_bulkhead::BulkheadError::NotReady
+pub tower_resilience_bulkhead::BulkheadError::Timeout
+impl core::clone::Clone for tower_resilience_bulkhead::error::BulkheadError
+pub fn tower_resilience_bulkhead::error::BulkheadError::clone(&self) -> tower_resilience_bulkhead::error::BulkheadError
+impl core::error::Error for tower_resilience_bulkhead::error::BulkheadError
+impl core::fmt::Debug for tower_resilience_bulkhead::error::BulkheadError
+pub fn tower_resilience_bulkhead::error::BulkheadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_bulkhead::error::BulkheadError
+pub fn tower_resilience_bulkhead::error::BulkheadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadError> for tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::from(tower_resilience_bulkhead::error::BulkheadError) -> Self
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadError> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_bulkhead::error::BulkheadError) -> Self
+impl core::marker::Freeze for tower_resilience_bulkhead::error::BulkheadError
+impl core::marker::Send for tower_resilience_bulkhead::error::BulkheadError
+impl core::marker::Sync for tower_resilience_bulkhead::error::BulkheadError
+impl core::marker::Unpin for tower_resilience_bulkhead::error::BulkheadError
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::error::BulkheadError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::error::BulkheadError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::error::BulkheadError
+pub enum tower_resilience_bulkhead::BulkheadEvent
+pub tower_resilience_bulkhead::BulkheadEvent::CallFailed
+pub tower_resilience_bulkhead::BulkheadEvent::CallFailed::duration: core::time::Duration
+pub tower_resilience_bulkhead::BulkheadEvent::CallFailed::pattern_name: alloc::string::String
+pub tower_resilience_bulkhead::BulkheadEvent::CallFailed::timestamp: std::time::Instant
+pub tower_resilience_bulkhead::BulkheadEvent::CallFinished
+pub tower_resilience_bulkhead::BulkheadEvent::CallFinished::duration: core::time::Duration
+pub tower_resilience_bulkhead::BulkheadEvent::CallFinished::pattern_name: alloc::string::String
+pub tower_resilience_bulkhead::BulkheadEvent::CallFinished::timestamp: std::time::Instant
+pub tower_resilience_bulkhead::BulkheadEvent::CallPermitted
+pub tower_resilience_bulkhead::BulkheadEvent::CallPermitted::concurrent_calls: usize
+pub tower_resilience_bulkhead::BulkheadEvent::CallPermitted::pattern_name: alloc::string::String
+pub tower_resilience_bulkhead::BulkheadEvent::CallPermitted::timestamp: std::time::Instant
+pub tower_resilience_bulkhead::BulkheadEvent::CallRejected
+pub tower_resilience_bulkhead::BulkheadEvent::CallRejected::max_concurrent_calls: usize
+pub tower_resilience_bulkhead::BulkheadEvent::CallRejected::pattern_name: alloc::string::String
+pub tower_resilience_bulkhead::BulkheadEvent::CallRejected::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_bulkhead::events::BulkheadEvent
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::clone(&self) -> tower_resilience_bulkhead::events::BulkheadEvent
+impl core::fmt::Debug for tower_resilience_bulkhead::events::BulkheadEvent
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_bulkhead::events::BulkheadEvent
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_bulkhead::events::BulkheadEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::marker::Send for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::marker::Sync for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::marker::Unpin for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::events::BulkheadEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::events::BulkheadEvent
+pub enum tower_resilience_bulkhead::BulkheadServiceError<E>
+pub tower_resilience_bulkhead::BulkheadServiceError::Bulkhead(tower_resilience_bulkhead::error::BulkheadError)
+pub tower_resilience_bulkhead::BulkheadServiceError::Inner(E)
+impl<E> tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::bulkhead_error(&self) -> core::option::Option<&tower_resilience_bulkhead::error::BulkheadError>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::into_inner(self) -> core::option::Option<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::is_bulkhead(&self) -> bool
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::is_inner(&self) -> bool
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadError> for tower_resilience_bulkhead::error::BulkheadServiceError<E>
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::from(tower_resilience_bulkhead::error::BulkheadError) -> Self
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadServiceError<E>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_bulkhead::error::BulkheadServiceError<E>) -> Self
+impl<E> core::convert::From<tower_resilience_bulkhead::error::BulkheadServiceError<tower_resilience_core::error::ResilienceError<E>>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_bulkhead::error::BulkheadServiceError<tower_resilience_core::error::ResilienceError<E>>) -> Self
+impl<E> core::error::Error for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::fmt::Debug + core::fmt::Display
+pub fn tower_resilience_bulkhead::error::BulkheadServiceError<E>::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl<E> core::marker::Freeze for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::error::BulkheadServiceError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_bulkhead::Bulkhead<S>
+impl<S> tower_resilience_bulkhead::service::Bulkhead<S>
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::get_ref(&self) -> &S
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::into_inner(self) -> S
+impl<S, Request> tower_service::Service<Request> for tower_resilience_bulkhead::service::Bulkhead<S> where S: tower_service::Service<Request> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, <S as tower_service::Service>::Response: core::marker::Send + 'static, <S as tower_service::Service>::Error: core::marker::Send + 'static, Request: core::marker::Send + 'static
+pub type tower_resilience_bulkhead::service::Bulkhead<S>::Error = tower_resilience_bulkhead::error::BulkheadServiceError<<S as tower_service::Service<Request>>::Error>
+pub type tower_resilience_bulkhead::service::Bulkhead<S>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_bulkhead::service::Bulkhead<S> as tower_service::Service<Request>>::Response, <tower_resilience_bulkhead::service::Bulkhead<S> as tower_service::Service<Request>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_bulkhead::service::Bulkhead<S>::Response = <S as tower_service::Service<Request>>::Response
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone> core::clone::Clone for tower_resilience_bulkhead::service::Bulkhead<S>
+pub fn tower_resilience_bulkhead::service::Bulkhead<S>::clone(&self) -> Self
+impl<S> core::marker::Freeze for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::Freeze
+impl<S> core::marker::Send for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::Send
+impl<S> core::marker::Sync for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::Sync
+impl<S> core::marker::Unpin for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::Unpin
+impl<S> core::marker::UnsafeUnpin for tower_resilience_bulkhead::service::Bulkhead<S> where S: core::marker::UnsafeUnpin
+impl<S> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::service::Bulkhead<S>
+impl<S> !core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::service::Bulkhead<S>
+pub struct tower_resilience_bulkhead::BulkheadConfig
+impl core::clone::Clone for tower_resilience_bulkhead::config::BulkheadConfig
+pub fn tower_resilience_bulkhead::config::BulkheadConfig::clone(&self) -> tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::Freeze for tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::Send for tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::Sync for tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::Unpin for tower_resilience_bulkhead::config::BulkheadConfig
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::config::BulkheadConfig
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::config::BulkheadConfig
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::config::BulkheadConfig
+pub struct tower_resilience_bulkhead::BulkheadConfigBuilder
+impl tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::backpressure(self) -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::build(self) -> core::result::Result<tower_resilience_bulkhead::layer::BulkheadLayer, tower_resilience_bulkhead::config::BulkheadConfigError>
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::build_with_handle(self) -> core::result::Result<(tower_resilience_bulkhead::layer::BulkheadLayer, tower_resilience_bulkhead::BulkheadHandle), tower_resilience_bulkhead::config::BulkheadConfigError>
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::max_concurrent_calls(self, usize) -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::max_wait_duration(self, core::time::Duration) -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::new() -> Self
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::on_call_failed<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::on_call_finished<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::on_call_permitted<F>(self, F) -> Self where F: core::ops::function::Fn(usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::on_call_rejected<F>(self, F) -> Self where F: core::ops::function::Fn(usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::reject_when_full(self) -> Self
+impl core::default::Default for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::config::BulkheadConfigBuilder::default() -> Self
+impl core::marker::Freeze for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::marker::Send for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::marker::Sync for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::marker::Unpin for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub struct tower_resilience_bulkhead::BulkheadHandle
+impl tower_resilience_bulkhead::BulkheadHandle
+pub fn tower_resilience_bulkhead::BulkheadHandle::active_calls(&self) -> usize
+pub fn tower_resilience_bulkhead::BulkheadHandle::available_permits(&self) -> usize
+pub fn tower_resilience_bulkhead::BulkheadHandle::max_concurrent(&self) -> usize
+pub fn tower_resilience_bulkhead::BulkheadHandle::utilization(&self) -> f64
+impl core::clone::Clone for tower_resilience_bulkhead::BulkheadHandle
+pub fn tower_resilience_bulkhead::BulkheadHandle::clone(&self) -> tower_resilience_bulkhead::BulkheadHandle
+impl core::marker::Freeze for tower_resilience_bulkhead::BulkheadHandle
+impl core::marker::Send for tower_resilience_bulkhead::BulkheadHandle
+impl core::marker::Sync for tower_resilience_bulkhead::BulkheadHandle
+impl core::marker::Unpin for tower_resilience_bulkhead::BulkheadHandle
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::BulkheadHandle
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::BulkheadHandle
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::BulkheadHandle
+pub struct tower_resilience_bulkhead::BulkheadLayer
+impl tower_resilience_bulkhead::layer::BulkheadLayer
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::builder() -> tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::large() -> tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::medium() -> tower_resilience_bulkhead::config::BulkheadConfigBuilder
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::new(tower_resilience_bulkhead::config::BulkheadConfig) -> Self
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::small() -> tower_resilience_bulkhead::config::BulkheadConfigBuilder
+impl core::clone::Clone for tower_resilience_bulkhead::layer::BulkheadLayer
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::clone(&self) -> tower_resilience_bulkhead::layer::BulkheadLayer
+impl<S> tower_layer::Layer<S> for tower_resilience_bulkhead::layer::BulkheadLayer
+pub type tower_resilience_bulkhead::layer::BulkheadLayer::Service = tower_resilience_bulkhead::service::Bulkhead<S>
+pub fn tower_resilience_bulkhead::layer::BulkheadLayer::layer(&self, S) -> Self::Service
+impl core::marker::Freeze for tower_resilience_bulkhead::layer::BulkheadLayer
+impl core::marker::Send for tower_resilience_bulkhead::layer::BulkheadLayer
+impl core::marker::Sync for tower_resilience_bulkhead::layer::BulkheadLayer
+impl core::marker::Unpin for tower_resilience_bulkhead::layer::BulkheadLayer
+impl core::marker::UnsafeUnpin for tower_resilience_bulkhead::layer::BulkheadLayer
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_bulkhead::layer::BulkheadLayer
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_bulkhead::layer::BulkheadLayer
+pub type tower_resilience_bulkhead::Result<T> = core::result::Result<T, tower_resilience_bulkhead::error::BulkheadError>

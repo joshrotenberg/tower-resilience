@@ -17,7 +17,7 @@ The following APIs now return `Result`:
 | --- | --- | --- |
 | `core` | `AimdController::new` | `AimdConfigError` |
 | `adaptive` | `Aimd::new`, `AimdBuilder::build` | `AimdConfigError` |
-| `adaptive` | `VegasBuilder::build` | `VegasConfigError` |
+| `adaptive` | `Vegas::new`, `VegasBuilder::build` | `VegasConfigError` |
 | `bulkhead` | `BulkheadConfigBuilder::{build, build_with_handle}` | `BulkheadConfigError` |
 | `circuitbreaker` | `CircuitBreakerConfigBuilder::{build, build_with_handle}` | `CircuitBreakerConfigError` |
 | `ratelimiter` | `RateLimiterConfigBuilder::{build, build_with_handle}` | `RateLimiterConfigError` |

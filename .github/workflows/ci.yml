@@ -11,6 +11,31 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  # Text snapshots make any public API movement explicit in code review. An
+  # intentional pre-1.0 break is acknowledged by reviewing and committing the
+  # regenerated snapshots alongside its migration and release notes.
+  public-api:
+    name: Public API Snapshot
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install pinned nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: nightly-2026-08-01
+
+      - name: Install cargo-public-api
+        run: cargo install cargo-public-api --locked --version 0.52.0
+
+      - name: Test snapshot validation
+        run: python3 -m unittest scripts.tests.test_public_api
+
+      - name: Check public API snapshots
+        run: python3 scripts/public_api.py check
+
   # After the dependency audit in #448, cargo-machete is a fast, deterministic
   # gate. Generated-code/build-script false positives are documented narrowly
   # in the owning manifest rather than hidden by a workspace-wide allowlist.

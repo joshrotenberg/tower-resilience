@@ -1,0 +1,665 @@
+pub mod tower_resilience_core
+pub mod tower_resilience_core::aimd
+#[non_exhaustive] pub enum tower_resilience_core::aimd::AimdConfigError
+pub tower_resilience_core::aimd::AimdConfigError::InvalidDecreaseFactor(f64)
+pub tower_resilience_core::aimd::AimdConfigError::MinExceedsMax
+pub tower_resilience_core::aimd::AimdConfigError::MinExceedsMax::max_limit: usize
+pub tower_resilience_core::aimd::AimdConfigError::MinExceedsMax::min_limit: usize
+pub tower_resilience_core::aimd::AimdConfigError::ZeroIncrease
+impl core::clone::Clone for tower_resilience_core::aimd::AimdConfigError
+pub fn tower_resilience_core::aimd::AimdConfigError::clone(&self) -> tower_resilience_core::aimd::AimdConfigError
+impl core::cmp::PartialEq for tower_resilience_core::aimd::AimdConfigError
+pub fn tower_resilience_core::aimd::AimdConfigError::eq(&self, &tower_resilience_core::aimd::AimdConfigError) -> bool
+impl core::error::Error for tower_resilience_core::aimd::AimdConfigError
+impl core::fmt::Debug for tower_resilience_core::aimd::AimdConfigError
+pub fn tower_resilience_core::aimd::AimdConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_core::aimd::AimdConfigError
+pub fn tower_resilience_core::aimd::AimdConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for tower_resilience_core::aimd::AimdConfigError
+impl core::marker::Freeze for tower_resilience_core::aimd::AimdConfigError
+impl core::marker::Send for tower_resilience_core::aimd::AimdConfigError
+impl core::marker::Sync for tower_resilience_core::aimd::AimdConfigError
+impl core::marker::Unpin for tower_resilience_core::aimd::AimdConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_core::aimd::AimdConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::aimd::AimdConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::aimd::AimdConfigError
+pub struct tower_resilience_core::aimd::AimdConfig
+pub tower_resilience_core::aimd::AimdConfig::decrease_factor: f64
+pub tower_resilience_core::aimd::AimdConfig::increase_by: usize
+pub tower_resilience_core::aimd::AimdConfig::initial_limit: usize
+pub tower_resilience_core::aimd::AimdConfig::max_limit: usize
+pub tower_resilience_core::aimd::AimdConfig::min_limit: usize
+impl tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdConfig::new() -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::validate(&self) -> core::result::Result<(), tower_resilience_core::aimd::AimdConfigError>
+pub fn tower_resilience_core::aimd::AimdConfig::with_decrease_factor(self, f64) -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::with_increase_by(self, usize) -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::with_initial_limit(self, usize) -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::with_max_limit(self, usize) -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::with_min_limit(self, usize) -> Self
+impl core::clone::Clone for tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdConfig::clone(&self) -> tower_resilience_core::aimd::AimdConfig
+impl core::default::Default for tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdConfig::default() -> Self
+impl core::fmt::Debug for tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_core::aimd::AimdConfig
+impl core::marker::Send for tower_resilience_core::aimd::AimdConfig
+impl core::marker::Sync for tower_resilience_core::aimd::AimdConfig
+impl core::marker::Unpin for tower_resilience_core::aimd::AimdConfig
+impl core::marker::UnsafeUnpin for tower_resilience_core::aimd::AimdConfig
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::aimd::AimdConfig
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::aimd::AimdConfig
+pub struct tower_resilience_core::aimd::AimdController
+impl tower_resilience_core::aimd::AimdController
+pub fn tower_resilience_core::aimd::AimdController::config(&self) -> &tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdController::limit(&self) -> usize
+pub fn tower_resilience_core::aimd::AimdController::max_limit(&self) -> usize
+pub fn tower_resilience_core::aimd::AimdController::min_limit(&self) -> usize
+pub fn tower_resilience_core::aimd::AimdController::new(tower_resilience_core::aimd::AimdConfig) -> core::result::Result<Self, tower_resilience_core::aimd::AimdConfigError>
+pub fn tower_resilience_core::aimd::AimdController::record_failure(&self)
+pub fn tower_resilience_core::aimd::AimdController::record_success(&self)
+pub fn tower_resilience_core::aimd::AimdController::record_successes(&self, usize)
+pub fn tower_resilience_core::aimd::AimdController::reset(&self)
+impl core::clone::Clone for tower_resilience_core::aimd::AimdController
+pub fn tower_resilience_core::aimd::AimdController::clone(&self) -> Self
+impl core::fmt::Debug for tower_resilience_core::aimd::AimdController
+pub fn tower_resilience_core::aimd::AimdController::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl !core::marker::Freeze for tower_resilience_core::aimd::AimdController
+impl core::marker::Send for tower_resilience_core::aimd::AimdController
+impl core::marker::Sync for tower_resilience_core::aimd::AimdController
+impl core::marker::Unpin for tower_resilience_core::aimd::AimdController
+impl core::marker::UnsafeUnpin for tower_resilience_core::aimd::AimdController
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::aimd::AimdController
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::aimd::AimdController
+pub mod tower_resilience_core::classifier
+pub struct tower_resilience_core::classifier::DefaultClassifier
+impl core::clone::Clone for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::clone(&self) -> tower_resilience_core::classifier::DefaultClassifier
+impl core::default::Default for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::default() -> tower_resilience_core::classifier::DefaultClassifier
+impl core::fmt::Debug for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_core::classifier::DefaultClassifier
+impl<Res, Err> tower_resilience_core::classifier::FailureClassifier<Res, Err> for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::classify(&self, &core::result::Result<Res, Err>) -> bool
+impl core::marker::Freeze for tower_resilience_core::classifier::DefaultClassifier
+impl core::marker::Send for tower_resilience_core::classifier::DefaultClassifier
+impl core::marker::Sync for tower_resilience_core::classifier::DefaultClassifier
+impl core::marker::Unpin for tower_resilience_core::classifier::DefaultClassifier
+impl core::marker::UnsafeUnpin for tower_resilience_core::classifier::DefaultClassifier
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::classifier::DefaultClassifier
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::classifier::DefaultClassifier
+pub struct tower_resilience_core::classifier::FnClassifier<F>
+impl<F> tower_resilience_core::classifier::FnClassifier<F>
+pub fn tower_resilience_core::classifier::FnClassifier<F>::new(F) -> Self
+impl<F, Res, Err> tower_resilience_core::classifier::FailureClassifier<Res, Err> for tower_resilience_core::classifier::FnClassifier<F> where F: core::ops::function::Fn(&core::result::Result<Res, Err>) -> bool + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::classifier::FnClassifier<F>::classify(&self, &core::result::Result<Res, Err>) -> bool
+impl<F: core::clone::Clone> core::clone::Clone for tower_resilience_core::classifier::FnClassifier<F>
+pub fn tower_resilience_core::classifier::FnClassifier<F>::clone(&self) -> tower_resilience_core::classifier::FnClassifier<F>
+impl<F> core::fmt::Debug for tower_resilience_core::classifier::FnClassifier<F>
+pub fn tower_resilience_core::classifier::FnClassifier<F>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<F> core::marker::Freeze for tower_resilience_core::classifier::FnClassifier<F>
+impl<F> core::marker::Send for tower_resilience_core::classifier::FnClassifier<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Sync for tower_resilience_core::classifier::FnClassifier<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Unpin for tower_resilience_core::classifier::FnClassifier<F>
+impl<F> core::marker::UnsafeUnpin for tower_resilience_core::classifier::FnClassifier<F>
+impl<F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::classifier::FnClassifier<F> where F: core::panic::unwind_safe::RefUnwindSafe
+impl<F> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::classifier::FnClassifier<F> where F: core::panic::unwind_safe::RefUnwindSafe
+pub trait tower_resilience_core::classifier::FailureClassifier<Res, Err>: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::classifier::FailureClassifier::classify(&self, &core::result::Result<Res, Err>) -> bool
+impl<F, Res, Err> tower_resilience_core::classifier::FailureClassifier<Res, Err> for tower_resilience_core::classifier::FnClassifier<F> where F: core::ops::function::Fn(&core::result::Result<Res, Err>) -> bool + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::classifier::FnClassifier<F>::classify(&self, &core::result::Result<Res, Err>) -> bool
+impl<Res, Err> tower_resilience_core::classifier::FailureClassifier<Res, Err> for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::classify(&self, &core::result::Result<Res, Err>) -> bool
+pub mod tower_resilience_core::error
+pub enum tower_resilience_core::error::ResilienceError<E>
+pub tower_resilience_core::error::ResilienceError::Application(E)
+pub tower_resilience_core::error::ResilienceError::BulkheadFull
+pub tower_resilience_core::error::ResilienceError::BulkheadFull::concurrent_calls: usize
+pub tower_resilience_core::error::ResilienceError::BulkheadFull::max_concurrent: usize
+pub tower_resilience_core::error::ResilienceError::CircuitOpen
+pub tower_resilience_core::error::ResilienceError::CircuitOpen::name: core::option::Option<alloc::string::String>
+pub tower_resilience_core::error::ResilienceError::InstanceEjected
+pub tower_resilience_core::error::ResilienceError::InstanceEjected::name: alloc::string::String
+pub tower_resilience_core::error::ResilienceError::RateLimited
+pub tower_resilience_core::error::ResilienceError::RateLimited::retry_after: core::option::Option<core::time::Duration>
+pub tower_resilience_core::error::ResilienceError::Timeout
+pub tower_resilience_core::error::ResilienceError::Timeout::layer: &'static str
+impl<E> tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::application_error(self) -> core::option::Option<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::is_application(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_bulkhead_full(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_circuit_open(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_instance_ejected(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_rate_limited(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_timeout(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::map_application<F, T>(self, F) -> tower_resilience_core::error::ResilienceError<T> where F: core::ops::function::FnOnce(E) -> T
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::clone(&self) -> tower_resilience_core::error::ResilienceError<E>
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::error::Error for tower_resilience_core::error::ResilienceError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::fmt::Display for tower_resilience_core::error::ResilienceError<E> where E: core::fmt::Display
+pub fn tower_resilience_core::error::ResilienceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::marker::Freeze for tower_resilience_core::error::ResilienceError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_core::error::ResilienceError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_core::error::ResilienceError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_core::error::ResilienceError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_core::error::ResilienceError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::error::ResilienceError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::error::ResilienceError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub trait tower_resilience_core::error::IntoResilienceError<E>
+pub fn tower_resilience_core::error::IntoResilienceError::into_resilience_error(self) -> tower_resilience_core::error::ResilienceError<E>
+impl<T, E> tower_resilience_core::error::IntoResilienceError<E> for T where T: core::convert::Into<tower_resilience_core::error::ResilienceError<E>>
+pub fn T::into_resilience_error(self) -> tower_resilience_core::error::ResilienceError<E>
+pub mod tower_resilience_core::error_layer
+pub struct tower_resilience_core::error_layer::ResilienceErrorFuture<F, E>
+impl<'__pin, F, E> core::marker::Unpin for tower_resilience_core::error_layer::ResilienceErrorFuture<F, E> where pin_project_lite::__private::PinnedFieldsOf<__Origin<'__pin, F, E>>: core::marker::Unpin
+impl<F, T, InnerErr, E> core::future::future::Future for tower_resilience_core::error_layer::ResilienceErrorFuture<F, E> where F: core::future::future::Future<Output = core::result::Result<T, InnerErr>>, InnerErr: tower_resilience_core::error::IntoResilienceError<E>
+pub type tower_resilience_core::error_layer::ResilienceErrorFuture<F, E>::Output = core::result::Result<T, tower_resilience_core::error::ResilienceError<E>>
+pub fn tower_resilience_core::error_layer::ResilienceErrorFuture<F, E>::poll(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<Self::Output>
+impl<F, E> core::marker::Freeze for tower_resilience_core::error_layer::ResilienceErrorFuture<F, E> where F: core::marker::Freeze
+impl<F, E> core::marker::Send for tower_resilience_core::error_layer::ResilienceErrorFuture<F, E> where F: core::marker::Send
+impl<F, E> core::marker::Sync for tower_resilience_core::error_layer::ResilienceErrorFuture<F, E> where F: core::marker::Sync
+impl<F, E> core::marker::UnsafeUnpin for tower_resilience_core::error_layer::ResilienceErrorFuture<F, E> where F: core::marker::UnsafeUnpin
+impl<F, E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::error_layer::ResilienceErrorFuture<F, E> where F: core::panic::unwind_safe::RefUnwindSafe
+impl<F, E> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::error_layer::ResilienceErrorFuture<F, E> where F: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>
+impl<L, E> tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::new(L) -> Self
+impl<L, S, E> tower_layer::Layer<S> for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: tower_layer::Layer<S>
+pub type tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::Service = tower_resilience_core::error_layer::ResilienceErrorService<<L as tower_layer::Layer<S>>::Service, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::layer(&self, S) -> Self::Service
+impl<L: core::clone::Clone, E> core::clone::Clone for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::clone(&self) -> Self
+impl<L: core::fmt::Debug, E: core::fmt::Debug> core::fmt::Debug for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<L, E> core::marker::Freeze for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::Freeze
+impl<L, E> core::marker::Send for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::Send
+impl<L, E> core::marker::Sync for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::Sync
+impl<L, E> core::marker::Unpin for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::Unpin
+impl<L, E> core::marker::UnsafeUnpin for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::UnsafeUnpin
+impl<L, E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::panic::unwind_safe::RefUnwindSafe
+impl<L, E> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_core::error_layer::ResilienceErrorService<S, E>
+impl<S, E> tower_resilience_core::error_layer::ResilienceErrorService<S, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::new(S) -> Self
+impl<S, Request, E> tower_service::Service<Request> for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: tower_service::Service<Request>, <S as tower_service::Service>::Error: tower_resilience_core::error::IntoResilienceError<E>
+pub type tower_resilience_core::error_layer::ResilienceErrorService<S, E>::Error = tower_resilience_core::error::ResilienceError<E>
+pub type tower_resilience_core::error_layer::ResilienceErrorService<S, E>::Future = tower_resilience_core::error_layer::ResilienceErrorFuture<<S as tower_service::Service<Request>>::Future, E>
+pub type tower_resilience_core::error_layer::ResilienceErrorService<S, E>::Response = <S as tower_service::Service<Request>>::Response
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone, E> core::clone::Clone for tower_resilience_core::error_layer::ResilienceErrorService<S, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::clone(&self) -> Self
+impl<S: core::fmt::Debug, E: core::fmt::Debug> core::fmt::Debug for tower_resilience_core::error_layer::ResilienceErrorService<S, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<S, E> core::marker::Freeze for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::Freeze
+impl<S, E> core::marker::Send for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::Send
+impl<S, E> core::marker::Sync for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::Sync
+impl<S, E> core::marker::Unpin for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::Unpin
+impl<S, E> core::marker::UnsafeUnpin for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::UnsafeUnpin
+impl<S, E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::panic::unwind_safe::RefUnwindSafe
+impl<S, E> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::panic::unwind_safe::UnwindSafe
+pub trait tower_resilience_core::error_layer::UnifiedErrors: core::marker::Sized
+pub fn tower_resilience_core::error_layer::UnifiedErrors::unified<E>(self) -> tower_resilience_core::error_layer::ResilienceErrorLayer<Self, E>
+impl<L> tower_resilience_core::error_layer::UnifiedErrors for L
+pub fn L::unified<E>(self) -> tower_resilience_core::error_layer::ResilienceErrorLayer<Self, E>
+pub mod tower_resilience_core::events
+pub struct tower_resilience_core::events::EventListeners<E: tower_resilience_core::events::ResilienceEvent>
+impl<E: tower_resilience_core::events::ResilienceEvent> tower_resilience_core::events::EventListeners<E>
+pub fn tower_resilience_core::events::EventListeners<E>::add<L>(&mut self, L) where L: tower_resilience_core::events::EventListener<E> + 'static
+pub fn tower_resilience_core::events::EventListeners<E>::emit(&self, &E)
+pub fn tower_resilience_core::events::EventListeners<E>::is_empty(&self) -> bool
+pub fn tower_resilience_core::events::EventListeners<E>::len(&self) -> usize
+pub fn tower_resilience_core::events::EventListeners<E>::new() -> Self
+impl<E: core::clone::Clone + tower_resilience_core::events::ResilienceEvent> core::clone::Clone for tower_resilience_core::events::EventListeners<E>
+pub fn tower_resilience_core::events::EventListeners<E>::clone(&self) -> tower_resilience_core::events::EventListeners<E>
+impl<E: tower_resilience_core::events::ResilienceEvent> core::default::Default for tower_resilience_core::events::EventListeners<E>
+pub fn tower_resilience_core::events::EventListeners<E>::default() -> Self
+impl<E> core::marker::Freeze for tower_resilience_core::events::EventListeners<E>
+impl<E> core::marker::Send for tower_resilience_core::events::EventListeners<E>
+impl<E> core::marker::Sync for tower_resilience_core::events::EventListeners<E>
+impl<E> core::marker::Unpin for tower_resilience_core::events::EventListeners<E>
+impl<E> core::marker::UnsafeUnpin for tower_resilience_core::events::EventListeners<E>
+impl<E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::events::EventListeners<E>
+impl<E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_core::events::EventListeners<E>
+pub struct tower_resilience_core::events::FnListener<E, F> where F: core::ops::function::Fn(&E) + core::marker::Send + core::marker::Sync
+impl<E, F> tower_resilience_core::events::FnListener<E, F> where F: core::ops::function::Fn(&E) + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::events::FnListener<E, F>::new(F) -> Self
+impl<E, F> tower_resilience_core::events::EventListener<E> for tower_resilience_core::events::FnListener<E, F> where E: tower_resilience_core::events::ResilienceEvent, F: core::ops::function::Fn(&E) + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::events::FnListener<E, F>::on_event(&self, &E)
+impl<E, F> core::marker::Freeze for tower_resilience_core::events::FnListener<E, F> where F: core::marker::Freeze
+impl<E, F> core::marker::Send for tower_resilience_core::events::FnListener<E, F> where E: core::marker::Send
+impl<E, F> core::marker::Sync for tower_resilience_core::events::FnListener<E, F> where E: core::marker::Sync
+impl<E, F> core::marker::Unpin for tower_resilience_core::events::FnListener<E, F> where F: core::marker::Unpin, E: core::marker::Unpin
+impl<E, F> core::marker::UnsafeUnpin for tower_resilience_core::events::FnListener<E, F> where F: core::marker::UnsafeUnpin
+impl<E, F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::events::FnListener<E, F> where F: core::panic::unwind_safe::RefUnwindSafe, E: core::panic::unwind_safe::RefUnwindSafe
+impl<E, F> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::events::FnListener<E, F> where F: core::panic::unwind_safe::UnwindSafe, E: core::panic::unwind_safe::UnwindSafe
+pub trait tower_resilience_core::events::EventListener<E: tower_resilience_core::events::ResilienceEvent>: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::events::EventListener::on_event(&self, &E)
+impl<E, F> tower_resilience_core::events::EventListener<E> for tower_resilience_core::events::FnListener<E, F> where E: tower_resilience_core::events::ResilienceEvent, F: core::ops::function::Fn(&E) + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::events::FnListener<E, F>::on_event(&self, &E)
+pub trait tower_resilience_core::events::ResilienceEvent: core::marker::Send + core::marker::Sync + core::fmt::Debug
+pub fn tower_resilience_core::events::ResilienceEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_core::events::ResilienceEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_core::events::ResilienceEvent::timestamp(&self) -> std::time::Instant
+pub type tower_resilience_core::events::BoxedEventListener<E> = alloc::sync::Arc<dyn tower_resilience_core::events::EventListener<E>>
+pub mod tower_resilience_core::health_integration
+pub enum tower_resilience_core::health_integration::TriggerHealth
+pub tower_resilience_core::health_integration::TriggerHealth::Degraded
+pub tower_resilience_core::health_integration::TriggerHealth::Healthy
+pub tower_resilience_core::health_integration::TriggerHealth::Unhealthy
+impl core::clone::Clone for tower_resilience_core::health_integration::TriggerHealth
+pub fn tower_resilience_core::health_integration::TriggerHealth::clone(&self) -> tower_resilience_core::health_integration::TriggerHealth
+impl core::cmp::Eq for tower_resilience_core::health_integration::TriggerHealth
+impl core::cmp::PartialEq for tower_resilience_core::health_integration::TriggerHealth
+pub fn tower_resilience_core::health_integration::TriggerHealth::eq(&self, &tower_resilience_core::health_integration::TriggerHealth) -> bool
+impl core::fmt::Debug for tower_resilience_core::health_integration::TriggerHealth
+pub fn tower_resilience_core::health_integration::TriggerHealth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::StructuralPartialEq for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::Freeze for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::Send for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::Sync for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::Unpin for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::UnsafeUnpin for tower_resilience_core::health_integration::TriggerHealth
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::health_integration::TriggerHealth
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::health_integration::TriggerHealth
+pub trait tower_resilience_core::health_integration::HealthTriggerable: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::health_integration::HealthTriggerable::trigger_degraded(&self)
+pub fn tower_resilience_core::health_integration::HealthTriggerable::trigger_healthy(&self)
+pub fn tower_resilience_core::health_integration::HealthTriggerable::trigger_unhealthy(&self)
+pub type tower_resilience_core::health_integration::SharedHealthTrigger = alloc::sync::Arc<dyn tower_resilience_core::health_integration::HealthTriggerable>
+pub mod tower_resilience_core::testing
+pub struct tower_resilience_core::testing::ControlledHandle
+impl tower_resilience_core::testing::ControlledHandle
+pub fn tower_resilience_core::testing::ControlledHandle::allow(&self, usize)
+pub fn tower_resilience_core::testing::ControlledHandle::calls(&self) -> usize
+pub fn tower_resilience_core::testing::ControlledHandle::close(&self)
+pub fn tower_resilience_core::testing::ControlledHandle::set_ready(&self, bool)
+impl core::clone::Clone for tower_resilience_core::testing::ControlledHandle
+pub fn tower_resilience_core::testing::ControlledHandle::clone(&self) -> tower_resilience_core::testing::ControlledHandle
+impl core::fmt::Debug for tower_resilience_core::testing::ControlledHandle
+pub fn tower_resilience_core::testing::ControlledHandle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_core::testing::ControlledHandle
+impl core::marker::Send for tower_resilience_core::testing::ControlledHandle
+impl core::marker::Sync for tower_resilience_core::testing::ControlledHandle
+impl core::marker::Unpin for tower_resilience_core::testing::ControlledHandle
+impl core::marker::UnsafeUnpin for tower_resilience_core::testing::ControlledHandle
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::testing::ControlledHandle
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::testing::ControlledHandle
+pub struct tower_resilience_core::testing::ControlledService
+impl tower_resilience_core::testing::ControlledService
+pub fn tower_resilience_core::testing::ControlledService::new(bool) -> (Self, tower_resilience_core::testing::ControlledHandle)
+impl core::clone::Clone for tower_resilience_core::testing::ControlledService
+pub fn tower_resilience_core::testing::ControlledService::clone(&self) -> tower_resilience_core::testing::ControlledService
+impl core::fmt::Debug for tower_resilience_core::testing::ControlledService
+pub fn tower_resilience_core::testing::ControlledService::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<Request> tower_service::Service<Request> for tower_resilience_core::testing::ControlledService where Request: core::marker::Send + 'static
+pub type tower_resilience_core::testing::ControlledService::Error = tower_resilience_core::testing::ControlledServiceClosed
+pub type tower_resilience_core::testing::ControlledService::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_core::testing::ControlledService as tower_service::Service<Request>>::Response, <tower_resilience_core::testing::ControlledService as tower_service::Service<Request>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_core::testing::ControlledService::Response = Request
+pub fn tower_resilience_core::testing::ControlledService::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_core::testing::ControlledService::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl core::marker::Freeze for tower_resilience_core::testing::ControlledService
+impl core::marker::Send for tower_resilience_core::testing::ControlledService
+impl core::marker::Sync for tower_resilience_core::testing::ControlledService
+impl core::marker::Unpin for tower_resilience_core::testing::ControlledService
+impl core::marker::UnsafeUnpin for tower_resilience_core::testing::ControlledService
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::testing::ControlledService
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::testing::ControlledService
+pub struct tower_resilience_core::testing::ControlledServiceClosed
+impl core::clone::Clone for tower_resilience_core::testing::ControlledServiceClosed
+pub fn tower_resilience_core::testing::ControlledServiceClosed::clone(&self) -> tower_resilience_core::testing::ControlledServiceClosed
+impl core::cmp::Eq for tower_resilience_core::testing::ControlledServiceClosed
+impl core::cmp::PartialEq for tower_resilience_core::testing::ControlledServiceClosed
+pub fn tower_resilience_core::testing::ControlledServiceClosed::eq(&self, &tower_resilience_core::testing::ControlledServiceClosed) -> bool
+impl core::error::Error for tower_resilience_core::testing::ControlledServiceClosed
+impl core::fmt::Debug for tower_resilience_core::testing::ControlledServiceClosed
+pub fn tower_resilience_core::testing::ControlledServiceClosed::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_core::testing::ControlledServiceClosed
+pub fn tower_resilience_core::testing::ControlledServiceClosed::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_core::testing::ControlledServiceClosed
+impl core::marker::StructuralPartialEq for tower_resilience_core::testing::ControlledServiceClosed
+impl core::marker::Freeze for tower_resilience_core::testing::ControlledServiceClosed
+impl core::marker::Send for tower_resilience_core::testing::ControlledServiceClosed
+impl core::marker::Sync for tower_resilience_core::testing::ControlledServiceClosed
+impl core::marker::Unpin for tower_resilience_core::testing::ControlledServiceClosed
+impl core::marker::UnsafeUnpin for tower_resilience_core::testing::ControlledServiceClosed
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::testing::ControlledServiceClosed
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::testing::ControlledServiceClosed
+pub struct tower_resilience_core::testing::ProbeFuture<F>
+impl<F> core::future::future::Future for tower_resilience_core::testing::ProbeFuture<F> where F: core::future::future::Future
+pub type tower_resilience_core::testing::ProbeFuture<F>::Output = <F as core::future::future::Future>::Output
+pub fn tower_resilience_core::testing::ProbeFuture<F>::poll(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<Self::Output>
+impl<F> core::ops::drop::Drop for tower_resilience_core::testing::ProbeFuture<F>
+pub fn tower_resilience_core::testing::ProbeFuture<F>::drop(&mut self)
+impl<F> core::marker::Freeze for tower_resilience_core::testing::ProbeFuture<F>
+impl<F> core::marker::Send for tower_resilience_core::testing::ProbeFuture<F> where F: core::marker::Send
+impl<F> core::marker::Sync for tower_resilience_core::testing::ProbeFuture<F> where F: core::marker::Sync
+impl<F> core::marker::Unpin for tower_resilience_core::testing::ProbeFuture<F>
+impl<F> core::marker::UnsafeUnpin for tower_resilience_core::testing::ProbeFuture<F>
+impl<F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::testing::ProbeFuture<F> where F: core::panic::unwind_safe::RefUnwindSafe
+impl<F> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::testing::ProbeFuture<F> where F: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_core::testing::ProbeHandle
+impl tower_resilience_core::testing::ProbeHandle
+pub fn tower_resilience_core::testing::ProbeHandle::assert_quiescent(&self)
+pub fn tower_resilience_core::testing::ProbeHandle::assert_ready_contract(&self)
+pub fn tower_resilience_core::testing::ProbeHandle::snapshot(&self) -> tower_resilience_core::testing::ProbeSnapshot
+impl core::clone::Clone for tower_resilience_core::testing::ProbeHandle
+pub fn tower_resilience_core::testing::ProbeHandle::clone(&self) -> tower_resilience_core::testing::ProbeHandle
+impl core::default::Default for tower_resilience_core::testing::ProbeHandle
+pub fn tower_resilience_core::testing::ProbeHandle::default() -> tower_resilience_core::testing::ProbeHandle
+impl core::fmt::Debug for tower_resilience_core::testing::ProbeHandle
+pub fn tower_resilience_core::testing::ProbeHandle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_core::testing::ProbeHandle
+impl core::marker::Send for tower_resilience_core::testing::ProbeHandle
+impl core::marker::Sync for tower_resilience_core::testing::ProbeHandle
+impl core::marker::Unpin for tower_resilience_core::testing::ProbeHandle
+impl core::marker::UnsafeUnpin for tower_resilience_core::testing::ProbeHandle
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::testing::ProbeHandle
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::testing::ProbeHandle
+pub struct tower_resilience_core::testing::ProbeSnapshot
+pub tower_resilience_core::testing::ProbeSnapshot::calls: usize
+pub tower_resilience_core::testing::ProbeSnapshot::cancelled: usize
+pub tower_resilience_core::testing::ProbeSnapshot::clones: usize
+pub tower_resilience_core::testing::ProbeSnapshot::completed: usize
+pub tower_resilience_core::testing::ProbeSnapshot::in_flight: usize
+pub tower_resilience_core::testing::ProbeSnapshot::peak_in_flight: usize
+pub tower_resilience_core::testing::ProbeSnapshot::readiness_errors: usize
+pub tower_resilience_core::testing::ProbeSnapshot::readiness_pending: usize
+pub tower_resilience_core::testing::ProbeSnapshot::readiness_polls: usize
+pub tower_resilience_core::testing::ProbeSnapshot::readiness_successes: usize
+pub tower_resilience_core::testing::ProbeSnapshot::readiness_violations: usize
+impl core::clone::Clone for tower_resilience_core::testing::ProbeSnapshot
+pub fn tower_resilience_core::testing::ProbeSnapshot::clone(&self) -> tower_resilience_core::testing::ProbeSnapshot
+impl core::cmp::Eq for tower_resilience_core::testing::ProbeSnapshot
+impl core::cmp::PartialEq for tower_resilience_core::testing::ProbeSnapshot
+pub fn tower_resilience_core::testing::ProbeSnapshot::eq(&self, &tower_resilience_core::testing::ProbeSnapshot) -> bool
+impl core::default::Default for tower_resilience_core::testing::ProbeSnapshot
+pub fn tower_resilience_core::testing::ProbeSnapshot::default() -> tower_resilience_core::testing::ProbeSnapshot
+impl core::fmt::Debug for tower_resilience_core::testing::ProbeSnapshot
+pub fn tower_resilience_core::testing::ProbeSnapshot::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_core::testing::ProbeSnapshot
+impl core::marker::StructuralPartialEq for tower_resilience_core::testing::ProbeSnapshot
+impl core::marker::Freeze for tower_resilience_core::testing::ProbeSnapshot
+impl core::marker::Send for tower_resilience_core::testing::ProbeSnapshot
+impl core::marker::Sync for tower_resilience_core::testing::ProbeSnapshot
+impl core::marker::Unpin for tower_resilience_core::testing::ProbeSnapshot
+impl core::marker::UnsafeUnpin for tower_resilience_core::testing::ProbeSnapshot
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::testing::ProbeSnapshot
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::testing::ProbeSnapshot
+pub struct tower_resilience_core::testing::ServiceProbe<S>
+impl<S> tower_resilience_core::testing::ServiceProbe<S>
+pub fn tower_resilience_core::testing::ServiceProbe<S>::handle(&self) -> tower_resilience_core::testing::ProbeHandle
+pub fn tower_resilience_core::testing::ServiceProbe<S>::into_inner(self) -> S
+pub fn tower_resilience_core::testing::ServiceProbe<S>::new(S) -> Self
+impl<S, Request> tower_service::Service<Request> for tower_resilience_core::testing::ServiceProbe<S> where S: tower_service::Service<Request>
+pub type tower_resilience_core::testing::ServiceProbe<S>::Error = <S as tower_service::Service<Request>>::Error
+pub type tower_resilience_core::testing::ServiceProbe<S>::Future = tower_resilience_core::testing::ProbeFuture<<S as tower_service::Service<Request>>::Future>
+pub type tower_resilience_core::testing::ServiceProbe<S>::Response = <S as tower_service::Service<Request>>::Response
+pub fn tower_resilience_core::testing::ServiceProbe<S>::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_core::testing::ServiceProbe<S>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S> core::clone::Clone for tower_resilience_core::testing::ServiceProbe<S> where S: core::clone::Clone
+pub fn tower_resilience_core::testing::ServiceProbe<S>::clone(&self) -> Self
+impl<S> core::marker::Freeze for tower_resilience_core::testing::ServiceProbe<S> where S: core::marker::Freeze
+impl<S> core::marker::Send for tower_resilience_core::testing::ServiceProbe<S> where S: core::marker::Send
+impl<S> core::marker::Sync for tower_resilience_core::testing::ServiceProbe<S> where S: core::marker::Sync
+impl<S> core::marker::Unpin for tower_resilience_core::testing::ServiceProbe<S> where S: core::marker::Unpin
+impl<S> core::marker::UnsafeUnpin for tower_resilience_core::testing::ServiceProbe<S> where S: core::marker::UnsafeUnpin
+impl<S> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::testing::ServiceProbe<S> where S: core::panic::unwind_safe::RefUnwindSafe
+impl<S> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::testing::ServiceProbe<S> where S: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_core::testing::StatefulInner
+impl tower_resilience_core::testing::StatefulInner
+pub fn tower_resilience_core::testing::StatefulInner::new() -> Self
+impl core::clone::Clone for tower_resilience_core::testing::StatefulInner
+pub fn tower_resilience_core::testing::StatefulInner::clone(&self) -> Self
+impl core::default::Default for tower_resilience_core::testing::StatefulInner
+pub fn tower_resilience_core::testing::StatefulInner::default() -> Self
+impl tower_service::Service<()> for tower_resilience_core::testing::StatefulInner
+pub type tower_resilience_core::testing::StatefulInner::Error = core::convert::Infallible
+pub type tower_resilience_core::testing::StatefulInner::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<(), <tower_resilience_core::testing::StatefulInner as tower_service::Service<()>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_core::testing::StatefulInner::Response = ()
+pub fn tower_resilience_core::testing::StatefulInner::call(&mut self, ()) -> Self::Future
+pub fn tower_resilience_core::testing::StatefulInner::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl core::marker::Freeze for tower_resilience_core::testing::StatefulInner
+impl core::marker::Send for tower_resilience_core::testing::StatefulInner
+impl core::marker::Sync for tower_resilience_core::testing::StatefulInner
+impl core::marker::Unpin for tower_resilience_core::testing::StatefulInner
+impl core::marker::UnsafeUnpin for tower_resilience_core::testing::StatefulInner
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::testing::StatefulInner
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::testing::StatefulInner
+pub enum tower_resilience_core::ResilienceError<E>
+pub tower_resilience_core::ResilienceError::Application(E)
+pub tower_resilience_core::ResilienceError::BulkheadFull
+pub tower_resilience_core::ResilienceError::BulkheadFull::concurrent_calls: usize
+pub tower_resilience_core::ResilienceError::BulkheadFull::max_concurrent: usize
+pub tower_resilience_core::ResilienceError::CircuitOpen
+pub tower_resilience_core::ResilienceError::CircuitOpen::name: core::option::Option<alloc::string::String>
+pub tower_resilience_core::ResilienceError::InstanceEjected
+pub tower_resilience_core::ResilienceError::InstanceEjected::name: alloc::string::String
+pub tower_resilience_core::ResilienceError::RateLimited
+pub tower_resilience_core::ResilienceError::RateLimited::retry_after: core::option::Option<core::time::Duration>
+pub tower_resilience_core::ResilienceError::Timeout
+pub tower_resilience_core::ResilienceError::Timeout::layer: &'static str
+impl<E> tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::application_error(self) -> core::option::Option<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::is_application(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_bulkhead_full(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_circuit_open(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_instance_ejected(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_rate_limited(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::is_timeout(&self) -> bool
+pub fn tower_resilience_core::error::ResilienceError<E>::map_application<F, T>(self, F) -> tower_resilience_core::error::ResilienceError<T> where F: core::ops::function::FnOnce(E) -> T
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::clone(&self) -> tower_resilience_core::error::ResilienceError<E>
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::error::Error for tower_resilience_core::error::ResilienceError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::fmt::Display for tower_resilience_core::error::ResilienceError<E> where E: core::fmt::Display
+pub fn tower_resilience_core::error::ResilienceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::marker::Freeze for tower_resilience_core::error::ResilienceError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_core::error::ResilienceError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_core::error::ResilienceError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_core::error::ResilienceError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_core::error::ResilienceError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::error::ResilienceError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::error::ResilienceError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_core::TriggerHealth
+pub tower_resilience_core::TriggerHealth::Degraded
+pub tower_resilience_core::TriggerHealth::Healthy
+pub tower_resilience_core::TriggerHealth::Unhealthy
+impl core::clone::Clone for tower_resilience_core::health_integration::TriggerHealth
+pub fn tower_resilience_core::health_integration::TriggerHealth::clone(&self) -> tower_resilience_core::health_integration::TriggerHealth
+impl core::cmp::Eq for tower_resilience_core::health_integration::TriggerHealth
+impl core::cmp::PartialEq for tower_resilience_core::health_integration::TriggerHealth
+pub fn tower_resilience_core::health_integration::TriggerHealth::eq(&self, &tower_resilience_core::health_integration::TriggerHealth) -> bool
+impl core::fmt::Debug for tower_resilience_core::health_integration::TriggerHealth
+pub fn tower_resilience_core::health_integration::TriggerHealth::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::StructuralPartialEq for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::Freeze for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::Send for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::Sync for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::Unpin for tower_resilience_core::health_integration::TriggerHealth
+impl core::marker::UnsafeUnpin for tower_resilience_core::health_integration::TriggerHealth
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::health_integration::TriggerHealth
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::health_integration::TriggerHealth
+pub struct tower_resilience_core::AimdConfig
+pub tower_resilience_core::AimdConfig::decrease_factor: f64
+pub tower_resilience_core::AimdConfig::increase_by: usize
+pub tower_resilience_core::AimdConfig::initial_limit: usize
+pub tower_resilience_core::AimdConfig::max_limit: usize
+pub tower_resilience_core::AimdConfig::min_limit: usize
+impl tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdConfig::new() -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::validate(&self) -> core::result::Result<(), tower_resilience_core::aimd::AimdConfigError>
+pub fn tower_resilience_core::aimd::AimdConfig::with_decrease_factor(self, f64) -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::with_increase_by(self, usize) -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::with_initial_limit(self, usize) -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::with_max_limit(self, usize) -> Self
+pub fn tower_resilience_core::aimd::AimdConfig::with_min_limit(self, usize) -> Self
+impl core::clone::Clone for tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdConfig::clone(&self) -> tower_resilience_core::aimd::AimdConfig
+impl core::default::Default for tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdConfig::default() -> Self
+impl core::fmt::Debug for tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_core::aimd::AimdConfig
+impl core::marker::Send for tower_resilience_core::aimd::AimdConfig
+impl core::marker::Sync for tower_resilience_core::aimd::AimdConfig
+impl core::marker::Unpin for tower_resilience_core::aimd::AimdConfig
+impl core::marker::UnsafeUnpin for tower_resilience_core::aimd::AimdConfig
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::aimd::AimdConfig
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::aimd::AimdConfig
+pub struct tower_resilience_core::AimdController
+impl tower_resilience_core::aimd::AimdController
+pub fn tower_resilience_core::aimd::AimdController::config(&self) -> &tower_resilience_core::aimd::AimdConfig
+pub fn tower_resilience_core::aimd::AimdController::limit(&self) -> usize
+pub fn tower_resilience_core::aimd::AimdController::max_limit(&self) -> usize
+pub fn tower_resilience_core::aimd::AimdController::min_limit(&self) -> usize
+pub fn tower_resilience_core::aimd::AimdController::new(tower_resilience_core::aimd::AimdConfig) -> core::result::Result<Self, tower_resilience_core::aimd::AimdConfigError>
+pub fn tower_resilience_core::aimd::AimdController::record_failure(&self)
+pub fn tower_resilience_core::aimd::AimdController::record_success(&self)
+pub fn tower_resilience_core::aimd::AimdController::record_successes(&self, usize)
+pub fn tower_resilience_core::aimd::AimdController::reset(&self)
+impl core::clone::Clone for tower_resilience_core::aimd::AimdController
+pub fn tower_resilience_core::aimd::AimdController::clone(&self) -> Self
+impl core::fmt::Debug for tower_resilience_core::aimd::AimdController
+pub fn tower_resilience_core::aimd::AimdController::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl !core::marker::Freeze for tower_resilience_core::aimd::AimdController
+impl core::marker::Send for tower_resilience_core::aimd::AimdController
+impl core::marker::Sync for tower_resilience_core::aimd::AimdController
+impl core::marker::Unpin for tower_resilience_core::aimd::AimdController
+impl core::marker::UnsafeUnpin for tower_resilience_core::aimd::AimdController
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::aimd::AimdController
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::aimd::AimdController
+pub struct tower_resilience_core::DefaultClassifier
+impl core::clone::Clone for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::clone(&self) -> tower_resilience_core::classifier::DefaultClassifier
+impl core::default::Default for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::default() -> tower_resilience_core::classifier::DefaultClassifier
+impl core::fmt::Debug for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_core::classifier::DefaultClassifier
+impl<Res, Err> tower_resilience_core::classifier::FailureClassifier<Res, Err> for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::classify(&self, &core::result::Result<Res, Err>) -> bool
+impl core::marker::Freeze for tower_resilience_core::classifier::DefaultClassifier
+impl core::marker::Send for tower_resilience_core::classifier::DefaultClassifier
+impl core::marker::Sync for tower_resilience_core::classifier::DefaultClassifier
+impl core::marker::Unpin for tower_resilience_core::classifier::DefaultClassifier
+impl core::marker::UnsafeUnpin for tower_resilience_core::classifier::DefaultClassifier
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::classifier::DefaultClassifier
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_core::classifier::DefaultClassifier
+pub struct tower_resilience_core::EventListeners<E: tower_resilience_core::events::ResilienceEvent>
+impl<E: tower_resilience_core::events::ResilienceEvent> tower_resilience_core::events::EventListeners<E>
+pub fn tower_resilience_core::events::EventListeners<E>::add<L>(&mut self, L) where L: tower_resilience_core::events::EventListener<E> + 'static
+pub fn tower_resilience_core::events::EventListeners<E>::emit(&self, &E)
+pub fn tower_resilience_core::events::EventListeners<E>::is_empty(&self) -> bool
+pub fn tower_resilience_core::events::EventListeners<E>::len(&self) -> usize
+pub fn tower_resilience_core::events::EventListeners<E>::new() -> Self
+impl<E: core::clone::Clone + tower_resilience_core::events::ResilienceEvent> core::clone::Clone for tower_resilience_core::events::EventListeners<E>
+pub fn tower_resilience_core::events::EventListeners<E>::clone(&self) -> tower_resilience_core::events::EventListeners<E>
+impl<E: tower_resilience_core::events::ResilienceEvent> core::default::Default for tower_resilience_core::events::EventListeners<E>
+pub fn tower_resilience_core::events::EventListeners<E>::default() -> Self
+impl<E> core::marker::Freeze for tower_resilience_core::events::EventListeners<E>
+impl<E> core::marker::Send for tower_resilience_core::events::EventListeners<E>
+impl<E> core::marker::Sync for tower_resilience_core::events::EventListeners<E>
+impl<E> core::marker::Unpin for tower_resilience_core::events::EventListeners<E>
+impl<E> core::marker::UnsafeUnpin for tower_resilience_core::events::EventListeners<E>
+impl<E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::events::EventListeners<E>
+impl<E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_core::events::EventListeners<E>
+pub struct tower_resilience_core::FnClassifier<F>
+impl<F> tower_resilience_core::classifier::FnClassifier<F>
+pub fn tower_resilience_core::classifier::FnClassifier<F>::new(F) -> Self
+impl<F, Res, Err> tower_resilience_core::classifier::FailureClassifier<Res, Err> for tower_resilience_core::classifier::FnClassifier<F> where F: core::ops::function::Fn(&core::result::Result<Res, Err>) -> bool + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::classifier::FnClassifier<F>::classify(&self, &core::result::Result<Res, Err>) -> bool
+impl<F: core::clone::Clone> core::clone::Clone for tower_resilience_core::classifier::FnClassifier<F>
+pub fn tower_resilience_core::classifier::FnClassifier<F>::clone(&self) -> tower_resilience_core::classifier::FnClassifier<F>
+impl<F> core::fmt::Debug for tower_resilience_core::classifier::FnClassifier<F>
+pub fn tower_resilience_core::classifier::FnClassifier<F>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<F> core::marker::Freeze for tower_resilience_core::classifier::FnClassifier<F>
+impl<F> core::marker::Send for tower_resilience_core::classifier::FnClassifier<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Sync for tower_resilience_core::classifier::FnClassifier<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Unpin for tower_resilience_core::classifier::FnClassifier<F>
+impl<F> core::marker::UnsafeUnpin for tower_resilience_core::classifier::FnClassifier<F>
+impl<F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::classifier::FnClassifier<F> where F: core::panic::unwind_safe::RefUnwindSafe
+impl<F> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::classifier::FnClassifier<F> where F: core::panic::unwind_safe::RefUnwindSafe
+pub struct tower_resilience_core::FnListener<E, F> where F: core::ops::function::Fn(&E) + core::marker::Send + core::marker::Sync
+impl<E, F> tower_resilience_core::events::FnListener<E, F> where F: core::ops::function::Fn(&E) + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::events::FnListener<E, F>::new(F) -> Self
+impl<E, F> tower_resilience_core::events::EventListener<E> for tower_resilience_core::events::FnListener<E, F> where E: tower_resilience_core::events::ResilienceEvent, F: core::ops::function::Fn(&E) + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::events::FnListener<E, F>::on_event(&self, &E)
+impl<E, F> core::marker::Freeze for tower_resilience_core::events::FnListener<E, F> where F: core::marker::Freeze
+impl<E, F> core::marker::Send for tower_resilience_core::events::FnListener<E, F> where E: core::marker::Send
+impl<E, F> core::marker::Sync for tower_resilience_core::events::FnListener<E, F> where E: core::marker::Sync
+impl<E, F> core::marker::Unpin for tower_resilience_core::events::FnListener<E, F> where F: core::marker::Unpin, E: core::marker::Unpin
+impl<E, F> core::marker::UnsafeUnpin for tower_resilience_core::events::FnListener<E, F> where F: core::marker::UnsafeUnpin
+impl<E, F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::events::FnListener<E, F> where F: core::panic::unwind_safe::RefUnwindSafe, E: core::panic::unwind_safe::RefUnwindSafe
+impl<E, F> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::events::FnListener<E, F> where F: core::panic::unwind_safe::UnwindSafe, E: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_core::ResilienceErrorLayer<L, E>
+impl<L, E> tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::new(L) -> Self
+impl<L, S, E> tower_layer::Layer<S> for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: tower_layer::Layer<S>
+pub type tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::Service = tower_resilience_core::error_layer::ResilienceErrorService<<L as tower_layer::Layer<S>>::Service, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::layer(&self, S) -> Self::Service
+impl<L: core::clone::Clone, E> core::clone::Clone for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::clone(&self) -> Self
+impl<L: core::fmt::Debug, E: core::fmt::Debug> core::fmt::Debug for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorLayer<L, E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<L, E> core::marker::Freeze for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::Freeze
+impl<L, E> core::marker::Send for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::Send
+impl<L, E> core::marker::Sync for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::Sync
+impl<L, E> core::marker::Unpin for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::Unpin
+impl<L, E> core::marker::UnsafeUnpin for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::marker::UnsafeUnpin
+impl<L, E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::panic::unwind_safe::RefUnwindSafe
+impl<L, E> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::error_layer::ResilienceErrorLayer<L, E> where L: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_core::ResilienceErrorService<S, E>
+impl<S, E> tower_resilience_core::error_layer::ResilienceErrorService<S, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::new(S) -> Self
+impl<S, Request, E> tower_service::Service<Request> for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: tower_service::Service<Request>, <S as tower_service::Service>::Error: tower_resilience_core::error::IntoResilienceError<E>
+pub type tower_resilience_core::error_layer::ResilienceErrorService<S, E>::Error = tower_resilience_core::error::ResilienceError<E>
+pub type tower_resilience_core::error_layer::ResilienceErrorService<S, E>::Future = tower_resilience_core::error_layer::ResilienceErrorFuture<<S as tower_service::Service<Request>>::Future, E>
+pub type tower_resilience_core::error_layer::ResilienceErrorService<S, E>::Response = <S as tower_service::Service<Request>>::Response
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone, E> core::clone::Clone for tower_resilience_core::error_layer::ResilienceErrorService<S, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::clone(&self) -> Self
+impl<S: core::fmt::Debug, E: core::fmt::Debug> core::fmt::Debug for tower_resilience_core::error_layer::ResilienceErrorService<S, E>
+pub fn tower_resilience_core::error_layer::ResilienceErrorService<S, E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<S, E> core::marker::Freeze for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::Freeze
+impl<S, E> core::marker::Send for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::Send
+impl<S, E> core::marker::Sync for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::Sync
+impl<S, E> core::marker::Unpin for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::Unpin
+impl<S, E> core::marker::UnsafeUnpin for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::marker::UnsafeUnpin
+impl<S, E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::panic::unwind_safe::RefUnwindSafe
+impl<S, E> core::panic::unwind_safe::UnwindSafe for tower_resilience_core::error_layer::ResilienceErrorService<S, E> where S: core::panic::unwind_safe::UnwindSafe
+pub trait tower_resilience_core::EventListener<E: tower_resilience_core::events::ResilienceEvent>: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::EventListener::on_event(&self, &E)
+impl<E, F> tower_resilience_core::events::EventListener<E> for tower_resilience_core::events::FnListener<E, F> where E: tower_resilience_core::events::ResilienceEvent, F: core::ops::function::Fn(&E) + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::events::FnListener<E, F>::on_event(&self, &E)
+pub trait tower_resilience_core::FailureClassifier<Res, Err>: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::FailureClassifier::classify(&self, &core::result::Result<Res, Err>) -> bool
+impl<F, Res, Err> tower_resilience_core::classifier::FailureClassifier<Res, Err> for tower_resilience_core::classifier::FnClassifier<F> where F: core::ops::function::Fn(&core::result::Result<Res, Err>) -> bool + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::classifier::FnClassifier<F>::classify(&self, &core::result::Result<Res, Err>) -> bool
+impl<Res, Err> tower_resilience_core::classifier::FailureClassifier<Res, Err> for tower_resilience_core::classifier::DefaultClassifier
+pub fn tower_resilience_core::classifier::DefaultClassifier::classify(&self, &core::result::Result<Res, Err>) -> bool
+pub trait tower_resilience_core::HealthTriggerable: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_core::HealthTriggerable::trigger_degraded(&self)
+pub fn tower_resilience_core::HealthTriggerable::trigger_healthy(&self)
+pub fn tower_resilience_core::HealthTriggerable::trigger_unhealthy(&self)
+pub trait tower_resilience_core::IntoResilienceError<E>
+pub fn tower_resilience_core::IntoResilienceError::into_resilience_error(self) -> tower_resilience_core::error::ResilienceError<E>
+impl<T, E> tower_resilience_core::error::IntoResilienceError<E> for T where T: core::convert::Into<tower_resilience_core::error::ResilienceError<E>>
+pub fn T::into_resilience_error(self) -> tower_resilience_core::error::ResilienceError<E>
+pub trait tower_resilience_core::ResilienceEvent: core::marker::Send + core::marker::Sync + core::fmt::Debug
+pub fn tower_resilience_core::ResilienceEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_core::ResilienceEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_core::ResilienceEvent::timestamp(&self) -> std::time::Instant
+pub trait tower_resilience_core::UnifiedErrors: core::marker::Sized
+pub fn tower_resilience_core::UnifiedErrors::unified<E>(self) -> tower_resilience_core::error_layer::ResilienceErrorLayer<Self, E>
+impl<L> tower_resilience_core::error_layer::UnifiedErrors for L
+pub fn L::unified<E>(self) -> tower_resilience_core::error_layer::ResilienceErrorLayer<Self, E>
+pub type tower_resilience_core::SharedHealthTrigger = alloc::sync::Arc<dyn tower_resilience_core::health_integration::HealthTriggerable>

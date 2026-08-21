@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking:** `Aimd::new`, `AimdBuilder::build`, and
+- **Breaking:** `Aimd::new`, `AimdBuilder::build`, `Vegas::new`, and
   `VegasBuilder::build` now return typed `Result` values and reject invalid
   limits, zero additive increase, and invalid decrease factors during
   construction.

@@ -1,0 +1,249 @@
+pub mod tower_resilience_adaptive
+pub use tower_resilience_adaptive::AimdConfigError
+pub enum tower_resilience_adaptive::AdaptiveError<E>
+pub tower_resilience_adaptive::AdaptiveError::LimitReached
+pub tower_resilience_adaptive::AdaptiveError::Service(E)
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_adaptive::AdaptiveError<E>
+pub fn tower_resilience_adaptive::AdaptiveError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_adaptive::AdaptiveError<E>
+pub fn tower_resilience_adaptive::AdaptiveError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::error::Error for tower_resilience_adaptive::AdaptiveError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::marker::Freeze for tower_resilience_adaptive::AdaptiveError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_adaptive::AdaptiveError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_adaptive::AdaptiveError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_adaptive::AdaptiveError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_adaptive::AdaptiveError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::AdaptiveError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::AdaptiveError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_adaptive::Algorithm
+pub tower_resilience_adaptive::Algorithm::Aimd(tower_resilience_adaptive::Aimd)
+pub tower_resilience_adaptive::Algorithm::Vegas(tower_resilience_adaptive::Vegas)
+impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Algorithm
+pub fn tower_resilience_adaptive::Algorithm::limit(&self) -> usize
+pub fn tower_resilience_adaptive::Algorithm::max_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Algorithm::min_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Algorithm::record_dropped(&self)
+pub fn tower_resilience_adaptive::Algorithm::record_failure(&self)
+pub fn tower_resilience_adaptive::Algorithm::record_success(&self, core::time::Duration)
+impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Algorithm
+pub type tower_resilience_adaptive::Algorithm::Algorithm = tower_resilience_adaptive::Algorithm
+pub fn tower_resilience_adaptive::Algorithm::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
+impl !core::marker::Freeze for tower_resilience_adaptive::Algorithm
+impl core::marker::Send for tower_resilience_adaptive::Algorithm
+impl core::marker::Sync for tower_resilience_adaptive::Algorithm
+impl core::marker::Unpin for tower_resilience_adaptive::Algorithm
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::Algorithm
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::Algorithm
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::Algorithm
+#[non_exhaustive] pub enum tower_resilience_adaptive::VegasConfigError
+pub tower_resilience_adaptive::VegasConfigError::MinExceedsMax
+pub tower_resilience_adaptive::VegasConfigError::MinExceedsMax::max_limit: usize
+pub tower_resilience_adaptive::VegasConfigError::MinExceedsMax::min_limit: usize
+impl core::clone::Clone for tower_resilience_adaptive::VegasConfigError
+pub fn tower_resilience_adaptive::VegasConfigError::clone(&self) -> tower_resilience_adaptive::VegasConfigError
+impl core::cmp::Eq for tower_resilience_adaptive::VegasConfigError
+impl core::cmp::PartialEq for tower_resilience_adaptive::VegasConfigError
+pub fn tower_resilience_adaptive::VegasConfigError::eq(&self, &tower_resilience_adaptive::VegasConfigError) -> bool
+impl core::error::Error for tower_resilience_adaptive::VegasConfigError
+impl core::fmt::Debug for tower_resilience_adaptive::VegasConfigError
+pub fn tower_resilience_adaptive::VegasConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_adaptive::VegasConfigError
+pub fn tower_resilience_adaptive::VegasConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_adaptive::VegasConfigError
+impl core::marker::StructuralPartialEq for tower_resilience_adaptive::VegasConfigError
+impl core::marker::Freeze for tower_resilience_adaptive::VegasConfigError
+impl core::marker::Send for tower_resilience_adaptive::VegasConfigError
+impl core::marker::Sync for tower_resilience_adaptive::VegasConfigError
+impl core::marker::Unpin for tower_resilience_adaptive::VegasConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::VegasConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::VegasConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::VegasConfigError
+pub struct tower_resilience_adaptive::AdaptiveFuture<T, E>
+impl<T, E> core::future::future::Future for tower_resilience_adaptive::AdaptiveFuture<T, E>
+pub type tower_resilience_adaptive::AdaptiveFuture<T, E>::Output = core::result::Result<T, tower_resilience_adaptive::AdaptiveError<E>>
+pub fn tower_resilience_adaptive::AdaptiveFuture<T, E>::poll(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<Self::Output>
+impl<T, E> core::marker::Freeze for tower_resilience_adaptive::AdaptiveFuture<T, E>
+impl<T, E> core::marker::Send for tower_resilience_adaptive::AdaptiveFuture<T, E>
+impl<T, E> !core::marker::Sync for tower_resilience_adaptive::AdaptiveFuture<T, E>
+impl<T, E> core::marker::Unpin for tower_resilience_adaptive::AdaptiveFuture<T, E>
+impl<T, E> core::marker::UnsafeUnpin for tower_resilience_adaptive::AdaptiveFuture<T, E>
+impl<T, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::AdaptiveFuture<T, E>
+impl<T, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::AdaptiveFuture<T, E>
+pub struct tower_resilience_adaptive::AdaptiveLimiterLayer<A>
+impl<A> tower_resilience_adaptive::AdaptiveLimiterLayer<A> where A: tower_resilience_adaptive::ConcurrencyAlgorithm
+pub fn tower_resilience_adaptive::AdaptiveLimiterLayer<A>::builder() -> tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+pub fn tower_resilience_adaptive::AdaptiveLimiterLayer<A>::new(A) -> Self
+impl<A> core::clone::Clone for tower_resilience_adaptive::AdaptiveLimiterLayer<A>
+pub fn tower_resilience_adaptive::AdaptiveLimiterLayer<A>::clone(&self) -> Self
+impl<S, A> tower_layer::Layer<S> for tower_resilience_adaptive::AdaptiveLimiterLayer<A> where A: tower_resilience_adaptive::ConcurrencyAlgorithm + 'static
+pub type tower_resilience_adaptive::AdaptiveLimiterLayer<A>::Service = tower_resilience_adaptive::AdaptiveService<S, A>
+pub fn tower_resilience_adaptive::AdaptiveLimiterLayer<A>::layer(&self, S) -> Self::Service
+impl<A> core::marker::Freeze for tower_resilience_adaptive::AdaptiveLimiterLayer<A>
+impl<A> core::marker::Send for tower_resilience_adaptive::AdaptiveLimiterLayer<A> where A: core::marker::Sync + core::marker::Send
+impl<A> core::marker::Sync for tower_resilience_adaptive::AdaptiveLimiterLayer<A> where A: core::marker::Sync + core::marker::Send
+impl<A> core::marker::Unpin for tower_resilience_adaptive::AdaptiveLimiterLayer<A>
+impl<A> core::marker::UnsafeUnpin for tower_resilience_adaptive::AdaptiveLimiterLayer<A>
+impl<A> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::AdaptiveLimiterLayer<A> where A: core::panic::unwind_safe::RefUnwindSafe
+impl<A> core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::AdaptiveLimiterLayer<A> where A: core::panic::unwind_safe::RefUnwindSafe
+pub struct tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+impl tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+pub fn tower_resilience_adaptive::AdaptiveLimiterLayerBuilder::aimd(self) -> tower_resilience_adaptive::AimdBuilder
+pub fn tower_resilience_adaptive::AdaptiveLimiterLayerBuilder::vegas(self) -> tower_resilience_adaptive::VegasBuilder
+impl core::marker::Freeze for tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+impl core::marker::Send for tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+impl core::marker::Sync for tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+impl core::marker::Unpin for tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
+pub struct tower_resilience_adaptive::AdaptiveService<S, A>
+impl<S, A> tower_resilience_adaptive::AdaptiveService<S, A> where A: tower_resilience_adaptive::ConcurrencyAlgorithm
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::algorithm(&self) -> &A
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::in_flight(&self) -> usize
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::limit(&self) -> usize
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::new(S, alloc::sync::Arc<A>) -> Self
+impl<S, A> tower_resilience_adaptive::AdaptiveService<S, A>
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::get_ref(&self) -> &S
+impl<S, A, Req> tower_service::Service<Req> for tower_resilience_adaptive::AdaptiveService<S, A> where S: tower_service::Service<Req>, <S as tower_service::Service>::Future: core::marker::Send + 'static, <S as tower_service::Service>::Response: core::marker::Send + 'static, <S as tower_service::Service>::Error: core::marker::Send + 'static, A: tower_resilience_adaptive::ConcurrencyAlgorithm + 'static
+pub type tower_resilience_adaptive::AdaptiveService<S, A>::Error = tower_resilience_adaptive::AdaptiveError<<S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_adaptive::AdaptiveService<S, A>::Future = tower_resilience_adaptive::AdaptiveFuture<<S as tower_service::Service<Req>>::Response, <S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_adaptive::AdaptiveService<S, A>::Response = <S as tower_service::Service<Req>>::Response
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S, A> core::clone::Clone for tower_resilience_adaptive::AdaptiveService<S, A> where S: core::clone::Clone
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::clone(&self) -> Self
+impl<S, A> core::ops::drop::Drop for tower_resilience_adaptive::AdaptiveService<S, A>
+pub fn tower_resilience_adaptive::AdaptiveService<S, A>::drop(&mut self)
+impl<S, A> core::marker::Freeze for tower_resilience_adaptive::AdaptiveService<S, A> where S: core::marker::Freeze
+impl<S, A> core::marker::Send for tower_resilience_adaptive::AdaptiveService<S, A> where S: core::marker::Send, A: core::marker::Sync + core::marker::Send
+impl<S, A> core::marker::Sync for tower_resilience_adaptive::AdaptiveService<S, A> where S: core::marker::Sync, A: core::marker::Sync + core::marker::Send
+impl<S, A> core::marker::Unpin for tower_resilience_adaptive::AdaptiveService<S, A> where S: core::marker::Unpin
+impl<S, A> core::marker::UnsafeUnpin for tower_resilience_adaptive::AdaptiveService<S, A> where S: core::marker::UnsafeUnpin
+impl<S, A> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::AdaptiveService<S, A>
+impl<S, A> !core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::AdaptiveService<S, A>
+pub struct tower_resilience_adaptive::Aimd
+impl tower_resilience_adaptive::Aimd
+pub fn tower_resilience_adaptive::Aimd::builder() -> tower_resilience_adaptive::AimdBuilder
+pub fn tower_resilience_adaptive::Aimd::new(tower_resilience_core::aimd::AimdConfig, core::time::Duration) -> core::result::Result<Self, tower_resilience_core::aimd::AimdConfigError>
+impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Aimd
+pub fn tower_resilience_adaptive::Aimd::limit(&self) -> usize
+pub fn tower_resilience_adaptive::Aimd::max_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Aimd::min_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Aimd::record_dropped(&self)
+pub fn tower_resilience_adaptive::Aimd::record_failure(&self)
+pub fn tower_resilience_adaptive::Aimd::record_success(&self, core::time::Duration)
+impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Aimd
+pub type tower_resilience_adaptive::Aimd::Algorithm = tower_resilience_adaptive::Aimd
+pub fn tower_resilience_adaptive::Aimd::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
+impl !core::marker::Freeze for tower_resilience_adaptive::Aimd
+impl core::marker::Send for tower_resilience_adaptive::Aimd
+impl core::marker::Sync for tower_resilience_adaptive::Aimd
+impl core::marker::Unpin for tower_resilience_adaptive::Aimd
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::Aimd
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::Aimd
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::Aimd
+pub struct tower_resilience_adaptive::AimdBuilder
+impl tower_resilience_adaptive::AimdBuilder
+pub fn tower_resilience_adaptive::AimdBuilder::build(self) -> core::result::Result<tower_resilience_adaptive::Aimd, tower_resilience_core::aimd::AimdConfigError>
+pub fn tower_resilience_adaptive::AimdBuilder::decrease_factor(self, f64) -> Self
+pub fn tower_resilience_adaptive::AimdBuilder::increase_by(self, usize) -> Self
+pub fn tower_resilience_adaptive::AimdBuilder::initial_limit(self, usize) -> Self
+pub fn tower_resilience_adaptive::AimdBuilder::latency_threshold(self, core::time::Duration) -> Self
+pub fn tower_resilience_adaptive::AimdBuilder::max_limit(self, usize) -> Self
+pub fn tower_resilience_adaptive::AimdBuilder::min_limit(self, usize) -> Self
+impl core::clone::Clone for tower_resilience_adaptive::AimdBuilder
+pub fn tower_resilience_adaptive::AimdBuilder::clone(&self) -> tower_resilience_adaptive::AimdBuilder
+impl core::default::Default for tower_resilience_adaptive::AimdBuilder
+pub fn tower_resilience_adaptive::AimdBuilder::default() -> Self
+impl core::fmt::Debug for tower_resilience_adaptive::AimdBuilder
+pub fn tower_resilience_adaptive::AimdBuilder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_adaptive::AimdBuilder
+impl core::marker::Send for tower_resilience_adaptive::AimdBuilder
+impl core::marker::Sync for tower_resilience_adaptive::AimdBuilder
+impl core::marker::Unpin for tower_resilience_adaptive::AimdBuilder
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::AimdBuilder
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::AimdBuilder
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::AimdBuilder
+pub struct tower_resilience_adaptive::Vegas
+impl tower_resilience_adaptive::Vegas
+pub fn tower_resilience_adaptive::Vegas::builder() -> tower_resilience_adaptive::VegasBuilder
+pub fn tower_resilience_adaptive::Vegas::new(usize, usize, usize, usize, usize) -> core::result::Result<Self, tower_resilience_adaptive::VegasConfigError>
+impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Vegas
+pub fn tower_resilience_adaptive::Vegas::limit(&self) -> usize
+pub fn tower_resilience_adaptive::Vegas::max_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Vegas::min_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Vegas::record_dropped(&self)
+pub fn tower_resilience_adaptive::Vegas::record_failure(&self)
+pub fn tower_resilience_adaptive::Vegas::record_success(&self, core::time::Duration)
+impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Vegas
+pub type tower_resilience_adaptive::Vegas::Algorithm = tower_resilience_adaptive::Vegas
+pub fn tower_resilience_adaptive::Vegas::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
+impl !core::marker::Freeze for tower_resilience_adaptive::Vegas
+impl core::marker::Send for tower_resilience_adaptive::Vegas
+impl core::marker::Sync for tower_resilience_adaptive::Vegas
+impl core::marker::Unpin for tower_resilience_adaptive::Vegas
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::Vegas
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::Vegas
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::Vegas
+pub struct tower_resilience_adaptive::VegasBuilder
+impl tower_resilience_adaptive::VegasBuilder
+pub fn tower_resilience_adaptive::VegasBuilder::alpha(self, usize) -> Self
+pub fn tower_resilience_adaptive::VegasBuilder::beta(self, usize) -> Self
+pub fn tower_resilience_adaptive::VegasBuilder::build(self) -> core::result::Result<tower_resilience_adaptive::Vegas, tower_resilience_adaptive::VegasConfigError>
+pub fn tower_resilience_adaptive::VegasBuilder::initial_limit(self, usize) -> Self
+pub fn tower_resilience_adaptive::VegasBuilder::max_limit(self, usize) -> Self
+pub fn tower_resilience_adaptive::VegasBuilder::min_limit(self, usize) -> Self
+impl core::clone::Clone for tower_resilience_adaptive::VegasBuilder
+pub fn tower_resilience_adaptive::VegasBuilder::clone(&self) -> tower_resilience_adaptive::VegasBuilder
+impl core::default::Default for tower_resilience_adaptive::VegasBuilder
+pub fn tower_resilience_adaptive::VegasBuilder::default() -> Self
+impl core::fmt::Debug for tower_resilience_adaptive::VegasBuilder
+pub fn tower_resilience_adaptive::VegasBuilder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_adaptive::VegasBuilder
+impl core::marker::Send for tower_resilience_adaptive::VegasBuilder
+impl core::marker::Sync for tower_resilience_adaptive::VegasBuilder
+impl core::marker::Unpin for tower_resilience_adaptive::VegasBuilder
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::VegasBuilder
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::VegasBuilder
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::VegasBuilder
+pub trait tower_resilience_adaptive::ConcurrencyAlgorithm: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::limit(&self) -> usize
+pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::max_limit(&self) -> usize
+pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::min_limit(&self) -> usize
+pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::record_dropped(&self)
+pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::record_failure(&self)
+pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::record_success(&self, core::time::Duration)
+impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Aimd
+pub fn tower_resilience_adaptive::Aimd::limit(&self) -> usize
+pub fn tower_resilience_adaptive::Aimd::max_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Aimd::min_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Aimd::record_dropped(&self)
+pub fn tower_resilience_adaptive::Aimd::record_failure(&self)
+pub fn tower_resilience_adaptive::Aimd::record_success(&self, core::time::Duration)
+impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Algorithm
+pub fn tower_resilience_adaptive::Algorithm::limit(&self) -> usize
+pub fn tower_resilience_adaptive::Algorithm::max_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Algorithm::min_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Algorithm::record_dropped(&self)
+pub fn tower_resilience_adaptive::Algorithm::record_failure(&self)
+pub fn tower_resilience_adaptive::Algorithm::record_success(&self, core::time::Duration)
+impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Vegas
+pub fn tower_resilience_adaptive::Vegas::limit(&self) -> usize
+pub fn tower_resilience_adaptive::Vegas::max_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Vegas::min_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Vegas::record_dropped(&self)
+pub fn tower_resilience_adaptive::Vegas::record_failure(&self)
+pub fn tower_resilience_adaptive::Vegas::record_success(&self, core::time::Duration)
+pub trait tower_resilience_adaptive::IntoLayer
+pub type tower_resilience_adaptive::IntoLayer::Algorithm: tower_resilience_adaptive::ConcurrencyAlgorithm
+pub fn tower_resilience_adaptive::IntoLayer::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
+impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Aimd
+pub type tower_resilience_adaptive::Aimd::Algorithm = tower_resilience_adaptive::Aimd
+pub fn tower_resilience_adaptive::Aimd::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
+impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Algorithm
+pub type tower_resilience_adaptive::Algorithm::Algorithm = tower_resilience_adaptive::Algorithm
+pub fn tower_resilience_adaptive::Algorithm::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
+impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Vegas
+pub type tower_resilience_adaptive::Vegas::Algorithm = tower_resilience_adaptive::Vegas
+pub fn tower_resilience_adaptive::Vegas::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>

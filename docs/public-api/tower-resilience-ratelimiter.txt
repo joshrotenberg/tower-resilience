@@ -1,0 +1,210 @@
+pub mod tower_resilience_ratelimiter
+#[non_exhaustive] pub enum tower_resilience_ratelimiter::RateLimiterConfigError
+pub tower_resilience_ratelimiter::RateLimiterConfigError::BurstCapacityOverflow
+pub tower_resilience_ratelimiter::RateLimiterConfigError::BurstCapacityOverflow::burst_size: usize
+pub tower_resilience_ratelimiter::RateLimiterConfigError::BurstCapacityOverflow::limit_for_period: usize
+pub tower_resilience_ratelimiter::RateLimiterConfigError::ZeroLimitForPeriod
+pub tower_resilience_ratelimiter::RateLimiterConfigError::ZeroRefreshPeriod
+impl core::clone::Clone for tower_resilience_ratelimiter::RateLimiterConfigError
+pub fn tower_resilience_ratelimiter::RateLimiterConfigError::clone(&self) -> tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::cmp::Eq for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::cmp::PartialEq for tower_resilience_ratelimiter::RateLimiterConfigError
+pub fn tower_resilience_ratelimiter::RateLimiterConfigError::eq(&self, &tower_resilience_ratelimiter::RateLimiterConfigError) -> bool
+impl core::error::Error for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::fmt::Debug for tower_resilience_ratelimiter::RateLimiterConfigError
+pub fn tower_resilience_ratelimiter::RateLimiterConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_ratelimiter::RateLimiterConfigError
+pub fn tower_resilience_ratelimiter::RateLimiterConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::marker::StructuralPartialEq for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::marker::Freeze for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::marker::Send for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::marker::Sync for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::marker::Unpin for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::RateLimiterConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::RateLimiterConfigError
+pub enum tower_resilience_ratelimiter::RateLimiterError
+pub tower_resilience_ratelimiter::RateLimiterError::RateLimitExceeded
+impl core::clone::Clone for tower_resilience_ratelimiter::RateLimiterError
+pub fn tower_resilience_ratelimiter::RateLimiterError::clone(&self) -> tower_resilience_ratelimiter::RateLimiterError
+impl core::error::Error for tower_resilience_ratelimiter::RateLimiterError
+impl core::fmt::Debug for tower_resilience_ratelimiter::RateLimiterError
+pub fn tower_resilience_ratelimiter::RateLimiterError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_ratelimiter::RateLimiterError
+pub fn tower_resilience_ratelimiter::RateLimiterError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_ratelimiter::RateLimiterError> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_ratelimiter::RateLimiterError) -> Self
+impl<E> core::convert::From<tower_resilience_ratelimiter::RateLimiterError> for tower_resilience_ratelimiter::RateLimiterServiceError<E>
+pub fn tower_resilience_ratelimiter::RateLimiterServiceError<E>::from(tower_resilience_ratelimiter::RateLimiterError) -> Self
+impl core::marker::Freeze for tower_resilience_ratelimiter::RateLimiterError
+impl core::marker::Send for tower_resilience_ratelimiter::RateLimiterError
+impl core::marker::Sync for tower_resilience_ratelimiter::RateLimiterError
+impl core::marker::Unpin for tower_resilience_ratelimiter::RateLimiterError
+impl core::marker::UnsafeUnpin for tower_resilience_ratelimiter::RateLimiterError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::RateLimiterError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::RateLimiterError
+pub enum tower_resilience_ratelimiter::RateLimiterEvent
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitAcquired
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitAcquired::pattern_name: alloc::string::String
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitAcquired::timestamp: std::time::Instant
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitAcquired::wait_duration: core::time::Duration
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitRejected
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitRejected::pattern_name: alloc::string::String
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitRejected::timeout_duration: core::time::Duration
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitRejected::timestamp: std::time::Instant
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitsRefreshed
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitsRefreshed::available_permits: usize
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitsRefreshed::pattern_name: alloc::string::String
+pub tower_resilience_ratelimiter::RateLimiterEvent::PermitsRefreshed::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_ratelimiter::RateLimiterEvent
+pub fn tower_resilience_ratelimiter::RateLimiterEvent::clone(&self) -> tower_resilience_ratelimiter::RateLimiterEvent
+impl core::fmt::Debug for tower_resilience_ratelimiter::RateLimiterEvent
+pub fn tower_resilience_ratelimiter::RateLimiterEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_ratelimiter::RateLimiterEvent
+pub fn tower_resilience_ratelimiter::RateLimiterEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_ratelimiter::RateLimiterEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_ratelimiter::RateLimiterEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_ratelimiter::RateLimiterEvent
+impl core::marker::Send for tower_resilience_ratelimiter::RateLimiterEvent
+impl core::marker::Sync for tower_resilience_ratelimiter::RateLimiterEvent
+impl core::marker::Unpin for tower_resilience_ratelimiter::RateLimiterEvent
+impl core::marker::UnsafeUnpin for tower_resilience_ratelimiter::RateLimiterEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::RateLimiterEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::RateLimiterEvent
+pub enum tower_resilience_ratelimiter::RateLimiterServiceError<E>
+pub tower_resilience_ratelimiter::RateLimiterServiceError::Inner(E)
+pub tower_resilience_ratelimiter::RateLimiterServiceError::RateLimited
+impl<E> tower_resilience_ratelimiter::RateLimiterServiceError<E>
+pub fn tower_resilience_ratelimiter::RateLimiterServiceError<E>::into_inner(self) -> core::option::Option<E>
+pub fn tower_resilience_ratelimiter::RateLimiterServiceError<E>::is_inner(&self) -> bool
+pub fn tower_resilience_ratelimiter::RateLimiterServiceError<E>::is_rate_limited(&self) -> bool
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_ratelimiter::RateLimiterServiceError<E>
+pub fn tower_resilience_ratelimiter::RateLimiterServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_ratelimiter::RateLimiterServiceError<E>
+pub fn tower_resilience_ratelimiter::RateLimiterServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_ratelimiter::RateLimiterError> for tower_resilience_ratelimiter::RateLimiterServiceError<E>
+pub fn tower_resilience_ratelimiter::RateLimiterServiceError<E>::from(tower_resilience_ratelimiter::RateLimiterError) -> Self
+impl<E> core::convert::From<tower_resilience_ratelimiter::RateLimiterServiceError<E>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_ratelimiter::RateLimiterServiceError<E>) -> Self
+impl<E> core::convert::From<tower_resilience_ratelimiter::RateLimiterServiceError<tower_resilience_core::error::ResilienceError<E>>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_ratelimiter::RateLimiterServiceError<tower_resilience_core::error::ResilienceError<E>>) -> Self
+impl<E> core::error::Error for tower_resilience_ratelimiter::RateLimiterServiceError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::marker::Freeze for tower_resilience_ratelimiter::RateLimiterServiceError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_ratelimiter::RateLimiterServiceError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_ratelimiter::RateLimiterServiceError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_ratelimiter::RateLimiterServiceError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_ratelimiter::RateLimiterServiceError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::RateLimiterServiceError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::RateLimiterServiceError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_ratelimiter::WindowType
+pub tower_resilience_ratelimiter::WindowType::Fixed
+pub tower_resilience_ratelimiter::WindowType::SlidingCounter
+pub tower_resilience_ratelimiter::WindowType::SlidingLog
+impl core::clone::Clone for tower_resilience_ratelimiter::WindowType
+pub fn tower_resilience_ratelimiter::WindowType::clone(&self) -> tower_resilience_ratelimiter::WindowType
+impl core::cmp::Eq for tower_resilience_ratelimiter::WindowType
+impl core::cmp::PartialEq for tower_resilience_ratelimiter::WindowType
+pub fn tower_resilience_ratelimiter::WindowType::eq(&self, &tower_resilience_ratelimiter::WindowType) -> bool
+impl core::default::Default for tower_resilience_ratelimiter::WindowType
+pub fn tower_resilience_ratelimiter::WindowType::default() -> tower_resilience_ratelimiter::WindowType
+impl core::fmt::Debug for tower_resilience_ratelimiter::WindowType
+pub fn tower_resilience_ratelimiter::WindowType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_ratelimiter::WindowType
+impl core::marker::StructuralPartialEq for tower_resilience_ratelimiter::WindowType
+impl core::marker::Freeze for tower_resilience_ratelimiter::WindowType
+impl core::marker::Send for tower_resilience_ratelimiter::WindowType
+impl core::marker::Sync for tower_resilience_ratelimiter::WindowType
+impl core::marker::Unpin for tower_resilience_ratelimiter::WindowType
+impl core::marker::UnsafeUnpin for tower_resilience_ratelimiter::WindowType
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::WindowType
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::WindowType
+pub struct tower_resilience_ratelimiter::RateLimiter<S>
+impl<S> tower_resilience_ratelimiter::RateLimiter<S>
+pub fn tower_resilience_ratelimiter::RateLimiter<S>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_ratelimiter::RateLimiter<S>::get_ref(&self) -> &S
+pub fn tower_resilience_ratelimiter::RateLimiter<S>::into_inner(self) -> S
+pub fn tower_resilience_ratelimiter::RateLimiter<S>::new(S, alloc::sync::Arc<tower_resilience_ratelimiter::RateLimiterConfig>) -> Self
+impl<S, Req> tower_service::Service<Req> for tower_resilience_ratelimiter::RateLimiter<S> where S: tower_service::Service<Req> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, <S as tower_service::Service>::Error: core::marker::Send + 'static, Req: core::marker::Send + 'static
+pub type tower_resilience_ratelimiter::RateLimiter<S>::Error = tower_resilience_ratelimiter::RateLimiterServiceError<<S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_ratelimiter::RateLimiter<S>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_ratelimiter::RateLimiter<S> as tower_service::Service<Req>>::Response, <tower_resilience_ratelimiter::RateLimiter<S> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_ratelimiter::RateLimiter<S>::Response = <S as tower_service::Service<Req>>::Response
+pub fn tower_resilience_ratelimiter::RateLimiter<S>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_ratelimiter::RateLimiter<S>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S> core::clone::Clone for tower_resilience_ratelimiter::RateLimiter<S> where S: core::clone::Clone
+pub fn tower_resilience_ratelimiter::RateLimiter<S>::clone(&self) -> Self
+impl<S> core::marker::Freeze for tower_resilience_ratelimiter::RateLimiter<S> where S: core::marker::Freeze
+impl<S> core::marker::Send for tower_resilience_ratelimiter::RateLimiter<S> where S: core::marker::Send
+impl<S> core::marker::Sync for tower_resilience_ratelimiter::RateLimiter<S> where S: core::marker::Sync
+impl<S> core::marker::Unpin for tower_resilience_ratelimiter::RateLimiter<S> where S: core::marker::Unpin
+impl<S> core::marker::UnsafeUnpin for tower_resilience_ratelimiter::RateLimiter<S> where S: core::marker::UnsafeUnpin
+impl<S> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::RateLimiter<S>
+impl<S> !core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::RateLimiter<S>
+pub struct tower_resilience_ratelimiter::RateLimiterConfig
+impl core::marker::Freeze for tower_resilience_ratelimiter::RateLimiterConfig
+impl core::marker::Send for tower_resilience_ratelimiter::RateLimiterConfig
+impl core::marker::Sync for tower_resilience_ratelimiter::RateLimiterConfig
+impl core::marker::Unpin for tower_resilience_ratelimiter::RateLimiterConfig
+impl core::marker::UnsafeUnpin for tower_resilience_ratelimiter::RateLimiterConfig
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::RateLimiterConfig
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::RateLimiterConfig
+pub struct tower_resilience_ratelimiter::RateLimiterConfigBuilder
+impl tower_resilience_ratelimiter::RateLimiterConfigBuilder
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::backpressure(self) -> Self
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::build(self) -> core::result::Result<tower_resilience_ratelimiter::RateLimiterLayer, tower_resilience_ratelimiter::RateLimiterConfigError>
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::build_with_handle(self) -> core::result::Result<(tower_resilience_ratelimiter::RateLimiterLayer, tower_resilience_ratelimiter::RateLimiterHandle), tower_resilience_ratelimiter::RateLimiterConfigError>
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::burst_size(self, usize) -> Self
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::limit_for_period(self, usize) -> Self
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::name<S: core::convert::Into<alloc::string::String>>(self, S) -> Self
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::new() -> Self
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::on_permit_acquired<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::on_permit_rejected<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::on_permits_refreshed<F>(self, F) -> Self where F: core::ops::function::Fn(usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::refresh_period(self, core::time::Duration) -> Self
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::timeout_duration(self, core::time::Duration) -> Self
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::window_type(self, tower_resilience_ratelimiter::WindowType) -> Self
+impl core::default::Default for tower_resilience_ratelimiter::RateLimiterConfigBuilder
+pub fn tower_resilience_ratelimiter::RateLimiterConfigBuilder::default() -> Self
+impl core::marker::Freeze for tower_resilience_ratelimiter::RateLimiterConfigBuilder
+impl core::marker::Send for tower_resilience_ratelimiter::RateLimiterConfigBuilder
+impl core::marker::Sync for tower_resilience_ratelimiter::RateLimiterConfigBuilder
+impl core::marker::Unpin for tower_resilience_ratelimiter::RateLimiterConfigBuilder
+impl core::marker::UnsafeUnpin for tower_resilience_ratelimiter::RateLimiterConfigBuilder
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::RateLimiterConfigBuilder
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::RateLimiterConfigBuilder
+pub struct tower_resilience_ratelimiter::RateLimiterHandle
+impl tower_resilience_ratelimiter::RateLimiterHandle
+pub fn tower_resilience_ratelimiter::RateLimiterHandle::available_permits(&self) -> usize
+pub fn tower_resilience_ratelimiter::RateLimiterHandle::burst_size(&self) -> usize
+pub fn tower_resilience_ratelimiter::RateLimiterHandle::capacity(&self) -> usize
+pub fn tower_resilience_ratelimiter::RateLimiterHandle::is_throttling(&self) -> bool
+pub fn tower_resilience_ratelimiter::RateLimiterHandle::limit_for_period(&self) -> usize
+pub fn tower_resilience_ratelimiter::RateLimiterHandle::utilization(&self) -> f64
+impl core::clone::Clone for tower_resilience_ratelimiter::RateLimiterHandle
+pub fn tower_resilience_ratelimiter::RateLimiterHandle::clone(&self) -> tower_resilience_ratelimiter::RateLimiterHandle
+impl core::marker::Freeze for tower_resilience_ratelimiter::RateLimiterHandle
+impl core::marker::Send for tower_resilience_ratelimiter::RateLimiterHandle
+impl core::marker::Sync for tower_resilience_ratelimiter::RateLimiterHandle
+impl core::marker::Unpin for tower_resilience_ratelimiter::RateLimiterHandle
+impl core::marker::UnsafeUnpin for tower_resilience_ratelimiter::RateLimiterHandle
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::RateLimiterHandle
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::RateLimiterHandle
+pub struct tower_resilience_ratelimiter::RateLimiterLayer
+impl tower_resilience_ratelimiter::RateLimiterLayer
+pub fn tower_resilience_ratelimiter::RateLimiterLayer::builder() -> tower_resilience_ratelimiter::RateLimiterConfigBuilder
+pub fn tower_resilience_ratelimiter::RateLimiterLayer::burst(usize, usize) -> tower_resilience_ratelimiter::RateLimiterConfigBuilder
+pub fn tower_resilience_ratelimiter::RateLimiterLayer::new(tower_resilience_ratelimiter::RateLimiterConfig) -> Self
+pub fn tower_resilience_ratelimiter::RateLimiterLayer::per_minute(usize) -> tower_resilience_ratelimiter::RateLimiterConfigBuilder
+pub fn tower_resilience_ratelimiter::RateLimiterLayer::per_second(usize) -> tower_resilience_ratelimiter::RateLimiterConfigBuilder
+impl core::clone::Clone for tower_resilience_ratelimiter::RateLimiterLayer
+pub fn tower_resilience_ratelimiter::RateLimiterLayer::clone(&self) -> tower_resilience_ratelimiter::RateLimiterLayer
+impl<S> tower_layer::Layer<S> for tower_resilience_ratelimiter::RateLimiterLayer
+pub type tower_resilience_ratelimiter::RateLimiterLayer::Service = tower_resilience_ratelimiter::RateLimiter<S>
+pub fn tower_resilience_ratelimiter::RateLimiterLayer::layer(&self, S) -> Self::Service
+impl core::marker::Freeze for tower_resilience_ratelimiter::RateLimiterLayer
+impl core::marker::Send for tower_resilience_ratelimiter::RateLimiterLayer
+impl core::marker::Sync for tower_resilience_ratelimiter::RateLimiterLayer
+impl core::marker::Unpin for tower_resilience_ratelimiter::RateLimiterLayer
+impl core::marker::UnsafeUnpin for tower_resilience_ratelimiter::RateLimiterLayer
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_ratelimiter::RateLimiterLayer
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_ratelimiter::RateLimiterLayer

@@ -1,0 +1,200 @@
+pub mod tower_resilience_router
+pub mod tower_resilience_router::config
+pub struct tower_resilience_router::config::RouterConfig
+impl core::clone::Clone for tower_resilience_router::config::RouterConfig
+pub fn tower_resilience_router::config::RouterConfig::clone(&self) -> tower_resilience_router::config::RouterConfig
+impl core::marker::Freeze for tower_resilience_router::config::RouterConfig
+impl core::marker::Send for tower_resilience_router::config::RouterConfig
+impl core::marker::Sync for tower_resilience_router::config::RouterConfig
+impl core::marker::Unpin for tower_resilience_router::config::RouterConfig
+impl core::marker::UnsafeUnpin for tower_resilience_router::config::RouterConfig
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::config::RouterConfig
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_router::config::RouterConfig
+pub struct tower_resilience_router::config::WeightedRouterBuilder<S>
+impl<S> tower_resilience_router::config::WeightedRouterBuilder<S>
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::build(self) -> tower_resilience_router::WeightedRouter<S>
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::deterministic(self) -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::new() -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::on_request_routed<F>(self, F) -> Self where F: core::ops::function::Fn(usize, u32) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::random(self) -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::route(self, S, u32) -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::strategy(self, tower_resilience_router::selection::SelectionStrategy) -> Self
+impl<S> core::default::Default for tower_resilience_router::config::WeightedRouterBuilder<S>
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::default() -> Self
+impl<S> core::marker::Freeze for tower_resilience_router::config::WeightedRouterBuilder<S>
+impl<S> core::marker::Send for tower_resilience_router::config::WeightedRouterBuilder<S> where S: core::marker::Send
+impl<S> core::marker::Sync for tower_resilience_router::config::WeightedRouterBuilder<S> where S: core::marker::Sync
+impl<S> core::marker::Unpin for tower_resilience_router::config::WeightedRouterBuilder<S> where S: core::marker::Unpin
+impl<S> core::marker::UnsafeUnpin for tower_resilience_router::config::WeightedRouterBuilder<S>
+impl<S> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::config::WeightedRouterBuilder<S>
+impl<S> !core::panic::unwind_safe::UnwindSafe for tower_resilience_router::config::WeightedRouterBuilder<S>
+pub mod tower_resilience_router::error
+pub enum tower_resilience_router::error::WeightedRouterError<E>
+pub tower_resilience_router::error::WeightedRouterError::Inner(E)
+impl<E> tower_resilience_router::error::WeightedRouterError<E>
+pub fn tower_resilience_router::error::WeightedRouterError<E>::into_inner(self) -> E
+pub fn tower_resilience_router::error::WeightedRouterError<E>::is_inner(&self) -> bool
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_router::error::WeightedRouterError<E>
+pub fn tower_resilience_router::error::WeightedRouterError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_router::error::WeightedRouterError<E>
+pub fn tower_resilience_router::error::WeightedRouterError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_router::error::WeightedRouterError<E>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_router::error::WeightedRouterError<E>) -> Self
+impl<E> core::convert::From<tower_resilience_router::error::WeightedRouterError<tower_resilience_core::error::ResilienceError<E>>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_router::error::WeightedRouterError<tower_resilience_core::error::ResilienceError<E>>) -> Self
+impl<E> core::error::Error for tower_resilience_router::error::WeightedRouterError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::marker::Freeze for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::error::WeightedRouterError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_router::error::WeightedRouterError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub mod tower_resilience_router::events
+pub enum tower_resilience_router::events::RouterEvent
+pub tower_resilience_router::events::RouterEvent::RequestRouted
+pub tower_resilience_router::events::RouterEvent::RequestRouted::backend_index: usize
+pub tower_resilience_router::events::RouterEvent::RequestRouted::backend_weight: u32
+pub tower_resilience_router::events::RouterEvent::RequestRouted::pattern_name: alloc::string::String
+pub tower_resilience_router::events::RouterEvent::RequestRouted::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_router::events::RouterEvent
+pub fn tower_resilience_router::events::RouterEvent::clone(&self) -> tower_resilience_router::events::RouterEvent
+impl core::fmt::Debug for tower_resilience_router::events::RouterEvent
+pub fn tower_resilience_router::events::RouterEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_router::events::RouterEvent
+pub fn tower_resilience_router::events::RouterEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_router::events::RouterEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_router::events::RouterEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_router::events::RouterEvent
+impl core::marker::Send for tower_resilience_router::events::RouterEvent
+impl core::marker::Sync for tower_resilience_router::events::RouterEvent
+impl core::marker::Unpin for tower_resilience_router::events::RouterEvent
+impl core::marker::UnsafeUnpin for tower_resilience_router::events::RouterEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::events::RouterEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_router::events::RouterEvent
+pub mod tower_resilience_router::selection
+pub enum tower_resilience_router::selection::SelectionStrategy
+pub tower_resilience_router::selection::SelectionStrategy::Deterministic
+pub tower_resilience_router::selection::SelectionStrategy::Random
+impl core::clone::Clone for tower_resilience_router::selection::SelectionStrategy
+pub fn tower_resilience_router::selection::SelectionStrategy::clone(&self) -> tower_resilience_router::selection::SelectionStrategy
+impl core::cmp::Eq for tower_resilience_router::selection::SelectionStrategy
+impl core::cmp::PartialEq for tower_resilience_router::selection::SelectionStrategy
+pub fn tower_resilience_router::selection::SelectionStrategy::eq(&self, &tower_resilience_router::selection::SelectionStrategy) -> bool
+impl core::default::Default for tower_resilience_router::selection::SelectionStrategy
+pub fn tower_resilience_router::selection::SelectionStrategy::default() -> tower_resilience_router::selection::SelectionStrategy
+impl core::fmt::Debug for tower_resilience_router::selection::SelectionStrategy
+pub fn tower_resilience_router::selection::SelectionStrategy::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::StructuralPartialEq for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::Freeze for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::Send for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::Sync for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::Unpin for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::UnsafeUnpin for tower_resilience_router::selection::SelectionStrategy
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::selection::SelectionStrategy
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_router::selection::SelectionStrategy
+pub enum tower_resilience_router::RouterEvent
+pub tower_resilience_router::RouterEvent::RequestRouted
+pub tower_resilience_router::RouterEvent::RequestRouted::backend_index: usize
+pub tower_resilience_router::RouterEvent::RequestRouted::backend_weight: u32
+pub tower_resilience_router::RouterEvent::RequestRouted::pattern_name: alloc::string::String
+pub tower_resilience_router::RouterEvent::RequestRouted::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_router::events::RouterEvent
+pub fn tower_resilience_router::events::RouterEvent::clone(&self) -> tower_resilience_router::events::RouterEvent
+impl core::fmt::Debug for tower_resilience_router::events::RouterEvent
+pub fn tower_resilience_router::events::RouterEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_router::events::RouterEvent
+pub fn tower_resilience_router::events::RouterEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_router::events::RouterEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_router::events::RouterEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_router::events::RouterEvent
+impl core::marker::Send for tower_resilience_router::events::RouterEvent
+impl core::marker::Sync for tower_resilience_router::events::RouterEvent
+impl core::marker::Unpin for tower_resilience_router::events::RouterEvent
+impl core::marker::UnsafeUnpin for tower_resilience_router::events::RouterEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::events::RouterEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_router::events::RouterEvent
+pub enum tower_resilience_router::SelectionStrategy
+pub tower_resilience_router::SelectionStrategy::Deterministic
+pub tower_resilience_router::SelectionStrategy::Random
+impl core::clone::Clone for tower_resilience_router::selection::SelectionStrategy
+pub fn tower_resilience_router::selection::SelectionStrategy::clone(&self) -> tower_resilience_router::selection::SelectionStrategy
+impl core::cmp::Eq for tower_resilience_router::selection::SelectionStrategy
+impl core::cmp::PartialEq for tower_resilience_router::selection::SelectionStrategy
+pub fn tower_resilience_router::selection::SelectionStrategy::eq(&self, &tower_resilience_router::selection::SelectionStrategy) -> bool
+impl core::default::Default for tower_resilience_router::selection::SelectionStrategy
+pub fn tower_resilience_router::selection::SelectionStrategy::default() -> tower_resilience_router::selection::SelectionStrategy
+impl core::fmt::Debug for tower_resilience_router::selection::SelectionStrategy
+pub fn tower_resilience_router::selection::SelectionStrategy::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::StructuralPartialEq for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::Freeze for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::Send for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::Sync for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::Unpin for tower_resilience_router::selection::SelectionStrategy
+impl core::marker::UnsafeUnpin for tower_resilience_router::selection::SelectionStrategy
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::selection::SelectionStrategy
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_router::selection::SelectionStrategy
+pub enum tower_resilience_router::WeightedRouterError<E>
+pub tower_resilience_router::WeightedRouterError::Inner(E)
+impl<E> tower_resilience_router::error::WeightedRouterError<E>
+pub fn tower_resilience_router::error::WeightedRouterError<E>::into_inner(self) -> E
+pub fn tower_resilience_router::error::WeightedRouterError<E>::is_inner(&self) -> bool
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_router::error::WeightedRouterError<E>
+pub fn tower_resilience_router::error::WeightedRouterError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_router::error::WeightedRouterError<E>
+pub fn tower_resilience_router::error::WeightedRouterError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_router::error::WeightedRouterError<E>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_router::error::WeightedRouterError<E>) -> Self
+impl<E> core::convert::From<tower_resilience_router::error::WeightedRouterError<tower_resilience_core::error::ResilienceError<E>>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_router::error::WeightedRouterError<tower_resilience_core::error::ResilienceError<E>>) -> Self
+impl<E> core::error::Error for tower_resilience_router::error::WeightedRouterError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::marker::Freeze for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_router::error::WeightedRouterError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::error::WeightedRouterError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_router::error::WeightedRouterError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_router::WeightedRouter<S>
+impl<S> tower_resilience_router::WeightedRouter<S>
+pub fn tower_resilience_router::WeightedRouter<S>::backend_count(&self) -> usize
+pub fn tower_resilience_router::WeightedRouter<S>::builder() -> tower_resilience_router::config::WeightedRouterBuilder<S>
+pub fn tower_resilience_router::WeightedRouter<S>::name(&self) -> &str
+pub fn tower_resilience_router::WeightedRouter<S>::weights(&self) -> alloc::vec::Vec<u32>
+impl<S, Request> tower_service::Service<Request> for tower_resilience_router::WeightedRouter<S> where S: tower_service::Service<Request>
+pub type tower_resilience_router::WeightedRouter<S>::Error = <S as tower_service::Service<Request>>::Error
+pub type tower_resilience_router::WeightedRouter<S>::Future = <S as tower_service::Service<Request>>::Future
+pub type tower_resilience_router::WeightedRouter<S>::Response = <S as tower_service::Service<Request>>::Response
+pub fn tower_resilience_router::WeightedRouter<S>::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_router::WeightedRouter<S>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone> core::clone::Clone for tower_resilience_router::WeightedRouter<S>
+pub fn tower_resilience_router::WeightedRouter<S>::clone(&self) -> Self
+impl<S> core::marker::Freeze for tower_resilience_router::WeightedRouter<S>
+impl<S> core::marker::Send for tower_resilience_router::WeightedRouter<S> where S: core::marker::Send
+impl<S> core::marker::Sync for tower_resilience_router::WeightedRouter<S> where S: core::marker::Sync
+impl<S> core::marker::Unpin for tower_resilience_router::WeightedRouter<S> where S: core::marker::Unpin
+impl<S> core::marker::UnsafeUnpin for tower_resilience_router::WeightedRouter<S>
+impl<S> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::WeightedRouter<S>
+impl<S> !core::panic::unwind_safe::UnwindSafe for tower_resilience_router::WeightedRouter<S>
+pub struct tower_resilience_router::WeightedRouterBuilder<S>
+impl<S> tower_resilience_router::config::WeightedRouterBuilder<S>
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::build(self) -> tower_resilience_router::WeightedRouter<S>
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::deterministic(self) -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::new() -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::on_request_routed<F>(self, F) -> Self where F: core::ops::function::Fn(usize, u32) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::random(self) -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::route(self, S, u32) -> Self
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::strategy(self, tower_resilience_router::selection::SelectionStrategy) -> Self
+impl<S> core::default::Default for tower_resilience_router::config::WeightedRouterBuilder<S>
+pub fn tower_resilience_router::config::WeightedRouterBuilder<S>::default() -> Self
+impl<S> core::marker::Freeze for tower_resilience_router::config::WeightedRouterBuilder<S>
+impl<S> core::marker::Send for tower_resilience_router::config::WeightedRouterBuilder<S> where S: core::marker::Send
+impl<S> core::marker::Sync for tower_resilience_router::config::WeightedRouterBuilder<S> where S: core::marker::Sync
+impl<S> core::marker::Unpin for tower_resilience_router::config::WeightedRouterBuilder<S> where S: core::marker::Unpin
+impl<S> core::marker::UnsafeUnpin for tower_resilience_router::config::WeightedRouterBuilder<S>
+impl<S> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_router::config::WeightedRouterBuilder<S>
+impl<S> !core::panic::unwind_safe::UnwindSafe for tower_resilience_router::config::WeightedRouterBuilder<S>

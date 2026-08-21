@@ -1,0 +1,193 @@
+pub mod tower_resilience_hedge
+pub enum tower_resilience_hedge::HedgeDelay
+pub tower_resilience_hedge::HedgeDelay::Dynamic(alloc::sync::Arc<(dyn core::ops::function::Fn(usize) -> core::time::Duration + core::marker::Send + core::marker::Sync)>)
+pub tower_resilience_hedge::HedgeDelay::Fixed(core::time::Duration)
+pub tower_resilience_hedge::HedgeDelay::Immediate
+impl tower_resilience_hedge::HedgeDelay
+pub fn tower_resilience_hedge::HedgeDelay::get_delay(&self, usize) -> core::option::Option<core::time::Duration>
+impl core::clone::Clone for tower_resilience_hedge::HedgeDelay
+pub fn tower_resilience_hedge::HedgeDelay::clone(&self) -> tower_resilience_hedge::HedgeDelay
+impl core::default::Default for tower_resilience_hedge::HedgeDelay
+pub fn tower_resilience_hedge::HedgeDelay::default() -> Self
+impl core::marker::Freeze for tower_resilience_hedge::HedgeDelay
+impl core::marker::Send for tower_resilience_hedge::HedgeDelay
+impl core::marker::Sync for tower_resilience_hedge::HedgeDelay
+impl core::marker::Unpin for tower_resilience_hedge::HedgeDelay
+impl core::marker::UnsafeUnpin for tower_resilience_hedge::HedgeDelay
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_hedge::HedgeDelay
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_hedge::HedgeDelay
+pub enum tower_resilience_hedge::HedgeError<E>
+pub tower_resilience_hedge::HedgeError::AllAttemptsFailed(E)
+pub tower_resilience_hedge::HedgeError::Inner(E)
+impl<E> tower_resilience_hedge::HedgeError<E>
+pub fn tower_resilience_hedge::HedgeError<E>::inner(&self) -> &E
+pub fn tower_resilience_hedge::HedgeError<E>::into_inner(self) -> E
+pub fn tower_resilience_hedge::HedgeError<E>::is_all_attempts_failed(&self) -> bool
+pub fn tower_resilience_hedge::HedgeError<E>::is_inner(&self) -> bool
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_hedge::HedgeError<E>
+pub fn tower_resilience_hedge::HedgeError<E>::clone(&self) -> tower_resilience_hedge::HedgeError<E>
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_hedge::HedgeError<E>
+pub fn tower_resilience_hedge::HedgeError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_hedge::HedgeError<E>
+pub fn tower_resilience_hedge::HedgeError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::error::Error for tower_resilience_hedge::HedgeError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::marker::Freeze for tower_resilience_hedge::HedgeError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_hedge::HedgeError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_hedge::HedgeError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_hedge::HedgeError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_hedge::HedgeError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_hedge::HedgeError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_hedge::HedgeError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_hedge::HedgeEvent
+pub tower_resilience_hedge::HedgeEvent::AllFailed
+pub tower_resilience_hedge::HedgeEvent::AllFailed::attempts: usize
+pub tower_resilience_hedge::HedgeEvent::AllFailed::name: core::option::Option<alloc::string::String>
+pub tower_resilience_hedge::HedgeEvent::AllFailed::timestamp: std::time::Instant
+pub tower_resilience_hedge::HedgeEvent::HedgeStarted
+pub tower_resilience_hedge::HedgeEvent::HedgeStarted::attempt: usize
+pub tower_resilience_hedge::HedgeEvent::HedgeStarted::delay: core::time::Duration
+pub tower_resilience_hedge::HedgeEvent::HedgeStarted::name: core::option::Option<alloc::string::String>
+pub tower_resilience_hedge::HedgeEvent::HedgeStarted::timestamp: std::time::Instant
+pub tower_resilience_hedge::HedgeEvent::HedgeSucceeded
+pub tower_resilience_hedge::HedgeEvent::HedgeSucceeded::attempt: usize
+pub tower_resilience_hedge::HedgeEvent::HedgeSucceeded::duration: core::time::Duration
+pub tower_resilience_hedge::HedgeEvent::HedgeSucceeded::name: core::option::Option<alloc::string::String>
+pub tower_resilience_hedge::HedgeEvent::HedgeSucceeded::primary_cancelled: bool
+pub tower_resilience_hedge::HedgeEvent::HedgeSucceeded::timestamp: std::time::Instant
+pub tower_resilience_hedge::HedgeEvent::PrimaryStarted
+pub tower_resilience_hedge::HedgeEvent::PrimaryStarted::name: core::option::Option<alloc::string::String>
+pub tower_resilience_hedge::HedgeEvent::PrimaryStarted::timestamp: std::time::Instant
+pub tower_resilience_hedge::HedgeEvent::PrimarySucceeded
+pub tower_resilience_hedge::HedgeEvent::PrimarySucceeded::duration: core::time::Duration
+pub tower_resilience_hedge::HedgeEvent::PrimarySucceeded::hedges_cancelled: usize
+pub tower_resilience_hedge::HedgeEvent::PrimarySucceeded::name: core::option::Option<alloc::string::String>
+pub tower_resilience_hedge::HedgeEvent::PrimarySucceeded::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_hedge::HedgeEvent
+pub fn tower_resilience_hedge::HedgeEvent::clone(&self) -> tower_resilience_hedge::HedgeEvent
+impl core::fmt::Debug for tower_resilience_hedge::HedgeEvent
+pub fn tower_resilience_hedge::HedgeEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_hedge::HedgeEvent
+pub fn tower_resilience_hedge::HedgeEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_hedge::HedgeEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_hedge::HedgeEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_hedge::HedgeEvent
+impl core::marker::Send for tower_resilience_hedge::HedgeEvent
+impl core::marker::Sync for tower_resilience_hedge::HedgeEvent
+impl core::marker::Unpin for tower_resilience_hedge::HedgeEvent
+impl core::marker::UnsafeUnpin for tower_resilience_hedge::HedgeEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_hedge::HedgeEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_hedge::HedgeEvent
+pub struct tower_resilience_hedge::AlwaysHedge
+impl core::clone::Clone for tower_resilience_hedge::AlwaysHedge
+pub fn tower_resilience_hedge::AlwaysHedge::clone(&self) -> tower_resilience_hedge::AlwaysHedge
+impl core::default::Default for tower_resilience_hedge::AlwaysHedge
+pub fn tower_resilience_hedge::AlwaysHedge::default() -> tower_resilience_hedge::AlwaysHedge
+impl core::fmt::Debug for tower_resilience_hedge::AlwaysHedge
+pub fn tower_resilience_hedge::AlwaysHedge::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_hedge::AlwaysHedge
+impl<Req> tower_resilience_hedge::HedgePolicy<Req> for tower_resilience_hedge::AlwaysHedge
+pub fn tower_resilience_hedge::AlwaysHedge::is_eligible(&self, &Req) -> bool
+impl core::marker::Freeze for tower_resilience_hedge::AlwaysHedge
+impl core::marker::Send for tower_resilience_hedge::AlwaysHedge
+impl core::marker::Sync for tower_resilience_hedge::AlwaysHedge
+impl core::marker::Unpin for tower_resilience_hedge::AlwaysHedge
+impl core::marker::UnsafeUnpin for tower_resilience_hedge::AlwaysHedge
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_hedge::AlwaysHedge
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_hedge::AlwaysHedge
+pub struct tower_resilience_hedge::Hedge<S, P>
+impl<S, P> tower_resilience_hedge::Hedge<S, P>
+pub fn tower_resilience_hedge::Hedge<S, P>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_hedge::Hedge<S, P>::get_ref(&self) -> &S
+pub fn tower_resilience_hedge::Hedge<S, P>::into_inner(self) -> S
+impl<S> tower_resilience_hedge::Hedge<S, tower_resilience_hedge::AlwaysHedge>
+pub fn tower_resilience_hedge::Hedge<S, tower_resilience_hedge::AlwaysHedge>::new(S, tower_resilience_hedge::HedgeConfig) -> Self
+impl<S, Req, P> tower_service::Service<Req> for tower_resilience_hedge::Hedge<S, P> where S: tower_service::Service<Req> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Response: core::marker::Send + core::marker::Sync + 'static, <S as tower_service::Service>::Error: core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, <S as tower_service::Service>::Future: core::marker::Send, Req: core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, P: tower_resilience_hedge::HedgePolicy<Req>
+pub type tower_resilience_hedge::Hedge<S, P>::Error = tower_resilience_hedge::HedgeError<<S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_hedge::Hedge<S, P>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_hedge::Hedge<S, P> as tower_service::Service<Req>>::Response, <tower_resilience_hedge::Hedge<S, P> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_hedge::Hedge<S, P>::Response = <S as tower_service::Service<Req>>::Response
+pub fn tower_resilience_hedge::Hedge<S, P>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_hedge::Hedge<S, P>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone, P> core::clone::Clone for tower_resilience_hedge::Hedge<S, P>
+pub fn tower_resilience_hedge::Hedge<S, P>::clone(&self) -> Self
+impl<S, P> core::marker::Freeze for tower_resilience_hedge::Hedge<S, P> where S: core::marker::Freeze
+impl<S, P> core::marker::Send for tower_resilience_hedge::Hedge<S, P> where S: core::marker::Send, P: core::marker::Sync + core::marker::Send
+impl<S, P> core::marker::Sync for tower_resilience_hedge::Hedge<S, P> where S: core::marker::Sync, P: core::marker::Sync + core::marker::Send
+impl<S, P> core::marker::Unpin for tower_resilience_hedge::Hedge<S, P> where S: core::marker::Unpin
+impl<S, P> core::marker::UnsafeUnpin for tower_resilience_hedge::Hedge<S, P> where S: core::marker::UnsafeUnpin
+impl<S, P> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_hedge::Hedge<S, P>
+impl<S, P> !core::panic::unwind_safe::UnwindSafe for tower_resilience_hedge::Hedge<S, P>
+pub struct tower_resilience_hedge::HedgeConfig
+impl core::clone::Clone for tower_resilience_hedge::HedgeConfig
+pub fn tower_resilience_hedge::HedgeConfig::clone(&self) -> tower_resilience_hedge::HedgeConfig
+impl core::default::Default for tower_resilience_hedge::HedgeConfig
+pub fn tower_resilience_hedge::HedgeConfig::default() -> Self
+impl core::marker::Freeze for tower_resilience_hedge::HedgeConfig
+impl core::marker::Send for tower_resilience_hedge::HedgeConfig
+impl core::marker::Sync for tower_resilience_hedge::HedgeConfig
+impl core::marker::Unpin for tower_resilience_hedge::HedgeConfig
+impl core::marker::UnsafeUnpin for tower_resilience_hedge::HedgeConfig
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_hedge::HedgeConfig
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_hedge::HedgeConfig
+pub struct tower_resilience_hedge::HedgeConfigBuilder<P>
+impl tower_resilience_hedge::HedgeConfigBuilder<tower_resilience_hedge::AlwaysHedge>
+pub fn tower_resilience_hedge::HedgeConfigBuilder<tower_resilience_hedge::AlwaysHedge>::new() -> Self
+impl<P> tower_resilience_hedge::HedgeConfigBuilder<P>
+pub fn tower_resilience_hedge::HedgeConfigBuilder<P>::build(self) -> tower_resilience_hedge::HedgeLayer<P>
+pub fn tower_resilience_hedge::HedgeConfigBuilder<P>::delay(self, core::time::Duration) -> Self
+pub fn tower_resilience_hedge::HedgeConfigBuilder<P>::delay_fn<F>(self, F) -> Self where F: core::ops::function::Fn(usize) -> core::time::Duration + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_hedge::HedgeConfigBuilder<P>::eligible_if<Req, F>(self, F) -> tower_resilience_hedge::HedgeConfigBuilder<tower_resilience_hedge::HedgePredicate<Req>> where Req: 'static, F: core::ops::function::Fn(&Req) -> bool + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_hedge::HedgeConfigBuilder<P>::max_hedged_attempts(self, usize) -> Self
+pub fn tower_resilience_hedge::HedgeConfigBuilder<P>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_hedge::HedgeConfigBuilder<P>::no_delay(self) -> Self
+pub fn tower_resilience_hedge::HedgeConfigBuilder<P>::on_event<L>(self, L) -> Self where L: tower_resilience_core::events::EventListener<tower_resilience_hedge::HedgeEvent> + 'static
+pub fn tower_resilience_hedge::HedgeConfigBuilder<P>::policy<Q>(self, Q) -> tower_resilience_hedge::HedgeConfigBuilder<Q>
+impl core::default::Default for tower_resilience_hedge::HedgeConfigBuilder<tower_resilience_hedge::AlwaysHedge>
+pub fn tower_resilience_hedge::HedgeConfigBuilder<tower_resilience_hedge::AlwaysHedge>::default() -> Self
+impl<P> core::marker::Freeze for tower_resilience_hedge::HedgeConfigBuilder<P> where P: core::marker::Freeze
+impl<P> core::marker::Send for tower_resilience_hedge::HedgeConfigBuilder<P> where P: core::marker::Send
+impl<P> core::marker::Sync for tower_resilience_hedge::HedgeConfigBuilder<P> where P: core::marker::Sync
+impl<P> core::marker::Unpin for tower_resilience_hedge::HedgeConfigBuilder<P> where P: core::marker::Unpin
+impl<P> core::marker::UnsafeUnpin for tower_resilience_hedge::HedgeConfigBuilder<P> where P: core::marker::UnsafeUnpin
+impl<P> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_hedge::HedgeConfigBuilder<P>
+impl<P> !core::panic::unwind_safe::UnwindSafe for tower_resilience_hedge::HedgeConfigBuilder<P>
+pub struct tower_resilience_hedge::HedgeLayer<P>
+impl tower_resilience_hedge::HedgeLayer<tower_resilience_hedge::AlwaysHedge>
+pub fn tower_resilience_hedge::HedgeLayer<tower_resilience_hedge::AlwaysHedge>::aggressive() -> Self
+pub fn tower_resilience_hedge::HedgeLayer<tower_resilience_hedge::AlwaysHedge>::builder() -> tower_resilience_hedge::HedgeConfigBuilder
+pub fn tower_resilience_hedge::HedgeLayer<tower_resilience_hedge::AlwaysHedge>::conservative() -> Self
+pub fn tower_resilience_hedge::HedgeLayer<tower_resilience_hedge::AlwaysHedge>::new(core::time::Duration) -> Self
+pub fn tower_resilience_hedge::HedgeLayer<tower_resilience_hedge::AlwaysHedge>::standard() -> Self
+impl<P> core::clone::Clone for tower_resilience_hedge::HedgeLayer<P>
+pub fn tower_resilience_hedge::HedgeLayer<P>::clone(&self) -> Self
+impl<S, P> tower_layer::Layer<S> for tower_resilience_hedge::HedgeLayer<P>
+pub type tower_resilience_hedge::HedgeLayer<P>::Service = tower_resilience_hedge::Hedge<S, P>
+pub fn tower_resilience_hedge::HedgeLayer<P>::layer(&self, S) -> Self::Service
+impl<P> core::marker::Freeze for tower_resilience_hedge::HedgeLayer<P>
+impl<P> core::marker::Send for tower_resilience_hedge::HedgeLayer<P> where P: core::marker::Sync + core::marker::Send
+impl<P> core::marker::Sync for tower_resilience_hedge::HedgeLayer<P> where P: core::marker::Sync + core::marker::Send
+impl<P> core::marker::Unpin for tower_resilience_hedge::HedgeLayer<P>
+impl<P> core::marker::UnsafeUnpin for tower_resilience_hedge::HedgeLayer<P>
+impl<P> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_hedge::HedgeLayer<P>
+impl<P> !core::panic::unwind_safe::UnwindSafe for tower_resilience_hedge::HedgeLayer<P>
+pub struct tower_resilience_hedge::HedgePredicate<Req>
+impl<Req> tower_resilience_hedge::HedgePredicate<Req>
+pub fn tower_resilience_hedge::HedgePredicate<Req>::new<F>(F) -> Self where F: core::ops::function::Fn(&Req) -> bool + core::marker::Send + core::marker::Sync + 'static
+impl<Req: 'static> tower_resilience_hedge::HedgePolicy<Req> for tower_resilience_hedge::HedgePredicate<Req>
+pub fn tower_resilience_hedge::HedgePredicate<Req>::is_eligible(&self, &Req) -> bool
+impl<Req: core::clone::Clone> core::clone::Clone for tower_resilience_hedge::HedgePredicate<Req>
+pub fn tower_resilience_hedge::HedgePredicate<Req>::clone(&self) -> tower_resilience_hedge::HedgePredicate<Req>
+impl<Req> core::fmt::Debug for tower_resilience_hedge::HedgePredicate<Req>
+pub fn tower_resilience_hedge::HedgePredicate<Req>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<Req> core::marker::Freeze for tower_resilience_hedge::HedgePredicate<Req>
+impl<Req> core::marker::Send for tower_resilience_hedge::HedgePredicate<Req>
+impl<Req> core::marker::Sync for tower_resilience_hedge::HedgePredicate<Req>
+impl<Req> core::marker::Unpin for tower_resilience_hedge::HedgePredicate<Req>
+impl<Req> core::marker::UnsafeUnpin for tower_resilience_hedge::HedgePredicate<Req>
+impl<Req> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_hedge::HedgePredicate<Req>
+impl<Req> !core::panic::unwind_safe::UnwindSafe for tower_resilience_hedge::HedgePredicate<Req>
+pub trait tower_resilience_hedge::HedgePolicy<Req>: core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_hedge::HedgePolicy::is_eligible(&self, &Req) -> bool
+impl<Req: 'static> tower_resilience_hedge::HedgePolicy<Req> for tower_resilience_hedge::HedgePredicate<Req>
+pub fn tower_resilience_hedge::HedgePredicate<Req>::is_eligible(&self, &Req) -> bool
+impl<Req> tower_resilience_hedge::HedgePolicy<Req> for tower_resilience_hedge::AlwaysHedge
+pub fn tower_resilience_hedge::AlwaysHedge::is_eligible(&self, &Req) -> bool

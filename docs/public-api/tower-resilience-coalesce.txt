@@ -1,0 +1,104 @@
+pub mod tower_resilience_coalesce
+pub enum tower_resilience_coalesce::CoalesceError<E>
+pub tower_resilience_coalesce::CoalesceError::LeaderCancelled
+pub tower_resilience_coalesce::CoalesceError::RecvError
+pub tower_resilience_coalesce::CoalesceError::Service(E)
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_coalesce::CoalesceError<E>
+pub fn tower_resilience_coalesce::CoalesceError<E>::clone(&self) -> Self
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_coalesce::CoalesceError<E>
+pub fn tower_resilience_coalesce::CoalesceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_coalesce::CoalesceError<E>
+pub fn tower_resilience_coalesce::CoalesceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::error::Error for tower_resilience_coalesce::CoalesceError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::marker::Freeze for tower_resilience_coalesce::CoalesceError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_coalesce::CoalesceError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_coalesce::CoalesceError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_coalesce::CoalesceError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_coalesce::CoalesceError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_coalesce::CoalesceError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_coalesce::CoalesceError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_coalesce::CoalesceFuture<S, K, Req> where S: tower_service::Service<Req>, <S as tower_service::Service>::Response: core::clone::Clone, <S as tower_service::Service>::Error: core::clone::Clone, K: core::hash::Hash + core::cmp::Eq + core::clone::Clone
+pub tower_resilience_coalesce::CoalesceFuture::Waiting
+pub tower_resilience_coalesce::CoalesceFuture::Waiting::receiver: tokio::sync::broadcast::Receiver<core::result::Result<<S as tower_service::Service>::Response, <S as tower_service::Service>::Error>>
+impl<S, K, Req> core::future::future::Future for tower_resilience_coalesce::CoalesceFuture<S, K, Req> where S: tower_service::Service<Req>, <S as tower_service::Service>::Response: core::clone::Clone, <S as tower_service::Service>::Error: core::clone::Clone, K: core::hash::Hash + core::cmp::Eq + core::clone::Clone
+pub type tower_resilience_coalesce::CoalesceFuture<S, K, Req>::Output = core::result::Result<<S as tower_service::Service<Req>>::Response, tower_resilience_coalesce::CoalesceError<<S as tower_service::Service<Req>>::Error>>
+pub fn tower_resilience_coalesce::CoalesceFuture<S, K, Req>::poll(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<Self::Output>
+impl<S, K, Req> core::ops::drop::Drop for tower_resilience_coalesce::CoalesceFuture<S, K, Req> where S: tower_service::Service<Req>, <S as tower_service::Service>::Response: core::clone::Clone, <S as tower_service::Service>::Error: core::clone::Clone, K: core::hash::Hash + core::cmp::Eq + core::clone::Clone
+pub fn tower_resilience_coalesce::CoalesceFuture<S, K, Req>::drop(&mut self)
+impl<S, K, Req> core::marker::Freeze for tower_resilience_coalesce::CoalesceFuture<S, K, Req> where <S as tower_service::Service<Req>>::Error: core::marker::Sized, <S as tower_service::Service<Req>>::Response: core::marker::Sized, K: core::marker::Freeze
+impl<S, K, Req> core::marker::Send for tower_resilience_coalesce::CoalesceFuture<S, K, Req> where <S as tower_service::Service<Req>>::Error: core::marker::Sized + core::marker::Send, <S as tower_service::Service<Req>>::Response: core::marker::Sized + core::marker::Send, K: core::marker::Send, <S as tower_service::Service<Req>>::Future: core::marker::Send
+impl<S, K, Req> core::marker::Sync for tower_resilience_coalesce::CoalesceFuture<S, K, Req> where <S as tower_service::Service<Req>>::Error: core::marker::Sized + core::marker::Send, <S as tower_service::Service<Req>>::Response: core::marker::Sized + core::marker::Send, K: core::marker::Sync + core::marker::Send, <S as tower_service::Service<Req>>::Future: core::marker::Sync
+impl<S, K, Req> core::marker::Unpin for tower_resilience_coalesce::CoalesceFuture<S, K, Req> where <S as tower_service::Service<Req>>::Error: core::marker::Sized, <S as tower_service::Service<Req>>::Response: core::marker::Sized, K: core::marker::Unpin
+impl<S, K, Req> core::marker::UnsafeUnpin for tower_resilience_coalesce::CoalesceFuture<S, K, Req> where <S as tower_service::Service<Req>>::Error: core::marker::Sized, <S as tower_service::Service<Req>>::Response: core::marker::Sized, K: core::marker::UnsafeUnpin
+impl<S, K, Req> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_coalesce::CoalesceFuture<S, K, Req>
+impl<S, K, Req> !core::panic::unwind_safe::UnwindSafe for tower_resilience_coalesce::CoalesceFuture<S, K, Req>
+pub struct tower_resilience_coalesce::CoalesceConfig<K, F>
+impl<K, F> tower_resilience_coalesce::CoalesceConfig<K, F>
+pub fn tower_resilience_coalesce::CoalesceConfig<K, F>::builder(F) -> tower_resilience_coalesce::CoalesceConfigBuilder<K, F>
+pub fn tower_resilience_coalesce::CoalesceConfig<K, F>::new(F) -> Self
+impl<K: core::clone::Clone, F: core::clone::Clone> core::clone::Clone for tower_resilience_coalesce::CoalesceConfig<K, F>
+pub fn tower_resilience_coalesce::CoalesceConfig<K, F>::clone(&self) -> tower_resilience_coalesce::CoalesceConfig<K, F>
+impl<K: core::fmt::Debug, F: core::fmt::Debug> core::fmt::Debug for tower_resilience_coalesce::CoalesceConfig<K, F>
+pub fn tower_resilience_coalesce::CoalesceConfig<K, F>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<K, F> core::marker::Freeze for tower_resilience_coalesce::CoalesceConfig<K, F> where F: core::marker::Freeze
+impl<K, F> core::marker::Send for tower_resilience_coalesce::CoalesceConfig<K, F> where F: core::marker::Send, K: core::marker::Send
+impl<K, F> core::marker::Sync for tower_resilience_coalesce::CoalesceConfig<K, F> where F: core::marker::Sync, K: core::marker::Sync
+impl<K, F> core::marker::Unpin for tower_resilience_coalesce::CoalesceConfig<K, F> where F: core::marker::Unpin, K: core::marker::Unpin
+impl<K, F> core::marker::UnsafeUnpin for tower_resilience_coalesce::CoalesceConfig<K, F> where F: core::marker::UnsafeUnpin
+impl<K, F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_coalesce::CoalesceConfig<K, F> where F: core::panic::unwind_safe::RefUnwindSafe, K: core::panic::unwind_safe::RefUnwindSafe
+impl<K, F> core::panic::unwind_safe::UnwindSafe for tower_resilience_coalesce::CoalesceConfig<K, F> where F: core::panic::unwind_safe::UnwindSafe, K: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_coalesce::CoalesceConfigBuilder<K, F>
+impl<K, F> tower_resilience_coalesce::CoalesceConfigBuilder<K, F>
+pub fn tower_resilience_coalesce::CoalesceConfigBuilder<K, F>::build(self) -> tower_resilience_coalesce::CoalesceConfig<K, F>
+pub fn tower_resilience_coalesce::CoalesceConfigBuilder<K, F>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_coalesce::CoalesceConfigBuilder<K, F>::new(F) -> Self
+impl<K: core::clone::Clone, F: core::clone::Clone> core::clone::Clone for tower_resilience_coalesce::CoalesceConfigBuilder<K, F>
+pub fn tower_resilience_coalesce::CoalesceConfigBuilder<K, F>::clone(&self) -> tower_resilience_coalesce::CoalesceConfigBuilder<K, F>
+impl<K: core::fmt::Debug, F: core::fmt::Debug> core::fmt::Debug for tower_resilience_coalesce::CoalesceConfigBuilder<K, F>
+pub fn tower_resilience_coalesce::CoalesceConfigBuilder<K, F>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<K, F> core::marker::Freeze for tower_resilience_coalesce::CoalesceConfigBuilder<K, F> where F: core::marker::Freeze
+impl<K, F> core::marker::Send for tower_resilience_coalesce::CoalesceConfigBuilder<K, F> where F: core::marker::Send, K: core::marker::Send
+impl<K, F> core::marker::Sync for tower_resilience_coalesce::CoalesceConfigBuilder<K, F> where F: core::marker::Sync, K: core::marker::Sync
+impl<K, F> core::marker::Unpin for tower_resilience_coalesce::CoalesceConfigBuilder<K, F> where F: core::marker::Unpin, K: core::marker::Unpin
+impl<K, F> core::marker::UnsafeUnpin for tower_resilience_coalesce::CoalesceConfigBuilder<K, F> where F: core::marker::UnsafeUnpin
+impl<K, F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_coalesce::CoalesceConfigBuilder<K, F> where F: core::panic::unwind_safe::RefUnwindSafe, K: core::panic::unwind_safe::RefUnwindSafe
+impl<K, F> core::panic::unwind_safe::UnwindSafe for tower_resilience_coalesce::CoalesceConfigBuilder<K, F> where F: core::panic::unwind_safe::UnwindSafe, K: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_coalesce::CoalesceLayer<K, Req, F>
+impl<K, Req, F> tower_resilience_coalesce::CoalesceLayer<K, Req, F> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, F: core::ops::function::Fn(&Req) -> K + core::clone::Clone + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_coalesce::CoalesceLayer<K, Req, F>::builder(F) -> tower_resilience_coalesce::layer::CoalesceLayerBuilder<K, Req, F>
+pub fn tower_resilience_coalesce::CoalesceLayer<K, Req, F>::new(F) -> Self
+pub fn tower_resilience_coalesce::CoalesceLayer<K, Req, F>::with_config(tower_resilience_coalesce::CoalesceConfig<K, F>) -> Self
+impl<K, Req, F> core::clone::Clone for tower_resilience_coalesce::CoalesceLayer<K, Req, F>
+pub fn tower_resilience_coalesce::CoalesceLayer<K, Req, F>::clone(&self) -> Self
+impl<S, K, Req, F> tower_layer::Layer<S> for tower_resilience_coalesce::CoalesceLayer<K, Req, F> where S: tower_service::Service<Req>, <S as tower_service::Service>::Response: core::clone::Clone, <S as tower_service::Service>::Error: core::clone::Clone, K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, F: core::ops::function::Fn(&Req) -> K + core::clone::Clone + core::marker::Send + core::marker::Sync + 'static
+pub type tower_resilience_coalesce::CoalesceLayer<K, Req, F>::Service = tower_resilience_coalesce::CoalesceService<S, K, Req, F>
+pub fn tower_resilience_coalesce::CoalesceLayer<K, Req, F>::layer(&self, S) -> Self::Service
+impl<K, Req, F> core::marker::Freeze for tower_resilience_coalesce::CoalesceLayer<K, Req, F>
+impl<K, Req, F> core::marker::Send for tower_resilience_coalesce::CoalesceLayer<K, Req, F> where Req: core::marker::Send, F: core::marker::Sync + core::marker::Send, K: core::marker::Sync + core::marker::Send
+impl<K, Req, F> core::marker::Sync for tower_resilience_coalesce::CoalesceLayer<K, Req, F> where Req: core::marker::Sync, F: core::marker::Sync + core::marker::Send, K: core::marker::Sync + core::marker::Send
+impl<K, Req, F> core::marker::Unpin for tower_resilience_coalesce::CoalesceLayer<K, Req, F> where Req: core::marker::Unpin
+impl<K, Req, F> core::marker::UnsafeUnpin for tower_resilience_coalesce::CoalesceLayer<K, Req, F>
+impl<K, Req, F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_coalesce::CoalesceLayer<K, Req, F> where Req: core::panic::unwind_safe::RefUnwindSafe, F: core::panic::unwind_safe::RefUnwindSafe, K: core::panic::unwind_safe::RefUnwindSafe
+impl<K, Req, F> core::panic::unwind_safe::UnwindSafe for tower_resilience_coalesce::CoalesceLayer<K, Req, F> where Req: core::panic::unwind_safe::UnwindSafe, F: core::panic::unwind_safe::RefUnwindSafe, K: core::panic::unwind_safe::RefUnwindSafe
+pub struct tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: tower_service::Service<Req>
+impl<S, K, Req, F> tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: tower_service::Service<Req>, <S as tower_service::Service>::Response: core::clone::Clone, <S as tower_service::Service>::Error: core::clone::Clone, K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, F: core::ops::function::Fn(&Req) -> K
+pub fn tower_resilience_coalesce::CoalesceService<S, K, Req, F>::new(S, alloc::sync::Arc<tower_resilience_coalesce::CoalesceConfig<K, F>>) -> Self
+impl<S, K, Req, F> tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: tower_service::Service<Req>
+pub fn tower_resilience_coalesce::CoalesceService<S, K, Req, F>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_coalesce::CoalesceService<S, K, Req, F>::get_ref(&self) -> &S
+pub fn tower_resilience_coalesce::CoalesceService<S, K, Req, F>::into_inner(self) -> S
+impl<S, K, Req, F> core::clone::Clone for tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: tower_service::Service<Req> + core::clone::Clone
+pub fn tower_resilience_coalesce::CoalesceService<S, K, Req, F>::clone(&self) -> Self
+impl<S, K, Req, F> tower_service::Service<Req> for tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: tower_service::Service<Req> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Response: core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Error: core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send, K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, Req: core::marker::Send + 'static, F: core::ops::function::Fn(&Req) -> K + core::clone::Clone + core::marker::Send + core::marker::Sync + 'static
+pub type tower_resilience_coalesce::CoalesceService<S, K, Req, F>::Error = tower_resilience_coalesce::CoalesceError<<S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_coalesce::CoalesceService<S, K, Req, F>::Future = tower_resilience_coalesce::CoalesceFuture<S, K, Req>
+pub type tower_resilience_coalesce::CoalesceService<S, K, Req, F>::Response = <S as tower_service::Service<Req>>::Response
+pub fn tower_resilience_coalesce::CoalesceService<S, K, Req, F>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_coalesce::CoalesceService<S, K, Req, F>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S, K, Req, F> core::marker::Freeze for tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: core::marker::Freeze
+impl<S, K, Req, F> core::marker::Send for tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: core::marker::Send, Req: core::marker::Send, F: core::marker::Sync + core::marker::Send, K: core::marker::Sync + core::marker::Send, <S as tower_service::Service<Req>>::Response: core::marker::Send, <S as tower_service::Service<Req>>::Error: core::marker::Send
+impl<S, K, Req, F> core::marker::Sync for tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: core::marker::Sync, Req: core::marker::Sync, F: core::marker::Sync + core::marker::Send, K: core::marker::Sync + core::marker::Send, <S as tower_service::Service<Req>>::Response: core::marker::Send, <S as tower_service::Service<Req>>::Error: core::marker::Send
+impl<S, K, Req, F> core::marker::Unpin for tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: core::marker::Unpin, Req: core::marker::Unpin
+impl<S, K, Req, F> core::marker::UnsafeUnpin for tower_resilience_coalesce::CoalesceService<S, K, Req, F> where S: core::marker::UnsafeUnpin
+impl<S, K, Req, F> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_coalesce::CoalesceService<S, K, Req, F>
+impl<S, K, Req, F> !core::panic::unwind_safe::UnwindSafe for tower_resilience_coalesce::CoalesceService<S, K, Req, F>

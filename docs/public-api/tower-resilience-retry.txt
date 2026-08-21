@@ -1,0 +1,328 @@
+pub mod tower_resilience_retry
+#[non_exhaustive] pub enum tower_resilience_retry::BackoffConfigError
+pub tower_resilience_retry::BackoffConfigError::InvalidMultiplier(f64)
+pub tower_resilience_retry::BackoffConfigError::InvalidRandomizationFactor(f64)
+impl core::clone::Clone for tower_resilience_retry::BackoffConfigError
+pub fn tower_resilience_retry::BackoffConfigError::clone(&self) -> tower_resilience_retry::BackoffConfigError
+impl core::cmp::PartialEq for tower_resilience_retry::BackoffConfigError
+pub fn tower_resilience_retry::BackoffConfigError::eq(&self, &tower_resilience_retry::BackoffConfigError) -> bool
+impl core::error::Error for tower_resilience_retry::BackoffConfigError
+impl core::fmt::Debug for tower_resilience_retry::BackoffConfigError
+pub fn tower_resilience_retry::BackoffConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_retry::BackoffConfigError
+pub fn tower_resilience_retry::BackoffConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_retry::BackoffConfigError
+impl core::marker::StructuralPartialEq for tower_resilience_retry::BackoffConfigError
+impl core::marker::Freeze for tower_resilience_retry::BackoffConfigError
+impl core::marker::Send for tower_resilience_retry::BackoffConfigError
+impl core::marker::Sync for tower_resilience_retry::BackoffConfigError
+impl core::marker::Unpin for tower_resilience_retry::BackoffConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_retry::BackoffConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::BackoffConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::BackoffConfigError
+pub enum tower_resilience_retry::MaxAttemptsSource<Req>
+pub tower_resilience_retry::MaxAttemptsSource::Dynamic(alloc::sync::Arc<(dyn core::ops::function::Fn(&Req) -> usize + core::marker::Send + core::marker::Sync)>)
+pub tower_resilience_retry::MaxAttemptsSource::Fixed(usize)
+impl<Req> tower_resilience_retry::MaxAttemptsSource<Req>
+pub fn tower_resilience_retry::MaxAttemptsSource<Req>::get_max_attempts(&self, &Req) -> usize
+impl<Req: core::clone::Clone> core::clone::Clone for tower_resilience_retry::MaxAttemptsSource<Req>
+pub fn tower_resilience_retry::MaxAttemptsSource<Req>::clone(&self) -> tower_resilience_retry::MaxAttemptsSource<Req>
+impl<Req> core::default::Default for tower_resilience_retry::MaxAttemptsSource<Req>
+pub fn tower_resilience_retry::MaxAttemptsSource<Req>::default() -> Self
+impl<Req> core::marker::Freeze for tower_resilience_retry::MaxAttemptsSource<Req>
+impl<Req> core::marker::Send for tower_resilience_retry::MaxAttemptsSource<Req>
+impl<Req> core::marker::Sync for tower_resilience_retry::MaxAttemptsSource<Req>
+impl<Req> core::marker::Unpin for tower_resilience_retry::MaxAttemptsSource<Req>
+impl<Req> core::marker::UnsafeUnpin for tower_resilience_retry::MaxAttemptsSource<Req>
+impl<Req> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::MaxAttemptsSource<Req>
+impl<Req> !core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::MaxAttemptsSource<Req>
+#[non_exhaustive] pub enum tower_resilience_retry::RetryBudgetConfigError
+pub tower_resilience_retry::RetryBudgetConfigError::Aimd(tower_resilience_core::aimd::AimdConfigError)
+pub tower_resilience_retry::RetryBudgetConfigError::InitialExceedsMax
+pub tower_resilience_retry::RetryBudgetConfigError::InitialExceedsMax::initial_tokens: usize
+pub tower_resilience_retry::RetryBudgetConfigError::InitialExceedsMax::max_tokens: usize
+pub tower_resilience_retry::RetryBudgetConfigError::InvalidTokensPerSecond(f64)
+pub tower_resilience_retry::RetryBudgetConfigError::ZeroDepositAmount
+pub tower_resilience_retry::RetryBudgetConfigError::ZeroWithdrawAmount
+impl core::clone::Clone for tower_resilience_retry::RetryBudgetConfigError
+pub fn tower_resilience_retry::RetryBudgetConfigError::clone(&self) -> tower_resilience_retry::RetryBudgetConfigError
+impl core::cmp::PartialEq for tower_resilience_retry::RetryBudgetConfigError
+pub fn tower_resilience_retry::RetryBudgetConfigError::eq(&self, &tower_resilience_retry::RetryBudgetConfigError) -> bool
+impl core::convert::From<tower_resilience_core::aimd::AimdConfigError> for tower_resilience_retry::RetryBudgetConfigError
+pub fn tower_resilience_retry::RetryBudgetConfigError::from(tower_resilience_core::aimd::AimdConfigError) -> Self
+impl core::error::Error for tower_resilience_retry::RetryBudgetConfigError
+pub fn tower_resilience_retry::RetryBudgetConfigError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for tower_resilience_retry::RetryBudgetConfigError
+pub fn tower_resilience_retry::RetryBudgetConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_retry::RetryBudgetConfigError
+pub fn tower_resilience_retry::RetryBudgetConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for tower_resilience_retry::RetryBudgetConfigError
+impl core::marker::Freeze for tower_resilience_retry::RetryBudgetConfigError
+impl core::marker::Send for tower_resilience_retry::RetryBudgetConfigError
+impl core::marker::Sync for tower_resilience_retry::RetryBudgetConfigError
+impl core::marker::Unpin for tower_resilience_retry::RetryBudgetConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_retry::RetryBudgetConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::RetryBudgetConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::RetryBudgetConfigError
+pub enum tower_resilience_retry::RetryEvent
+pub tower_resilience_retry::RetryEvent::BudgetExhausted
+pub tower_resilience_retry::RetryEvent::BudgetExhausted::attempt: usize
+pub tower_resilience_retry::RetryEvent::BudgetExhausted::pattern_name: alloc::string::String
+pub tower_resilience_retry::RetryEvent::BudgetExhausted::timestamp: std::time::Instant
+pub tower_resilience_retry::RetryEvent::Error
+pub tower_resilience_retry::RetryEvent::Error::attempts: usize
+pub tower_resilience_retry::RetryEvent::Error::pattern_name: alloc::string::String
+pub tower_resilience_retry::RetryEvent::Error::timestamp: std::time::Instant
+pub tower_resilience_retry::RetryEvent::IgnoredError
+pub tower_resilience_retry::RetryEvent::IgnoredError::pattern_name: alloc::string::String
+pub tower_resilience_retry::RetryEvent::IgnoredError::timestamp: std::time::Instant
+pub tower_resilience_retry::RetryEvent::Retry
+pub tower_resilience_retry::RetryEvent::Retry::attempt: usize
+pub tower_resilience_retry::RetryEvent::Retry::delay: core::time::Duration
+pub tower_resilience_retry::RetryEvent::Retry::pattern_name: alloc::string::String
+pub tower_resilience_retry::RetryEvent::Retry::timestamp: std::time::Instant
+pub tower_resilience_retry::RetryEvent::Success
+pub tower_resilience_retry::RetryEvent::Success::attempts: usize
+pub tower_resilience_retry::RetryEvent::Success::pattern_name: alloc::string::String
+pub tower_resilience_retry::RetryEvent::Success::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_retry::RetryEvent
+pub fn tower_resilience_retry::RetryEvent::clone(&self) -> tower_resilience_retry::RetryEvent
+impl core::fmt::Debug for tower_resilience_retry::RetryEvent
+pub fn tower_resilience_retry::RetryEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_retry::RetryEvent
+pub fn tower_resilience_retry::RetryEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_retry::RetryEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_retry::RetryEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_retry::RetryEvent
+impl core::marker::Send for tower_resilience_retry::RetryEvent
+impl core::marker::Sync for tower_resilience_retry::RetryEvent
+impl core::marker::Unpin for tower_resilience_retry::RetryEvent
+impl core::marker::UnsafeUnpin for tower_resilience_retry::RetryEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::RetryEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::RetryEvent
+pub struct tower_resilience_retry::AimdBudget
+impl tower_resilience_retry::AimdBudget
+pub fn tower_resilience_retry::AimdBudget::current_max(&self) -> usize
+pub fn tower_resilience_retry::AimdBudget::new(usize, usize, usize, usize, f64) -> core::result::Result<Self, tower_resilience_retry::RetryBudgetConfigError>
+impl core::fmt::Debug for tower_resilience_retry::AimdBudget
+pub fn tower_resilience_retry::AimdBudget::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_retry::RetryBudget for tower_resilience_retry::AimdBudget
+pub fn tower_resilience_retry::AimdBudget::balance(&self) -> usize
+pub fn tower_resilience_retry::AimdBudget::deposit(&self)
+pub fn tower_resilience_retry::AimdBudget::try_withdraw(&self) -> bool
+impl !core::marker::Freeze for tower_resilience_retry::AimdBudget
+impl core::marker::Send for tower_resilience_retry::AimdBudget
+impl core::marker::Sync for tower_resilience_retry::AimdBudget
+impl core::marker::Unpin for tower_resilience_retry::AimdBudget
+impl core::marker::UnsafeUnpin for tower_resilience_retry::AimdBudget
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::AimdBudget
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::AimdBudget
+pub struct tower_resilience_retry::ExponentialBackoff
+impl tower_resilience_retry::ExponentialBackoff
+pub fn tower_resilience_retry::ExponentialBackoff::max_interval(self, core::time::Duration) -> Self
+pub fn tower_resilience_retry::ExponentialBackoff::multiplier(self, f64) -> core::result::Result<Self, tower_resilience_retry::BackoffConfigError>
+pub fn tower_resilience_retry::ExponentialBackoff::new(core::time::Duration) -> Self
+impl core::clone::Clone for tower_resilience_retry::ExponentialBackoff
+pub fn tower_resilience_retry::ExponentialBackoff::clone(&self) -> tower_resilience_retry::ExponentialBackoff
+impl core::fmt::Debug for tower_resilience_retry::ExponentialBackoff
+pub fn tower_resilience_retry::ExponentialBackoff::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_retry::IntervalFunction for tower_resilience_retry::ExponentialBackoff
+pub fn tower_resilience_retry::ExponentialBackoff::next_interval(&self, usize) -> core::time::Duration
+impl core::marker::Freeze for tower_resilience_retry::ExponentialBackoff
+impl core::marker::Send for tower_resilience_retry::ExponentialBackoff
+impl core::marker::Sync for tower_resilience_retry::ExponentialBackoff
+impl core::marker::Unpin for tower_resilience_retry::ExponentialBackoff
+impl core::marker::UnsafeUnpin for tower_resilience_retry::ExponentialBackoff
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::ExponentialBackoff
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::ExponentialBackoff
+pub struct tower_resilience_retry::ExponentialRandomBackoff
+impl tower_resilience_retry::ExponentialRandomBackoff
+pub fn tower_resilience_retry::ExponentialRandomBackoff::max_interval(self, core::time::Duration) -> Self
+pub fn tower_resilience_retry::ExponentialRandomBackoff::multiplier(self, f64) -> core::result::Result<Self, tower_resilience_retry::BackoffConfigError>
+pub fn tower_resilience_retry::ExponentialRandomBackoff::new(core::time::Duration, f64) -> core::result::Result<Self, tower_resilience_retry::BackoffConfigError>
+impl core::clone::Clone for tower_resilience_retry::ExponentialRandomBackoff
+pub fn tower_resilience_retry::ExponentialRandomBackoff::clone(&self) -> tower_resilience_retry::ExponentialRandomBackoff
+impl core::fmt::Debug for tower_resilience_retry::ExponentialRandomBackoff
+pub fn tower_resilience_retry::ExponentialRandomBackoff::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_retry::IntervalFunction for tower_resilience_retry::ExponentialRandomBackoff
+pub fn tower_resilience_retry::ExponentialRandomBackoff::next_interval(&self, usize) -> core::time::Duration
+impl core::marker::Freeze for tower_resilience_retry::ExponentialRandomBackoff
+impl core::marker::Send for tower_resilience_retry::ExponentialRandomBackoff
+impl core::marker::Sync for tower_resilience_retry::ExponentialRandomBackoff
+impl core::marker::Unpin for tower_resilience_retry::ExponentialRandomBackoff
+impl core::marker::UnsafeUnpin for tower_resilience_retry::ExponentialRandomBackoff
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::ExponentialRandomBackoff
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::ExponentialRandomBackoff
+pub struct tower_resilience_retry::FixedInterval
+impl tower_resilience_retry::FixedInterval
+pub fn tower_resilience_retry::FixedInterval::new(core::time::Duration) -> Self
+impl core::clone::Clone for tower_resilience_retry::FixedInterval
+pub fn tower_resilience_retry::FixedInterval::clone(&self) -> tower_resilience_retry::FixedInterval
+impl core::fmt::Debug for tower_resilience_retry::FixedInterval
+pub fn tower_resilience_retry::FixedInterval::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_retry::IntervalFunction for tower_resilience_retry::FixedInterval
+pub fn tower_resilience_retry::FixedInterval::next_interval(&self, usize) -> core::time::Duration
+impl core::marker::Freeze for tower_resilience_retry::FixedInterval
+impl core::marker::Send for tower_resilience_retry::FixedInterval
+impl core::marker::Sync for tower_resilience_retry::FixedInterval
+impl core::marker::Unpin for tower_resilience_retry::FixedInterval
+impl core::marker::UnsafeUnpin for tower_resilience_retry::FixedInterval
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::FixedInterval
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::FixedInterval
+pub struct tower_resilience_retry::FnInterval<F>
+impl<F> tower_resilience_retry::FnInterval<F> where F: core::ops::function::Fn(usize) -> core::time::Duration + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_retry::FnInterval<F>::new(F) -> Self
+impl<F> tower_resilience_retry::IntervalFunction for tower_resilience_retry::FnInterval<F> where F: core::ops::function::Fn(usize) -> core::time::Duration + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_retry::FnInterval<F>::next_interval(&self, usize) -> core::time::Duration
+impl<F> core::marker::Freeze for tower_resilience_retry::FnInterval<F> where F: core::marker::Freeze
+impl<F> core::marker::Send for tower_resilience_retry::FnInterval<F> where F: core::marker::Send
+impl<F> core::marker::Sync for tower_resilience_retry::FnInterval<F> where F: core::marker::Sync
+impl<F> core::marker::Unpin for tower_resilience_retry::FnInterval<F> where F: core::marker::Unpin
+impl<F> core::marker::UnsafeUnpin for tower_resilience_retry::FnInterval<F> where F: core::marker::UnsafeUnpin
+impl<F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::FnInterval<F> where F: core::panic::unwind_safe::RefUnwindSafe
+impl<F> core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::FnInterval<F> where F: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_retry::Retry<S, Req, Res, E>
+impl<S, Req, Res, E> tower_resilience_retry::Retry<S, Req, Res, E>
+pub fn tower_resilience_retry::Retry<S, Req, Res, E>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_retry::Retry<S, Req, Res, E>::get_ref(&self) -> &S
+pub fn tower_resilience_retry::Retry<S, Req, Res, E>::into_inner(self) -> S
+pub fn tower_resilience_retry::Retry<S, Req, Res, E>::new(S, alloc::sync::Arc<tower_resilience_retry::RetryConfig<Req, Res, E>>, core::marker::PhantomData<Req>) -> Self
+impl<S, Req, Res, E> core::clone::Clone for tower_resilience_retry::Retry<S, Req, Res, E> where S: core::clone::Clone
+pub fn tower_resilience_retry::Retry<S, Req, Res, E>::clone(&self) -> Self
+impl<S, Req, Res, E> tower_service::Service<Req> for tower_resilience_retry::Retry<S, Req, Res, E> where S: tower_service::Service<Req, Response = Res, Error = E> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, Req: core::clone::Clone + core::marker::Send + 'static, Res: core::marker::Send + 'static, E: core::marker::Send + 'static
+pub type tower_resilience_retry::Retry<S, Req, Res, E>::Error = E
+pub type tower_resilience_retry::Retry<S, Req, Res, E>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_retry::Retry<S, Req, Res, E> as tower_service::Service<Req>>::Response, <tower_resilience_retry::Retry<S, Req, Res, E> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_retry::Retry<S, Req, Res, E>::Response = Res
+pub fn tower_resilience_retry::Retry<S, Req, Res, E>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_retry::Retry<S, Req, Res, E>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S, Req, Res, E> core::marker::Freeze for tower_resilience_retry::Retry<S, Req, Res, E> where S: core::marker::Freeze
+impl<S, Req, Res, E> core::marker::Send for tower_resilience_retry::Retry<S, Req, Res, E> where S: core::marker::Send, Req: core::marker::Send
+impl<S, Req, Res, E> core::marker::Sync for tower_resilience_retry::Retry<S, Req, Res, E> where S: core::marker::Sync, Req: core::marker::Sync
+impl<S, Req, Res, E> core::marker::Unpin for tower_resilience_retry::Retry<S, Req, Res, E> where S: core::marker::Unpin, Req: core::marker::Unpin
+impl<S, Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_retry::Retry<S, Req, Res, E> where S: core::marker::UnsafeUnpin
+impl<S, Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::Retry<S, Req, Res, E>
+impl<S, Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::Retry<S, Req, Res, E>
+pub struct tower_resilience_retry::RetryBudgetBuilder
+impl tower_resilience_retry::RetryBudgetBuilder
+pub fn tower_resilience_retry::RetryBudgetBuilder::aimd(self) -> tower_resilience_retry::budget::AimdBudgetBuilder
+pub fn tower_resilience_retry::RetryBudgetBuilder::new() -> Self
+pub fn tower_resilience_retry::RetryBudgetBuilder::token_bucket(self) -> tower_resilience_retry::budget::TokenBucketBuilder
+impl core::clone::Clone for tower_resilience_retry::RetryBudgetBuilder
+pub fn tower_resilience_retry::RetryBudgetBuilder::clone(&self) -> tower_resilience_retry::RetryBudgetBuilder
+impl core::default::Default for tower_resilience_retry::RetryBudgetBuilder
+pub fn tower_resilience_retry::RetryBudgetBuilder::default() -> tower_resilience_retry::RetryBudgetBuilder
+impl core::marker::Freeze for tower_resilience_retry::RetryBudgetBuilder
+impl core::marker::Send for tower_resilience_retry::RetryBudgetBuilder
+impl core::marker::Sync for tower_resilience_retry::RetryBudgetBuilder
+impl core::marker::Unpin for tower_resilience_retry::RetryBudgetBuilder
+impl core::marker::UnsafeUnpin for tower_resilience_retry::RetryBudgetBuilder
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::RetryBudgetBuilder
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::RetryBudgetBuilder
+pub struct tower_resilience_retry::RetryConfig<Req, Res, E>
+impl<Req, Res, E> core::marker::Freeze for tower_resilience_retry::RetryConfig<Req, Res, E>
+impl<Req, Res, E> core::marker::Send for tower_resilience_retry::RetryConfig<Req, Res, E>
+impl<Req, Res, E> core::marker::Sync for tower_resilience_retry::RetryConfig<Req, Res, E>
+impl<Req, Res, E> core::marker::Unpin for tower_resilience_retry::RetryConfig<Req, Res, E>
+impl<Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_retry::RetryConfig<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::RetryConfig<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::RetryConfig<Req, Res, E>
+pub struct tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+impl<Req, Res, E> tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::backoff<I>(self, I) -> Self where I: tower_resilience_retry::IntervalFunction + 'static
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::budget(self, alloc::sync::Arc<dyn tower_resilience_retry::RetryBudget>) -> Self
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::build(self) -> tower_resilience_retry::RetryLayer<Req, Res, E>
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::exponential_backoff(self, core::time::Duration) -> Self
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::fixed_backoff(self, core::time::Duration) -> Self
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::max_attempts(self, usize) -> Self
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::max_attempts_fn<F>(self, F) -> Self where F: core::ops::function::Fn(&Req) -> usize + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::name<S: core::convert::Into<alloc::string::String>>(self, S) -> Self
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::new() -> Self
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::on_budget_exhausted<F>(self, F) -> Self where F: core::ops::function::Fn(usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::on_error<F>(self, F) -> Self where F: core::ops::function::Fn(usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::on_ignored_error<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::on_retry<F>(self, F) -> Self where F: core::ops::function::Fn(usize, core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::on_success<F>(self, F) -> Self where F: core::ops::function::Fn(usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::retry_on<F>(self, F) -> Self where F: core::ops::function::Fn(&E) -> bool + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::retry_on_response<F>(self, F) -> Self where F: core::ops::function::Fn(&Res) -> bool + core::marker::Send + core::marker::Sync + 'static
+impl<Req, Res, E> core::default::Default for tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+pub fn tower_resilience_retry::RetryConfigBuilder<Req, Res, E>::default() -> Self
+impl<Req, Res, E> core::marker::Freeze for tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+impl<Req, Res, E> core::marker::Send for tower_resilience_retry::RetryConfigBuilder<Req, Res, E> where Req: core::marker::Send, Res: core::marker::Send
+impl<Req, Res, E> core::marker::Sync for tower_resilience_retry::RetryConfigBuilder<Req, Res, E> where Req: core::marker::Sync, Res: core::marker::Sync
+impl<Req, Res, E> core::marker::Unpin for tower_resilience_retry::RetryConfigBuilder<Req, Res, E> where Req: core::marker::Unpin, Res: core::marker::Unpin
+impl<Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+pub struct tower_resilience_retry::RetryLayer<Req, Res, E>
+impl<Req, Res, E> tower_resilience_retry::RetryLayer<Req, Res, E>
+pub fn tower_resilience_retry::RetryLayer<Req, Res, E>::aggressive() -> tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+pub fn tower_resilience_retry::RetryLayer<Req, Res, E>::builder() -> tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+pub fn tower_resilience_retry::RetryLayer<Req, Res, E>::conservative() -> tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+pub fn tower_resilience_retry::RetryLayer<Req, Res, E>::exponential_backoff() -> tower_resilience_retry::RetryConfigBuilder<Req, Res, E>
+pub fn tower_resilience_retry::RetryLayer<Req, Res, E>::new(tower_resilience_retry::RetryConfig<Req, Res, E>) -> Self
+impl<Req: core::clone::Clone, Res: core::clone::Clone, E: core::clone::Clone> core::clone::Clone for tower_resilience_retry::RetryLayer<Req, Res, E>
+pub fn tower_resilience_retry::RetryLayer<Req, Res, E>::clone(&self) -> tower_resilience_retry::RetryLayer<Req, Res, E>
+impl<S, Req, Res, E> tower_layer::Layer<S> for tower_resilience_retry::RetryLayer<Req, Res, E>
+pub type tower_resilience_retry::RetryLayer<Req, Res, E>::Service = tower_resilience_retry::Retry<S, Req, Res, E>
+pub fn tower_resilience_retry::RetryLayer<Req, Res, E>::layer(&self, S) -> Self::Service
+impl<Req, Res, E> core::marker::Freeze for tower_resilience_retry::RetryLayer<Req, Res, E>
+impl<Req, Res, E> core::marker::Send for tower_resilience_retry::RetryLayer<Req, Res, E>
+impl<Req, Res, E> core::marker::Sync for tower_resilience_retry::RetryLayer<Req, Res, E>
+impl<Req, Res, E> core::marker::Unpin for tower_resilience_retry::RetryLayer<Req, Res, E>
+impl<Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_retry::RetryLayer<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::RetryLayer<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::RetryLayer<Req, Res, E>
+pub struct tower_resilience_retry::RetryPolicy<R, E>
+impl<R, E> tower_resilience_retry::RetryPolicy<R, E>
+pub fn tower_resilience_retry::RetryPolicy<R, E>::new(alloc::sync::Arc<dyn tower_resilience_retry::IntervalFunction>) -> Self
+pub fn tower_resilience_retry::RetryPolicy<R, E>::next_backoff(&self, usize) -> core::time::Duration
+pub fn tower_resilience_retry::RetryPolicy<R, E>::should_retry(&self, &E) -> bool
+pub fn tower_resilience_retry::RetryPolicy<R, E>::should_retry_response(&self, &R) -> bool
+pub fn tower_resilience_retry::RetryPolicy<R, E>::with_retry_predicate<F>(self, F) -> Self where F: core::ops::function::Fn(&E) -> bool + core::marker::Send + core::marker::Sync + 'static
+impl<R, E> core::marker::Freeze for tower_resilience_retry::RetryPolicy<R, E>
+impl<R, E> core::marker::Send for tower_resilience_retry::RetryPolicy<R, E>
+impl<R, E> core::marker::Sync for tower_resilience_retry::RetryPolicy<R, E>
+impl<R, E> core::marker::Unpin for tower_resilience_retry::RetryPolicy<R, E>
+impl<R, E> core::marker::UnsafeUnpin for tower_resilience_retry::RetryPolicy<R, E>
+impl<R, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::RetryPolicy<R, E>
+impl<R, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::RetryPolicy<R, E>
+pub struct tower_resilience_retry::TokenBucketBudget
+impl tower_resilience_retry::TokenBucketBudget
+pub fn tower_resilience_retry::TokenBucketBudget::new(f64, usize, usize) -> core::result::Result<Self, tower_resilience_retry::RetryBudgetConfigError>
+impl core::fmt::Debug for tower_resilience_retry::TokenBucketBudget
+pub fn tower_resilience_retry::TokenBucketBudget::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_retry::RetryBudget for tower_resilience_retry::TokenBucketBudget
+pub fn tower_resilience_retry::TokenBucketBudget::balance(&self) -> usize
+pub fn tower_resilience_retry::TokenBucketBudget::deposit(&self)
+pub fn tower_resilience_retry::TokenBucketBudget::try_withdraw(&self) -> bool
+impl !core::marker::Freeze for tower_resilience_retry::TokenBucketBudget
+impl core::marker::Send for tower_resilience_retry::TokenBucketBudget
+impl core::marker::Sync for tower_resilience_retry::TokenBucketBudget
+impl core::marker::Unpin for tower_resilience_retry::TokenBucketBudget
+impl core::marker::UnsafeUnpin for tower_resilience_retry::TokenBucketBudget
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_retry::TokenBucketBudget
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_retry::TokenBucketBudget
+pub trait tower_resilience_retry::IntervalFunction: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_retry::IntervalFunction::next_interval(&self, usize) -> core::time::Duration
+impl tower_resilience_retry::IntervalFunction for tower_resilience_retry::ExponentialBackoff
+pub fn tower_resilience_retry::ExponentialBackoff::next_interval(&self, usize) -> core::time::Duration
+impl tower_resilience_retry::IntervalFunction for tower_resilience_retry::ExponentialRandomBackoff
+pub fn tower_resilience_retry::ExponentialRandomBackoff::next_interval(&self, usize) -> core::time::Duration
+impl tower_resilience_retry::IntervalFunction for tower_resilience_retry::FixedInterval
+pub fn tower_resilience_retry::FixedInterval::next_interval(&self, usize) -> core::time::Duration
+impl<F> tower_resilience_retry::IntervalFunction for tower_resilience_retry::FnInterval<F> where F: core::ops::function::Fn(usize) -> core::time::Duration + core::marker::Send + core::marker::Sync
+pub fn tower_resilience_retry::FnInterval<F>::next_interval(&self, usize) -> core::time::Duration
+pub trait tower_resilience_retry::RetryBudget: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_retry::RetryBudget::balance(&self) -> usize
+pub fn tower_resilience_retry::RetryBudget::deposit(&self)
+pub fn tower_resilience_retry::RetryBudget::try_withdraw(&self) -> bool
+impl tower_resilience_retry::RetryBudget for tower_resilience_retry::AimdBudget
+pub fn tower_resilience_retry::AimdBudget::balance(&self) -> usize
+pub fn tower_resilience_retry::AimdBudget::deposit(&self)
+pub fn tower_resilience_retry::AimdBudget::try_withdraw(&self) -> bool
+impl tower_resilience_retry::RetryBudget for tower_resilience_retry::TokenBucketBudget
+pub fn tower_resilience_retry::TokenBucketBudget::balance(&self) -> usize
+pub fn tower_resilience_retry::TokenBucketBudget::deposit(&self)
+pub fn tower_resilience_retry::TokenBucketBudget::try_withdraw(&self) -> bool
+pub type tower_resilience_retry::ResponsePredicate<R> = alloc::sync::Arc<(dyn core::ops::function::Fn(&R) -> bool + core::marker::Send + core::marker::Sync)>
+pub type tower_resilience_retry::RetryPredicate<E> = alloc::sync::Arc<(dyn core::ops::function::Fn(&E) -> bool + core::marker::Send + core::marker::Sync)>
