@@ -4,6 +4,11 @@ use std::fmt;
 use tower_resilience_core::ResilienceError;
 
 /// Errors that can occur in the time limiter.
+///
+/// The inner service error remains available through [`TimeLimiterError::Inner`]
+/// and [`TimeLimiterError::into_inner`]. It is intentionally not exposed
+/// through [`std::error::Error::source`] so boxed Tower errors can be wrapped
+/// directly.
 #[derive(Debug)]
 pub enum TimeLimiterError<E> {
     /// The request timed out.
@@ -21,14 +26,7 @@ impl<E: fmt::Display> fmt::Display for TimeLimiterError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for TimeLimiterError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            TimeLimiterError::Timeout => None,
-            TimeLimiterError::Inner(e) => Some(e),
-        }
-    }
-}
+impl<E> std::error::Error for TimeLimiterError<E> where E: fmt::Debug + fmt::Display {}
 
 impl<E> TimeLimiterError<E> {
     /// Returns true if this is a timeout error.

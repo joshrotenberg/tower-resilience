@@ -3,6 +3,10 @@
 use std::fmt;
 
 /// Error type for the hedging service.
+///
+/// The typed inner error remains available through [`HedgeError::inner`] and
+/// [`HedgeError::into_inner`]. It is intentionally not exposed through
+/// [`std::error::Error::source`] so boxed Tower errors can be wrapped directly.
 #[derive(Debug, Clone)]
 pub enum HedgeError<E> {
     /// All hedged attempts failed.
@@ -25,14 +29,7 @@ impl<E: fmt::Display> fmt::Display for HedgeError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for HedgeError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            HedgeError::AllAttemptsFailed(e) => Some(e),
-            HedgeError::Inner(e) => Some(e),
-        }
-    }
-}
+impl<E> std::error::Error for HedgeError<E> where E: fmt::Debug + fmt::Display {}
 
 impl<E> HedgeError<E> {
     /// Returns `true` if all hedged attempts failed.

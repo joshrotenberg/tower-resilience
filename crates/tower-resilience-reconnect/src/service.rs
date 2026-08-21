@@ -607,6 +607,11 @@ fn notify_state_change(
 }
 
 /// Errors that can occur during reconnection.
+///
+/// Factory and service errors remain available through their typed variants.
+/// They are intentionally not exposed through [`std::error::Error::source`] so
+/// boxed Tower errors can be wrapped directly. The boxed terminal cause in
+/// [`ReconnectError::MaxAttemptsExceeded`] remains available as a source.
 #[derive(Debug)]
 pub enum ReconnectError<MakeError, ServiceError> {
     /// The maximum number of reconnection attempts was exceeded.
@@ -651,16 +656,16 @@ where
 
 impl<M, S> std::error::Error for ReconnectError<M, S>
 where
-    M: std::error::Error + 'static,
-    S: std::error::Error + 'static,
+    M: std::fmt::Debug + std::fmt::Display,
+    S: std::fmt::Debug + std::fmt::Display,
 {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::MaxAttemptsExceeded { error, .. } => Some(error.as_ref()),
-            Self::FactoryError(error) => Some(error),
-            Self::ConnectionFailed(error)
-            | Self::ConnectionFailedNoRetry(error)
-            | Self::ServiceError(error) => Some(error),
+            Self::FactoryError(_)
+            | Self::ConnectionFailed(_)
+            | Self::ConnectionFailedNoRetry(_)
+            | Self::ServiceError(_) => None,
         }
     }
 }

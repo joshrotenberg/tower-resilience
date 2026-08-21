@@ -14,6 +14,13 @@ pub enum OutlierDetectionError {
 }
 
 /// Service-level error that wraps both outlier detection and inner service errors.
+///
+/// The inner service error remains available through
+/// [`OutlierDetectionServiceError::Inner`] and
+/// [`OutlierDetectionServiceError::into_inner`]. It is intentionally not
+/// exposed through [`std::error::Error::source`] so boxed Tower errors can be
+/// wrapped directly. Outlier-detection errors remain available as an error
+/// source.
 #[derive(Debug)]
 pub enum OutlierDetectionServiceError<E> {
     /// An outlier detection error (e.g., instance ejected).
@@ -59,11 +66,14 @@ impl<E: std::fmt::Display> std::fmt::Display for OutlierDetectionServiceError<E>
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for OutlierDetectionServiceError<E> {
+impl<E> std::error::Error for OutlierDetectionServiceError<E>
+where
+    E: std::fmt::Debug + std::fmt::Display,
+{
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             OutlierDetectionServiceError::OutlierDetection(e) => Some(e),
-            OutlierDetectionServiceError::Inner(e) => Some(e),
+            OutlierDetectionServiceError::Inner(_) => None,
         }
     }
 }

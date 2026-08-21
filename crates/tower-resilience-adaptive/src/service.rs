@@ -312,6 +312,11 @@ where
 }
 
 /// Error type for adaptive limiter.
+///
+/// The inner service error remains available through [`AdaptiveError::Service`].
+/// It is intentionally not exposed through [`std::error::Error::source`] so
+/// boxed Tower errors can be wrapped without requiring the boxed trait object
+/// itself to implement [`std::error::Error`].
 #[derive(Debug)]
 pub enum AdaptiveError<E> {
     /// The service returned an error.
@@ -329,14 +334,7 @@ impl<E: std::fmt::Display> std::fmt::Display for AdaptiveError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for AdaptiveError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Service(e) => Some(e),
-            Self::LimitReached => None,
-        }
-    }
-}
+impl<E> std::error::Error for AdaptiveError<E> where E: std::fmt::Debug + std::fmt::Display {}
 
 /// Future returned by [`AdaptiveService`].
 pub struct AdaptiveFuture<T, E> {

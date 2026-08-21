@@ -8,6 +8,11 @@ use tower_resilience_core::ResilienceError;
 /// The weighted router itself does not produce errors -- it delegates
 /// to the selected backend. This error type wraps the inner service
 /// error for consistency with other tower-resilience patterns.
+///
+/// The inner service error remains available through [`WeightedRouterError::Inner`]
+/// and [`WeightedRouterError::into_inner`]. It is intentionally not exposed
+/// through [`std::error::Error::source`] so boxed Tower errors can be wrapped
+/// directly.
 #[derive(Debug)]
 pub enum WeightedRouterError<E> {
     /// An error from the selected backend service.
@@ -36,13 +41,7 @@ impl<E: fmt::Display> fmt::Display for WeightedRouterError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for WeightedRouterError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            WeightedRouterError::Inner(e) => Some(e),
-        }
-    }
-}
+impl<E> std::error::Error for WeightedRouterError<E> where E: fmt::Debug + fmt::Display {}
 
 impl<E> From<WeightedRouterError<E>> for ResilienceError<E> {
     fn from(err: WeightedRouterError<E>) -> Self {

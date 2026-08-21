@@ -112,6 +112,10 @@ where
 }
 
 /// Error type for executor service operations.
+///
+/// The inner service error remains available through [`ExecutorError::Service`].
+/// It is intentionally not exposed through [`std::error::Error::source`] so
+/// boxed Tower errors can be wrapped directly.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExecutorError<E> {
     /// The spawned task was cancelled or panicked.
@@ -129,14 +133,7 @@ impl<E: std::fmt::Display> std::fmt::Display for ExecutorError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for ExecutorError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Service(e) => Some(e),
-            _ => None,
-        }
-    }
-}
+impl<E> std::error::Error for ExecutorError<E> where E: std::fmt::Debug + std::fmt::Display {}
 
 pin_project! {
     /// Future returned by [`ExecutorService`].
