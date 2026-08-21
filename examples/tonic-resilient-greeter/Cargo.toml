@@ -32,7 +32,12 @@ tower-resilience-chaos = { path = "../../crates/tower-resilience-chaos" }
 # Utilities
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-rand = "0.9"
 
 [build-dependencies]
 tonic-prost-build = "0.14"
+
+# `prost` and `tonic-prost` are referenced by the Rust generated from the
+# protobuf schema. `tonic-prost-build` is called by build.rs, which
+# cargo-machete does not scan. All three are required despite appearing unused.
+[package.metadata.cargo-machete]
+ignored = ["prost", "tonic-prost", "tonic-prost-build"]

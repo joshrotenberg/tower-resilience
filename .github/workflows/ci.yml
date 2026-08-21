@@ -11,6 +11,26 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  # After the dependency audit in #448, cargo-machete is a fast, deterministic
+  # gate. Generated-code/build-script false positives are documented narrowly
+  # in the owning manifest rather than hidden by a workspace-wide allowlist.
+  dependency-hygiene:
+    name: Dependency Hygiene
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-machete
+        run: cargo install cargo-machete --locked --version 0.9.2
+
+      - name: Check unused dependencies
+        run: cargo machete --with-metadata
+
   # This packages every publishable crate in dependency order without
   # publishing it. Running on every PR necessarily gates release-plz PRs while
   # also catching package-surface regressions when they are introduced.

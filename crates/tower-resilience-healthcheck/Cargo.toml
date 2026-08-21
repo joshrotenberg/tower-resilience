@@ -19,7 +19,6 @@ wiremock = "0.6"
 tower-resilience-chaos = { version = "0.12.0", path = "../tower-resilience-chaos" }
 reqwest = "0.13"
 tower = "0.5"
-tower-layer = "0.3"
 
 [features]
 default = []

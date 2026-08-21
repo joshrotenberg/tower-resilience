@@ -33,12 +33,22 @@ cargo test --locked --workspace --all-features
 cargo build --locked --workspace --examples --all-features
 RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-deps
 rustup run 1.85.0 cargo check --locked -p tower-resilience --all-features
+cargo machete --with-metadata
 cargo audit
 ```
 
 `Cargo.lock` is committed for reproducible workspace, example, and security
 checks. Include intentional compatible dependency updates in your pull request
 and verify the resulting lockfile with the commands above.
+
+Install the dependency-hygiene tool with `cargo install cargo-machete --locked
+--version 0.9.2`. CI treats findings as errors. Before removing a reported
+dependency, check generated code, build scripts, doctests, optional feature
+forwarding, and minimal-feature builds. Document a confirmed false positive in
+the owning manifest's `[package.metadata.cargo-machete]` table with a nearby
+reason; do not add workspace-wide exceptions. The current audit and its
+classifications are recorded in
+[`docs/dependency-hygiene.md`](docs/dependency-hygiene.md).
 
 Nightly stress tests are opt-in locally but gating in their GitHub Actions
 workflow:
