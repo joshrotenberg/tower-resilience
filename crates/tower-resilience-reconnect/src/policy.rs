@@ -3,7 +3,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 use tower_resilience_retry::{
-    ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, IntervalFunction,
+    BackoffConfigError, ExponentialBackoff, ExponentialRandomBackoff, FixedInterval,
+    IntervalFunction,
 };
 
 /// Reconnection policy defining how to backoff between reconnection attempts.
@@ -53,11 +54,7 @@ impl ReconnectPolicy {
     /// * `initial_delay` - Starting delay (e.g., 100ms)
     /// * `max_delay` - Maximum delay cap (e.g., 5 seconds)
     pub fn exponential(initial_delay: Duration, max_delay: Duration) -> Self {
-        ReconnectPolicy::Exponential(
-            ExponentialBackoff::new(initial_delay)
-                .multiplier(2.0)
-                .max_interval(max_delay),
-        )
+        ReconnectPolicy::Exponential(ExponentialBackoff::new(initial_delay).max_interval(max_delay))
     }
 
     /// Create an exponential backoff policy with randomization
@@ -66,16 +63,20 @@ impl ReconnectPolicy {
     /// * `initial_delay` - Starting delay
     /// * `max_delay` - Maximum delay cap
     /// * `randomization_factor` - Randomization factor (0.0 to 1.0)
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BackoffConfigError::InvalidRandomizationFactor`] if
+    /// `randomization_factor` is non-finite or outside `0.0..=1.0`.
     pub fn exponential_random(
         initial_delay: Duration,
         max_delay: Duration,
         randomization_factor: f64,
-    ) -> Self {
-        ReconnectPolicy::ExponentialRandom(
-            ExponentialRandomBackoff::new(initial_delay, randomization_factor)
-                .multiplier(2.0)
+    ) -> Result<Self, BackoffConfigError> {
+        Ok(ReconnectPolicy::ExponentialRandom(
+            ExponentialRandomBackoff::new(initial_delay, randomization_factor)?
                 .max_interval(max_delay),
-        )
+        ))
     }
 
     /// Get the delay for a given attempt number
@@ -152,6 +153,29 @@ mod tests {
         // Should cap at max_delay (1 second)
         assert_eq!(policy.delay_for_attempt(4), Some(Duration::from_secs(1)));
         assert_eq!(policy.delay_for_attempt(10), Some(Duration::from_secs(1)));
+    }
+
+    #[test]
+    fn test_exponential_random_policy_validates_randomization_factor() {
+        assert!(matches!(
+            ReconnectPolicy::exponential_random(
+                Duration::from_millis(100),
+                Duration::from_secs(1),
+                f64::NAN,
+            ),
+            Err(BackoffConfigError::InvalidRandomizationFactor(value)) if value.is_nan()
+        ));
+
+        let policy = ReconnectPolicy::exponential_random(
+            Duration::from_millis(100),
+            Duration::from_secs(1),
+            0.0,
+        )
+        .unwrap();
+        assert_eq!(
+            policy.delay_for_attempt(1),
+            Some(Duration::from_millis(200))
+        );
     }
 
     #[test]

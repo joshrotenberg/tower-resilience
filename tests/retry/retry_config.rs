@@ -249,6 +249,7 @@ async fn custom_exponential_backoff_configuration() {
         .backoff(
             ExponentialBackoff::new(Duration::from_millis(10))
                 .multiplier(3.0)
+                .unwrap()
                 .max_interval(Duration::from_millis(100)),
         )
         .build();
@@ -286,10 +287,7 @@ async fn exponential_random_backoff_configuration() {
 
     let config = RetryLayer::builder()
         .max_attempts(5)
-        .backoff(ExponentialRandomBackoff::new(
-            Duration::from_millis(50),
-            0.5,
-        ))
+        .backoff(ExponentialRandomBackoff::new(Duration::from_millis(50), 0.5).unwrap())
         .build();
 
     let layer = config;
