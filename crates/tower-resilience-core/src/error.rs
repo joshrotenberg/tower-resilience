@@ -150,6 +150,11 @@ use std::time::Duration;
 ///
 /// - `E`: The application-specific error type from the wrapped service
 ///
+/// The application error remains available through
+/// [`ResilienceError::Application`] and the typed accessor methods. It is not
+/// exposed through [`std::error::Error::source`] so conventional boxed Tower
+/// errors can be used as `E` directly.
+///
 /// # Examples
 ///
 /// ```
@@ -258,7 +263,7 @@ where
     }
 }
 
-impl<E> std::error::Error for ResilienceError<E> where E: std::error::Error {}
+impl<E> std::error::Error for ResilienceError<E> where E: fmt::Debug + fmt::Display {}
 
 // Note: From implementations for each resilience layer error are provided
 // by the individual crates (bulkhead, circuitbreaker, etc.) to avoid

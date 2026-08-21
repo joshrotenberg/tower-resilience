@@ -7,6 +7,10 @@ use std::fmt;
 /// `E` is the primary service error. `FallbackE` is the backup service error
 /// and defaults to `E` so existing value, function, and closure-backed fallback
 /// APIs retain their original `FallbackError<E>` type.
+///
+/// Both typed errors remain available through the variants and accessor methods.
+/// They are intentionally not exposed through [`std::error::Error::source`] so
+/// boxed Tower errors can be wrapped directly.
 #[derive(Debug)]
 pub enum FallbackError<E, FallbackE = E> {
     /// The inner service failed and no fallback was applied (predicate didn't match),
@@ -114,13 +118,7 @@ impl<E: fmt::Display, FallbackE: fmt::Display> fmt::Display for FallbackError<E,
 
 impl<E, FallbackE> std::error::Error for FallbackError<E, FallbackE>
 where
-    E: std::error::Error + 'static,
-    FallbackE: std::error::Error + 'static,
+    E: fmt::Debug + fmt::Display,
+    FallbackE: fmt::Debug + fmt::Display,
 {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Inner(error) => Some(error),
-            Self::FallbackFailed(error) => Some(error),
-        }
-    }
 }

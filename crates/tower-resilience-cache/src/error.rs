@@ -3,6 +3,10 @@
 use std::fmt;
 
 /// Errors that can occur in the cache.
+///
+/// The inner service error remains available through [`CacheError::Inner`] and
+/// [`CacheError::into_inner`]. It is intentionally not exposed through
+/// [`std::error::Error::source`] so boxed Tower errors can be wrapped directly.
 #[derive(Debug)]
 pub enum CacheError<E> {
     /// The inner service returned an error.
@@ -17,13 +21,7 @@ impl<E: fmt::Display> fmt::Display for CacheError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for CacheError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            CacheError::Inner(e) => Some(e),
-        }
-    }
-}
+impl<E> std::error::Error for CacheError<E> where E: fmt::Debug + fmt::Display {}
 
 impl<E> CacheError<E> {
     /// Converts this error into the inner error.

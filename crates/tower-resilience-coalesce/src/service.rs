@@ -19,6 +19,10 @@ use metrics::{counter, describe_counter};
 use tracing::debug;
 
 /// Error type for coalesced requests.
+///
+/// The inner service error remains available through [`CoalesceError::Service`].
+/// It is intentionally not exposed through [`std::error::Error::source`] so
+/// boxed Tower errors can be wrapped directly.
 #[derive(Debug)]
 pub enum CoalesceError<E> {
     /// The underlying service returned an error.
@@ -39,14 +43,7 @@ impl<E: std::fmt::Display> std::fmt::Display for CoalesceError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for CoalesceError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            CoalesceError::Service(e) => Some(e),
-            _ => None,
-        }
-    }
-}
+impl<E> std::error::Error for CoalesceError<E> where E: std::fmt::Debug + std::fmt::Display {}
 
 impl<E: Clone> Clone for CoalesceError<E> {
     fn clone(&self) -> Self {

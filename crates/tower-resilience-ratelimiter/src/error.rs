@@ -23,6 +23,12 @@ impl std::error::Error for RateLimiterError {}
 /// This error type is returned by the [`RateLimiter`](crate::RateLimiter) service and
 /// allows services with any error type to be wrapped without losing inner service errors.
 ///
+/// The inner service error remains available through
+/// [`RateLimiterServiceError::Inner`] and
+/// [`RateLimiterServiceError::into_inner`]. It is intentionally not exposed
+/// through [`std::error::Error::source`] so boxed Tower errors can be wrapped
+/// directly.
+///
 /// # Examples
 ///
 /// ```rust
@@ -77,14 +83,7 @@ impl<E: fmt::Display> fmt::Display for RateLimiterServiceError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for RateLimiterServiceError<E> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            RateLimiterServiceError::RateLimited => None,
-            RateLimiterServiceError::Inner(e) => Some(e),
-        }
-    }
-}
+impl<E> std::error::Error for RateLimiterServiceError<E> where E: fmt::Debug + fmt::Display {}
 
 impl<E> From<RateLimiterError> for RateLimiterServiceError<E> {
     fn from(_err: RateLimiterError) -> Self {

@@ -31,6 +31,12 @@ pub type Result<T> = std::result::Result<T, BulkheadError>;
 /// allows services with any error type to be wrapped without requiring
 /// `From<BulkheadError>` implementations.
 ///
+/// The inner service error remains available through
+/// [`BulkheadServiceError::Inner`] and [`BulkheadServiceError::into_inner`]. It
+/// is intentionally not exposed through [`std::error::Error::source`] so boxed
+/// Tower errors can be wrapped directly. Bulkhead-specific errors remain
+/// available as an error source.
+///
 /// # Examples
 ///
 /// ```rust
@@ -93,11 +99,14 @@ impl<E: std::fmt::Display> std::fmt::Display for BulkheadServiceError<E> {
     }
 }
 
-impl<E: std::error::Error + 'static> std::error::Error for BulkheadServiceError<E> {
+impl<E> std::error::Error for BulkheadServiceError<E>
+where
+    E: std::fmt::Debug + std::fmt::Display,
+{
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             BulkheadServiceError::Bulkhead(e) => Some(e),
-            BulkheadServiceError::Inner(e) => Some(e),
+            BulkheadServiceError::Inner(_) => None,
         }
     }
 }

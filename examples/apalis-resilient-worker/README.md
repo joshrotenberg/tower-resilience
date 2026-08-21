@@ -22,12 +22,9 @@ Apalis already accepts Tower layers, so the integration point is its
 `WorkerBuilder::layer` method. The layer sees Apalis's full `Task` request even
 though the handler continues to receive the ergonomic job arguments.
 
-Apalis task functions use a boxed dynamic service error. Bulkhead and adaptive
-currently need the outer `map_err` adapter shown in the example because their
-generic wrapper errors cannot convert back into that boxed type. This is
-tracked in [#443](https://github.com/joshrotenberg/tower-resilience/issues/443);
-the adapter intentionally makes the current integration executable, but loses
-the original typed error and source chain.
+Apalis task functions use a boxed dynamic service error. The resilience
+wrappers compose with that error directly, so the layers preserve their typed
+variants without an outer error-mapping adapter.
 
 For queue-backed work, backpressure is usually a better default than
 fail-fast rejection. When a circuit is open or a bulkhead is full,

@@ -133,7 +133,6 @@ async fn bulkhead_isolation() -> Result<(), BoxDynError> {
     let handler_max_seen = Arc::clone(&max_seen);
     let worker = WorkerBuilder::new("bulkhead-worker")
         .backend(storage)
-        .map_err(box_layer_error)
         .layer(bulkhead)
         .parallelize(tokio::spawn)
         .build(move |job: Job, worker: WorkerContext| {
@@ -194,7 +193,6 @@ async fn adaptive_concurrency() -> Result<(), BoxDynError> {
 
     let worker = WorkerBuilder::new("adaptive-worker")
         .backend(storage)
-        .map_err(box_layer_error)
         .layer(layer)
         .build(|job: Job, worker: WorkerContext| async move {
             if job.id == 3 {
@@ -222,13 +220,6 @@ async fn run_with_timeout(
         .await
         .map_err(|_| io::Error::other("worker demo timed out"))??;
     Ok(())
-}
-
-// Apalis task functions expose BoxDynError as their service error. Until #443
-// is fixed, generic tower-resilience wrappers around that error need an outer
-// adapter to satisfy Apalis's Into<BoxDynError> worker bound.
-fn box_layer_error(error: impl std::fmt::Display) -> BoxDynError {
-    io::Error::other(error.to_string()).into()
 }
 
 #[derive(Clone)]
