@@ -48,6 +48,7 @@ fn build_call_service(
         .backoff(
             ExponentialBackoff::new(Duration::from_millis(100))
                 .multiplier(2.0)
+                .expect("constant retry multiplier is valid")
                 .max_interval(Duration::from_secs(2)),
         )
         .on_retry(|attempt, delay| {

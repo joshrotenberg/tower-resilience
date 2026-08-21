@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   attempts. Metrics are not yet labeled by instance name -- `reconnect`
   has no per-instance naming concept ([#428](https://github.com/joshrotenberg/tower-resilience/issues/428)).
 
+### Changed
+
+- **Breaking:** `ReconnectPolicy::exponential_random` now returns `Result`
+  and re-exports `BackoffConfigError`, matching the validated backoff API from
+  `tower-resilience-retry` ([#438](https://github.com/joshrotenberg/tower-resilience/issues/438)).
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-reconnect-v0.11.0...tower-resilience-reconnect-v0.12.0) - 2026-08-17
 
 ### Fixed

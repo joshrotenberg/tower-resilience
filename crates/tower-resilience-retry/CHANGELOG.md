@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Retry::get_ref()`, `get_mut()`, and `into_inner()` accessors for the
   wrapped service, matching Tower's own middleware convention.
 
+### Changed
+
+- **Breaking:** `ExponentialBackoff::multiplier`,
+  `ExponentialRandomBackoff::new`, and
+  `ExponentialRandomBackoff::multiplier` now return `Result` with a typed
+  `BackoffConfigError` instead of accepting invalid floating-point settings.
+
+### Fixed
+
+- Reject zero, negative, and non-finite exponential multipliers and invalid
+  randomization factors during configuration; saturate intervals that exceed
+  `Duration` instead of panicking later during a retry ([#438](https://github.com/joshrotenberg/tower-resilience/issues/438)).
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-retry-v0.11.0...tower-resilience-retry-v0.12.0) - 2026-08-17
 
 ### Fixed

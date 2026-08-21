@@ -162,7 +162,8 @@ mod layer;
 mod policy;
 
 pub use backoff::{
-    ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval, IntervalFunction,
+    BackoffConfigError, ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, FnInterval,
+    IntervalFunction,
 };
 pub use budget::{
     AimdBudget, RetryBudget, RetryBudgetBuilder, RetryBudgetConfigError, TokenBucketBudget,

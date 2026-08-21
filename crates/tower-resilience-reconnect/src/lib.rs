@@ -134,5 +134,6 @@ pub use state::{ConnectionState, ReconnectState};
 
 // Re-export backoff strategies from retry crate for convenience
 pub use tower_resilience_retry::{
-    ExponentialBackoff, ExponentialRandomBackoff, FixedInterval, IntervalFunction,
+    BackoffConfigError, ExponentialBackoff, ExponentialRandomBackoff, FixedInterval,
+    IntervalFunction,
 };

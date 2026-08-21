@@ -63,6 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Exponential Backoff with Custom Settings\n");
     let backoff = ExponentialBackoff::new(Duration::from_millis(50))
         .multiplier(1.5)
+        .expect("constant reconnect multiplier is valid")
         .max_interval(Duration::from_secs(30));
     let config3 = ReconnectConfig::builder()
         .policy(ReconnectPolicy::Exponential(backoff))

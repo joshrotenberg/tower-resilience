@@ -162,7 +162,11 @@ async fn exponential_backoff_custom_multiplier() {
 
     let config = RetryLayer::builder()
         .max_attempts(4)
-        .backoff(ExponentialBackoff::new(Duration::from_millis(50)).multiplier(3.0))
+        .backoff(
+            ExponentialBackoff::new(Duration::from_millis(50))
+                .multiplier(3.0)
+                .unwrap(),
+        )
         .build();
 
     let layer = config;
@@ -285,7 +289,7 @@ async fn exponential_random_backoff_has_variance() {
     // public IntervalFunction::next_interval API -- the same way the crate's
     // own unit tests do. This removes scheduler/timer dependence entirely
     // while preserving the test's intent (randomized backoff varies).
-    let backoff = ExponentialRandomBackoff::new(Duration::from_millis(100), 0.5);
+    let backoff = ExponentialRandomBackoff::new(Duration::from_millis(100), 0.5).unwrap();
 
     // Compute the delay for the same attempt many times. attempt 0 has a base
     // of 100ms (100 * 2^0); with a 0.5 randomization factor the result is
@@ -345,6 +349,7 @@ async fn exponential_random_backoff_respects_max() {
         .max_attempts(5)
         .backoff(
             ExponentialRandomBackoff::new(Duration::from_millis(50), 0.3)
+                .unwrap()
                 .max_interval(Duration::from_millis(100)),
         )
         .build();

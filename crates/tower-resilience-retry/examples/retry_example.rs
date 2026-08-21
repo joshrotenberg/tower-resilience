@@ -90,6 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .backoff(
             ExponentialBackoff::new(Duration::from_millis(50))
                 .multiplier(2.0)
+                .expect("constant retry multiplier is valid")
                 .max_interval(Duration::from_secs(1)),
         )
         .on_retry(|attempt, delay| {
