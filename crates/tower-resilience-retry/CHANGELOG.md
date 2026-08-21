@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ExponentialRandomBackoff::new`, and
   `ExponentialRandomBackoff::multiplier` now return `Result` with a typed
   `BackoffConfigError` instead of accepting invalid floating-point settings.
+- **Breaking:** `TokenBucketBuilder::build`, `AimdBudgetBuilder::build`,
+  `TokenBucketBudget::new`, and `AimdBudget::new` now return `Result` with a
+  typed `RetryBudgetConfigError` instead of accepting invalid rates, bounds,
+  or zero deposit/withdraw amounts.
+- **Breaking:** `TokenBucketBudget` no longer automatically implements
+  `UnwindSafe` or `RefUnwindSafe` after moving to clock-backed synchronized
+  accounting.
 
 ### Fixed
 

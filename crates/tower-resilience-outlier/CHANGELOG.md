@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** `OutlierDetectionConfigBuilder::build` now returns
+  `Result<_, OutlierDetectionConfigError>` and rejects a missing detector at
+  construction time.
 - **Breaking:** `OutlierDetectionService::Future` is now a named,
   `pin_project!`-based `OutlierDetectionFuture<F, C>` instead of
   `BoxFuture<'static, Result<...>>`. This removes one `Box::pin` heap

@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RateLimiter::get_ref()`, `get_mut()`, and `into_inner()` accessors for
   the wrapped service, matching Tower's own middleware convention.
 
+### Changed
+
+- **Breaking:** `RateLimiterConfigBuilder::build` and `build_with_handle`
+  now return `Result<_, RateLimiterConfigError>` and reject zero limits,
+  zero refresh periods, and overflowing burst capacities during
+  construction.
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-ratelimiter-v0.11.0...tower-resilience-ratelimiter-v0.12.0) - 2026-08-17
 
 ### Fixed

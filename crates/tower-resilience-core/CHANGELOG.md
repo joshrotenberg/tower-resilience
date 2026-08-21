@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** `AimdController::new` now returns
+  `Result<_, AimdConfigError>` and rejects invalid limit bounds, zero
+  additive increase, and invalid decrease factors during construction.
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-core-v0.11.0...tower-resilience-core-v0.12.0) - 2026-08-17
 
 ### Fixed

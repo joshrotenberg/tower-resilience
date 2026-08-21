@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** `BulkheadConfigBuilder::build` and `build_with_handle` now
+  return `Result<_, BulkheadConfigError>` and reject
+  `max_concurrent_calls == 0` during construction.
+- **Breaking:** `BulkheadError` adds the `Closed` and `NotReady` variants.
+  Exhaustive matches must handle both new readiness failures.
 - Backpressure readiness now polls and reserves semaphore permits directly,
   without spawning one Tokio task per waiter.
 
