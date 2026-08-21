@@ -1,6 +1,8 @@
 /target
 **/*.rs.bk
 *.pdb
+__pycache__/
+*.pyc
 .DS_Store
 CLAUDE.md
 .claude/AGENTS.md

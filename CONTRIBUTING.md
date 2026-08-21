@@ -288,6 +288,16 @@ same location. If a crate is added, confirm its changelog lands at that
 default path (or add an explicit `[[package]]` entry if it needs a
 different one).
 
+Before merging a release PR, run the complete non-publishing package check:
+
+```bash
+python3 scripts/publish_preflight.py
+```
+
+See the [release preflight and recovery runbook](docs/release-process.md) for
+what the command validates, the publication order, the known release-plz dry
+run limitation, monitored-publish steps, and partial-failure recovery.
+
 ### Runbook: checking for stale release branches/PRs
 
 Run this check whenever the release automation looks off (e.g. a release PR

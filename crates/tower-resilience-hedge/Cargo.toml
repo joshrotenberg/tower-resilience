@@ -6,6 +6,7 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 rust-version.workspace = true
+readme = "../../README.md"
 description = "Hedging middleware for Tower services - reduces tail latency via parallel requests"
 keywords = ["tower", "resilience", "hedge", "latency", "middleware"]
 categories = ["asynchronous", "network-programming"]
