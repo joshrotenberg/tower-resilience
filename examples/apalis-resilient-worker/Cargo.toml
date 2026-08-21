@@ -1,0 +1,12 @@
+[package]
+name = "apalis-resilient-worker"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+apalis = { version = "=1.0.0-rc.9", default-features = false }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tower-resilience-adaptive = { path = "../../crates/tower-resilience-adaptive" }
+tower-resilience-bulkhead = { path = "../../crates/tower-resilience-bulkhead" }
+tower-resilience-circuitbreaker = { path = "../../crates/tower-resilience-circuitbreaker" }
