@@ -24,6 +24,7 @@ must do the same, or it does not belong here.
 | [circuitbreaker-tower-comparison.md](circuitbreaker-tower-comparison.md) | Contributors, maintainer | Pinned comparison against the upstream `tower-rs/tower#855` circuit-breaker proposal, including the RMQTT/GovCraft-Acton integration review. Updated when upstream behavior actually ships, not on every proposal revision. |
 | [upstream-watchlist.md](upstream-watchlist.md) | Maintainer | Durable list of upstream `tower`/`tower-http` issues that could erase a local differentiator, supply a parity test, or hand over a reusable primitive. Reviewed at least once per release. |
 | [release-process.md](release-process.md) | Maintainer | Reproducible publish preflight, ordered release monitoring, and partial-failure recovery runbook. Reviewed for every release PR. |
+| [dependency-hygiene.md](dependency-hygiene.md) | Contributors, maintainer | Classification record for dependency-audit findings and the process for keeping direct dependencies intentional. Updated whenever a `cargo machete` exception is added or removed. |
 
 ## Maintaining this index
 

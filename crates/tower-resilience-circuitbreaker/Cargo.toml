@@ -20,13 +20,12 @@ tower-resilience-core.workspace = true
 
 tracing = { workspace = true, optional = true }
 metrics = { workspace = true, optional = true }
-metrics-util = { version = "0.20", optional = true }
 serde = { workspace = true, optional = true }
 
 [features]
 default = []
 # Enable Prometheus metrics (state transitions, call counts, latency histograms)
-metrics = ["dep:metrics", "dep:metrics-util"]
+metrics = ["dep:metrics"]
 # Enable distributed tracing via the tracing crate
 tracing = ["dep:tracing"]
 # Enable serde serialization for circuit breaker state

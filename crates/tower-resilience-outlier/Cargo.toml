@@ -14,8 +14,6 @@ keywords = ["tower", "outlier", "resilience", "middleware", "ejection"]
 [dependencies]
 tower-resilience-core = { workspace = true }
 tower = { workspace = true }
-tower-layer = { workspace = true }
-tower-service = { workspace = true }
 pin-project-lite = { workspace = true }
 thiserror = { workspace = true }
 
