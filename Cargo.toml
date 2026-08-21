@@ -71,6 +71,7 @@ members = [
     "crates/tower-resilience-outlier",
     "crates/tower-resilience-router",
     "crates/tower-resilience",
+    "examples/apalis-resilient-worker",
     "examples/axum-resilient-kv-store",
     "examples/tonic-resilient-greeter",
 ]
