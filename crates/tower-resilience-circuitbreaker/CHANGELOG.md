@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   service on both `CircuitBreaker` and `CircuitBreakerWithFallback`,
   matching Tower's own middleware convention.
 
+### Changed
+
+- **Breaking:** `CircuitBreakerConfigBuilder::build` and
+  `build_with_handle` now return `Result<_, CircuitBreakerConfigError>` and
+  reject invalid thresholds, windows, consecutive-failure counts, and
+  incomplete time-based window configuration during construction.
+
 ### Fixed
 
 - Reserve half-open probe admission atomically with a per-cycle semaphore

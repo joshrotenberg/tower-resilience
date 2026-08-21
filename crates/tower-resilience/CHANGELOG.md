@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** 0.13 validates configuration at construction time. Builders
+  and constructors in core AIMD, adaptive, bulkhead, circuit breaker, rate
+  limiter, outlier detection, retry budgets/backoff, and reconnect now return
+  typed `Result` values where invalid configuration was previously accepted.
+- **Breaking:** outlier detection uses a named, allocation-free
+  `Service::Future`; exhaustive `BulkheadError` matches must handle `Closed`
+  and `NotReady`; and `TokenBucketBudget` no longer automatically implements
+  `UnwindSafe`/`RefUnwindSafe`.
+- Generic middleware errors now compose directly with Tower `BoxError`.
+  Application/inner errors remain available through typed variants and
+  accessors but are no longer exposed through `std::error::Error::source`.
+- `TimeLimiterLayer::streaming()` is deprecated in favor of the more accurate
+  `detached()` name.
+
+### Migrating from 0.12
+
+See the [0.12 to 0.13 migration guide](MIGRATION.md) for the complete API list
+and compiling upgrade examples. Release tooling may call this pre-1.0 minor
+bump API compatible because the version increment permits breaking changes;
+0.13 is not source-compatible with 0.12.
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-v0.11.0...tower-resilience-v0.12.0) - 2026-08-17
 
 ### Fixed

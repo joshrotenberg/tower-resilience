@@ -150,6 +150,7 @@
 //! - **[Pattern Guides](patterns)** - Detailed guides for each pattern with examples and anti-patterns
 //! - **[Composition Guide](composition)** - How to combine patterns effectively
 //! - **[Use Cases](use_cases)** - Real-world scenarios and recommendations
+//! - **[0.12 to 0.13 Migration](migration)** - Required source changes for the 0.13 release
 //!
 //! ## Observability
 //!
@@ -310,6 +311,8 @@
 
 // Documentation modules
 pub mod composition;
+#[doc = include_str!("../MIGRATION.md")]
+pub mod migration {}
 pub mod observability;
 pub mod patterns;
 pub mod tower_primer;

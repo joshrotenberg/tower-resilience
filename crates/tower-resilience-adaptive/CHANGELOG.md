@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   limit changes. Metrics are not yet labeled by instance name -- `adaptive`
   has no per-instance naming concept ([#428](https://github.com/joshrotenberg/tower-resilience/issues/428)).
 
+### Changed
+
+- **Breaking:** `Aimd::new`, `AimdBuilder::build`, and
+  `VegasBuilder::build` now return typed `Result` values and reject invalid
+  limits, zero additive increase, and invalid decrease factors during
+  construction.
+
 ## [0.12.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-adaptive-v0.11.0...tower-resilience-adaptive-v0.12.0) - 2026-08-17
 
 ### Fixed
