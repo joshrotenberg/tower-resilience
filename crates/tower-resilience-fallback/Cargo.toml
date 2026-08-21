@@ -6,6 +6,7 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 rust-version.workspace = true
+readme = "../../README.md"
 description = "Fallback middleware for Tower services"
 keywords = ["tower", "resilience", "fallback", "fault-tolerance", "middleware"]
 categories = ["asynchronous", "network-programming"]

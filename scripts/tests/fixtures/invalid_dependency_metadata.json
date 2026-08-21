@@ -1,0 +1,38 @@
+{
+  "workspace_members": [
+    "path+file:///fixture#internal@1.0.0",
+    "path+file:///fixture#broken@1.0.0",
+    "path+file:///fixture#example@0.1.0"
+  ],
+  "packages": [
+    {
+      "id": "path+file:///fixture#internal@1.0.0",
+      "name": "internal",
+      "version": "1.0.0",
+      "publish": null,
+      "dependencies": []
+    },
+    {
+      "id": "path+file:///fixture#broken@1.0.0",
+      "name": "broken",
+      "version": "1.0.0",
+      "publish": null,
+      "dependencies": [
+        {
+          "name": "internal",
+          "kind": null,
+          "path": "/fixture/internal",
+          "req": "*",
+          "source": null
+        }
+      ]
+    },
+    {
+      "id": "path+file:///fixture#example@0.1.0",
+      "name": "example",
+      "version": "0.1.0",
+      "publish": [],
+      "dependencies": []
+    }
+  ]
+}

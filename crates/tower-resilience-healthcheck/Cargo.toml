@@ -6,6 +6,7 @@ license.workspace = true
 description = "Proactive health checking for resources with intelligent selection strategies"
 repository.workspace = true
 rust-version.workspace = true
+readme = "../../README.md"
 
 [dependencies]
 tokio = { workspace = true, features = ["rt"] }

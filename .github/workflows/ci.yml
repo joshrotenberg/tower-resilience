@@ -11,6 +11,26 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  # This packages every publishable crate in dependency order without
+  # publishing it. Running on every PR necessarily gates release-plz PRs while
+  # also catching package-surface regressions when they are introduced.
+  publish-preflight:
+    name: Publish Preflight
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Test preflight validation
+        run: python3 -m unittest scripts.tests.test_publish_preflight
+
+      - name: Inspect publishable package archives
+        run: python3 scripts/publish_preflight.py
+
   test:
     name: Test
     runs-on: ${{ matrix.os }}
