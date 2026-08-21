@@ -1,0 +1,185 @@
+pub mod tower_resilience_reconnect
+pub use tower_resilience_reconnect::BackoffConfigError
+pub use tower_resilience_reconnect::ExponentialBackoff
+pub use tower_resilience_reconnect::ExponentialRandomBackoff
+pub use tower_resilience_reconnect::FixedInterval
+pub use tower_resilience_reconnect::IntervalFunction
+pub mod tower_resilience_reconnect::migration
+pub enum tower_resilience_reconnect::ConnectionState
+pub tower_resilience_reconnect::ConnectionState::Connected
+pub tower_resilience_reconnect::ConnectionState::Disconnected
+pub tower_resilience_reconnect::ConnectionState::Reconnecting
+impl core::clone::Clone for tower_resilience_reconnect::ConnectionState
+pub fn tower_resilience_reconnect::ConnectionState::clone(&self) -> tower_resilience_reconnect::ConnectionState
+impl core::cmp::Eq for tower_resilience_reconnect::ConnectionState
+impl core::cmp::PartialEq for tower_resilience_reconnect::ConnectionState
+pub fn tower_resilience_reconnect::ConnectionState::eq(&self, &tower_resilience_reconnect::ConnectionState) -> bool
+impl core::fmt::Debug for tower_resilience_reconnect::ConnectionState
+pub fn tower_resilience_reconnect::ConnectionState::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_reconnect::ConnectionState
+impl core::marker::StructuralPartialEq for tower_resilience_reconnect::ConnectionState
+impl core::marker::Freeze for tower_resilience_reconnect::ConnectionState
+impl core::marker::Send for tower_resilience_reconnect::ConnectionState
+impl core::marker::Sync for tower_resilience_reconnect::ConnectionState
+impl core::marker::Unpin for tower_resilience_reconnect::ConnectionState
+impl core::marker::UnsafeUnpin for tower_resilience_reconnect::ConnectionState
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_reconnect::ConnectionState
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_reconnect::ConnectionState
+pub enum tower_resilience_reconnect::ReconnectError<MakeError, ServiceError>
+pub tower_resilience_reconnect::ReconnectError::ConnectionFailed(ServiceError)
+pub tower_resilience_reconnect::ReconnectError::ConnectionFailedNoRetry(ServiceError)
+pub tower_resilience_reconnect::ReconnectError::FactoryError(MakeError)
+pub tower_resilience_reconnect::ReconnectError::MaxAttemptsExceeded
+pub tower_resilience_reconnect::ReconnectError::MaxAttemptsExceeded::attempts: u32
+pub tower_resilience_reconnect::ReconnectError::MaxAttemptsExceeded::error: alloc::boxed::Box<(dyn core::error::Error + core::marker::Send + core::marker::Sync)>
+pub tower_resilience_reconnect::ReconnectError::ServiceError(ServiceError)
+impl<M, S> core::error::Error for tower_resilience_reconnect::ReconnectError<M, S> where M: core::fmt::Debug + core::fmt::Display, S: core::fmt::Debug + core::fmt::Display
+pub fn tower_resilience_reconnect::ReconnectError<M, S>::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl<M, S> core::fmt::Display for tower_resilience_reconnect::ReconnectError<M, S> where M: core::fmt::Display, S: core::fmt::Display
+pub fn tower_resilience_reconnect::ReconnectError<M, S>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<MakeError: core::fmt::Debug, ServiceError: core::fmt::Debug> core::fmt::Debug for tower_resilience_reconnect::ReconnectError<MakeError, ServiceError>
+pub fn tower_resilience_reconnect::ReconnectError<MakeError, ServiceError>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<MakeError, ServiceError> core::marker::Freeze for tower_resilience_reconnect::ReconnectError<MakeError, ServiceError> where MakeError: core::marker::Freeze, ServiceError: core::marker::Freeze
+impl<MakeError, ServiceError> core::marker::Send for tower_resilience_reconnect::ReconnectError<MakeError, ServiceError> where MakeError: core::marker::Send, ServiceError: core::marker::Send
+impl<MakeError, ServiceError> core::marker::Sync for tower_resilience_reconnect::ReconnectError<MakeError, ServiceError> where MakeError: core::marker::Sync, ServiceError: core::marker::Sync
+impl<MakeError, ServiceError> core::marker::Unpin for tower_resilience_reconnect::ReconnectError<MakeError, ServiceError> where MakeError: core::marker::Unpin, ServiceError: core::marker::Unpin
+impl<MakeError, ServiceError> core::marker::UnsafeUnpin for tower_resilience_reconnect::ReconnectError<MakeError, ServiceError> where MakeError: core::marker::UnsafeUnpin, ServiceError: core::marker::UnsafeUnpin
+impl<MakeError, ServiceError> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_reconnect::ReconnectError<MakeError, ServiceError>
+impl<MakeError, ServiceError> !core::panic::unwind_safe::UnwindSafe for tower_resilience_reconnect::ReconnectError<MakeError, ServiceError>
+pub enum tower_resilience_reconnect::ReconnectPolicy
+pub tower_resilience_reconnect::ReconnectPolicy::Custom(alloc::sync::Arc<dyn tower_resilience_retry::backoff::IntervalFunction>)
+pub tower_resilience_reconnect::ReconnectPolicy::Exponential(tower_resilience_retry::backoff::ExponentialBackoff)
+pub tower_resilience_reconnect::ReconnectPolicy::ExponentialRandom(tower_resilience_retry::backoff::ExponentialRandomBackoff)
+pub tower_resilience_reconnect::ReconnectPolicy::Fixed(tower_resilience_retry::backoff::FixedInterval)
+pub tower_resilience_reconnect::ReconnectPolicy::None
+impl tower_resilience_reconnect::ReconnectPolicy
+pub fn tower_resilience_reconnect::ReconnectPolicy::delay_for_attempt(&self, usize) -> core::option::Option<core::time::Duration>
+pub fn tower_resilience_reconnect::ReconnectPolicy::exponential(core::time::Duration, core::time::Duration) -> Self
+pub fn tower_resilience_reconnect::ReconnectPolicy::exponential_random(core::time::Duration, core::time::Duration, f64) -> core::result::Result<Self, tower_resilience_retry::backoff::BackoffConfigError>
+pub fn tower_resilience_reconnect::ReconnectPolicy::fixed(core::time::Duration) -> Self
+pub fn tower_resilience_reconnect::ReconnectPolicy::none() -> Self
+impl core::clone::Clone for tower_resilience_reconnect::ReconnectPolicy
+pub fn tower_resilience_reconnect::ReconnectPolicy::clone(&self) -> Self
+impl core::default::Default for tower_resilience_reconnect::ReconnectPolicy
+pub fn tower_resilience_reconnect::ReconnectPolicy::default() -> Self
+impl core::fmt::Debug for tower_resilience_reconnect::ReconnectPolicy
+pub fn tower_resilience_reconnect::ReconnectPolicy::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_reconnect::ReconnectPolicy
+impl core::marker::Send for tower_resilience_reconnect::ReconnectPolicy
+impl core::marker::Sync for tower_resilience_reconnect::ReconnectPolicy
+impl core::marker::Unpin for tower_resilience_reconnect::ReconnectPolicy
+impl core::marker::UnsafeUnpin for tower_resilience_reconnect::ReconnectPolicy
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_reconnect::ReconnectPolicy
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_reconnect::ReconnectPolicy
+pub struct tower_resilience_reconnect::ReconnectConfig
+impl tower_resilience_reconnect::ReconnectConfig
+pub fn tower_resilience_reconnect::ReconnectConfig::builder() -> tower_resilience_reconnect::ReconnectConfigBuilder
+pub fn tower_resilience_reconnect::ReconnectConfig::max_attempts(&self) -> core::option::Option<u32>
+pub fn tower_resilience_reconnect::ReconnectConfig::policy(&self) -> &tower_resilience_reconnect::ReconnectPolicy
+pub fn tower_resilience_reconnect::ReconnectConfig::retry_on_reconnect(&self) -> bool
+pub fn tower_resilience_reconnect::ReconnectConfig::should_reconnect(&self, &dyn core::error::Error) -> bool
+impl core::clone::Clone for tower_resilience_reconnect::ReconnectConfig
+pub fn tower_resilience_reconnect::ReconnectConfig::clone(&self) -> Self
+impl core::default::Default for tower_resilience_reconnect::ReconnectConfig
+pub fn tower_resilience_reconnect::ReconnectConfig::default() -> Self
+impl core::fmt::Debug for tower_resilience_reconnect::ReconnectConfig
+pub fn tower_resilience_reconnect::ReconnectConfig::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_reconnect::ReconnectConfig
+impl core::marker::Send for tower_resilience_reconnect::ReconnectConfig
+impl core::marker::Sync for tower_resilience_reconnect::ReconnectConfig
+impl core::marker::Unpin for tower_resilience_reconnect::ReconnectConfig
+impl core::marker::UnsafeUnpin for tower_resilience_reconnect::ReconnectConfig
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_reconnect::ReconnectConfig
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_reconnect::ReconnectConfig
+pub struct tower_resilience_reconnect::ReconnectConfigBuilder
+impl tower_resilience_reconnect::ReconnectConfigBuilder
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::build(self) -> tower_resilience_reconnect::ReconnectConfig
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::connection_errors_only(self) -> Self
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::max_attempts(self, u32) -> Self
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::new() -> Self
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::on_reconnect<F>(self, F) -> Self where F: core::ops::function::Fn(u32) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::on_state_change<F>(self, F) -> Self where F: core::ops::function::Fn(tower_resilience_reconnect::ConnectionState, tower_resilience_reconnect::ConnectionState) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::policy(self, tower_resilience_reconnect::ReconnectPolicy) -> Self
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::reconnect_predicate<F>(self, F) -> Self where F: core::ops::function::Fn(&dyn core::error::Error) -> bool + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::retry_on_reconnect(self, bool) -> Self
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::unlimited_attempts(self) -> Self
+impl core::default::Default for tower_resilience_reconnect::ReconnectConfigBuilder
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::default() -> Self
+impl core::fmt::Debug for tower_resilience_reconnect::ReconnectConfigBuilder
+pub fn tower_resilience_reconnect::ReconnectConfigBuilder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_reconnect::ReconnectConfigBuilder
+impl core::marker::Send for tower_resilience_reconnect::ReconnectConfigBuilder
+impl core::marker::Sync for tower_resilience_reconnect::ReconnectConfigBuilder
+impl core::marker::Unpin for tower_resilience_reconnect::ReconnectConfigBuilder
+impl core::marker::UnsafeUnpin for tower_resilience_reconnect::ReconnectConfigBuilder
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_reconnect::ReconnectConfigBuilder
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_reconnect::ReconnectConfigBuilder
+pub struct tower_resilience_reconnect::ReconnectLayer<Target>
+impl tower_resilience_reconnect::ReconnectLayer<()>
+pub fn tower_resilience_reconnect::ReconnectLayer<()>::new(tower_resilience_reconnect::ReconnectConfig) -> Self
+pub fn tower_resilience_reconnect::ReconnectLayer<()>::with_defaults() -> Self
+impl<Target> tower_resilience_reconnect::ReconnectLayer<Target>
+pub fn tower_resilience_reconnect::ReconnectLayer<Target>::for_target(Target, tower_resilience_reconnect::ReconnectConfig) -> Self
+pub fn tower_resilience_reconnect::ReconnectLayer<Target>::state(&self) -> &tower_resilience_reconnect::ReconnectState
+impl core::default::Default for tower_resilience_reconnect::ReconnectLayer<()>
+pub fn tower_resilience_reconnect::ReconnectLayer<()>::default() -> Self
+impl<M, Target> tower_layer::Layer<M> for tower_resilience_reconnect::ReconnectLayer<Target> where M: tower_service::Service<Target>, Target: core::clone::Clone
+pub type tower_resilience_reconnect::ReconnectLayer<Target>::Service = tower_resilience_reconnect::ReconnectService<M, Target>
+pub fn tower_resilience_reconnect::ReconnectLayer<Target>::layer(&self, M) -> Self::Service
+impl<Target: core::clone::Clone> core::clone::Clone for tower_resilience_reconnect::ReconnectLayer<Target>
+pub fn tower_resilience_reconnect::ReconnectLayer<Target>::clone(&self) -> tower_resilience_reconnect::ReconnectLayer<Target>
+impl<Target: core::fmt::Debug> core::fmt::Debug for tower_resilience_reconnect::ReconnectLayer<Target>
+pub fn tower_resilience_reconnect::ReconnectLayer<Target>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<Target> core::marker::Freeze for tower_resilience_reconnect::ReconnectLayer<Target> where Target: core::marker::Freeze
+impl<Target> core::marker::Send for tower_resilience_reconnect::ReconnectLayer<Target> where Target: core::marker::Send
+impl<Target> core::marker::Sync for tower_resilience_reconnect::ReconnectLayer<Target> where Target: core::marker::Sync
+impl<Target> core::marker::Unpin for tower_resilience_reconnect::ReconnectLayer<Target> where Target: core::marker::Unpin
+impl<Target> core::marker::UnsafeUnpin for tower_resilience_reconnect::ReconnectLayer<Target> where Target: core::marker::UnsafeUnpin
+impl<Target> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_reconnect::ReconnectLayer<Target>
+impl<Target> !core::panic::unwind_safe::UnwindSafe for tower_resilience_reconnect::ReconnectLayer<Target>
+pub struct tower_resilience_reconnect::ReconnectService<M, Target> where M: tower_service::Service<Target>
+impl<M, Target> tower_resilience_reconnect::ReconnectService<M, Target> where M: tower_service::Service<Target>
+pub fn tower_resilience_reconnect::ReconnectService<M, Target>::config(&self) -> &tower_resilience_reconnect::ReconnectConfig
+pub fn tower_resilience_reconnect::ReconnectService<M, Target>::new(M, Target, tower_resilience_reconnect::ReconnectConfig) -> Self
+pub fn tower_resilience_reconnect::ReconnectService<M, Target>::state(&self) -> &tower_resilience_reconnect::ReconnectState
+impl<M, Target, Request> tower_service::Service<Request> for tower_resilience_reconnect::ReconnectService<M, Target> where M: tower_service::Service<Target>, <M as tower_service::Service>::Response: tower_service::Service<Request> + core::clone::Clone, <M as tower_service::Service>::Error: core::error::Error + core::marker::Send + core::marker::Sync + 'static, <<M as tower_service::Service>::Response as tower_service::Service<Request>>::Error: core::error::Error + core::marker::Send + core::marker::Sync + 'static, Target: core::clone::Clone, Request: core::clone::Clone
+pub type tower_resilience_reconnect::ReconnectService<M, Target>::Error = tower_resilience_reconnect::ReconnectError<<M as tower_service::Service<Target>>::Error, <<M as tower_service::Service<Target>>::Response as tower_service::Service<Request>>::Error>
+pub type tower_resilience_reconnect::ReconnectService<M, Target>::Future = tower_resilience_reconnect::service::ReconnectFuture<M, Target, Request>
+pub type tower_resilience_reconnect::ReconnectService<M, Target>::Response = <<M as tower_service::Service<Target>>::Response as tower_service::Service<Request>>::Response
+pub fn tower_resilience_reconnect::ReconnectService<M, Target>::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_reconnect::ReconnectService<M, Target>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<M, Target> core::clone::Clone for tower_resilience_reconnect::ReconnectService<M, Target> where M: tower_service::Service<Target>
+pub fn tower_resilience_reconnect::ReconnectService<M, Target>::clone(&self) -> Self
+impl<M, Target> core::marker::Freeze for tower_resilience_reconnect::ReconnectService<M, Target> where <M as tower_service::Service<Target>>::Response: core::marker::Freeze
+impl<M, Target> core::marker::Send for tower_resilience_reconnect::ReconnectService<M, Target> where <M as tower_service::Service<Target>>::Response: core::marker::Send, M: core::marker::Send, Target: core::marker::Send, <M as tower_service::Service<Target>>::Future: core::marker::Send
+impl<M, Target> core::marker::Sync for tower_resilience_reconnect::ReconnectService<M, Target> where <M as tower_service::Service<Target>>::Response: core::marker::Sync + core::marker::Send, M: core::marker::Send, Target: core::marker::Send, <M as tower_service::Service<Target>>::Future: core::marker::Send
+impl<M, Target> core::marker::Unpin for tower_resilience_reconnect::ReconnectService<M, Target> where <M as tower_service::Service<Target>>::Response: core::marker::Unpin
+impl<M, Target> core::marker::UnsafeUnpin for tower_resilience_reconnect::ReconnectService<M, Target> where <M as tower_service::Service<Target>>::Response: core::marker::UnsafeUnpin
+impl<M, Target> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_reconnect::ReconnectService<M, Target>
+impl<M, Target> !core::panic::unwind_safe::UnwindSafe for tower_resilience_reconnect::ReconnectService<M, Target>
+pub struct tower_resilience_reconnect::ReconnectState
+impl tower_resilience_reconnect::ReconnectState
+pub fn tower_resilience_reconnect::ReconnectState::attempts(&self) -> u32
+pub fn tower_resilience_reconnect::ReconnectState::increment_attempts(&self) -> u32
+pub fn tower_resilience_reconnect::ReconnectState::mark_connected(&self)
+pub fn tower_resilience_reconnect::ReconnectState::mark_disconnected(&self)
+pub fn tower_resilience_reconnect::ReconnectState::mark_reconnecting(&self)
+pub fn tower_resilience_reconnect::ReconnectState::new() -> Self
+pub fn tower_resilience_reconnect::ReconnectState::reset_attempts(&self)
+pub fn tower_resilience_reconnect::ReconnectState::set_state(&self, tower_resilience_reconnect::ConnectionState)
+pub fn tower_resilience_reconnect::ReconnectState::state(&self) -> tower_resilience_reconnect::ConnectionState
+pub fn tower_resilience_reconnect::ReconnectState::time_since_connected(&self) -> core::option::Option<core::time::Duration>
+impl core::clone::Clone for tower_resilience_reconnect::ReconnectState
+pub fn tower_resilience_reconnect::ReconnectState::clone(&self) -> tower_resilience_reconnect::ReconnectState
+impl core::default::Default for tower_resilience_reconnect::ReconnectState
+pub fn tower_resilience_reconnect::ReconnectState::default() -> Self
+impl core::fmt::Debug for tower_resilience_reconnect::ReconnectState
+pub fn tower_resilience_reconnect::ReconnectState::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_reconnect::ReconnectState
+impl core::marker::Send for tower_resilience_reconnect::ReconnectState
+impl core::marker::Sync for tower_resilience_reconnect::ReconnectState
+impl core::marker::Unpin for tower_resilience_reconnect::ReconnectState
+impl core::marker::UnsafeUnpin for tower_resilience_reconnect::ReconnectState
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_reconnect::ReconnectState
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_reconnect::ReconnectState
+pub type tower_resilience_reconnect::ReconnectPredicate = alloc::sync::Arc<(dyn core::ops::function::Fn(&dyn core::error::Error) -> bool + core::marker::Send + core::marker::Sync)>

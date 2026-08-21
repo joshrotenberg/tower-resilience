@@ -1,0 +1,199 @@
+pub mod tower_resilience_fallback
+pub mod tower_resilience_fallback::migration
+pub enum tower_resilience_fallback::FallbackError<E, FallbackE>
+pub tower_resilience_fallback::FallbackError::FallbackFailed(FallbackE)
+pub tower_resilience_fallback::FallbackError::Inner(E)
+impl<E, FallbackE> tower_resilience_fallback::FallbackError<E, FallbackE>
+pub fn tower_resilience_fallback::FallbackError<E, FallbackE>::fallback_error(&self) -> core::option::Option<&FallbackE>
+pub fn tower_resilience_fallback::FallbackError<E, FallbackE>::is_fallback_failed(&self) -> bool
+pub fn tower_resilience_fallback::FallbackError<E, FallbackE>::is_inner(&self) -> bool
+pub fn tower_resilience_fallback::FallbackError<E, FallbackE>::map_fallback<F, U>(self, F) -> tower_resilience_fallback::FallbackError<E, U> where F: core::ops::function::FnOnce(FallbackE) -> U
+pub fn tower_resilience_fallback::FallbackError<E, FallbackE>::map_primary<F, U>(self, F) -> tower_resilience_fallback::FallbackError<U, FallbackE> where F: core::ops::function::FnOnce(E) -> U
+pub fn tower_resilience_fallback::FallbackError<E, FallbackE>::primary_error(&self) -> core::option::Option<&E>
+impl<E> tower_resilience_fallback::FallbackError<E, E>
+pub fn tower_resilience_fallback::FallbackError<E, E>::inner(&self) -> &E
+pub fn tower_resilience_fallback::FallbackError<E, E>::into_inner(self) -> E
+pub fn tower_resilience_fallback::FallbackError<E, E>::map<F, U>(self, F) -> tower_resilience_fallback::FallbackError<U> where F: core::ops::function::FnOnce(E) -> U
+impl<E, FallbackE> core::error::Error for tower_resilience_fallback::FallbackError<E, FallbackE> where E: core::fmt::Debug + core::fmt::Display, FallbackE: core::fmt::Debug + core::fmt::Display
+impl<E: core::clone::Clone, FallbackE: core::clone::Clone> core::clone::Clone for tower_resilience_fallback::FallbackError<E, FallbackE>
+pub fn tower_resilience_fallback::FallbackError<E, FallbackE>::clone(&self) -> Self
+impl<E: core::fmt::Debug, FallbackE: core::fmt::Debug> core::fmt::Debug for tower_resilience_fallback::FallbackError<E, FallbackE>
+pub fn tower_resilience_fallback::FallbackError<E, FallbackE>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display, FallbackE: core::fmt::Display> core::fmt::Display for tower_resilience_fallback::FallbackError<E, FallbackE>
+pub fn tower_resilience_fallback::FallbackError<E, FallbackE>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E, FallbackE> core::marker::Freeze for tower_resilience_fallback::FallbackError<E, FallbackE> where E: core::marker::Freeze, FallbackE: core::marker::Freeze
+impl<E, FallbackE> core::marker::Send for tower_resilience_fallback::FallbackError<E, FallbackE> where E: core::marker::Send, FallbackE: core::marker::Send
+impl<E, FallbackE> core::marker::Sync for tower_resilience_fallback::FallbackError<E, FallbackE> where E: core::marker::Sync, FallbackE: core::marker::Sync
+impl<E, FallbackE> core::marker::Unpin for tower_resilience_fallback::FallbackError<E, FallbackE> where E: core::marker::Unpin, FallbackE: core::marker::Unpin
+impl<E, FallbackE> core::marker::UnsafeUnpin for tower_resilience_fallback::FallbackError<E, FallbackE> where E: core::marker::UnsafeUnpin, FallbackE: core::marker::UnsafeUnpin
+impl<E, FallbackE> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_fallback::FallbackError<E, FallbackE> where E: core::panic::unwind_safe::RefUnwindSafe, FallbackE: core::panic::unwind_safe::RefUnwindSafe
+impl<E, FallbackE> core::panic::unwind_safe::UnwindSafe for tower_resilience_fallback::FallbackError<E, FallbackE> where E: core::panic::unwind_safe::UnwindSafe, FallbackE: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_fallback::FallbackEvent
+pub tower_resilience_fallback::FallbackEvent::Applied
+pub tower_resilience_fallback::FallbackEvent::Applied::pattern_name: alloc::string::String
+pub tower_resilience_fallback::FallbackEvent::Applied::strategy: &'static str
+pub tower_resilience_fallback::FallbackEvent::Applied::timestamp: std::time::Instant
+pub tower_resilience_fallback::FallbackEvent::Failed
+pub tower_resilience_fallback::FallbackEvent::Failed::pattern_name: alloc::string::String
+pub tower_resilience_fallback::FallbackEvent::Failed::timestamp: std::time::Instant
+pub tower_resilience_fallback::FallbackEvent::FailedAttempt
+pub tower_resilience_fallback::FallbackEvent::FailedAttempt::pattern_name: alloc::string::String
+pub tower_resilience_fallback::FallbackEvent::FailedAttempt::timestamp: std::time::Instant
+pub tower_resilience_fallback::FallbackEvent::Skipped
+pub tower_resilience_fallback::FallbackEvent::Skipped::pattern_name: alloc::string::String
+pub tower_resilience_fallback::FallbackEvent::Skipped::timestamp: std::time::Instant
+pub tower_resilience_fallback::FallbackEvent::Success
+pub tower_resilience_fallback::FallbackEvent::Success::pattern_name: alloc::string::String
+pub tower_resilience_fallback::FallbackEvent::Success::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_fallback::FallbackEvent
+pub fn tower_resilience_fallback::FallbackEvent::clone(&self) -> tower_resilience_fallback::FallbackEvent
+impl core::fmt::Debug for tower_resilience_fallback::FallbackEvent
+pub fn tower_resilience_fallback::FallbackEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_fallback::FallbackEvent
+pub fn tower_resilience_fallback::FallbackEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_fallback::FallbackEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_fallback::FallbackEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_fallback::FallbackEvent
+impl core::marker::Send for tower_resilience_fallback::FallbackEvent
+impl core::marker::Sync for tower_resilience_fallback::FallbackEvent
+impl core::marker::Unpin for tower_resilience_fallback::FallbackEvent
+impl core::marker::UnsafeUnpin for tower_resilience_fallback::FallbackEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_fallback::FallbackEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_fallback::FallbackEvent
+pub enum tower_resilience_fallback::FallbackStrategy<Req, Res, E>
+pub tower_resilience_fallback::FallbackStrategy::Exception(tower_resilience_fallback::ExceptionFn<E>)
+pub tower_resilience_fallback::FallbackStrategy::FromError(tower_resilience_fallback::FromErrorFn<Res, E>)
+pub tower_resilience_fallback::FallbackStrategy::FromRequestError(tower_resilience_fallback::FromRequestErrorFn<Req, Res, E>)
+pub tower_resilience_fallback::FallbackStrategy::Service(tower_resilience_fallback::ServiceFn<Req, Res, E>)
+pub tower_resilience_fallback::FallbackStrategy::Value(Res)
+pub tower_resilience_fallback::FallbackStrategy::ValueFn(tower_resilience_fallback::ValueFn<Res>)
+impl<Req, Res, E> core::clone::Clone for tower_resilience_fallback::FallbackStrategy<Req, Res, E> where Res: core::clone::Clone
+pub fn tower_resilience_fallback::FallbackStrategy<Req, Res, E>::clone(&self) -> Self
+impl<Req, Res, E> core::marker::Freeze for tower_resilience_fallback::FallbackStrategy<Req, Res, E> where Res: core::marker::Freeze
+impl<Req, Res, E> core::marker::Send for tower_resilience_fallback::FallbackStrategy<Req, Res, E> where Res: core::marker::Send
+impl<Req, Res, E> core::marker::Sync for tower_resilience_fallback::FallbackStrategy<Req, Res, E> where Res: core::marker::Sync
+impl<Req, Res, E> core::marker::Unpin for tower_resilience_fallback::FallbackStrategy<Req, Res, E> where Res: core::marker::Unpin
+impl<Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_fallback::FallbackStrategy<Req, Res, E> where Res: core::marker::UnsafeUnpin
+impl<Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_fallback::FallbackStrategy<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_fallback::FallbackStrategy<Req, Res, E>
+pub struct tower_resilience_fallback::Fallback<S, Req, Res, E>
+impl<S, Req, Res, E> tower_resilience_fallback::Fallback<S, Req, Res, E>
+pub fn tower_resilience_fallback::Fallback<S, Req, Res, E>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_fallback::Fallback<S, Req, Res, E>::get_ref(&self) -> &S
+pub fn tower_resilience_fallback::Fallback<S, Req, Res, E>::into_inner(self) -> S
+pub fn tower_resilience_fallback::Fallback<S, Req, Res, E>::new(S, alloc::sync::Arc<tower_resilience_fallback::FallbackConfig<Req, Res, E>>) -> Self
+impl<S, Req, Res, E> core::clone::Clone for tower_resilience_fallback::Fallback<S, Req, Res, E> where S: core::clone::Clone, Res: core::clone::Clone
+pub fn tower_resilience_fallback::Fallback<S, Req, Res, E>::clone(&self) -> Self
+impl<S, Req, Res, E> tower_service::Service<Req> for tower_resilience_fallback::Fallback<S, Req, Res, E> where S: tower_service::Service<Req, Response = Res, Error = E> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, Req: core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, Res: core::clone::Clone + core::marker::Send + core::marker::Sync + 'static, E: core::marker::Send + core::marker::Sync + 'static
+pub type tower_resilience_fallback::Fallback<S, Req, Res, E>::Error = tower_resilience_fallback::FallbackError<E>
+pub type tower_resilience_fallback::Fallback<S, Req, Res, E>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_fallback::Fallback<S, Req, Res, E> as tower_service::Service<Req>>::Response, <tower_resilience_fallback::Fallback<S, Req, Res, E> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_fallback::Fallback<S, Req, Res, E>::Response = Res
+pub fn tower_resilience_fallback::Fallback<S, Req, Res, E>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_fallback::Fallback<S, Req, Res, E>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S, Req, Res, E> core::marker::Freeze for tower_resilience_fallback::Fallback<S, Req, Res, E> where S: core::marker::Freeze
+impl<S, Req, Res, E> core::marker::Send for tower_resilience_fallback::Fallback<S, Req, Res, E> where S: core::marker::Send, Res: core::marker::Sync + core::marker::Send
+impl<S, Req, Res, E> core::marker::Sync for tower_resilience_fallback::Fallback<S, Req, Res, E> where S: core::marker::Sync, Res: core::marker::Sync + core::marker::Send
+impl<S, Req, Res, E> core::marker::Unpin for tower_resilience_fallback::Fallback<S, Req, Res, E> where S: core::marker::Unpin
+impl<S, Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_fallback::Fallback<S, Req, Res, E> where S: core::marker::UnsafeUnpin
+impl<S, Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_fallback::Fallback<S, Req, Res, E>
+impl<S, Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_fallback::Fallback<S, Req, Res, E>
+pub struct tower_resilience_fallback::FallbackConfig<Req, Res, E>
+impl<Req, Res, E> core::marker::Freeze for tower_resilience_fallback::FallbackConfig<Req, Res, E> where Res: core::marker::Freeze
+impl<Req, Res, E> core::marker::Send for tower_resilience_fallback::FallbackConfig<Req, Res, E> where Res: core::marker::Send
+impl<Req, Res, E> core::marker::Sync for tower_resilience_fallback::FallbackConfig<Req, Res, E> where Res: core::marker::Sync
+impl<Req, Res, E> core::marker::Unpin for tower_resilience_fallback::FallbackConfig<Req, Res, E> where Res: core::marker::Unpin
+impl<Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_fallback::FallbackConfig<Req, Res, E> where Res: core::marker::UnsafeUnpin
+impl<Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_fallback::FallbackConfig<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_fallback::FallbackConfig<Req, Res, E>
+pub struct tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>
+impl<Req, Res, E> tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::build(self) -> tower_resilience_fallback::FallbackLayer<Req, Res, E>
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::exception<F>(self, F) -> Self where F: core::ops::function::Fn(E) -> E + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::from_error<F>(self, F) -> Self where F: core::ops::function::Fn(&E) -> Res + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::from_request_error<F>(self, F) -> Self where F: core::ops::function::Fn(&Req, &E) -> Res + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::handle<F>(self, F) -> Self where F: core::ops::function::Fn(&E) -> bool + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::handle_response<F>(self, F) -> Self where F: core::ops::function::Fn(&Res) -> bool + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::new() -> Self
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::on_event<F>(self, F) -> Self where F: core::ops::function::Fn(&tower_resilience_fallback::FallbackEvent) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::service<S, Fut>(self, S) -> Self where S: core::ops::function::Fn(Req) -> Fut + core::marker::Send + core::marker::Sync + 'static, Fut: core::future::future::Future<Output = core::result::Result<Res, E>> + core::marker::Send + 'static
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::value(self, Res) -> Self where Res: core::clone::Clone
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::value_fn<F>(self, F) -> Self where F: core::ops::function::Fn() -> Res + core::marker::Send + core::marker::Sync + 'static
+impl<Req, Res, E> core::default::Default for tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>
+pub fn tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>::default() -> Self
+impl<Req, Res, E> core::marker::Freeze for tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E> where Res: core::marker::Freeze
+impl<Req, Res, E> core::marker::Send for tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E> where Res: core::marker::Send
+impl<Req, Res, E> core::marker::Sync for tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E> where Res: core::marker::Sync
+impl<Req, Res, E> core::marker::Unpin for tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E> where Res: core::marker::Unpin
+impl<Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E> where Res: core::marker::UnsafeUnpin
+impl<Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>
+pub struct tower_resilience_fallback::FallbackLayer<Req, Res, E>
+impl<Req, Res, E> tower_resilience_fallback::FallbackLayer<Req, Res, E> where Res: core::clone::Clone
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::exception<F>(F) -> Self where F: core::ops::function::Fn(E) -> E + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::from_error<F>(F) -> Self where F: core::ops::function::Fn(&E) -> Res + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::from_request_error<F>(F) -> Self where F: core::ops::function::Fn(&Req, &E) -> Res + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::service<S, Fut>(S) -> Self where S: core::ops::function::Fn(Req) -> Fut + core::marker::Send + core::marker::Sync + 'static, Fut: core::future::future::Future<Output = core::result::Result<Res, E>> + core::marker::Send + 'static
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::value(Res) -> Self
+impl<Req, Res, E> tower_resilience_fallback::FallbackLayer<Req, Res, E>
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::builder() -> tower_resilience_fallback::FallbackConfigBuilder<Req, Res, E>
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::tower_service<B>(B) -> tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::value_fn<F>(F) -> Self where F: core::ops::function::Fn() -> Res + core::marker::Send + core::marker::Sync + 'static
+impl<Req, Res, E> core::clone::Clone for tower_resilience_fallback::FallbackLayer<Req, Res, E> where Res: core::clone::Clone
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::clone(&self) -> Self
+impl<S, Req, Res, E> tower_layer::Layer<S> for tower_resilience_fallback::FallbackLayer<Req, Res, E> where Res: core::clone::Clone
+pub type tower_resilience_fallback::FallbackLayer<Req, Res, E>::Service = tower_resilience_fallback::Fallback<S, Req, Res, E>
+pub fn tower_resilience_fallback::FallbackLayer<Req, Res, E>::layer(&self, S) -> Self::Service
+impl<Req, Res, E> core::marker::Freeze for tower_resilience_fallback::FallbackLayer<Req, Res, E>
+impl<Req, Res, E> core::marker::Send for tower_resilience_fallback::FallbackLayer<Req, Res, E> where Res: core::marker::Sync + core::marker::Send
+impl<Req, Res, E> core::marker::Sync for tower_resilience_fallback::FallbackLayer<Req, Res, E> where Res: core::marker::Sync + core::marker::Send
+impl<Req, Res, E> core::marker::Unpin for tower_resilience_fallback::FallbackLayer<Req, Res, E>
+impl<Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_fallback::FallbackLayer<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_fallback::FallbackLayer<Req, Res, E>
+impl<Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_fallback::FallbackLayer<Req, Res, E>
+pub struct tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>
+impl<S, B, Req, Res, E> tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>
+pub fn tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>::get_ref(&self) -> &S
+pub fn tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>::into_inner(self) -> S
+impl<S, B, Req, Res, E> core::clone::Clone for tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E> where S: core::clone::Clone
+pub fn tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>::clone(&self) -> Self
+impl<S, B, Req, Res, E> tower_service::Service<Req> for tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E> where S: tower_service::Service<Req, Response = Res, Error = E> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, B: tower_service::Service<Req, Response = Res> + core::marker::Send + 'static, <B as tower_service::Service>::Future: core::marker::Send + 'static, <B as tower_service::Service>::Error: core::marker::Send + 'static, Req: core::clone::Clone + core::marker::Send + 'static, Res: core::marker::Send + 'static, E: core::marker::Send + 'static
+pub type tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>::Error = tower_resilience_fallback::FallbackError<E, <B as tower_service::Service<Req>>::Error>
+pub type tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<Res, <tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>::Response = Res
+pub fn tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S, B, Req, Res, E> core::marker::Freeze for tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E> where S: core::marker::Freeze
+impl<S, B, Req, Res, E> core::marker::Send for tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E> where S: core::marker::Send, B: core::marker::Send
+impl<S, B, Req, Res, E> core::marker::Sync for tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E> where S: core::marker::Sync, B: core::marker::Send
+impl<S, B, Req, Res, E> core::marker::Unpin for tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E> where S: core::marker::Unpin
+impl<S, B, Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E> where S: core::marker::UnsafeUnpin
+impl<S, B, Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>
+impl<S, B, Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>
+pub struct tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+impl<B, Req, Res, E> tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+pub fn tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>::handle<F>(self, F) -> Self where F: core::ops::function::Fn(&E) -> bool + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>::handle_response<F>(self, F) -> Self where F: core::ops::function::Fn(&Res) -> bool + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>::new(B) -> Self
+pub fn tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>::on_event<F>(self, F) -> Self where F: core::ops::function::Fn(&tower_resilience_fallback::FallbackEvent) + core::marker::Send + core::marker::Sync + 'static
+impl<B, Req, Res, E> core::clone::Clone for tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+pub fn tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>::clone(&self) -> Self
+impl<S, B, Req, Res, E> tower_layer::Layer<S> for tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+pub type tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>::Service = tower_resilience_fallback::ServiceFallback<S, B, Req, Res, E>
+pub fn tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>::layer(&self, S) -> Self::Service
+impl<B, Req, Res, E> core::marker::Freeze for tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+impl<B, Req, Res, E> core::marker::Send for tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E> where B: core::marker::Send
+impl<B, Req, Res, E> core::marker::Sync for tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E> where B: core::marker::Send
+impl<B, Req, Res, E> core::marker::Unpin for tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+impl<B, Req, Res, E> core::marker::UnsafeUnpin for tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+impl<B, Req, Res, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+impl<B, Req, Res, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_fallback::ServiceFallbackLayer<B, Req, Res, E>
+pub type tower_resilience_fallback::ExceptionFn<E> = alloc::sync::Arc<(dyn core::ops::function::Fn(E) -> E + core::marker::Send + core::marker::Sync)>
+pub type tower_resilience_fallback::FromErrorFn<Res, E> = alloc::sync::Arc<(dyn core::ops::function::Fn(&E) -> Res + core::marker::Send + core::marker::Sync)>
+pub type tower_resilience_fallback::FromRequestErrorFn<Req, Res, E> = alloc::sync::Arc<(dyn core::ops::function::Fn(&Req, &E) -> Res + core::marker::Send + core::marker::Sync)>
+pub type tower_resilience_fallback::HandlePredicate<E> = alloc::sync::Arc<(dyn core::ops::function::Fn(&E) -> bool + core::marker::Send + core::marker::Sync)>
+pub type tower_resilience_fallback::HandleResponsePredicate<Res> = alloc::sync::Arc<(dyn core::ops::function::Fn(&Res) -> bool + core::marker::Send + core::marker::Sync)>
+pub type tower_resilience_fallback::ServiceFn<Req, Res, E> = alloc::sync::Arc<(dyn core::ops::function::Fn(Req) -> futures_core::future::BoxFuture<'static, core::result::Result<Res, E>> + core::marker::Send + core::marker::Sync)>
+pub type tower_resilience_fallback::ValueFn<Res> = alloc::sync::Arc<(dyn core::ops::function::Fn() -> Res + core::marker::Send + core::marker::Sync)>

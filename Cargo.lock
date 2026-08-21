@@ -2771,6 +2771,7 @@ dependencies = [
  "serial_test",
  "tokio",
  "tower",
+ "tower-resilience",
  "tower-resilience-adaptive",
  "tower-resilience-bulkhead",
  "tower-resilience-cache",

@@ -1,0 +1,173 @@
+pub mod tower_resilience_timelimiter
+pub enum tower_resilience_timelimiter::TimeLimiterError<E>
+pub tower_resilience_timelimiter::TimeLimiterError::Inner(E)
+pub tower_resilience_timelimiter::TimeLimiterError::Timeout
+impl<E> tower_resilience_timelimiter::TimeLimiterError<E>
+pub fn tower_resilience_timelimiter::TimeLimiterError<E>::into_inner(self) -> core::option::Option<E>
+pub fn tower_resilience_timelimiter::TimeLimiterError<E>::is_timeout(&self) -> bool
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_timelimiter::TimeLimiterError<E>
+pub fn tower_resilience_timelimiter::TimeLimiterError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_timelimiter::TimeLimiterError<E>
+pub fn tower_resilience_timelimiter::TimeLimiterError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_timelimiter::TimeLimiterError<E>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_timelimiter::TimeLimiterError<E>) -> Self
+impl<E> core::convert::From<tower_resilience_timelimiter::TimeLimiterError<tower_resilience_core::error::ResilienceError<E>>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_timelimiter::TimeLimiterError<tower_resilience_core::error::ResilienceError<E>>) -> Self
+impl<E> core::error::Error for tower_resilience_timelimiter::TimeLimiterError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::marker::Freeze for tower_resilience_timelimiter::TimeLimiterError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_timelimiter::TimeLimiterError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_timelimiter::TimeLimiterError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_timelimiter::TimeLimiterError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_timelimiter::TimeLimiterError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_timelimiter::TimeLimiterError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_timelimiter::TimeLimiterError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_timelimiter::TimeLimiterEvent
+pub tower_resilience_timelimiter::TimeLimiterEvent::Error
+pub tower_resilience_timelimiter::TimeLimiterEvent::Error::duration: core::time::Duration
+pub tower_resilience_timelimiter::TimeLimiterEvent::Error::pattern_name: alloc::string::String
+pub tower_resilience_timelimiter::TimeLimiterEvent::Error::timestamp: std::time::Instant
+pub tower_resilience_timelimiter::TimeLimiterEvent::Success
+pub tower_resilience_timelimiter::TimeLimiterEvent::Success::duration: core::time::Duration
+pub tower_resilience_timelimiter::TimeLimiterEvent::Success::pattern_name: alloc::string::String
+pub tower_resilience_timelimiter::TimeLimiterEvent::Success::timestamp: std::time::Instant
+pub tower_resilience_timelimiter::TimeLimiterEvent::Timeout
+pub tower_resilience_timelimiter::TimeLimiterEvent::Timeout::pattern_name: alloc::string::String
+pub tower_resilience_timelimiter::TimeLimiterEvent::Timeout::timeout_duration: core::time::Duration
+pub tower_resilience_timelimiter::TimeLimiterEvent::Timeout::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_timelimiter::TimeLimiterEvent
+pub fn tower_resilience_timelimiter::TimeLimiterEvent::clone(&self) -> tower_resilience_timelimiter::TimeLimiterEvent
+impl core::fmt::Debug for tower_resilience_timelimiter::TimeLimiterEvent
+pub fn tower_resilience_timelimiter::TimeLimiterEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_timelimiter::TimeLimiterEvent
+pub fn tower_resilience_timelimiter::TimeLimiterEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_timelimiter::TimeLimiterEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_timelimiter::TimeLimiterEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_timelimiter::TimeLimiterEvent
+impl core::marker::Send for tower_resilience_timelimiter::TimeLimiterEvent
+impl core::marker::Sync for tower_resilience_timelimiter::TimeLimiterEvent
+impl core::marker::Unpin for tower_resilience_timelimiter::TimeLimiterEvent
+impl core::marker::UnsafeUnpin for tower_resilience_timelimiter::TimeLimiterEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_timelimiter::TimeLimiterEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_timelimiter::TimeLimiterEvent
+pub struct tower_resilience_timelimiter::DynamicTimeout<F>
+impl<F> tower_resilience_timelimiter::DynamicTimeout<F>
+pub fn tower_resilience_timelimiter::DynamicTimeout<F>::new(F) -> Self
+impl<F> core::clone::Clone for tower_resilience_timelimiter::DynamicTimeout<F>
+pub fn tower_resilience_timelimiter::DynamicTimeout<F>::clone(&self) -> Self
+impl<Req, F> tower_resilience_timelimiter::TimeoutFn<Req> for tower_resilience_timelimiter::DynamicTimeout<F> where F: core::ops::function::Fn(&Req) -> core::time::Duration + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_timelimiter::DynamicTimeout<F>::clone_box(&self) -> alloc::boxed::Box<dyn tower_resilience_timelimiter::TimeoutFn<Req>>
+pub fn tower_resilience_timelimiter::DynamicTimeout<F>::get_timeout(&self, &Req) -> core::time::Duration
+impl<F> core::marker::Freeze for tower_resilience_timelimiter::DynamicTimeout<F>
+impl<F> core::marker::Send for tower_resilience_timelimiter::DynamicTimeout<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Sync for tower_resilience_timelimiter::DynamicTimeout<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Unpin for tower_resilience_timelimiter::DynamicTimeout<F>
+impl<F> core::marker::UnsafeUnpin for tower_resilience_timelimiter::DynamicTimeout<F>
+impl<F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_timelimiter::DynamicTimeout<F> where F: core::panic::unwind_safe::RefUnwindSafe
+impl<F> core::panic::unwind_safe::UnwindSafe for tower_resilience_timelimiter::DynamicTimeout<F> where F: core::panic::unwind_safe::RefUnwindSafe
+pub struct tower_resilience_timelimiter::FixedTimeout(_)
+impl tower_resilience_timelimiter::FixedTimeout
+pub fn tower_resilience_timelimiter::FixedTimeout::new(core::time::Duration) -> Self
+impl core::clone::Clone for tower_resilience_timelimiter::FixedTimeout
+pub fn tower_resilience_timelimiter::FixedTimeout::clone(&self) -> tower_resilience_timelimiter::FixedTimeout
+impl core::default::Default for tower_resilience_timelimiter::FixedTimeout
+pub fn tower_resilience_timelimiter::FixedTimeout::default() -> tower_resilience_timelimiter::FixedTimeout
+impl core::fmt::Debug for tower_resilience_timelimiter::FixedTimeout
+pub fn tower_resilience_timelimiter::FixedTimeout::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_timelimiter::FixedTimeout
+impl<Req> tower_resilience_timelimiter::TimeoutFn<Req> for tower_resilience_timelimiter::FixedTimeout
+pub fn tower_resilience_timelimiter::FixedTimeout::clone_box(&self) -> alloc::boxed::Box<dyn tower_resilience_timelimiter::TimeoutFn<Req>>
+pub fn tower_resilience_timelimiter::FixedTimeout::get_timeout(&self, &Req) -> core::time::Duration
+impl core::marker::Freeze for tower_resilience_timelimiter::FixedTimeout
+impl core::marker::Send for tower_resilience_timelimiter::FixedTimeout
+impl core::marker::Sync for tower_resilience_timelimiter::FixedTimeout
+impl core::marker::Unpin for tower_resilience_timelimiter::FixedTimeout
+impl core::marker::UnsafeUnpin for tower_resilience_timelimiter::FixedTimeout
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_timelimiter::FixedTimeout
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_timelimiter::FixedTimeout
+pub struct tower_resilience_timelimiter::TimeLimiter<S, T>
+impl<S, T> tower_resilience_timelimiter::TimeLimiter<S, T>
+pub fn tower_resilience_timelimiter::TimeLimiter<S, T>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_timelimiter::TimeLimiter<S, T>::get_ref(&self) -> &S
+pub fn tower_resilience_timelimiter::TimeLimiter<S, T>::into_inner(self) -> S
+impl<S, T, Req> tower_service::Service<Req> for tower_resilience_timelimiter::TimeLimiter<S, T> where S: tower_service::Service<Req> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, <S as tower_service::Service>::Response: core::marker::Send + 'static, <S as tower_service::Service>::Error: core::marker::Send + 'static, Req: core::marker::Send + 'static, T: tower_resilience_timelimiter::TimeoutFn<Req> + 'static
+pub type tower_resilience_timelimiter::TimeLimiter<S, T>::Error = tower_resilience_timelimiter::TimeLimiterError<<S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_timelimiter::TimeLimiter<S, T>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_timelimiter::TimeLimiter<S, T> as tower_service::Service<Req>>::Response, <tower_resilience_timelimiter::TimeLimiter<S, T> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_timelimiter::TimeLimiter<S, T>::Response = <S as tower_service::Service<Req>>::Response
+pub fn tower_resilience_timelimiter::TimeLimiter<S, T>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_timelimiter::TimeLimiter<S, T>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone, T> core::clone::Clone for tower_resilience_timelimiter::TimeLimiter<S, T>
+pub fn tower_resilience_timelimiter::TimeLimiter<S, T>::clone(&self) -> Self
+impl<S, T> core::marker::Freeze for tower_resilience_timelimiter::TimeLimiter<S, T> where S: core::marker::Freeze
+impl<S, T> core::marker::Send for tower_resilience_timelimiter::TimeLimiter<S, T> where S: core::marker::Send, T: core::marker::Sync + core::marker::Send
+impl<S, T> core::marker::Sync for tower_resilience_timelimiter::TimeLimiter<S, T> where S: core::marker::Sync, T: core::marker::Sync + core::marker::Send
+impl<S, T> core::marker::Unpin for tower_resilience_timelimiter::TimeLimiter<S, T> where S: core::marker::Unpin
+impl<S, T> core::marker::UnsafeUnpin for tower_resilience_timelimiter::TimeLimiter<S, T> where S: core::marker::UnsafeUnpin
+impl<S, T> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_timelimiter::TimeLimiter<S, T>
+impl<S, T> !core::panic::unwind_safe::UnwindSafe for tower_resilience_timelimiter::TimeLimiter<S, T>
+pub struct tower_resilience_timelimiter::TimeLimiterConfig<T>
+impl<T: core::clone::Clone> core::clone::Clone for tower_resilience_timelimiter::TimeLimiterConfig<T>
+pub fn tower_resilience_timelimiter::TimeLimiterConfig<T>::clone(&self) -> Self
+impl<T> core::convert::From<tower_resilience_timelimiter::TimeLimiterConfig<T>> for tower_resilience_timelimiter::TimeLimiterLayer<T>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<T>::from(tower_resilience_timelimiter::TimeLimiterConfig<T>) -> Self
+impl<T> core::marker::Freeze for tower_resilience_timelimiter::TimeLimiterConfig<T> where T: core::marker::Freeze
+impl<T> core::marker::Send for tower_resilience_timelimiter::TimeLimiterConfig<T> where T: core::marker::Send
+impl<T> core::marker::Sync for tower_resilience_timelimiter::TimeLimiterConfig<T> where T: core::marker::Sync
+impl<T> core::marker::Unpin for tower_resilience_timelimiter::TimeLimiterConfig<T> where T: core::marker::Unpin
+impl<T> core::marker::UnsafeUnpin for tower_resilience_timelimiter::TimeLimiterConfig<T> where T: core::marker::UnsafeUnpin
+impl<T> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_timelimiter::TimeLimiterConfig<T>
+impl<T> !core::panic::unwind_safe::UnwindSafe for tower_resilience_timelimiter::TimeLimiterConfig<T>
+pub struct tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>
+impl tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>::new() -> Self
+impl<T> tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>::build(self) -> tower_resilience_timelimiter::TimeLimiterLayer<T>
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>::cancel_running_future(self, bool) -> Self
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>::on_error<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>::on_success<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>::on_timeout<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>::timeout_duration(self, core::time::Duration) -> tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>::timeout_fn<Req, F>(self, F) -> tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::DynamicTimeout<F>> where F: core::ops::function::Fn(&Req) -> core::time::Duration + core::marker::Send + core::marker::Sync + 'static
+impl core::default::Default for tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>::default() -> Self
+impl<T> core::marker::Freeze for tower_resilience_timelimiter::TimeLimiterConfigBuilder<T> where T: core::marker::Freeze
+impl<T> core::marker::Send for tower_resilience_timelimiter::TimeLimiterConfigBuilder<T> where T: core::marker::Send
+impl<T> core::marker::Sync for tower_resilience_timelimiter::TimeLimiterConfigBuilder<T> where T: core::marker::Sync
+impl<T> core::marker::Unpin for tower_resilience_timelimiter::TimeLimiterConfigBuilder<T> where T: core::marker::Unpin
+impl<T> core::marker::UnsafeUnpin for tower_resilience_timelimiter::TimeLimiterConfigBuilder<T> where T: core::marker::UnsafeUnpin
+impl<T> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>
+impl<T> !core::panic::unwind_safe::UnwindSafe for tower_resilience_timelimiter::TimeLimiterConfigBuilder<T>
+pub struct tower_resilience_timelimiter::TimeLimiterLayer<T>
+impl tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>::builder() -> tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>::detached() -> tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>::fast() -> tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>::slow() -> tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>::standard() -> tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>::streaming() -> tower_resilience_timelimiter::TimeLimiterConfigBuilder<tower_resilience_timelimiter::FixedTimeout>
+impl<S, F> tower_layer::Layer<S> for tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::DynamicTimeout<F>> where F: 'static
+pub type tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::DynamicTimeout<F>>::Service = tower_resilience_timelimiter::TimeLimiter<S, tower_resilience_timelimiter::DynamicTimeout<F>>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::DynamicTimeout<F>>::layer(&self, S) -> Self::Service
+impl<S> tower_layer::Layer<S> for tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>
+pub type tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>::Service = tower_resilience_timelimiter::TimeLimiter<S, tower_resilience_timelimiter::FixedTimeout>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<tower_resilience_timelimiter::FixedTimeout>::layer(&self, S) -> Self::Service
+impl<T: core::clone::Clone> core::clone::Clone for tower_resilience_timelimiter::TimeLimiterLayer<T>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<T>::clone(&self) -> tower_resilience_timelimiter::TimeLimiterLayer<T>
+impl<T> core::convert::From<tower_resilience_timelimiter::TimeLimiterConfig<T>> for tower_resilience_timelimiter::TimeLimiterLayer<T>
+pub fn tower_resilience_timelimiter::TimeLimiterLayer<T>::from(tower_resilience_timelimiter::TimeLimiterConfig<T>) -> Self
+impl<T> core::marker::Freeze for tower_resilience_timelimiter::TimeLimiterLayer<T>
+impl<T> core::marker::Send for tower_resilience_timelimiter::TimeLimiterLayer<T> where T: core::marker::Sync + core::marker::Send
+impl<T> core::marker::Sync for tower_resilience_timelimiter::TimeLimiterLayer<T> where T: core::marker::Sync + core::marker::Send
+impl<T> core::marker::Unpin for tower_resilience_timelimiter::TimeLimiterLayer<T>
+impl<T> core::marker::UnsafeUnpin for tower_resilience_timelimiter::TimeLimiterLayer<T>
+impl<T> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_timelimiter::TimeLimiterLayer<T>
+impl<T> !core::panic::unwind_safe::UnwindSafe for tower_resilience_timelimiter::TimeLimiterLayer<T>
+pub trait tower_resilience_timelimiter::TimeoutFn<Req>: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_timelimiter::TimeoutFn::clone_box(&self) -> alloc::boxed::Box<dyn tower_resilience_timelimiter::TimeoutFn<Req>>
+pub fn tower_resilience_timelimiter::TimeoutFn::get_timeout(&self, &Req) -> core::time::Duration
+impl<Req, F> tower_resilience_timelimiter::TimeoutFn<Req> for tower_resilience_timelimiter::DynamicTimeout<F> where F: core::ops::function::Fn(&Req) -> core::time::Duration + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_timelimiter::DynamicTimeout<F>::clone_box(&self) -> alloc::boxed::Box<dyn tower_resilience_timelimiter::TimeoutFn<Req>>
+pub fn tower_resilience_timelimiter::DynamicTimeout<F>::get_timeout(&self, &Req) -> core::time::Duration
+impl<Req> tower_resilience_timelimiter::TimeoutFn<Req> for tower_resilience_timelimiter::FixedTimeout
+pub fn tower_resilience_timelimiter::FixedTimeout::clone_box(&self) -> alloc::boxed::Box<dyn tower_resilience_timelimiter::TimeoutFn<Req>>
+pub fn tower_resilience_timelimiter::FixedTimeout::get_timeout(&self, &Req) -> core::time::Duration

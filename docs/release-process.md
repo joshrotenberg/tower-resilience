@@ -5,6 +5,28 @@ Audience: maintainers preparing, monitoring, or recovering a workspace release.
 Review this runbook for every release PR. Update it whenever the publishable
 workspace shape, release-plz workflow, or crates.io recovery procedure changes.
 
+## Public API review
+
+For every pre-1.0 minor release, compare all publishable crates with the
+currently published version before approving the release PR:
+
+```bash
+python3 scripts/public_api.py diff 0.12.0
+```
+
+Classify every added, changed, and removed public item. Ensure every
+intentional source break appears in the affected crate changelog and in the
+facade changelog and migration guide. Then regenerate the checked-in snapshots
+with `python3 scripts/public_api.py update`, review their diff, and commit that
+acknowledgement with the API changes.
+
+Do not interpret release-plz's "API compatible" output as proof of source
+compatibility. Its semver check is not exhaustive, and a pre-1.0 minor bump may
+legitimately contain source-breaking changes. The snapshot gate detects that
+the surface changed; maintainer review decides whether the change and release
+notes are correct. See [`public-api-review.md`](public-api-review.md) for the
+pinned tools and full procedure.
+
 ## Non-publishing preflight
 
 From the repository root, run:
@@ -71,6 +93,8 @@ from Cargo metadata instead of maintaining a second hard-coded crate list.
 
 1. Confirm the release PR's publish preflight and normal CI are green, it has
    no conflicts, and its generated changelog matches the intended release.
+   For a pre-1.0 minor, also confirm the public API diff was reviewed and its
+   snapshot update and intentional breaks are present in the release PR.
 2. Merge the release PR and immediately locate the `Release` workflow run for
    that merge commit with `gh run list --workflow Release`.
 3. Watch it through completion with `gh run watch <run-id> --exit-status`.

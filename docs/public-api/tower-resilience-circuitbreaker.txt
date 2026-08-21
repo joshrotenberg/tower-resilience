@@ -1,0 +1,340 @@
+pub mod tower_resilience_circuitbreaker
+pub use tower_resilience_circuitbreaker::DefaultClassifier
+pub use tower_resilience_circuitbreaker::FailureClassifier
+pub use tower_resilience_circuitbreaker::FnClassifier
+pub mod tower_resilience_circuitbreaker::classifier
+pub use tower_resilience_circuitbreaker::classifier::DefaultClassifier
+pub use tower_resilience_circuitbreaker::classifier::FailureClassifier
+pub use tower_resilience_circuitbreaker::classifier::FnClassifier
+#[non_exhaustive] pub enum tower_resilience_circuitbreaker::CircuitBreakerConfigError
+pub tower_resilience_circuitbreaker::CircuitBreakerConfigError::InvalidFailureRateThreshold(f64)
+pub tower_resilience_circuitbreaker::CircuitBreakerConfigError::InvalidSlowCallRateThreshold(f64)
+pub tower_resilience_circuitbreaker::CircuitBreakerConfigError::MissingSlidingWindowDuration
+pub tower_resilience_circuitbreaker::CircuitBreakerConfigError::ZeroConsecutiveFailures
+pub tower_resilience_circuitbreaker::CircuitBreakerConfigError::ZeroSlidingWindowSize
+impl core::clone::Clone for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigError::clone(&self) -> tower_resilience_circuitbreaker::CircuitBreakerConfigError
+impl core::cmp::PartialEq for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigError::eq(&self, &tower_resilience_circuitbreaker::CircuitBreakerConfigError) -> bool
+impl core::error::Error for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+impl core::fmt::Debug for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+impl core::marker::Freeze for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+impl core::marker::Send for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+impl core::marker::Sync for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+impl core::marker::Unpin for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerConfigError
+pub enum tower_resilience_circuitbreaker::CircuitBreakerError<E>
+pub tower_resilience_circuitbreaker::CircuitBreakerError::Inner(E)
+pub tower_resilience_circuitbreaker::CircuitBreakerError::OpenCircuit
+impl<E> tower_resilience_circuitbreaker::CircuitBreakerError<E>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerError<E>::into_inner(self) -> core::option::Option<E>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerError<E>::is_circuit_open(&self) -> bool
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_circuitbreaker::CircuitBreakerError<E>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<E> for tower_resilience_circuitbreaker::CircuitBreakerError<E>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerError<E>::from(E) -> Self
+impl<E> core::convert::From<tower_resilience_circuitbreaker::CircuitBreakerError<E>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_circuitbreaker::CircuitBreakerError<E>) -> Self
+impl<E> core::convert::From<tower_resilience_circuitbreaker::CircuitBreakerError<tower_resilience_core::error::ResilienceError<E>>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_circuitbreaker::CircuitBreakerError<tower_resilience_core::error::ResilienceError<E>>) -> Self
+impl<E> core::error::Error for tower_resilience_circuitbreaker::CircuitBreakerError<E> where Self: core::fmt::Debug + core::fmt::Display
+impl<E> core::fmt::Display for tower_resilience_circuitbreaker::CircuitBreakerError<E> where E: core::fmt::Display
+pub fn tower_resilience_circuitbreaker::CircuitBreakerError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::marker::Freeze for tower_resilience_circuitbreaker::CircuitBreakerError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_circuitbreaker::CircuitBreakerError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_circuitbreaker::CircuitBreakerError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_circuitbreaker::CircuitBreakerError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitBreakerError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_circuitbreaker::CircuitBreakerEvent
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::CallPermitted
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::CallPermitted::pattern_name: alloc::string::String
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::CallPermitted::state: tower_resilience_circuitbreaker::CircuitState
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::CallPermitted::timestamp: std::time::Instant
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::CallRejected
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::CallRejected::pattern_name: alloc::string::String
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::CallRejected::timestamp: std::time::Instant
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::FailureRecorded
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::FailureRecorded::pattern_name: alloc::string::String
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::FailureRecorded::state: tower_resilience_circuitbreaker::CircuitState
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::FailureRecorded::timestamp: std::time::Instant
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::SlowCallDetected
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::SlowCallDetected::duration: core::time::Duration
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::SlowCallDetected::pattern_name: alloc::string::String
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::SlowCallDetected::state: tower_resilience_circuitbreaker::CircuitState
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::SlowCallDetected::timestamp: std::time::Instant
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::StateTransition
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::StateTransition::from_state: tower_resilience_circuitbreaker::CircuitState
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::StateTransition::pattern_name: alloc::string::String
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::StateTransition::timestamp: std::time::Instant
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::StateTransition::to_state: tower_resilience_circuitbreaker::CircuitState
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::SuccessRecorded
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::SuccessRecorded::pattern_name: alloc::string::String
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::SuccessRecorded::state: tower_resilience_circuitbreaker::CircuitState
+pub tower_resilience_circuitbreaker::CircuitBreakerEvent::SuccessRecorded::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_circuitbreaker::CircuitBreakerEvent
+pub fn tower_resilience_circuitbreaker::CircuitBreakerEvent::clone(&self) -> tower_resilience_circuitbreaker::CircuitBreakerEvent
+impl core::fmt::Debug for tower_resilience_circuitbreaker::CircuitBreakerEvent
+pub fn tower_resilience_circuitbreaker::CircuitBreakerEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_circuitbreaker::CircuitBreakerEvent
+pub fn tower_resilience_circuitbreaker::CircuitBreakerEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_circuitbreaker::CircuitBreakerEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_circuitbreaker::CircuitBreakerEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_circuitbreaker::CircuitBreakerEvent
+impl core::marker::Send for tower_resilience_circuitbreaker::CircuitBreakerEvent
+impl core::marker::Sync for tower_resilience_circuitbreaker::CircuitBreakerEvent
+impl core::marker::Unpin for tower_resilience_circuitbreaker::CircuitBreakerEvent
+impl core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitBreakerEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerEvent
+#[repr(u8)] pub enum tower_resilience_circuitbreaker::CircuitState
+pub tower_resilience_circuitbreaker::CircuitState::Closed = 0
+pub tower_resilience_circuitbreaker::CircuitState::HalfOpen = 2
+pub tower_resilience_circuitbreaker::CircuitState::Open = 1
+impl core::clone::Clone for tower_resilience_circuitbreaker::CircuitState
+pub fn tower_resilience_circuitbreaker::CircuitState::clone(&self) -> tower_resilience_circuitbreaker::CircuitState
+impl core::cmp::Eq for tower_resilience_circuitbreaker::CircuitState
+impl core::cmp::PartialEq for tower_resilience_circuitbreaker::CircuitState
+pub fn tower_resilience_circuitbreaker::CircuitState::eq(&self, &tower_resilience_circuitbreaker::CircuitState) -> bool
+impl core::fmt::Debug for tower_resilience_circuitbreaker::CircuitState
+pub fn tower_resilience_circuitbreaker::CircuitState::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_circuitbreaker::CircuitState
+impl core::marker::StructuralPartialEq for tower_resilience_circuitbreaker::CircuitState
+impl serde_core::ser::Serialize for tower_resilience_circuitbreaker::CircuitState
+pub fn tower_resilience_circuitbreaker::CircuitState::serialize<__S>(&self, __S) -> core::result::Result<<__S as serde_core::ser::Serializer>::Ok, <__S as serde_core::ser::Serializer>::Error> where __S: serde_core::ser::Serializer
+impl<'de> serde_core::de::Deserialize<'de> for tower_resilience_circuitbreaker::CircuitState
+pub fn tower_resilience_circuitbreaker::CircuitState::deserialize<__D>(__D) -> core::result::Result<Self, <__D as serde_core::de::Deserializer>::Error> where __D: serde_core::de::Deserializer<'de>
+impl core::marker::Freeze for tower_resilience_circuitbreaker::CircuitState
+impl core::marker::Send for tower_resilience_circuitbreaker::CircuitState
+impl core::marker::Sync for tower_resilience_circuitbreaker::CircuitState
+impl core::marker::Unpin for tower_resilience_circuitbreaker::CircuitState
+impl core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitState
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitState
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitState
+pub enum tower_resilience_circuitbreaker::FailureModel
+pub tower_resilience_circuitbreaker::FailureModel::ConsecutiveFailures
+pub tower_resilience_circuitbreaker::FailureModel::ConsecutiveFailures::k: usize
+pub tower_resilience_circuitbreaker::FailureModel::SlidingWindow
+impl core::clone::Clone for tower_resilience_circuitbreaker::FailureModel
+pub fn tower_resilience_circuitbreaker::FailureModel::clone(&self) -> tower_resilience_circuitbreaker::FailureModel
+impl core::cmp::Eq for tower_resilience_circuitbreaker::FailureModel
+impl core::cmp::PartialEq for tower_resilience_circuitbreaker::FailureModel
+pub fn tower_resilience_circuitbreaker::FailureModel::eq(&self, &tower_resilience_circuitbreaker::FailureModel) -> bool
+impl core::default::Default for tower_resilience_circuitbreaker::FailureModel
+pub fn tower_resilience_circuitbreaker::FailureModel::default() -> tower_resilience_circuitbreaker::FailureModel
+impl core::fmt::Debug for tower_resilience_circuitbreaker::FailureModel
+pub fn tower_resilience_circuitbreaker::FailureModel::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_circuitbreaker::FailureModel
+impl core::marker::StructuralPartialEq for tower_resilience_circuitbreaker::FailureModel
+impl core::marker::Freeze for tower_resilience_circuitbreaker::FailureModel
+impl core::marker::Send for tower_resilience_circuitbreaker::FailureModel
+impl core::marker::Sync for tower_resilience_circuitbreaker::FailureModel
+impl core::marker::Unpin for tower_resilience_circuitbreaker::FailureModel
+impl core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::FailureModel
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::FailureModel
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::FailureModel
+pub enum tower_resilience_circuitbreaker::SlidingWindowType
+pub tower_resilience_circuitbreaker::SlidingWindowType::CountBased
+pub tower_resilience_circuitbreaker::SlidingWindowType::TimeBased
+impl core::clone::Clone for tower_resilience_circuitbreaker::SlidingWindowType
+pub fn tower_resilience_circuitbreaker::SlidingWindowType::clone(&self) -> tower_resilience_circuitbreaker::SlidingWindowType
+impl core::cmp::Eq for tower_resilience_circuitbreaker::SlidingWindowType
+impl core::cmp::PartialEq for tower_resilience_circuitbreaker::SlidingWindowType
+pub fn tower_resilience_circuitbreaker::SlidingWindowType::eq(&self, &tower_resilience_circuitbreaker::SlidingWindowType) -> bool
+impl core::fmt::Debug for tower_resilience_circuitbreaker::SlidingWindowType
+pub fn tower_resilience_circuitbreaker::SlidingWindowType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_circuitbreaker::SlidingWindowType
+impl core::marker::StructuralPartialEq for tower_resilience_circuitbreaker::SlidingWindowType
+impl core::marker::Freeze for tower_resilience_circuitbreaker::SlidingWindowType
+impl core::marker::Send for tower_resilience_circuitbreaker::SlidingWindowType
+impl core::marker::Sync for tower_resilience_circuitbreaker::SlidingWindowType
+impl core::marker::Unpin for tower_resilience_circuitbreaker::SlidingWindowType
+impl core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::SlidingWindowType
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::SlidingWindowType
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::SlidingWindowType
+pub struct tower_resilience_circuitbreaker::CircuitBreaker<S, C>
+impl<S, C> tower_resilience_circuitbreaker::CircuitBreaker<S, C>
+pub async fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::force_closed(&self)
+pub async fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::force_open(&self)
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::get_ref(&self) -> &S
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::health_status(&self) -> &'static str
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::http_status(&self) -> u16
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::into_inner(self) -> S
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::is_open(&self) -> bool
+pub async fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::metrics(&self) -> tower_resilience_circuitbreaker::CircuitMetrics
+pub async fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::reset(&self)
+pub async fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::state(&self) -> tower_resilience_circuitbreaker::CircuitState
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::state_sync(&self) -> tower_resilience_circuitbreaker::CircuitState
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::with_fallback<Req, Res, Err, F>(self, F) -> tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> where F: core::ops::function::Fn(Req) -> futures_core::future::BoxFuture<'static, core::result::Result<Res, Err>> + core::marker::Send + core::marker::Sync + 'static
+impl<S, C, Req> tower_service::Service<Req> for tower_resilience_circuitbreaker::CircuitBreaker<S, C> where S: tower_service::Service<Req> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Response: core::marker::Send + 'static, <S as tower_service::Service>::Error: core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, Req: core::marker::Send + 'static, C: tower_resilience_core::classifier::FailureClassifier<<S as tower_service::Service>::Response, <S as tower_service::Service>::Error> + core::marker::Send + core::marker::Sync + 'static
+pub type tower_resilience_circuitbreaker::CircuitBreaker<S, C>::Error = tower_resilience_circuitbreaker::CircuitBreakerError<<S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_circuitbreaker::CircuitBreaker<S, C>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<S as tower_service::Service<Req>>::Response, <tower_resilience_circuitbreaker::CircuitBreaker<S, C> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_circuitbreaker::CircuitBreaker<S, C>::Response = <S as tower_service::Service<Req>>::Response
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S, C> core::clone::Clone for tower_resilience_circuitbreaker::CircuitBreaker<S, C> where S: core::clone::Clone
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::clone(&self) -> Self
+impl<S, C> tower_resilience_core::health_integration::HealthTriggerable for tower_resilience_circuitbreaker::CircuitBreaker<S, C> where S: core::marker::Send + core::marker::Sync + 'static, C: core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::trigger_healthy(&self)
+pub fn tower_resilience_circuitbreaker::CircuitBreaker<S, C>::trigger_unhealthy(&self)
+impl<S, C> core::marker::Freeze for tower_resilience_circuitbreaker::CircuitBreaker<S, C> where S: core::marker::Freeze
+impl<S, C> core::marker::Send for tower_resilience_circuitbreaker::CircuitBreaker<S, C> where S: core::marker::Send, C: core::marker::Sync + core::marker::Send
+impl<S, C> core::marker::Sync for tower_resilience_circuitbreaker::CircuitBreaker<S, C> where S: core::marker::Sync, C: core::marker::Sync + core::marker::Send
+impl<S, C> core::marker::Unpin for tower_resilience_circuitbreaker::CircuitBreaker<S, C> where S: core::marker::Unpin
+impl<S, C> core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitBreaker<S, C> where S: core::marker::UnsafeUnpin
+impl<S, C> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitBreaker<S, C>
+impl<S, C> !core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitBreaker<S, C>
+pub struct tower_resilience_circuitbreaker::CircuitBreakerConfig<C>
+impl<C> core::marker::Freeze for tower_resilience_circuitbreaker::CircuitBreakerConfig<C> where C: core::marker::Freeze
+impl<C> core::marker::Send for tower_resilience_circuitbreaker::CircuitBreakerConfig<C> where C: core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_circuitbreaker::CircuitBreakerConfig<C> where C: core::marker::Sync
+impl<C> core::marker::Unpin for tower_resilience_circuitbreaker::CircuitBreakerConfig<C> where C: core::marker::Unpin
+impl<C> core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitBreakerConfig<C> where C: core::marker::UnsafeUnpin
+impl<C> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerConfig<C>
+impl<C> !core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerConfig<C>
+pub struct tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>
+impl tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>::new() -> Self
+impl<C> tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::backpressure(self) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::build(self) -> core::result::Result<tower_resilience_circuitbreaker::CircuitBreakerLayer<C>, tower_resilience_circuitbreaker::CircuitBreakerConfigError>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::build_with_handle(self) -> core::result::Result<(tower_resilience_circuitbreaker::CircuitBreakerLayer<C>, tower_resilience_circuitbreaker::CircuitBreakerHandle<C>), tower_resilience_circuitbreaker::CircuitBreakerConfigError>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::classify_response<F, Res>(self, F) -> tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::FnClassifier<impl core::ops::function::Fn(&core::result::Result<Res, core::convert::Infallible>) -> bool + core::marker::Send + core::marker::Sync>> where F: core::ops::function::Fn(&Res) -> bool + core::marker::Send + core::marker::Sync + 'static, Res: 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::consecutive_failures(self, usize) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::failure_classifier<F, Res, Err>(self, F) -> tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::FnClassifier<F>> where F: core::ops::function::Fn(&core::result::Result<Res, Err>) -> bool + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::failure_classifier_type<C2>(self, C2) -> tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C2>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::failure_model(self, tower_resilience_circuitbreaker::FailureModel) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::failure_rate_threshold(self, f64) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::manual_mode(self) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::minimum_number_of_calls(self, usize) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::name<N: core::convert::Into<alloc::string::String>>(self, N) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::on_call_permitted<F>(self, F) -> Self where F: core::ops::function::Fn(tower_resilience_circuitbreaker::CircuitState) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::on_call_rejected<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::on_failure<F>(self, F) -> Self where F: core::ops::function::Fn(tower_resilience_circuitbreaker::CircuitState) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::on_slow_call<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::on_state_transition<F>(self, F) -> Self where F: core::ops::function::Fn(tower_resilience_circuitbreaker::CircuitState, tower_resilience_circuitbreaker::CircuitState) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::on_success<F>(self, F) -> Self where F: core::ops::function::Fn(tower_resilience_circuitbreaker::CircuitState) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::permitted_calls_in_half_open(self, usize) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::sliding_window_duration(self, core::time::Duration) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::sliding_window_size(self, usize) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::sliding_window_type(self, tower_resilience_circuitbreaker::SlidingWindowType) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::slow_call_duration_threshold(self, core::time::Duration) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::slow_call_rate_threshold(self, f64) -> Self
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>::wait_duration_in_open(self, core::time::Duration) -> Self
+impl core::default::Default for tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>::default() -> Self
+impl<C> core::marker::Freeze for tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C> where C: core::marker::Freeze
+impl<C> core::marker::Send for tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C> where C: core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C> where C: core::marker::Sync
+impl<C> core::marker::Unpin for tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C> where C: core::marker::Unpin
+impl<C> core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C> where C: core::marker::UnsafeUnpin
+impl<C> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>
+impl<C> !core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<C>
+pub struct tower_resilience_circuitbreaker::CircuitBreakerHandle<C>
+impl<C> tower_resilience_circuitbreaker::CircuitBreakerHandle<C>
+pub async fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::force_closed(&self)
+pub async fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::force_open(&self)
+pub fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::health_status(&self) -> &'static str
+pub fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::http_status(&self) -> u16
+pub fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::is_open(&self) -> bool
+pub async fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::metrics(&self) -> tower_resilience_circuitbreaker::CircuitMetrics
+pub async fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::reset(&self)
+pub fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::state(&self) -> tower_resilience_circuitbreaker::CircuitState
+impl<C: core::clone::Clone> core::clone::Clone for tower_resilience_circuitbreaker::CircuitBreakerHandle<C>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::clone(&self) -> tower_resilience_circuitbreaker::CircuitBreakerHandle<C>
+impl<C> tower_resilience_core::health_integration::HealthTriggerable for tower_resilience_circuitbreaker::CircuitBreakerHandle<C> where C: core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::trigger_healthy(&self)
+pub fn tower_resilience_circuitbreaker::CircuitBreakerHandle<C>::trigger_unhealthy(&self)
+impl<C> core::marker::Freeze for tower_resilience_circuitbreaker::CircuitBreakerHandle<C>
+impl<C> core::marker::Send for tower_resilience_circuitbreaker::CircuitBreakerHandle<C> where C: core::marker::Sync + core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_circuitbreaker::CircuitBreakerHandle<C> where C: core::marker::Sync + core::marker::Send
+impl<C> core::marker::Unpin for tower_resilience_circuitbreaker::CircuitBreakerHandle<C>
+impl<C> core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitBreakerHandle<C>
+impl<C> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerHandle<C>
+impl<C> !core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerHandle<C>
+pub struct tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+impl tower_resilience_circuitbreaker::CircuitBreakerLayer<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerLayer<tower_resilience_core::classifier::DefaultClassifier>::builder() -> tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerLayer<tower_resilience_core::classifier::DefaultClassifier>::fast_fail() -> tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerLayer<tower_resilience_core::classifier::DefaultClassifier>::standard() -> tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerLayer<tower_resilience_core::classifier::DefaultClassifier>::tolerant() -> tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+impl<C> tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerLayer<C>::layer_fn<S>(&self, S) -> tower_resilience_circuitbreaker::CircuitBreaker<S, C> where C: core::clone::Clone
+impl<C: core::clone::Clone> core::clone::Clone for tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerLayer<C>::clone(&self) -> tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+impl<S, C> tower_layer::Layer<S> for tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+pub type tower_resilience_circuitbreaker::CircuitBreakerLayer<C>::Service = tower_resilience_circuitbreaker::CircuitBreaker<S, C>
+pub fn tower_resilience_circuitbreaker::CircuitBreakerLayer<C>::layer(&self, S) -> Self::Service
+impl<C> core::marker::Freeze for tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+impl<C> core::marker::Send for tower_resilience_circuitbreaker::CircuitBreakerLayer<C> where C: core::marker::Sync + core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_circuitbreaker::CircuitBreakerLayer<C> where C: core::marker::Sync + core::marker::Send
+impl<C> core::marker::Unpin for tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+impl<C> core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+impl<C> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+impl<C> !core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerLayer<C>
+pub struct tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>
+impl<S, C, Req, Res, Err> tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>
+pub async fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::force_closed(&self)
+pub async fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::force_open(&self)
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::get_ref(&self) -> &S
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::health_status(&self) -> &'static str
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::http_status(&self) -> u16
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::into_inner(self) -> S
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::is_open(&self) -> bool
+pub async fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::metrics(&self) -> tower_resilience_circuitbreaker::CircuitMetrics
+pub async fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::reset(&self)
+pub async fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::state(&self) -> tower_resilience_circuitbreaker::CircuitState
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::state_sync(&self) -> tower_resilience_circuitbreaker::CircuitState
+impl<S, C, Req, Res, Err> core::clone::Clone for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> where S: core::clone::Clone
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::clone(&self) -> Self
+impl<S, C, Req, Res, Err> tower_resilience_core::health_integration::HealthTriggerable for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> where S: core::marker::Send + core::marker::Sync + 'static, C: core::marker::Send + core::marker::Sync + 'static, Req: core::marker::Send + core::marker::Sync + 'static, Res: core::marker::Send + core::marker::Sync + 'static, Err: core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::trigger_healthy(&self)
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::trigger_unhealthy(&self)
+impl<S, C, Req, Res, Err> tower_service::Service<Req> for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> where S: tower_service::Service<Req, Response = Res, Error = Err> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, Res: core::marker::Send + 'static, Err: core::marker::Send + 'static, Req: core::marker::Send + 'static, C: tower_resilience_core::classifier::FailureClassifier<Res, Err> + core::marker::Send + core::marker::Sync + 'static
+pub type tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::Error = tower_resilience_circuitbreaker::CircuitBreakerError<Err>
+pub type tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<Res, <tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::Response = Res
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S, C, Req, Res, Err> core::marker::Freeze for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> where S: core::marker::Freeze
+impl<S, C, Req, Res, Err> core::marker::Send for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> where S: core::marker::Send, C: core::marker::Sync + core::marker::Send, Req: core::marker::Send, Res: core::marker::Send, Err: core::marker::Send
+impl<S, C, Req, Res, Err> core::marker::Sync for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> where S: core::marker::Sync, C: core::marker::Sync + core::marker::Send, Req: core::marker::Sync, Res: core::marker::Sync, Err: core::marker::Sync
+impl<S, C, Req, Res, Err> core::marker::Unpin for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> where S: core::marker::Unpin, Req: core::marker::Unpin, Res: core::marker::Unpin, Err: core::marker::Unpin
+impl<S, C, Req, Res, Err> core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err> where S: core::marker::UnsafeUnpin
+impl<S, C, Req, Res, Err> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>
+impl<S, C, Req, Res, Err> !core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitBreakerWithFallback<S, C, Req, Res, Err>
+pub struct tower_resilience_circuitbreaker::CircuitMetrics
+pub tower_resilience_circuitbreaker::CircuitMetrics::failure_count: usize
+pub tower_resilience_circuitbreaker::CircuitMetrics::failure_rate: f64
+pub tower_resilience_circuitbreaker::CircuitMetrics::slow_call_count: usize
+pub tower_resilience_circuitbreaker::CircuitMetrics::slow_call_rate: f64
+pub tower_resilience_circuitbreaker::CircuitMetrics::state: tower_resilience_circuitbreaker::CircuitState
+pub tower_resilience_circuitbreaker::CircuitMetrics::success_count: usize
+pub tower_resilience_circuitbreaker::CircuitMetrics::time_since_state_change: core::time::Duration
+pub tower_resilience_circuitbreaker::CircuitMetrics::total_calls: usize
+impl core::clone::Clone for tower_resilience_circuitbreaker::CircuitMetrics
+pub fn tower_resilience_circuitbreaker::CircuitMetrics::clone(&self) -> tower_resilience_circuitbreaker::CircuitMetrics
+impl core::cmp::PartialEq for tower_resilience_circuitbreaker::CircuitMetrics
+pub fn tower_resilience_circuitbreaker::CircuitMetrics::eq(&self, &tower_resilience_circuitbreaker::CircuitMetrics) -> bool
+impl core::fmt::Debug for tower_resilience_circuitbreaker::CircuitMetrics
+pub fn tower_resilience_circuitbreaker::CircuitMetrics::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for tower_resilience_circuitbreaker::CircuitMetrics
+impl serde_core::ser::Serialize for tower_resilience_circuitbreaker::CircuitMetrics
+pub fn tower_resilience_circuitbreaker::CircuitMetrics::serialize<__S>(&self, __S) -> core::result::Result<<__S as serde_core::ser::Serializer>::Ok, <__S as serde_core::ser::Serializer>::Error> where __S: serde_core::ser::Serializer
+impl core::marker::Freeze for tower_resilience_circuitbreaker::CircuitMetrics
+impl core::marker::Send for tower_resilience_circuitbreaker::CircuitMetrics
+impl core::marker::Sync for tower_resilience_circuitbreaker::CircuitMetrics
+impl core::marker::Unpin for tower_resilience_circuitbreaker::CircuitMetrics
+impl core::marker::UnsafeUnpin for tower_resilience_circuitbreaker::CircuitMetrics
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_circuitbreaker::CircuitMetrics
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_circuitbreaker::CircuitMetrics
+pub fn tower_resilience_circuitbreaker::circuit_breaker_builder() -> tower_resilience_circuitbreaker::CircuitBreakerConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>

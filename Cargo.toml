@@ -37,6 +37,7 @@ criterion = { workspace = true }
 serial_test = "3.2"
 rand = "0.9"
 proptest = { workspace = true }
+tower-resilience = { path = "crates/tower-resilience", features = ["full"] }
 
 [[bench]]
 name = "happy_path_overhead"

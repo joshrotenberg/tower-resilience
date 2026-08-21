@@ -20,8 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generic middleware errors now compose directly with Tower `BoxError`.
   Application/inner errors remain available through typed variants and
   accessors but are no longer exposed through `std::error::Error::source`.
+- Fallback can now delegate to an arbitrary Tower backup service with its own
+  error type. `FallbackError` gains a defaulted backup-error parameter, so
+  existing `FallbackError<E>` type uses remain source-compatible.
 - `TimeLimiterLayer::streaming()` is deprecated in favor of the more accurate
   `detached()` name.
+- The public API diff against every published 0.12.0 crate was reviewed. The
+  intentional source breaks are listed above and in `MIGRATION.md`; the 0.13
+  snapshots are checked in as an explicit release acknowledgement.
 
 ### Migrating from 0.12
 

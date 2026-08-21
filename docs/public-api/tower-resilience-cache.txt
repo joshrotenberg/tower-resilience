@@ -1,0 +1,184 @@
+pub mod tower_resilience_cache
+pub enum tower_resilience_cache::CacheBuildError
+pub tower_resilience_cache::CacheBuildError::MissingKeyExtractor
+impl core::error::Error for tower_resilience_cache::CacheBuildError
+impl core::fmt::Debug for tower_resilience_cache::CacheBuildError
+pub fn tower_resilience_cache::CacheBuildError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_cache::CacheBuildError
+pub fn tower_resilience_cache::CacheBuildError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_cache::CacheBuildError
+impl core::marker::Send for tower_resilience_cache::CacheBuildError
+impl core::marker::Sync for tower_resilience_cache::CacheBuildError
+impl core::marker::Unpin for tower_resilience_cache::CacheBuildError
+impl core::marker::UnsafeUnpin for tower_resilience_cache::CacheBuildError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::CacheBuildError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::CacheBuildError
+pub enum tower_resilience_cache::CacheError<E>
+pub tower_resilience_cache::CacheError::Inner(E)
+impl<E> tower_resilience_cache::CacheError<E>
+pub fn tower_resilience_cache::CacheError<E>::into_inner(self) -> E
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_cache::CacheError<E>
+pub fn tower_resilience_cache::CacheError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_cache::CacheError<E>
+pub fn tower_resilience_cache::CacheError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::error::Error for tower_resilience_cache::CacheError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::marker::Freeze for tower_resilience_cache::CacheError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_cache::CacheError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_cache::CacheError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_cache::CacheError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_cache::CacheError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::CacheError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::CacheError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_cache::CacheEvent
+pub tower_resilience_cache::CacheEvent::Eviction
+pub tower_resilience_cache::CacheEvent::Eviction::pattern_name: alloc::string::String
+pub tower_resilience_cache::CacheEvent::Eviction::timestamp: std::time::Instant
+pub tower_resilience_cache::CacheEvent::Hit
+pub tower_resilience_cache::CacheEvent::Hit::pattern_name: alloc::string::String
+pub tower_resilience_cache::CacheEvent::Hit::timestamp: std::time::Instant
+pub tower_resilience_cache::CacheEvent::Miss
+pub tower_resilience_cache::CacheEvent::Miss::pattern_name: alloc::string::String
+pub tower_resilience_cache::CacheEvent::Miss::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_cache::CacheEvent
+pub fn tower_resilience_cache::CacheEvent::clone(&self) -> tower_resilience_cache::CacheEvent
+impl core::fmt::Debug for tower_resilience_cache::CacheEvent
+pub fn tower_resilience_cache::CacheEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_cache::CacheEvent
+pub fn tower_resilience_cache::CacheEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_cache::CacheEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_cache::CacheEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_cache::CacheEvent
+impl core::marker::Send for tower_resilience_cache::CacheEvent
+impl core::marker::Sync for tower_resilience_cache::CacheEvent
+impl core::marker::Unpin for tower_resilience_cache::CacheEvent
+impl core::marker::UnsafeUnpin for tower_resilience_cache::CacheEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::CacheEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::CacheEvent
+pub enum tower_resilience_cache::EvictionPolicy
+pub tower_resilience_cache::EvictionPolicy::Fifo
+pub tower_resilience_cache::EvictionPolicy::Lfu
+pub tower_resilience_cache::EvictionPolicy::Lru
+impl core::clone::Clone for tower_resilience_cache::EvictionPolicy
+pub fn tower_resilience_cache::EvictionPolicy::clone(&self) -> tower_resilience_cache::EvictionPolicy
+impl core::cmp::Eq for tower_resilience_cache::EvictionPolicy
+impl core::cmp::PartialEq for tower_resilience_cache::EvictionPolicy
+pub fn tower_resilience_cache::EvictionPolicy::eq(&self, &tower_resilience_cache::EvictionPolicy) -> bool
+impl core::default::Default for tower_resilience_cache::EvictionPolicy
+pub fn tower_resilience_cache::EvictionPolicy::default() -> tower_resilience_cache::EvictionPolicy
+impl core::fmt::Debug for tower_resilience_cache::EvictionPolicy
+pub fn tower_resilience_cache::EvictionPolicy::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_cache::EvictionPolicy
+impl core::marker::StructuralPartialEq for tower_resilience_cache::EvictionPolicy
+impl core::marker::Freeze for tower_resilience_cache::EvictionPolicy
+impl core::marker::Send for tower_resilience_cache::EvictionPolicy
+impl core::marker::Sync for tower_resilience_cache::EvictionPolicy
+impl core::marker::Unpin for tower_resilience_cache::EvictionPolicy
+impl core::marker::UnsafeUnpin for tower_resilience_cache::EvictionPolicy
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::EvictionPolicy
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::EvictionPolicy
+pub struct tower_resilience_cache::Cache<S, Req, K, Resp>
+impl<S, Req, K, Resp> tower_resilience_cache::Cache<S, Req, K, Resp> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static, Resp: core::clone::Clone + core::marker::Send + 'static
+pub fn tower_resilience_cache::Cache<S, Req, K, Resp>::new(S, alloc::sync::Arc<tower_resilience_cache::CacheConfig<Req, K>>) -> Self
+impl<S, Req, K, Resp> tower_resilience_cache::Cache<S, Req, K, Resp>
+pub fn tower_resilience_cache::Cache<S, Req, K, Resp>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_cache::Cache<S, Req, K, Resp>::get_ref(&self) -> &S
+pub fn tower_resilience_cache::Cache<S, Req, K, Resp>::into_inner(self) -> S
+impl<S, Req, K, Resp> core::clone::Clone for tower_resilience_cache::Cache<S, Req, K, Resp> where S: core::clone::Clone
+pub fn tower_resilience_cache::Cache<S, Req, K, Resp>::clone(&self) -> Self
+impl<S, Req, K> tower_service::Service<Req> for tower_resilience_cache::Cache<S, Req, K, <S as tower_service::Service>::Response> where S: tower_service::Service<Req>, <S as tower_service::Service>::Response: core::clone::Clone + core::marker::Send + 'static, K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static, Req: core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static
+pub type tower_resilience_cache::Cache<S, Req, K, <S as tower_service::Service>::Response>::Error = tower_resilience_cache::CacheError<<S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_cache::Cache<S, Req, K, <S as tower_service::Service>::Response>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_cache::Cache<S, Req, K, <S as tower_service::Service<Req>>::Response> as tower_service::Service<Req>>::Response, <tower_resilience_cache::Cache<S, Req, K, <S as tower_service::Service<Req>>::Response> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_cache::Cache<S, Req, K, <S as tower_service::Service>::Response>::Response = <S as tower_service::Service<Req>>::Response
+pub fn tower_resilience_cache::Cache<S, Req, K, <S as tower_service::Service>::Response>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_cache::Cache<S, Req, K, <S as tower_service::Service>::Response>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S, Req, K, Resp> core::marker::Freeze for tower_resilience_cache::Cache<S, Req, K, Resp> where S: core::marker::Freeze
+impl<S, Req, K, Resp> core::marker::Send for tower_resilience_cache::Cache<S, Req, K, Resp> where S: core::marker::Send
+impl<S, Req, K, Resp> core::marker::Sync for tower_resilience_cache::Cache<S, Req, K, Resp> where S: core::marker::Sync
+impl<S, Req, K, Resp> core::marker::Unpin for tower_resilience_cache::Cache<S, Req, K, Resp> where S: core::marker::Unpin
+impl<S, Req, K, Resp> core::marker::UnsafeUnpin for tower_resilience_cache::Cache<S, Req, K, Resp> where S: core::marker::UnsafeUnpin
+impl<S, Req, K, Resp> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::Cache<S, Req, K, Resp>
+impl<S, Req, K, Resp> !core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::Cache<S, Req, K, Resp>
+pub struct tower_resilience_cache::CacheConfig<Req, K>
+impl<Req, K> core::marker::Freeze for tower_resilience_cache::CacheConfig<Req, K>
+impl<Req, K> core::marker::Send for tower_resilience_cache::CacheConfig<Req, K>
+impl<Req, K> core::marker::Sync for tower_resilience_cache::CacheConfig<Req, K>
+impl<Req, K> core::marker::Unpin for tower_resilience_cache::CacheConfig<Req, K>
+impl<Req, K> core::marker::UnsafeUnpin for tower_resilience_cache::CacheConfig<Req, K>
+impl<Req, K> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::CacheConfig<Req, K>
+impl<Req, K> !core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::CacheConfig<Req, K>
+pub struct tower_resilience_cache::CacheConfigBuilder<Req, K>
+impl<Req, K> tower_resilience_cache::CacheConfigBuilder<Req, K> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::build(self) -> core::result::Result<tower_resilience_cache::CacheLayer<Req, K>, tower_resilience_cache::CacheBuildError>
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::eviction_policy(self, tower_resilience_cache::EvictionPolicy) -> Self
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::key_extractor<F>(self, F) -> Self where F: core::ops::function::Fn(&Req) -> K + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::max_size(self, usize) -> Self
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::new() -> Self
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::on_eviction<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::on_hit<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::on_miss<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::ttl(self, core::time::Duration) -> Self
+impl<Req, K> core::default::Default for tower_resilience_cache::CacheConfigBuilder<Req, K> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static
+pub fn tower_resilience_cache::CacheConfigBuilder<Req, K>::default() -> Self
+impl<Req, K> core::marker::Freeze for tower_resilience_cache::CacheConfigBuilder<Req, K>
+impl<Req, K> core::marker::Send for tower_resilience_cache::CacheConfigBuilder<Req, K>
+impl<Req, K> core::marker::Sync for tower_resilience_cache::CacheConfigBuilder<Req, K>
+impl<Req, K> core::marker::Unpin for tower_resilience_cache::CacheConfigBuilder<Req, K>
+impl<Req, K> core::marker::UnsafeUnpin for tower_resilience_cache::CacheConfigBuilder<Req, K>
+impl<Req, K> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::CacheConfigBuilder<Req, K>
+impl<Req, K> !core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::CacheConfigBuilder<Req, K>
+pub struct tower_resilience_cache::CacheLayer<Req, K>
+impl<Req, K> tower_resilience_cache::CacheLayer<Req, K> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static
+pub fn tower_resilience_cache::CacheLayer<Req, K>::builder() -> tower_resilience_cache::CacheConfigBuilder<Req, K>
+pub fn tower_resilience_cache::CacheLayer<Req, K>::new(tower_resilience_cache::CacheConfig<Req, K>) -> Self
+pub fn tower_resilience_cache::CacheLayer<Req, K>::shared<Resp>(self) -> tower_resilience_cache::SharedCacheLayer<Req, K, Resp> where Resp: core::clone::Clone + core::marker::Send + 'static
+impl<Req: core::clone::Clone, K: core::clone::Clone> core::clone::Clone for tower_resilience_cache::CacheLayer<Req, K>
+pub fn tower_resilience_cache::CacheLayer<Req, K>::clone(&self) -> tower_resilience_cache::CacheLayer<Req, K>
+impl<S, Req, K> tower_layer::Layer<S> for tower_resilience_cache::CacheLayer<Req, K> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static, S: tower_service::Service<Req>, <S as tower_service::Service>::Response: core::clone::Clone + core::marker::Send + 'static
+pub type tower_resilience_cache::CacheLayer<Req, K>::Service = tower_resilience_cache::Cache<S, Req, K, <S as tower_service::Service<Req>>::Response>
+pub fn tower_resilience_cache::CacheLayer<Req, K>::layer(&self, S) -> Self::Service
+impl<Req, K> core::marker::Freeze for tower_resilience_cache::CacheLayer<Req, K>
+impl<Req, K> core::marker::Send for tower_resilience_cache::CacheLayer<Req, K>
+impl<Req, K> core::marker::Sync for tower_resilience_cache::CacheLayer<Req, K>
+impl<Req, K> core::marker::Unpin for tower_resilience_cache::CacheLayer<Req, K>
+impl<Req, K> core::marker::UnsafeUnpin for tower_resilience_cache::CacheLayer<Req, K>
+impl<Req, K> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::CacheLayer<Req, K>
+impl<Req, K> !core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::CacheLayer<Req, K>
+pub struct tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>
+impl<Req, K, Resp> tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static, Resp: core::clone::Clone + core::marker::Send + 'static
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::build(self) -> core::result::Result<tower_resilience_cache::SharedCacheLayer<Req, K, Resp>, tower_resilience_cache::CacheBuildError>
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::eviction_policy(self, tower_resilience_cache::EvictionPolicy) -> Self
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::key_extractor<F>(self, F) -> Self where F: core::ops::function::Fn(&Req) -> K + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::max_size(self, usize) -> Self
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::new() -> Self
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::on_eviction<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::on_hit<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::on_miss<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::ttl(self, core::time::Duration) -> Self
+impl<Req, K, Resp> core::default::Default for tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static, Resp: core::clone::Clone + core::marker::Send + 'static
+pub fn tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>::default() -> Self
+impl<Req, K, Resp> core::marker::Freeze for tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>
+impl<Req, K, Resp> core::marker::Send for tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp> where Resp: core::marker::Send
+impl<Req, K, Resp> core::marker::Sync for tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp> where Resp: core::marker::Sync
+impl<Req, K, Resp> core::marker::Unpin for tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp> where Resp: core::marker::Unpin
+impl<Req, K, Resp> core::marker::UnsafeUnpin for tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>
+impl<Req, K, Resp> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>
+impl<Req, K, Resp> !core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>
+pub struct tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+impl<Req, K, Resp> tower_resilience_cache::SharedCacheLayer<Req, K, Resp> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static, Resp: core::clone::Clone + core::marker::Send + 'static
+pub fn tower_resilience_cache::SharedCacheLayer<Req, K, Resp>::builder() -> tower_resilience_cache::SharedCacheConfigBuilder<Req, K, Resp>
+pub fn tower_resilience_cache::SharedCacheLayer<Req, K, Resp>::new(tower_resilience_cache::CacheConfig<Req, K>) -> Self
+impl<Req: core::clone::Clone, K: core::clone::Clone, Resp: core::clone::Clone> core::clone::Clone for tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+pub fn tower_resilience_cache::SharedCacheLayer<Req, K, Resp>::clone(&self) -> tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+impl<S, Req, K, Resp> tower_layer::Layer<S> for tower_resilience_cache::SharedCacheLayer<Req, K, Resp> where K: core::hash::Hash + core::cmp::Eq + core::clone::Clone + core::marker::Send + 'static, S: tower_service::Service<Req, Response = Resp>, Resp: core::clone::Clone + core::marker::Send + 'static
+pub type tower_resilience_cache::SharedCacheLayer<Req, K, Resp>::Service = tower_resilience_cache::Cache<S, Req, K, Resp>
+pub fn tower_resilience_cache::SharedCacheLayer<Req, K, Resp>::layer(&self, S) -> Self::Service
+impl<Req, K, Resp> core::marker::Freeze for tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+impl<Req, K, Resp> core::marker::Send for tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+impl<Req, K, Resp> core::marker::Sync for tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+impl<Req, K, Resp> core::marker::Unpin for tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+impl<Req, K, Resp> core::marker::UnsafeUnpin for tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+impl<Req, K, Resp> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+impl<Req, K, Resp> !core::panic::unwind_safe::UnwindSafe for tower_resilience_cache::SharedCacheLayer<Req, K, Resp>
+pub type tower_resilience_cache::KeyExtractor<Req, K> = alloc::sync::Arc<(dyn core::ops::function::Fn(&Req) -> K + core::marker::Send + core::marker::Sync)>

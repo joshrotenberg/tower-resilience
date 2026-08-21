@@ -25,6 +25,7 @@ must do the same, or it does not belong here.
 | [upstream-watchlist.md](upstream-watchlist.md) | Maintainer | Durable list of upstream `tower`/`tower-http` issues that could erase a local differentiator, supply a parity test, or hand over a reusable primitive. Reviewed at least once per release. |
 | [release-process.md](release-process.md) | Maintainer | Reproducible publish preflight, ordered release monitoring, and partial-failure recovery runbook. Reviewed for every release PR. |
 | [dependency-hygiene.md](dependency-hygiene.md) | Contributors, maintainer | Classification record for dependency-audit findings and the process for keeping direct dependencies intentional. Updated whenever a `cargo machete` exception is added or removed. |
+| [public-api-review.md](public-api-review.md) | Maintainer | Pinned public API snapshots, acknowledgement policy, release diff procedure, and the current release review record. Updated whenever a public API changes and for every minor release. |
 
 ## Maintaining this index
 

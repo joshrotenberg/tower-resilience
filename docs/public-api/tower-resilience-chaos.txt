@@ -1,0 +1,331 @@
+pub mod tower_resilience_chaos
+pub mod tower_resilience_chaos::config
+pub struct tower_resilience_chaos::config::ChaosConfig<E>
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_chaos::config::ChaosConfig<E>
+pub fn tower_resilience_chaos::config::ChaosConfig<E>::clone(&self) -> Self
+impl<E> core::marker::Freeze for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::UnsafeUnpin
+impl<E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::ChaosConfig<E>
+impl<E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::ChaosConfig<E>
+pub struct tower_resilience_chaos::config::ChaosConfigBuilder<E>
+impl tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>::error_rate(self, f64) -> tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>::new() -> Self
+impl<E> tower_resilience_chaos::config::ChaosConfigBuilder<E>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::build(self) -> tower_resilience_chaos::layer::ChaosLayer<E>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::error_fn<Req, Err, F>(self, F) -> tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::CustomErrorFn<F>> where F: core::ops::function::Fn(&Req) -> Err + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::latency_rate(self, f64) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::max_latency(self, core::time::Duration) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::min_latency(self, core::time::Duration) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::on_error_injected<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::on_latency_injected<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::on_passed_through<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::seed(self, u64) -> Self
+impl<F> tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::CustomErrorFn<F>>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::CustomErrorFn<F>>::error_rate(self, f64) -> Self
+impl core::default::Default for tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>::default() -> Self
+impl<E> core::marker::Freeze for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::UnsafeUnpin
+impl<E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::ChaosConfigBuilder<E>
+impl<E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::ChaosConfigBuilder<E>
+pub struct tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::error_fn<Req, Err, F>(self, F) -> tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::CustomErrorFn<F>> where F: core::ops::function::Fn(&Req) -> Err + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::latency_rate(self, f64) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::max_latency(self, core::time::Duration) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::min_latency(self, core::time::Duration) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::on_error_injected<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::on_latency_injected<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::on_passed_through<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::seed(self, u64) -> Self
+impl core::marker::Freeze for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl core::marker::Send for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl core::marker::Sync for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl core::marker::Unpin for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl core::marker::UnsafeUnpin for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+pub struct tower_resilience_chaos::config::CustomErrorFn<F>
+impl<F> tower_resilience_chaos::config::CustomErrorFn<F>
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::new(F, f64) -> Self
+impl<F> core::clone::Clone for tower_resilience_chaos::config::CustomErrorFn<F>
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::clone(&self) -> Self
+impl<Req, Err, F> tower_resilience_chaos::config::ErrorInjector<Req, Err> for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::ops::function::Fn(&Req) -> Err + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::inject_error(&self, &Req, f64) -> core::option::Option<Err>
+impl<F> core::marker::Freeze for tower_resilience_chaos::config::CustomErrorFn<F>
+impl<F> core::marker::Send for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Sync for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Unpin for tower_resilience_chaos::config::CustomErrorFn<F>
+impl<F> core::marker::UnsafeUnpin for tower_resilience_chaos::config::CustomErrorFn<F>
+impl<F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::panic::unwind_safe::RefUnwindSafe
+impl<F> core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::panic::unwind_safe::RefUnwindSafe
+pub struct tower_resilience_chaos::config::NoErrorInjection
+impl core::clone::Clone for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::clone(&self) -> tower_resilience_chaos::config::NoErrorInjection
+impl core::default::Default for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::default() -> tower_resilience_chaos::config::NoErrorInjection
+impl core::fmt::Debug for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_chaos::config::NoErrorInjection
+impl<Req, Err> tower_resilience_chaos::config::ErrorInjector<Req, Err> for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::config::NoErrorInjection::inject_error(&self, &Req, f64) -> core::option::Option<Err>
+impl core::marker::Freeze for tower_resilience_chaos::config::NoErrorInjection
+impl core::marker::Send for tower_resilience_chaos::config::NoErrorInjection
+impl core::marker::Sync for tower_resilience_chaos::config::NoErrorInjection
+impl core::marker::Unpin for tower_resilience_chaos::config::NoErrorInjection
+impl core::marker::UnsafeUnpin for tower_resilience_chaos::config::NoErrorInjection
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::NoErrorInjection
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::NoErrorInjection
+pub trait tower_resilience_chaos::config::ErrorInjector<Req, Err>: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_chaos::config::ErrorInjector::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::config::ErrorInjector::inject_error(&self, &Req, f64) -> core::option::Option<Err>
+impl<Req, Err, F> tower_resilience_chaos::config::ErrorInjector<Req, Err> for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::ops::function::Fn(&Req) -> Err + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::inject_error(&self, &Req, f64) -> core::option::Option<Err>
+impl<Req, Err> tower_resilience_chaos::config::ErrorInjector<Req, Err> for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::config::NoErrorInjection::inject_error(&self, &Req, f64) -> core::option::Option<Err>
+pub mod tower_resilience_chaos::events
+pub enum tower_resilience_chaos::events::ChaosEvent
+pub tower_resilience_chaos::events::ChaosEvent::ErrorInjected
+pub tower_resilience_chaos::events::ChaosEvent::ErrorInjected::pattern_name: alloc::string::String
+pub tower_resilience_chaos::events::ChaosEvent::ErrorInjected::timestamp: std::time::Instant
+pub tower_resilience_chaos::events::ChaosEvent::LatencyInjected
+pub tower_resilience_chaos::events::ChaosEvent::LatencyInjected::delay: core::time::Duration
+pub tower_resilience_chaos::events::ChaosEvent::LatencyInjected::pattern_name: alloc::string::String
+pub tower_resilience_chaos::events::ChaosEvent::LatencyInjected::timestamp: std::time::Instant
+pub tower_resilience_chaos::events::ChaosEvent::PassedThrough
+pub tower_resilience_chaos::events::ChaosEvent::PassedThrough::pattern_name: alloc::string::String
+pub tower_resilience_chaos::events::ChaosEvent::PassedThrough::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_chaos::events::ChaosEvent
+pub fn tower_resilience_chaos::events::ChaosEvent::clone(&self) -> tower_resilience_chaos::events::ChaosEvent
+impl core::fmt::Debug for tower_resilience_chaos::events::ChaosEvent
+pub fn tower_resilience_chaos::events::ChaosEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_chaos::events::ChaosEvent
+pub fn tower_resilience_chaos::events::ChaosEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_chaos::events::ChaosEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_chaos::events::ChaosEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_chaos::events::ChaosEvent
+impl core::marker::Send for tower_resilience_chaos::events::ChaosEvent
+impl core::marker::Sync for tower_resilience_chaos::events::ChaosEvent
+impl core::marker::Unpin for tower_resilience_chaos::events::ChaosEvent
+impl core::marker::UnsafeUnpin for tower_resilience_chaos::events::ChaosEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::events::ChaosEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::events::ChaosEvent
+pub mod tower_resilience_chaos::layer
+pub struct tower_resilience_chaos::layer::ChaosLayer<E>
+impl tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>::builder() -> tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>
+impl<E> tower_resilience_chaos::layer::ChaosLayer<E>
+pub fn tower_resilience_chaos::layer::ChaosLayer<E>::new(tower_resilience_chaos::config::ChaosConfig<E>) -> Self
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_chaos::layer::ChaosLayer<E>
+pub fn tower_resilience_chaos::layer::ChaosLayer<E>::clone(&self) -> tower_resilience_chaos::layer::ChaosLayer<E>
+impl<S, F> tower_layer::Layer<S> for tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::CustomErrorFn<F>> where F: 'static
+pub type tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::CustomErrorFn<F>>::Service = tower_resilience_chaos::service::Chaos<S, tower_resilience_chaos::config::CustomErrorFn<F>>
+pub fn tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::CustomErrorFn<F>>::layer(&self, S) -> Self::Service
+impl<S> tower_layer::Layer<S> for tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>
+pub type tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>::Service = tower_resilience_chaos::service::Chaos<S, tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>::layer(&self, S) -> Self::Service
+impl<E> core::marker::Freeze for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::UnsafeUnpin
+impl<E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::layer::ChaosLayer<E>
+impl<E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::layer::ChaosLayer<E>
+pub mod tower_resilience_chaos::service
+pub struct tower_resilience_chaos::service::Chaos<S, E>
+impl<S, E> tower_resilience_chaos::service::Chaos<S, E>
+pub fn tower_resilience_chaos::service::Chaos<S, E>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_chaos::service::Chaos<S, E>::get_ref(&self) -> &S
+pub fn tower_resilience_chaos::service::Chaos<S, E>::into_inner(self) -> S
+impl<S, E, Req, Res, Err> tower_service::Service<Req> for tower_resilience_chaos::service::Chaos<S, E> where S: tower_service::Service<Req, Response = Res, Error = Err> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, Req: core::marker::Send + 'static, Res: core::marker::Send + 'static, Err: core::marker::Send + 'static, E: tower_resilience_chaos::config::ErrorInjector<Req, Err> + core::clone::Clone + 'static
+pub type tower_resilience_chaos::service::Chaos<S, E>::Error = Err
+pub type tower_resilience_chaos::service::Chaos<S, E>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_chaos::service::Chaos<S, E> as tower_service::Service<Req>>::Response, <tower_resilience_chaos::service::Chaos<S, E> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_chaos::service::Chaos<S, E>::Response = Res
+pub fn tower_resilience_chaos::service::Chaos<S, E>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_chaos::service::Chaos<S, E>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone, E: core::clone::Clone> core::clone::Clone for tower_resilience_chaos::service::Chaos<S, E>
+pub fn tower_resilience_chaos::service::Chaos<S, E>::clone(&self) -> tower_resilience_chaos::service::Chaos<S, E>
+impl<S, E> core::marker::Freeze for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::Freeze
+impl<S, E> core::marker::Send for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::Send, E: core::marker::Sync + core::marker::Send
+impl<S, E> core::marker::Sync for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::Sync, E: core::marker::Sync + core::marker::Send
+impl<S, E> core::marker::Unpin for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::Unpin
+impl<S, E> core::marker::UnsafeUnpin for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::UnsafeUnpin
+impl<S, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::service::Chaos<S, E>
+impl<S, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::service::Chaos<S, E>
+pub enum tower_resilience_chaos::ChaosEvent
+pub tower_resilience_chaos::ChaosEvent::ErrorInjected
+pub tower_resilience_chaos::ChaosEvent::ErrorInjected::pattern_name: alloc::string::String
+pub tower_resilience_chaos::ChaosEvent::ErrorInjected::timestamp: std::time::Instant
+pub tower_resilience_chaos::ChaosEvent::LatencyInjected
+pub tower_resilience_chaos::ChaosEvent::LatencyInjected::delay: core::time::Duration
+pub tower_resilience_chaos::ChaosEvent::LatencyInjected::pattern_name: alloc::string::String
+pub tower_resilience_chaos::ChaosEvent::LatencyInjected::timestamp: std::time::Instant
+pub tower_resilience_chaos::ChaosEvent::PassedThrough
+pub tower_resilience_chaos::ChaosEvent::PassedThrough::pattern_name: alloc::string::String
+pub tower_resilience_chaos::ChaosEvent::PassedThrough::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_chaos::events::ChaosEvent
+pub fn tower_resilience_chaos::events::ChaosEvent::clone(&self) -> tower_resilience_chaos::events::ChaosEvent
+impl core::fmt::Debug for tower_resilience_chaos::events::ChaosEvent
+pub fn tower_resilience_chaos::events::ChaosEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_chaos::events::ChaosEvent
+pub fn tower_resilience_chaos::events::ChaosEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_chaos::events::ChaosEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_chaos::events::ChaosEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_chaos::events::ChaosEvent
+impl core::marker::Send for tower_resilience_chaos::events::ChaosEvent
+impl core::marker::Sync for tower_resilience_chaos::events::ChaosEvent
+impl core::marker::Unpin for tower_resilience_chaos::events::ChaosEvent
+impl core::marker::UnsafeUnpin for tower_resilience_chaos::events::ChaosEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::events::ChaosEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::events::ChaosEvent
+pub struct tower_resilience_chaos::Chaos<S, E>
+impl<S, E> tower_resilience_chaos::service::Chaos<S, E>
+pub fn tower_resilience_chaos::service::Chaos<S, E>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_chaos::service::Chaos<S, E>::get_ref(&self) -> &S
+pub fn tower_resilience_chaos::service::Chaos<S, E>::into_inner(self) -> S
+impl<S, E, Req, Res, Err> tower_service::Service<Req> for tower_resilience_chaos::service::Chaos<S, E> where S: tower_service::Service<Req, Response = Res, Error = Err> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send + 'static, Req: core::marker::Send + 'static, Res: core::marker::Send + 'static, Err: core::marker::Send + 'static, E: tower_resilience_chaos::config::ErrorInjector<Req, Err> + core::clone::Clone + 'static
+pub type tower_resilience_chaos::service::Chaos<S, E>::Error = Err
+pub type tower_resilience_chaos::service::Chaos<S, E>::Future = core::pin::Pin<alloc::boxed::Box<(dyn core::future::future::Future<Output = core::result::Result<<tower_resilience_chaos::service::Chaos<S, E> as tower_service::Service<Req>>::Response, <tower_resilience_chaos::service::Chaos<S, E> as tower_service::Service<Req>>::Error>> + core::marker::Send)>>
+pub type tower_resilience_chaos::service::Chaos<S, E>::Response = Res
+pub fn tower_resilience_chaos::service::Chaos<S, E>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_chaos::service::Chaos<S, E>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone, E: core::clone::Clone> core::clone::Clone for tower_resilience_chaos::service::Chaos<S, E>
+pub fn tower_resilience_chaos::service::Chaos<S, E>::clone(&self) -> tower_resilience_chaos::service::Chaos<S, E>
+impl<S, E> core::marker::Freeze for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::Freeze
+impl<S, E> core::marker::Send for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::Send, E: core::marker::Sync + core::marker::Send
+impl<S, E> core::marker::Sync for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::Sync, E: core::marker::Sync + core::marker::Send
+impl<S, E> core::marker::Unpin for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::Unpin
+impl<S, E> core::marker::UnsafeUnpin for tower_resilience_chaos::service::Chaos<S, E> where S: core::marker::UnsafeUnpin
+impl<S, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::service::Chaos<S, E>
+impl<S, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::service::Chaos<S, E>
+pub struct tower_resilience_chaos::ChaosConfig<E>
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_chaos::config::ChaosConfig<E>
+pub fn tower_resilience_chaos::config::ChaosConfig<E>::clone(&self) -> Self
+impl<E> core::marker::Freeze for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_chaos::config::ChaosConfig<E> where E: core::marker::UnsafeUnpin
+impl<E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::ChaosConfig<E>
+impl<E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::ChaosConfig<E>
+pub struct tower_resilience_chaos::ChaosConfigBuilder<E>
+impl tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>::error_rate(self, f64) -> tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>::new() -> Self
+impl<E> tower_resilience_chaos::config::ChaosConfigBuilder<E>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::build(self) -> tower_resilience_chaos::layer::ChaosLayer<E>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::error_fn<Req, Err, F>(self, F) -> tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::CustomErrorFn<F>> where F: core::ops::function::Fn(&Req) -> Err + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::latency_rate(self, f64) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::max_latency(self, core::time::Duration) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::min_latency(self, core::time::Duration) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::on_error_injected<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::on_latency_injected<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::on_passed_through<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<E>::seed(self, u64) -> Self
+impl<F> tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::CustomErrorFn<F>>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::CustomErrorFn<F>>::error_rate(self, f64) -> Self
+impl core::default::Default for tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>::default() -> Self
+impl<E> core::marker::Freeze for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_chaos::config::ChaosConfigBuilder<E> where E: core::marker::UnsafeUnpin
+impl<E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::ChaosConfigBuilder<E>
+impl<E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::ChaosConfigBuilder<E>
+pub struct tower_resilience_chaos::ChaosConfigBuilderWithRate
+impl tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::error_fn<Req, Err, F>(self, F) -> tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::CustomErrorFn<F>> where F: core::ops::function::Fn(&Req) -> Err + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::latency_rate(self, f64) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::max_latency(self, core::time::Duration) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::min_latency(self, core::time::Duration) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::on_error_injected<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::on_latency_injected<F>(self, F) -> Self where F: core::ops::function::Fn(core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::on_passed_through<F>(self, F) -> Self where F: core::ops::function::Fn() + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::ChaosConfigBuilderWithRate::seed(self, u64) -> Self
+impl core::marker::Freeze for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl core::marker::Send for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl core::marker::Sync for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl core::marker::Unpin for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl core::marker::UnsafeUnpin for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+impl !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::ChaosConfigBuilderWithRate
+pub struct tower_resilience_chaos::ChaosLayer<E>
+impl tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>::builder() -> tower_resilience_chaos::config::ChaosConfigBuilder<tower_resilience_chaos::config::NoErrorInjection>
+impl<E> tower_resilience_chaos::layer::ChaosLayer<E>
+pub fn tower_resilience_chaos::layer::ChaosLayer<E>::new(tower_resilience_chaos::config::ChaosConfig<E>) -> Self
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_chaos::layer::ChaosLayer<E>
+pub fn tower_resilience_chaos::layer::ChaosLayer<E>::clone(&self) -> tower_resilience_chaos::layer::ChaosLayer<E>
+impl<S, F> tower_layer::Layer<S> for tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::CustomErrorFn<F>> where F: 'static
+pub type tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::CustomErrorFn<F>>::Service = tower_resilience_chaos::service::Chaos<S, tower_resilience_chaos::config::CustomErrorFn<F>>
+pub fn tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::CustomErrorFn<F>>::layer(&self, S) -> Self::Service
+impl<S> tower_layer::Layer<S> for tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>
+pub type tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>::Service = tower_resilience_chaos::service::Chaos<S, tower_resilience_chaos::config::NoErrorInjection>
+pub fn tower_resilience_chaos::layer::ChaosLayer<tower_resilience_chaos::config::NoErrorInjection>::layer(&self, S) -> Self::Service
+impl<E> core::marker::Freeze for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_chaos::layer::ChaosLayer<E> where E: core::marker::UnsafeUnpin
+impl<E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::layer::ChaosLayer<E>
+impl<E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::layer::ChaosLayer<E>
+pub struct tower_resilience_chaos::CustomErrorFn<F>
+impl<F> tower_resilience_chaos::config::CustomErrorFn<F>
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::new(F, f64) -> Self
+impl<F> core::clone::Clone for tower_resilience_chaos::config::CustomErrorFn<F>
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::clone(&self) -> Self
+impl<Req, Err, F> tower_resilience_chaos::config::ErrorInjector<Req, Err> for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::ops::function::Fn(&Req) -> Err + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::inject_error(&self, &Req, f64) -> core::option::Option<Err>
+impl<F> core::marker::Freeze for tower_resilience_chaos::config::CustomErrorFn<F>
+impl<F> core::marker::Send for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Sync for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::marker::Sync + core::marker::Send
+impl<F> core::marker::Unpin for tower_resilience_chaos::config::CustomErrorFn<F>
+impl<F> core::marker::UnsafeUnpin for tower_resilience_chaos::config::CustomErrorFn<F>
+impl<F> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::panic::unwind_safe::RefUnwindSafe
+impl<F> core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::panic::unwind_safe::RefUnwindSafe
+pub struct tower_resilience_chaos::NoErrorInjection
+impl core::clone::Clone for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::clone(&self) -> tower_resilience_chaos::config::NoErrorInjection
+impl core::default::Default for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::default() -> tower_resilience_chaos::config::NoErrorInjection
+impl core::fmt::Debug for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_chaos::config::NoErrorInjection
+impl<Req, Err> tower_resilience_chaos::config::ErrorInjector<Req, Err> for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::config::NoErrorInjection::inject_error(&self, &Req, f64) -> core::option::Option<Err>
+impl core::marker::Freeze for tower_resilience_chaos::config::NoErrorInjection
+impl core::marker::Send for tower_resilience_chaos::config::NoErrorInjection
+impl core::marker::Sync for tower_resilience_chaos::config::NoErrorInjection
+impl core::marker::Unpin for tower_resilience_chaos::config::NoErrorInjection
+impl core::marker::UnsafeUnpin for tower_resilience_chaos::config::NoErrorInjection
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_chaos::config::NoErrorInjection
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_chaos::config::NoErrorInjection
+pub trait tower_resilience_chaos::ErrorInjector<Req, Err>: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_chaos::ErrorInjector::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::ErrorInjector::inject_error(&self, &Req, f64) -> core::option::Option<Err>
+impl<Req, Err, F> tower_resilience_chaos::config::ErrorInjector<Req, Err> for tower_resilience_chaos::config::CustomErrorFn<F> where F: core::ops::function::Fn(&Req) -> Err + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::config::CustomErrorFn<F>::inject_error(&self, &Req, f64) -> core::option::Option<Err>
+impl<Req, Err> tower_resilience_chaos::config::ErrorInjector<Req, Err> for tower_resilience_chaos::config::NoErrorInjection
+pub fn tower_resilience_chaos::config::NoErrorInjection::error_rate(&self) -> f64
+pub fn tower_resilience_chaos::config::NoErrorInjection::inject_error(&self, &Req, f64) -> core::option::Option<Err>

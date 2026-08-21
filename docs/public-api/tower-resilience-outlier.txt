@@ -1,0 +1,501 @@
+pub mod tower_resilience_outlier
+pub use tower_resilience_outlier::DefaultClassifier
+pub use tower_resilience_outlier::FailureClassifier
+pub use tower_resilience_outlier::FnClassifier
+pub mod tower_resilience_outlier::config
+#[non_exhaustive] pub enum tower_resilience_outlier::config::OutlierDetectionConfigError
+pub tower_resilience_outlier::config::OutlierDetectionConfigError::MissingDetector
+impl core::clone::Clone for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigError::clone(&self) -> tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::cmp::Eq for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::cmp::PartialEq for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigError::eq(&self, &tower_resilience_outlier::config::OutlierDetectionConfigError) -> bool
+impl core::error::Error for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::fmt::Debug for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::StructuralPartialEq for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::Freeze for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::Send for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::Sync for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::Unpin for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub struct tower_resilience_outlier::config::OutlierDetectionConfig<C>
+impl<C: core::clone::Clone> core::clone::Clone for tower_resilience_outlier::config::OutlierDetectionConfig<C>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfig<C>::clone(&self) -> tower_resilience_outlier::config::OutlierDetectionConfig<C>
+impl<C> core::marker::Freeze for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::Freeze
+impl<C> core::marker::Send for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::Sync
+impl<C> core::marker::Unpin for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::Unpin
+impl<C> core::marker::UnsafeUnpin for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::UnsafeUnpin
+impl<C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::panic::unwind_safe::RefUnwindSafe
+impl<C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>
+impl tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>::failure_classifier<F>(self, F) -> tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::FnClassifier<F>>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>::new() -> Self
+impl<C> tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::backpressure(self) -> Self
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::build(self) -> core::result::Result<tower_resilience_outlier::layer::OutlierDetectionLayer<C>, tower_resilience_outlier::config::OutlierDetectionConfigError>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::detector(self, tower_resilience_outlier::detector::OutlierDetector) -> Self
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::error_on_ejection(self) -> Self
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::failure_classifier_type<C2>(self, C2) -> tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C2>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::instance_name(self, impl core::convert::Into<alloc::string::String>) -> Self
+impl core::default::Default for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>::default() -> Self
+impl<C> core::marker::Freeze for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::Freeze
+impl<C> core::marker::Send for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::Sync
+impl<C> core::marker::Unpin for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::Unpin
+impl<C> core::marker::UnsafeUnpin for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::UnsafeUnpin
+impl<C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::panic::unwind_safe::RefUnwindSafe
+impl<C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::panic::unwind_safe::UnwindSafe
+pub mod tower_resilience_outlier::detector
+pub struct tower_resilience_outlier::detector::OutlierDetector
+impl tower_resilience_outlier::detector::OutlierDetector
+pub fn tower_resilience_outlier::detector::OutlierDetector::base_ejection_duration(self, core::time::Duration) -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::ejected_count(&self) -> usize
+pub fn tower_resilience_outlier::detector::OutlierDetector::instance_count(&self) -> usize
+pub fn tower_resilience_outlier::detector::OutlierDetector::is_ejected(&self, &str) -> bool
+pub fn tower_resilience_outlier::detector::OutlierDetector::max_ejection_duration(self, core::time::Duration) -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::max_ejection_percent(self, usize) -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::new() -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::on_ejection<F>(self, F) -> Self where F: core::ops::function::Fn(&str, usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_outlier::detector::OutlierDetector::on_recovery<F>(self, F) -> Self where F: core::ops::function::Fn(&str, core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_outlier::detector::OutlierDetector::pattern_name(&self) -> alloc::string::String
+pub fn tower_resilience_outlier::detector::OutlierDetector::record_failure(&self, &str) -> bool
+pub fn tower_resilience_outlier::detector::OutlierDetector::record_success(&self, &str)
+pub fn tower_resilience_outlier::detector::OutlierDetector::register(&self, impl core::convert::Into<alloc::string::String>, usize)
+pub fn tower_resilience_outlier::detector::OutlierDetector::register_with_strategy(&self, impl core::convert::Into<alloc::string::String>, alloc::sync::Arc<dyn tower_resilience_outlier::strategy::EjectionStrategy>)
+impl core::clone::Clone for tower_resilience_outlier::detector::OutlierDetector
+pub fn tower_resilience_outlier::detector::OutlierDetector::clone(&self) -> tower_resilience_outlier::detector::OutlierDetector
+impl core::default::Default for tower_resilience_outlier::detector::OutlierDetector
+pub fn tower_resilience_outlier::detector::OutlierDetector::default() -> Self
+impl core::marker::Freeze for tower_resilience_outlier::detector::OutlierDetector
+impl core::marker::Send for tower_resilience_outlier::detector::OutlierDetector
+impl core::marker::Sync for tower_resilience_outlier::detector::OutlierDetector
+impl core::marker::Unpin for tower_resilience_outlier::detector::OutlierDetector
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::detector::OutlierDetector
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::detector::OutlierDetector
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::detector::OutlierDetector
+pub mod tower_resilience_outlier::error
+pub enum tower_resilience_outlier::error::OutlierDetectionError
+pub tower_resilience_outlier::error::OutlierDetectionError::Ejected
+pub tower_resilience_outlier::error::OutlierDetectionError::Ejected::name: alloc::string::String
+impl core::clone::Clone for tower_resilience_outlier::error::OutlierDetectionError
+pub fn tower_resilience_outlier::error::OutlierDetectionError::clone(&self) -> tower_resilience_outlier::error::OutlierDetectionError
+impl core::error::Error for tower_resilience_outlier::error::OutlierDetectionError
+impl core::fmt::Debug for tower_resilience_outlier::error::OutlierDetectionError
+pub fn tower_resilience_outlier::error::OutlierDetectionError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_outlier::error::OutlierDetectionError
+pub fn tower_resilience_outlier::error::OutlierDetectionError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionError> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_outlier::error::OutlierDetectionError) -> Self
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionError> for tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::from(tower_resilience_outlier::error::OutlierDetectionError) -> Self
+impl core::marker::Freeze for tower_resilience_outlier::error::OutlierDetectionError
+impl core::marker::Send for tower_resilience_outlier::error::OutlierDetectionError
+impl core::marker::Sync for tower_resilience_outlier::error::OutlierDetectionError
+impl core::marker::Unpin for tower_resilience_outlier::error::OutlierDetectionError
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::error::OutlierDetectionError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::error::OutlierDetectionError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::error::OutlierDetectionError
+pub enum tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub tower_resilience_outlier::error::OutlierDetectionServiceError::Inner(E)
+pub tower_resilience_outlier::error::OutlierDetectionServiceError::OutlierDetection(tower_resilience_outlier::error::OutlierDetectionError)
+impl<E> tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::into_inner(self) -> core::option::Option<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::is_inner(&self) -> bool
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::is_outlier_detection(&self) -> bool
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::outlier_detection_error(&self) -> core::option::Option<&tower_resilience_outlier::error::OutlierDetectionError>
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionError> for tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::from(tower_resilience_outlier::error::OutlierDetectionError) -> Self
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionServiceError<E>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_outlier::error::OutlierDetectionServiceError<E>) -> Self
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionServiceError<tower_resilience_core::error::ResilienceError<E>>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_outlier::error::OutlierDetectionServiceError<tower_resilience_core::error::ResilienceError<E>>) -> Self
+impl<E> core::error::Error for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::fmt::Debug + core::fmt::Display
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl<E> core::marker::Freeze for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub mod tower_resilience_outlier::events
+pub enum tower_resilience_outlier::events::OutlierDetectionEvent
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Ejected
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Ejected::consecutive_errors: usize
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Ejected::ejection_duration: core::time::Duration
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Ejected::instance_name: alloc::string::String
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Ejected::pattern_name: alloc::string::String
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Ejected::timestamp: std::time::Instant
+pub tower_resilience_outlier::events::OutlierDetectionEvent::EjectionSkipped
+pub tower_resilience_outlier::events::OutlierDetectionEvent::EjectionSkipped::current_ejection_percent: f64
+pub tower_resilience_outlier::events::OutlierDetectionEvent::EjectionSkipped::instance_name: alloc::string::String
+pub tower_resilience_outlier::events::OutlierDetectionEvent::EjectionSkipped::pattern_name: alloc::string::String
+pub tower_resilience_outlier::events::OutlierDetectionEvent::EjectionSkipped::timestamp: std::time::Instant
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Recovered
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Recovered::ejected_duration: core::time::Duration
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Recovered::instance_name: alloc::string::String
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Recovered::pattern_name: alloc::string::String
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Recovered::timestamp: std::time::Instant
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Rejected
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Rejected::instance_name: alloc::string::String
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Rejected::pattern_name: alloc::string::String
+pub tower_resilience_outlier::events::OutlierDetectionEvent::Rejected::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_outlier::events::OutlierDetectionEvent
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::clone(&self) -> tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::fmt::Debug for tower_resilience_outlier::events::OutlierDetectionEvent
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_outlier::events::OutlierDetectionEvent
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::marker::Send for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::marker::Sync for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::marker::Unpin for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::events::OutlierDetectionEvent
+pub mod tower_resilience_outlier::layer
+pub struct tower_resilience_outlier::layer::OutlierDetectionLayer<C>
+impl tower_resilience_outlier::layer::OutlierDetectionLayer<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_outlier::layer::OutlierDetectionLayer<tower_resilience_core::classifier::DefaultClassifier>::builder() -> tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+impl<C: core::clone::Clone> core::clone::Clone for tower_resilience_outlier::layer::OutlierDetectionLayer<C>
+pub fn tower_resilience_outlier::layer::OutlierDetectionLayer<C>::clone(&self) -> tower_resilience_outlier::layer::OutlierDetectionLayer<C>
+impl<S, C> tower_layer::Layer<S> for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::clone::Clone
+pub type tower_resilience_outlier::layer::OutlierDetectionLayer<C>::Service = tower_resilience_outlier::service::OutlierDetectionService<S, C>
+pub fn tower_resilience_outlier::layer::OutlierDetectionLayer<C>::layer(&self, S) -> Self::Service
+impl<C> core::marker::Freeze for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::Freeze
+impl<C> core::marker::Send for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::Sync
+impl<C> core::marker::Unpin for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::Unpin
+impl<C> core::marker::UnsafeUnpin for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::UnsafeUnpin
+impl<C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::panic::unwind_safe::RefUnwindSafe
+impl<C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::panic::unwind_safe::UnwindSafe
+pub mod tower_resilience_outlier::service
+pub enum tower_resilience_outlier::service::OutlierDetectionFuture<F, C>
+pub tower_resilience_outlier::service::OutlierDetectionFuture::Called
+pub tower_resilience_outlier::service::OutlierDetectionFuture::Called::classifier: C
+pub tower_resilience_outlier::service::OutlierDetectionFuture::Called::detector: tower_resilience_outlier::detector::OutlierDetector
+pub tower_resilience_outlier::service::OutlierDetectionFuture::Called::future: F
+pub tower_resilience_outlier::service::OutlierDetectionFuture::Called::instance_name: alloc::string::String
+pub tower_resilience_outlier::service::OutlierDetectionFuture::Rejected
+pub tower_resilience_outlier::service::OutlierDetectionFuture::Rejected::name: core::option::Option<alloc::string::String>
+impl<'__pin, F, C> core::marker::Unpin for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where pin_project_lite::__private::PinnedFieldsOf<__Origin<'__pin, F, C>>: core::marker::Unpin
+impl<F, C, Res, E> core::future::future::Future for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::future::future::Future<Output = core::result::Result<Res, E>>, C: tower_resilience_core::classifier::FailureClassifier<Res, E>
+pub type tower_resilience_outlier::service::OutlierDetectionFuture<F, C>::Output = core::result::Result<Res, tower_resilience_outlier::error::OutlierDetectionServiceError<E>>
+pub fn tower_resilience_outlier::service::OutlierDetectionFuture<F, C>::poll(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<Self::Output>
+impl<F, C> core::marker::Freeze for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::marker::Freeze, C: core::marker::Freeze
+impl<F, C> core::marker::Send for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::marker::Send, C: core::marker::Send
+impl<F, C> core::marker::Sync for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::marker::Sync, C: core::marker::Sync
+impl<F, C> core::marker::UnsafeUnpin for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::marker::UnsafeUnpin, C: core::marker::UnsafeUnpin
+impl<F, C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::panic::unwind_safe::RefUnwindSafe, C: core::panic::unwind_safe::RefUnwindSafe
+impl<F, C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::panic::unwind_safe::UnwindSafe, C: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_outlier::service::OutlierDetectionService<S, C>
+impl<S, C> tower_resilience_outlier::service::OutlierDetectionService<S, C>
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::get_ref(&self) -> &S
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::instance_name(&self) -> &str
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::into_inner(self) -> S
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::is_ejected(&self) -> bool
+impl<S, C, Request> tower_service::Service<Request> for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: tower_service::Service<Request> + core::clone::Clone, C: tower_resilience_core::classifier::FailureClassifier<<S as tower_service::Service>::Response, <S as tower_service::Service>::Error> + core::clone::Clone
+pub type tower_resilience_outlier::service::OutlierDetectionService<S, C>::Error = tower_resilience_outlier::error::OutlierDetectionServiceError<<S as tower_service::Service<Request>>::Error>
+pub type tower_resilience_outlier::service::OutlierDetectionService<S, C>::Future = tower_resilience_outlier::service::OutlierDetectionFuture<<S as tower_service::Service<Request>>::Future, C>
+pub type tower_resilience_outlier::service::OutlierDetectionService<S, C>::Response = <S as tower_service::Service<Request>>::Response
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone, C: core::clone::Clone> core::clone::Clone for tower_resilience_outlier::service::OutlierDetectionService<S, C>
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::clone(&self) -> Self
+impl<S, C> core::marker::Freeze for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::Freeze, C: core::marker::Freeze
+impl<S, C> core::marker::Send for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::Send, C: core::marker::Send
+impl<S, C> core::marker::Sync for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::Sync, C: core::marker::Sync
+impl<S, C> core::marker::Unpin for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::Unpin, C: core::marker::Unpin
+impl<S, C> core::marker::UnsafeUnpin for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::UnsafeUnpin, C: core::marker::UnsafeUnpin
+impl<S, C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::panic::unwind_safe::RefUnwindSafe, C: core::panic::unwind_safe::RefUnwindSafe
+impl<S, C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::panic::unwind_safe::UnwindSafe, C: core::panic::unwind_safe::UnwindSafe
+pub mod tower_resilience_outlier::strategy
+pub struct tower_resilience_outlier::strategy::ConsecutiveErrors
+impl tower_resilience_outlier::strategy::ConsecutiveErrors
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::current_count(&self) -> usize
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::new(usize) -> Self
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::threshold(&self) -> usize
+impl tower_resilience_outlier::strategy::EjectionStrategy for tower_resilience_outlier::strategy::ConsecutiveErrors
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::failure_count(&self) -> usize
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::record_failure(&self) -> bool
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::record_success(&self)
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::reset(&self)
+impl !core::marker::Freeze for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::marker::Send for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::marker::Sync for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::marker::Unpin for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::strategy::ConsecutiveErrors
+pub trait tower_resilience_outlier::strategy::EjectionStrategy: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_outlier::strategy::EjectionStrategy::failure_count(&self) -> usize
+pub fn tower_resilience_outlier::strategy::EjectionStrategy::record_failure(&self) -> bool
+pub fn tower_resilience_outlier::strategy::EjectionStrategy::record_success(&self)
+pub fn tower_resilience_outlier::strategy::EjectionStrategy::reset(&self)
+impl tower_resilience_outlier::strategy::EjectionStrategy for tower_resilience_outlier::strategy::ConsecutiveErrors
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::failure_count(&self) -> usize
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::record_failure(&self) -> bool
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::record_success(&self)
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::reset(&self)
+#[non_exhaustive] pub enum tower_resilience_outlier::OutlierDetectionConfigError
+pub tower_resilience_outlier::OutlierDetectionConfigError::MissingDetector
+impl core::clone::Clone for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigError::clone(&self) -> tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::cmp::Eq for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::cmp::PartialEq for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigError::eq(&self, &tower_resilience_outlier::config::OutlierDetectionConfigError) -> bool
+impl core::error::Error for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::fmt::Debug for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::StructuralPartialEq for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::Freeze for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::Send for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::Sync for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::Unpin for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfigError
+pub enum tower_resilience_outlier::OutlierDetectionError
+pub tower_resilience_outlier::OutlierDetectionError::Ejected
+pub tower_resilience_outlier::OutlierDetectionError::Ejected::name: alloc::string::String
+impl core::clone::Clone for tower_resilience_outlier::error::OutlierDetectionError
+pub fn tower_resilience_outlier::error::OutlierDetectionError::clone(&self) -> tower_resilience_outlier::error::OutlierDetectionError
+impl core::error::Error for tower_resilience_outlier::error::OutlierDetectionError
+impl core::fmt::Debug for tower_resilience_outlier::error::OutlierDetectionError
+pub fn tower_resilience_outlier::error::OutlierDetectionError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_outlier::error::OutlierDetectionError
+pub fn tower_resilience_outlier::error::OutlierDetectionError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionError> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_outlier::error::OutlierDetectionError) -> Self
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionError> for tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::from(tower_resilience_outlier::error::OutlierDetectionError) -> Self
+impl core::marker::Freeze for tower_resilience_outlier::error::OutlierDetectionError
+impl core::marker::Send for tower_resilience_outlier::error::OutlierDetectionError
+impl core::marker::Sync for tower_resilience_outlier::error::OutlierDetectionError
+impl core::marker::Unpin for tower_resilience_outlier::error::OutlierDetectionError
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::error::OutlierDetectionError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::error::OutlierDetectionError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::error::OutlierDetectionError
+pub enum tower_resilience_outlier::OutlierDetectionEvent
+pub tower_resilience_outlier::OutlierDetectionEvent::Ejected
+pub tower_resilience_outlier::OutlierDetectionEvent::Ejected::consecutive_errors: usize
+pub tower_resilience_outlier::OutlierDetectionEvent::Ejected::ejection_duration: core::time::Duration
+pub tower_resilience_outlier::OutlierDetectionEvent::Ejected::instance_name: alloc::string::String
+pub tower_resilience_outlier::OutlierDetectionEvent::Ejected::pattern_name: alloc::string::String
+pub tower_resilience_outlier::OutlierDetectionEvent::Ejected::timestamp: std::time::Instant
+pub tower_resilience_outlier::OutlierDetectionEvent::EjectionSkipped
+pub tower_resilience_outlier::OutlierDetectionEvent::EjectionSkipped::current_ejection_percent: f64
+pub tower_resilience_outlier::OutlierDetectionEvent::EjectionSkipped::instance_name: alloc::string::String
+pub tower_resilience_outlier::OutlierDetectionEvent::EjectionSkipped::pattern_name: alloc::string::String
+pub tower_resilience_outlier::OutlierDetectionEvent::EjectionSkipped::timestamp: std::time::Instant
+pub tower_resilience_outlier::OutlierDetectionEvent::Recovered
+pub tower_resilience_outlier::OutlierDetectionEvent::Recovered::ejected_duration: core::time::Duration
+pub tower_resilience_outlier::OutlierDetectionEvent::Recovered::instance_name: alloc::string::String
+pub tower_resilience_outlier::OutlierDetectionEvent::Recovered::pattern_name: alloc::string::String
+pub tower_resilience_outlier::OutlierDetectionEvent::Recovered::timestamp: std::time::Instant
+pub tower_resilience_outlier::OutlierDetectionEvent::Rejected
+pub tower_resilience_outlier::OutlierDetectionEvent::Rejected::instance_name: alloc::string::String
+pub tower_resilience_outlier::OutlierDetectionEvent::Rejected::pattern_name: alloc::string::String
+pub tower_resilience_outlier::OutlierDetectionEvent::Rejected::timestamp: std::time::Instant
+impl core::clone::Clone for tower_resilience_outlier::events::OutlierDetectionEvent
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::clone(&self) -> tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::fmt::Debug for tower_resilience_outlier::events::OutlierDetectionEvent
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl tower_resilience_core::events::ResilienceEvent for tower_resilience_outlier::events::OutlierDetectionEvent
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::event_type(&self) -> &'static str
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::pattern_name(&self) -> &str
+pub fn tower_resilience_outlier::events::OutlierDetectionEvent::timestamp(&self) -> std::time::Instant
+impl core::marker::Freeze for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::marker::Send for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::marker::Sync for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::marker::Unpin for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::events::OutlierDetectionEvent
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::events::OutlierDetectionEvent
+pub enum tower_resilience_outlier::OutlierDetectionFuture<F, C>
+pub tower_resilience_outlier::OutlierDetectionFuture::Called
+pub tower_resilience_outlier::OutlierDetectionFuture::Called::classifier: C
+pub tower_resilience_outlier::OutlierDetectionFuture::Called::detector: tower_resilience_outlier::detector::OutlierDetector
+pub tower_resilience_outlier::OutlierDetectionFuture::Called::future: F
+pub tower_resilience_outlier::OutlierDetectionFuture::Called::instance_name: alloc::string::String
+pub tower_resilience_outlier::OutlierDetectionFuture::Rejected
+pub tower_resilience_outlier::OutlierDetectionFuture::Rejected::name: core::option::Option<alloc::string::String>
+impl<'__pin, F, C> core::marker::Unpin for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where pin_project_lite::__private::PinnedFieldsOf<__Origin<'__pin, F, C>>: core::marker::Unpin
+impl<F, C, Res, E> core::future::future::Future for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::future::future::Future<Output = core::result::Result<Res, E>>, C: tower_resilience_core::classifier::FailureClassifier<Res, E>
+pub type tower_resilience_outlier::service::OutlierDetectionFuture<F, C>::Output = core::result::Result<Res, tower_resilience_outlier::error::OutlierDetectionServiceError<E>>
+pub fn tower_resilience_outlier::service::OutlierDetectionFuture<F, C>::poll(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<Self::Output>
+impl<F, C> core::marker::Freeze for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::marker::Freeze, C: core::marker::Freeze
+impl<F, C> core::marker::Send for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::marker::Send, C: core::marker::Send
+impl<F, C> core::marker::Sync for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::marker::Sync, C: core::marker::Sync
+impl<F, C> core::marker::UnsafeUnpin for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::marker::UnsafeUnpin, C: core::marker::UnsafeUnpin
+impl<F, C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::panic::unwind_safe::RefUnwindSafe, C: core::panic::unwind_safe::RefUnwindSafe
+impl<F, C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::service::OutlierDetectionFuture<F, C> where F: core::panic::unwind_safe::UnwindSafe, C: core::panic::unwind_safe::UnwindSafe
+pub enum tower_resilience_outlier::OutlierDetectionServiceError<E>
+pub tower_resilience_outlier::OutlierDetectionServiceError::Inner(E)
+pub tower_resilience_outlier::OutlierDetectionServiceError::OutlierDetection(tower_resilience_outlier::error::OutlierDetectionError)
+impl<E> tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::into_inner(self) -> core::option::Option<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::is_inner(&self) -> bool
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::is_outlier_detection(&self) -> bool
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::outlier_detection_error(&self) -> core::option::Option<&tower_resilience_outlier::error::OutlierDetectionError>
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionError> for tower_resilience_outlier::error::OutlierDetectionServiceError<E>
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::from(tower_resilience_outlier::error::OutlierDetectionError) -> Self
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionServiceError<E>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_outlier::error::OutlierDetectionServiceError<E>) -> Self
+impl<E> core::convert::From<tower_resilience_outlier::error::OutlierDetectionServiceError<tower_resilience_core::error::ResilienceError<E>>> for tower_resilience_core::error::ResilienceError<E>
+pub fn tower_resilience_core::error::ResilienceError<E>::from(tower_resilience_outlier::error::OutlierDetectionServiceError<tower_resilience_core::error::ResilienceError<E>>) -> Self
+impl<E> core::error::Error for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::fmt::Debug + core::fmt::Display
+pub fn tower_resilience_outlier::error::OutlierDetectionServiceError<E>::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl<E> core::marker::Freeze for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::error::OutlierDetectionServiceError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_outlier::ConsecutiveErrors
+impl tower_resilience_outlier::strategy::ConsecutiveErrors
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::current_count(&self) -> usize
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::new(usize) -> Self
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::threshold(&self) -> usize
+impl tower_resilience_outlier::strategy::EjectionStrategy for tower_resilience_outlier::strategy::ConsecutiveErrors
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::failure_count(&self) -> usize
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::record_failure(&self) -> bool
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::record_success(&self)
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::reset(&self)
+impl !core::marker::Freeze for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::marker::Send for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::marker::Sync for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::marker::Unpin for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::strategy::ConsecutiveErrors
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::strategy::ConsecutiveErrors
+pub struct tower_resilience_outlier::OutlierDetectionConfig<C>
+impl<C: core::clone::Clone> core::clone::Clone for tower_resilience_outlier::config::OutlierDetectionConfig<C>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfig<C>::clone(&self) -> tower_resilience_outlier::config::OutlierDetectionConfig<C>
+impl<C> core::marker::Freeze for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::Freeze
+impl<C> core::marker::Send for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::Sync
+impl<C> core::marker::Unpin for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::Unpin
+impl<C> core::marker::UnsafeUnpin for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::marker::UnsafeUnpin
+impl<C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::panic::unwind_safe::RefUnwindSafe
+impl<C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfig<C> where C: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_outlier::OutlierDetectionConfigBuilder<C>
+impl tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>::failure_classifier<F>(self, F) -> tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::FnClassifier<F>>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>::new() -> Self
+impl<C> tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::backpressure(self) -> Self
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::build(self) -> core::result::Result<tower_resilience_outlier::layer::OutlierDetectionLayer<C>, tower_resilience_outlier::config::OutlierDetectionConfigError>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::detector(self, tower_resilience_outlier::detector::OutlierDetector) -> Self
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::error_on_ejection(self) -> Self
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::failure_classifier_type<C2>(self, C2) -> tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C2>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C>::instance_name(self, impl core::convert::Into<alloc::string::String>) -> Self
+impl core::default::Default for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>::default() -> Self
+impl<C> core::marker::Freeze for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::Freeze
+impl<C> core::marker::Send for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::Sync
+impl<C> core::marker::Unpin for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::Unpin
+impl<C> core::marker::UnsafeUnpin for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::marker::UnsafeUnpin
+impl<C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::panic::unwind_safe::RefUnwindSafe
+impl<C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::config::OutlierDetectionConfigBuilder<C> where C: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_outlier::OutlierDetectionLayer<C>
+impl tower_resilience_outlier::layer::OutlierDetectionLayer<tower_resilience_core::classifier::DefaultClassifier>
+pub fn tower_resilience_outlier::layer::OutlierDetectionLayer<tower_resilience_core::classifier::DefaultClassifier>::builder() -> tower_resilience_outlier::config::OutlierDetectionConfigBuilder<tower_resilience_core::classifier::DefaultClassifier>
+impl<C: core::clone::Clone> core::clone::Clone for tower_resilience_outlier::layer::OutlierDetectionLayer<C>
+pub fn tower_resilience_outlier::layer::OutlierDetectionLayer<C>::clone(&self) -> tower_resilience_outlier::layer::OutlierDetectionLayer<C>
+impl<S, C> tower_layer::Layer<S> for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::clone::Clone
+pub type tower_resilience_outlier::layer::OutlierDetectionLayer<C>::Service = tower_resilience_outlier::service::OutlierDetectionService<S, C>
+pub fn tower_resilience_outlier::layer::OutlierDetectionLayer<C>::layer(&self, S) -> Self::Service
+impl<C> core::marker::Freeze for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::Freeze
+impl<C> core::marker::Send for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::Send
+impl<C> core::marker::Sync for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::Sync
+impl<C> core::marker::Unpin for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::Unpin
+impl<C> core::marker::UnsafeUnpin for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::marker::UnsafeUnpin
+impl<C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::panic::unwind_safe::RefUnwindSafe
+impl<C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::layer::OutlierDetectionLayer<C> where C: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_outlier::OutlierDetectionService<S, C>
+impl<S, C> tower_resilience_outlier::service::OutlierDetectionService<S, C>
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::get_ref(&self) -> &S
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::instance_name(&self) -> &str
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::into_inner(self) -> S
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::is_ejected(&self) -> bool
+impl<S, C, Request> tower_service::Service<Request> for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: tower_service::Service<Request> + core::clone::Clone, C: tower_resilience_core::classifier::FailureClassifier<<S as tower_service::Service>::Response, <S as tower_service::Service>::Error> + core::clone::Clone
+pub type tower_resilience_outlier::service::OutlierDetectionService<S, C>::Error = tower_resilience_outlier::error::OutlierDetectionServiceError<<S as tower_service::Service<Request>>::Error>
+pub type tower_resilience_outlier::service::OutlierDetectionService<S, C>::Future = tower_resilience_outlier::service::OutlierDetectionFuture<<S as tower_service::Service<Request>>::Future, C>
+pub type tower_resilience_outlier::service::OutlierDetectionService<S, C>::Response = <S as tower_service::Service<Request>>::Response
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::call(&mut self, Request) -> Self::Future
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone, C: core::clone::Clone> core::clone::Clone for tower_resilience_outlier::service::OutlierDetectionService<S, C>
+pub fn tower_resilience_outlier::service::OutlierDetectionService<S, C>::clone(&self) -> Self
+impl<S, C> core::marker::Freeze for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::Freeze, C: core::marker::Freeze
+impl<S, C> core::marker::Send for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::Send, C: core::marker::Send
+impl<S, C> core::marker::Sync for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::Sync, C: core::marker::Sync
+impl<S, C> core::marker::Unpin for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::Unpin, C: core::marker::Unpin
+impl<S, C> core::marker::UnsafeUnpin for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::marker::UnsafeUnpin, C: core::marker::UnsafeUnpin
+impl<S, C> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::panic::unwind_safe::RefUnwindSafe, C: core::panic::unwind_safe::RefUnwindSafe
+impl<S, C> core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::service::OutlierDetectionService<S, C> where S: core::panic::unwind_safe::UnwindSafe, C: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_outlier::OutlierDetector
+impl tower_resilience_outlier::detector::OutlierDetector
+pub fn tower_resilience_outlier::detector::OutlierDetector::base_ejection_duration(self, core::time::Duration) -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::ejected_count(&self) -> usize
+pub fn tower_resilience_outlier::detector::OutlierDetector::instance_count(&self) -> usize
+pub fn tower_resilience_outlier::detector::OutlierDetector::is_ejected(&self, &str) -> bool
+pub fn tower_resilience_outlier::detector::OutlierDetector::max_ejection_duration(self, core::time::Duration) -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::max_ejection_percent(self, usize) -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::name(self, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::new() -> Self
+pub fn tower_resilience_outlier::detector::OutlierDetector::on_ejection<F>(self, F) -> Self where F: core::ops::function::Fn(&str, usize) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_outlier::detector::OutlierDetector::on_recovery<F>(self, F) -> Self where F: core::ops::function::Fn(&str, core::time::Duration) + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_outlier::detector::OutlierDetector::pattern_name(&self) -> alloc::string::String
+pub fn tower_resilience_outlier::detector::OutlierDetector::record_failure(&self, &str) -> bool
+pub fn tower_resilience_outlier::detector::OutlierDetector::record_success(&self, &str)
+pub fn tower_resilience_outlier::detector::OutlierDetector::register(&self, impl core::convert::Into<alloc::string::String>, usize)
+pub fn tower_resilience_outlier::detector::OutlierDetector::register_with_strategy(&self, impl core::convert::Into<alloc::string::String>, alloc::sync::Arc<dyn tower_resilience_outlier::strategy::EjectionStrategy>)
+impl core::clone::Clone for tower_resilience_outlier::detector::OutlierDetector
+pub fn tower_resilience_outlier::detector::OutlierDetector::clone(&self) -> tower_resilience_outlier::detector::OutlierDetector
+impl core::default::Default for tower_resilience_outlier::detector::OutlierDetector
+pub fn tower_resilience_outlier::detector::OutlierDetector::default() -> Self
+impl core::marker::Freeze for tower_resilience_outlier::detector::OutlierDetector
+impl core::marker::Send for tower_resilience_outlier::detector::OutlierDetector
+impl core::marker::Sync for tower_resilience_outlier::detector::OutlierDetector
+impl core::marker::Unpin for tower_resilience_outlier::detector::OutlierDetector
+impl core::marker::UnsafeUnpin for tower_resilience_outlier::detector::OutlierDetector
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_outlier::detector::OutlierDetector
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_outlier::detector::OutlierDetector
+pub trait tower_resilience_outlier::EjectionStrategy: core::marker::Send + core::marker::Sync
+pub fn tower_resilience_outlier::EjectionStrategy::failure_count(&self) -> usize
+pub fn tower_resilience_outlier::EjectionStrategy::record_failure(&self) -> bool
+pub fn tower_resilience_outlier::EjectionStrategy::record_success(&self)
+pub fn tower_resilience_outlier::EjectionStrategy::reset(&self)
+impl tower_resilience_outlier::strategy::EjectionStrategy for tower_resilience_outlier::strategy::ConsecutiveErrors
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::failure_count(&self) -> usize
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::record_failure(&self) -> bool
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::record_success(&self)
+pub fn tower_resilience_outlier::strategy::ConsecutiveErrors::reset(&self)

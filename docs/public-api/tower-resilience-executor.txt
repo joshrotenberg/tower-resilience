@@ -1,0 +1,125 @@
+pub mod tower_resilience_executor
+pub enum tower_resilience_executor::ExecutorError<E>
+pub tower_resilience_executor::ExecutorError::Service(E)
+pub tower_resilience_executor::ExecutorError::TaskCancelled
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_executor::ExecutorError<E>
+pub fn tower_resilience_executor::ExecutorError<E>::clone(&self) -> tower_resilience_executor::ExecutorError<E>
+impl<E: core::cmp::Eq> core::cmp::Eq for tower_resilience_executor::ExecutorError<E>
+impl<E: core::cmp::PartialEq> core::cmp::PartialEq for tower_resilience_executor::ExecutorError<E>
+pub fn tower_resilience_executor::ExecutorError<E>::eq(&self, &tower_resilience_executor::ExecutorError<E>) -> bool
+impl<E: core::cmp::PartialEq> core::marker::StructuralPartialEq for tower_resilience_executor::ExecutorError<E>
+impl<E: core::fmt::Debug> core::fmt::Debug for tower_resilience_executor::ExecutorError<E>
+pub fn tower_resilience_executor::ExecutorError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E: core::fmt::Display> core::fmt::Display for tower_resilience_executor::ExecutorError<E>
+pub fn tower_resilience_executor::ExecutorError<E>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<E> core::error::Error for tower_resilience_executor::ExecutorError<E> where E: core::fmt::Debug + core::fmt::Display
+impl<E> core::marker::Freeze for tower_resilience_executor::ExecutorError<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_executor::ExecutorError<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_executor::ExecutorError<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_executor::ExecutorError<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_executor::ExecutorError<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_executor::ExecutorError<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_executor::ExecutorError<E> where E: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_executor::BlockingExecutor
+impl tower_resilience_executor::BlockingExecutor
+pub fn tower_resilience_executor::BlockingExecutor::current() -> Self
+pub fn tower_resilience_executor::BlockingExecutor::new(tokio::runtime::handle::Handle) -> Self
+impl core::clone::Clone for tower_resilience_executor::BlockingExecutor
+pub fn tower_resilience_executor::BlockingExecutor::clone(&self) -> tower_resilience_executor::BlockingExecutor
+impl tower_resilience_executor::Executor for tower_resilience_executor::BlockingExecutor
+pub fn tower_resilience_executor::BlockingExecutor::spawn<F>(&self, F) -> tokio::runtime::task::join::JoinHandle<<F as core::future::future::Future>::Output> where F: core::future::future::Future + core::marker::Send + 'static, <F as core::future::future::Future>::Output: core::marker::Send + 'static
+impl core::marker::Freeze for tower_resilience_executor::BlockingExecutor
+impl core::marker::Send for tower_resilience_executor::BlockingExecutor
+impl core::marker::Sync for tower_resilience_executor::BlockingExecutor
+impl core::marker::Unpin for tower_resilience_executor::BlockingExecutor
+impl core::marker::UnsafeUnpin for tower_resilience_executor::BlockingExecutor
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_executor::BlockingExecutor
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_executor::BlockingExecutor
+pub struct tower_resilience_executor::CurrentRuntime
+impl tower_resilience_executor::CurrentRuntime
+pub fn tower_resilience_executor::CurrentRuntime::new() -> Self
+impl core::clone::Clone for tower_resilience_executor::CurrentRuntime
+pub fn tower_resilience_executor::CurrentRuntime::clone(&self) -> tower_resilience_executor::CurrentRuntime
+impl core::default::Default for tower_resilience_executor::CurrentRuntime
+pub fn tower_resilience_executor::CurrentRuntime::default() -> Self
+impl tower_resilience_executor::Executor for tower_resilience_executor::CurrentRuntime
+pub fn tower_resilience_executor::CurrentRuntime::spawn<F>(&self, F) -> tokio::runtime::task::join::JoinHandle<<F as core::future::future::Future>::Output> where F: core::future::future::Future + core::marker::Send + 'static, <F as core::future::future::Future>::Output: core::marker::Send + 'static
+impl core::marker::Freeze for tower_resilience_executor::CurrentRuntime
+impl core::marker::Send for tower_resilience_executor::CurrentRuntime
+impl core::marker::Sync for tower_resilience_executor::CurrentRuntime
+impl core::marker::Unpin for tower_resilience_executor::CurrentRuntime
+impl core::marker::UnsafeUnpin for tower_resilience_executor::CurrentRuntime
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_executor::CurrentRuntime
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_executor::CurrentRuntime
+pub struct tower_resilience_executor::ExecutorFuture<T, E>
+impl<'__pin, T, E> core::marker::Unpin for tower_resilience_executor::ExecutorFuture<T, E> where pin_project_lite::__private::PinnedFieldsOf<__Origin<'__pin, T, E>>: core::marker::Unpin
+impl<T, E> core::future::future::Future for tower_resilience_executor::ExecutorFuture<T, E>
+pub type tower_resilience_executor::ExecutorFuture<T, E>::Output = core::result::Result<T, tower_resilience_executor::ExecutorError<E>>
+pub fn tower_resilience_executor::ExecutorFuture<T, E>::poll(core::pin::Pin<&mut Self>, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<Self::Output>
+impl<T, E> core::marker::Freeze for tower_resilience_executor::ExecutorFuture<T, E>
+impl<T, E> core::marker::Send for tower_resilience_executor::ExecutorFuture<T, E> where T: core::marker::Send, E: core::marker::Send
+impl<T, E> core::marker::Sync for tower_resilience_executor::ExecutorFuture<T, E> where T: core::marker::Send, E: core::marker::Send
+impl<T, E> core::marker::UnsafeUnpin for tower_resilience_executor::ExecutorFuture<T, E>
+impl<T, E> !core::panic::unwind_safe::RefUnwindSafe for tower_resilience_executor::ExecutorFuture<T, E>
+impl<T, E> !core::panic::unwind_safe::UnwindSafe for tower_resilience_executor::ExecutorFuture<T, E>
+pub struct tower_resilience_executor::ExecutorLayer<E>
+impl tower_resilience_executor::ExecutorLayer<tokio::runtime::handle::Handle>
+pub fn tower_resilience_executor::ExecutorLayer<tokio::runtime::handle::Handle>::current() -> Self
+impl<E> tower_resilience_executor::ExecutorLayer<E> where E: tower_resilience_executor::Executor
+pub fn tower_resilience_executor::ExecutorLayer<E>::builder() -> tower_resilience_executor::ExecutorLayerBuilder<E>
+pub fn tower_resilience_executor::ExecutorLayer<E>::new(E) -> Self
+impl<E: core::clone::Clone> core::clone::Clone for tower_resilience_executor::ExecutorLayer<E>
+pub fn tower_resilience_executor::ExecutorLayer<E>::clone(&self) -> tower_resilience_executor::ExecutorLayer<E>
+impl<S, E> tower_layer::Layer<S> for tower_resilience_executor::ExecutorLayer<E> where E: core::clone::Clone
+pub type tower_resilience_executor::ExecutorLayer<E>::Service = tower_resilience_executor::ExecutorService<S, E>
+pub fn tower_resilience_executor::ExecutorLayer<E>::layer(&self, S) -> Self::Service
+impl<E> core::marker::Freeze for tower_resilience_executor::ExecutorLayer<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_executor::ExecutorLayer<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_executor::ExecutorLayer<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_executor::ExecutorLayer<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_executor::ExecutorLayer<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_executor::ExecutorLayer<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_executor::ExecutorLayer<E> where E: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_executor::ExecutorLayerBuilder<E>
+impl tower_resilience_executor::ExecutorLayerBuilder<tokio::runtime::handle::Handle>
+pub fn tower_resilience_executor::ExecutorLayerBuilder<tokio::runtime::handle::Handle>::current(self) -> Self
+pub fn tower_resilience_executor::ExecutorLayerBuilder<tokio::runtime::handle::Handle>::handle(self, tokio::runtime::handle::Handle) -> Self
+impl<E> tower_resilience_executor::ExecutorLayerBuilder<E> where E: tower_resilience_executor::Executor
+pub fn tower_resilience_executor::ExecutorLayerBuilder<E>::build(self) -> tower_resilience_executor::ExecutorLayer<E>
+pub fn tower_resilience_executor::ExecutorLayerBuilder<E>::executor(self, E) -> Self
+impl<E> core::marker::Freeze for tower_resilience_executor::ExecutorLayerBuilder<E> where E: core::marker::Freeze
+impl<E> core::marker::Send for tower_resilience_executor::ExecutorLayerBuilder<E> where E: core::marker::Send
+impl<E> core::marker::Sync for tower_resilience_executor::ExecutorLayerBuilder<E> where E: core::marker::Sync
+impl<E> core::marker::Unpin for tower_resilience_executor::ExecutorLayerBuilder<E> where E: core::marker::Unpin
+impl<E> core::marker::UnsafeUnpin for tower_resilience_executor::ExecutorLayerBuilder<E> where E: core::marker::UnsafeUnpin
+impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_executor::ExecutorLayerBuilder<E> where E: core::panic::unwind_safe::RefUnwindSafe
+impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_executor::ExecutorLayerBuilder<E> where E: core::panic::unwind_safe::UnwindSafe
+pub struct tower_resilience_executor::ExecutorService<S, E>
+impl<S, E> tower_resilience_executor::ExecutorService<S, E>
+pub fn tower_resilience_executor::ExecutorService<S, E>::get_mut(&mut self) -> &mut S
+pub fn tower_resilience_executor::ExecutorService<S, E>::get_ref(&self) -> &S
+pub fn tower_resilience_executor::ExecutorService<S, E>::into_inner(self) -> S
+pub fn tower_resilience_executor::ExecutorService<S, E>::new(S, E) -> Self
+impl<S, E, Req> tower_service::Service<Req> for tower_resilience_executor::ExecutorService<S, E> where S: tower_service::Service<Req> + core::clone::Clone + core::marker::Send + 'static, <S as tower_service::Service>::Future: core::marker::Send, <S as tower_service::Service>::Response: core::marker::Send + 'static, <S as tower_service::Service>::Error: core::marker::Send + 'static, E: tower_resilience_executor::Executor, Req: core::marker::Send + 'static
+pub type tower_resilience_executor::ExecutorService<S, E>::Error = tower_resilience_executor::ExecutorError<<S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_executor::ExecutorService<S, E>::Future = tower_resilience_executor::ExecutorFuture<<S as tower_service::Service<Req>>::Response, <S as tower_service::Service<Req>>::Error>
+pub type tower_resilience_executor::ExecutorService<S, E>::Response = <S as tower_service::Service<Req>>::Response
+pub fn tower_resilience_executor::ExecutorService<S, E>::call(&mut self, Req) -> Self::Future
+pub fn tower_resilience_executor::ExecutorService<S, E>::poll_ready(&mut self, &mut core::task::wake::Context<'_>) -> core::task::poll::Poll<core::result::Result<(), Self::Error>>
+impl<S: core::clone::Clone, E: core::clone::Clone> core::clone::Clone for tower_resilience_executor::ExecutorService<S, E>
+pub fn tower_resilience_executor::ExecutorService<S, E>::clone(&self) -> tower_resilience_executor::ExecutorService<S, E>
+impl<S, E> core::marker::Freeze for tower_resilience_executor::ExecutorService<S, E> where S: core::marker::Freeze, E: core::marker::Freeze
+impl<S, E> core::marker::Send for tower_resilience_executor::ExecutorService<S, E> where S: core::marker::Send, E: core::marker::Send
+impl<S, E> core::marker::Sync for tower_resilience_executor::ExecutorService<S, E> where S: core::marker::Sync, E: core::marker::Sync
+impl<S, E> core::marker::Unpin for tower_resilience_executor::ExecutorService<S, E> where S: core::marker::Unpin, E: core::marker::Unpin
+impl<S, E> core::marker::UnsafeUnpin for tower_resilience_executor::ExecutorService<S, E> where S: core::marker::UnsafeUnpin, E: core::marker::UnsafeUnpin
+impl<S, E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_executor::ExecutorService<S, E> where S: core::panic::unwind_safe::RefUnwindSafe, E: core::panic::unwind_safe::RefUnwindSafe
+impl<S, E> core::panic::unwind_safe::UnwindSafe for tower_resilience_executor::ExecutorService<S, E> where S: core::panic::unwind_safe::UnwindSafe, E: core::panic::unwind_safe::UnwindSafe
+pub trait tower_resilience_executor::Executor: core::clone::Clone + core::marker::Send + core::marker::Sync + 'static
+pub fn tower_resilience_executor::Executor::spawn<F>(&self, F) -> tokio::runtime::task::join::JoinHandle<<F as core::future::future::Future>::Output> where F: core::future::future::Future + core::marker::Send + 'static, <F as core::future::future::Future>::Output: core::marker::Send + 'static
+impl tower_resilience_executor::Executor for tokio::runtime::handle::Handle
+pub fn tokio::runtime::handle::Handle::spawn<F>(&self, F) -> tokio::runtime::task::join::JoinHandle<<F as core::future::future::Future>::Output> where F: core::future::future::Future + core::marker::Send + 'static, <F as core::future::future::Future>::Output: core::marker::Send + 'static
+impl tower_resilience_executor::Executor for tower_resilience_executor::BlockingExecutor
+pub fn tower_resilience_executor::BlockingExecutor::spawn<F>(&self, F) -> tokio::runtime::task::join::JoinHandle<<F as core::future::future::Future>::Output> where F: core::future::future::Future + core::marker::Send + 'static, <F as core::future::future::Future>::Output: core::marker::Send + 'static
+impl tower_resilience_executor::Executor for tower_resilience_executor::CurrentRuntime
+pub fn tower_resilience_executor::CurrentRuntime::spawn<F>(&self, F) -> tokio::runtime::task::join::JoinHandle<<F as core::future::future::Future>::Output> where F: core::future::future::Future + core::marker::Send + 'static, <F as core::future::future::Future>::Output: core::marker::Send + 'static
