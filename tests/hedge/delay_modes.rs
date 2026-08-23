@@ -45,7 +45,7 @@ async fn test_parallel_mode_fires_all_immediately() {
     assert_eq!(call_count.load(Ordering::SeqCst), 3);
 }
 
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn test_latency_mode_waits_before_hedge() {
     let call_times = Arc::new(tokio::sync::Mutex::new(Vec::new()));
     let ct = Arc::clone(&call_times);
@@ -53,7 +53,7 @@ async fn test_latency_mode_waits_before_hedge() {
     let service = service_fn(move |_req: String| {
         let ct = Arc::clone(&ct);
         async move {
-            ct.lock().await.push(std::time::Instant::now());
+            ct.lock().await.push(tokio::time::Instant::now());
             // Primary is slow, hedge will be fast
             tokio::time::sleep(Duration::from_millis(200)).await;
             Ok::<_, TestError>("success".to_string())
@@ -84,7 +84,7 @@ async fn test_latency_mode_waits_before_hedge() {
     assert!(hedge_delay >= delay, "hedge delay: {:?}", hedge_delay);
 }
 
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn test_dynamic_delay_function() {
     let call_times = Arc::new(tokio::sync::Mutex::new(Vec::new()));
     let ct = Arc::clone(&call_times);
@@ -92,7 +92,7 @@ async fn test_dynamic_delay_function() {
     let service = service_fn(move |_req: String| {
         let ct = Arc::clone(&ct);
         async move {
-            ct.lock().await.push(std::time::Instant::now());
+            ct.lock().await.push(tokio::time::Instant::now());
             // All slow so hedges will fire
             tokio::time::sleep(Duration::from_millis(500)).await;
             Ok::<_, TestError>("success".to_string())
@@ -175,7 +175,7 @@ async fn test_fast_primary_prevents_hedge() {
     assert_eq!(call_count.load(Ordering::SeqCst), 1);
 }
 
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn test_multiple_hedges_with_increasing_delays() {
     let call_times = Arc::new(tokio::sync::Mutex::new(Vec::new()));
     let ct = Arc::clone(&call_times);
@@ -183,7 +183,7 @@ async fn test_multiple_hedges_with_increasing_delays() {
     let service = service_fn(move |_req: String| {
         let ct = Arc::clone(&ct);
         async move {
-            ct.lock().await.push(std::time::Instant::now());
+            ct.lock().await.push(tokio::time::Instant::now());
             // Very slow - all hedges will fire
             tokio::time::sleep(Duration::from_millis(1000)).await;
             Ok::<_, TestError>("success".to_string())
