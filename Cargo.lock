@@ -64,7 +64,7 @@ checksum = "7780d1e7082500a4fdb463b0a6fc1c00e4012cd9b2af101c26fcabbb2f390f2c"
 dependencies = [
  "apalis-core",
  "pin-project",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tower",
 ]
 
@@ -79,7 +79,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "pin-project",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tower-layer",
  "tower-service",
 ]
@@ -1570,7 +1570,7 @@ dependencies = [
  "rustc-hash",
  "rustls",
  "socket2",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tokio",
  "tracing",
  "web-time",
@@ -1593,7 +1593,7 @@ dependencies = [
  "rustls",
  "rustls-pki-types",
  "slab",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tinyvec",
  "tracing",
  "web-time",
@@ -2239,11 +2239,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.17"
+version = "2.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
+checksum = "ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f"
 dependencies = [
- "thiserror-impl 2.0.17",
+ "thiserror-impl 2.0.20",
 ]
 
 [[package]]
@@ -2259,13 +2259,13 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.17"
+version = "2.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913"
+checksum = "bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.108",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -2553,7 +2553,7 @@ version = "0.13.0"
 dependencies = [
  "metrics",
  "metrics-util",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tokio",
  "tokio-util",
  "tower",
@@ -2569,7 +2569,7 @@ version = "0.13.0"
 dependencies = [
  "futures",
  "metrics",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tokio",
  "tokio-util",
  "tower",
@@ -2612,7 +2612,7 @@ dependencies = [
  "futures",
  "metrics",
  "serde",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tokio",
  "tower",
  "tower-resilience-core",
@@ -2642,7 +2642,7 @@ dependencies = [
  "metrics",
  "metrics-util",
  "pin-project-lite",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tokio",
  "tower",
  "tracing",
@@ -2709,7 +2709,7 @@ dependencies = [
  "metrics",
  "metrics-util",
  "pin-project-lite",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tokio",
  "tower",
  "tower-resilience-core",
@@ -2722,7 +2722,7 @@ version = "0.13.0"
 dependencies = [
  "futures",
  "metrics",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tokio",
  "tower",
  "tower-resilience-core",
@@ -2749,7 +2749,7 @@ dependencies = [
  "futures",
  "metrics",
  "rand 0.9.2",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "tokio",
  "tower",
  "tower-resilience-core",
