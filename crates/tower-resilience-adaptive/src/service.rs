@@ -277,6 +277,7 @@ where
         self.in_flight.fetch_add(1, Ordering::SeqCst);
 
         let algorithm = Arc::clone(&self.algorithm);
+        let in_flight = Arc::clone(&self.in_flight);
         let semaphore = Arc::clone(&self.semaphore);
         let capacity = Arc::clone(&self.capacity);
         let guard = AdmissionGuard {
@@ -298,7 +299,8 @@ where
                 metrics::histogram!("adaptive_rtt_seconds").record(latency.as_secs_f64());
 
                 match &result {
-                    Ok(_) => algorithm.record_success(latency),
+                    Ok(_) => algorithm
+                        .record_success_with_load(latency, in_flight.load(Ordering::SeqCst)),
                     Err(_) => algorithm.record_failure(),
                 }
 

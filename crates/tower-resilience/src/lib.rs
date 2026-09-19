@@ -110,7 +110,7 @@
 //!
 //! # Resilience Patterns
 //!
-//! - **[Adaptive]** - Dynamic concurrency limiting using AIMD or Vegas algorithms
+//! - **[Adaptive]** - Dynamic concurrency limiting using AIMD, Vegas, or Gradient2 algorithms
 //! - **[Bulkhead]** - Isolates resources to prevent system-wide failures
 //! - **[Cache]** - Response memoization to reduce load
 //! - **[Circuit Breaker]** - Prevents cascading failures by stopping calls to failing services

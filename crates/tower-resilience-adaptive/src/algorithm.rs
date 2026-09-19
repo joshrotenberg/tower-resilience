@@ -7,10 +7,24 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::Duration;
 use tower_resilience_core::aimd::{AimdConfig, AimdConfigError, AimdController};
 
+#[path = "gradient_control.rs"]
+mod gradient;
+
+pub use gradient::{Gradient2, Gradient2Builder, Gradient2ConfigError};
+
 /// Trait for adaptive concurrency control algorithms.
 pub trait ConcurrencyAlgorithm: Send + Sync {
     /// Record a successful request with its latency.
     fn record_success(&self, latency: Duration);
+
+    /// Record a successful request and the load observed while it completed.
+    ///
+    /// The default implementation preserves compatibility with algorithms
+    /// implemented before load-aware adaptation was added. Algorithms that
+    /// use utilization as a signal can override this method.
+    fn record_success_with_load(&self, latency: Duration, _in_flight: usize) {
+        self.record_success(latency);
+    }
 
     /// Record a failed request.
     fn record_failure(&self);
@@ -438,6 +452,8 @@ pub enum Algorithm {
     Aimd(Aimd),
     /// Vegas algorithm
     Vegas(Vegas),
+    /// Gradient2 algorithm.
+    Gradient2(Gradient2),
 }
 
 impl ConcurrencyAlgorithm for Algorithm {
@@ -445,6 +461,15 @@ impl ConcurrencyAlgorithm for Algorithm {
         match self {
             Algorithm::Aimd(a) => a.record_success(latency),
             Algorithm::Vegas(v) => v.record_success(latency),
+            Algorithm::Gradient2(g) => g.record_success(latency),
+        }
+    }
+
+    fn record_success_with_load(&self, latency: Duration, in_flight: usize) {
+        match self {
+            Algorithm::Aimd(a) => a.record_success(latency),
+            Algorithm::Vegas(v) => v.record_success(latency),
+            Algorithm::Gradient2(g) => g.record_success_with_load(latency, in_flight),
         }
     }
 
@@ -452,6 +477,7 @@ impl ConcurrencyAlgorithm for Algorithm {
         match self {
             Algorithm::Aimd(a) => a.record_failure(),
             Algorithm::Vegas(v) => v.record_failure(),
+            Algorithm::Gradient2(g) => g.record_failure(),
         }
     }
 
@@ -459,6 +485,7 @@ impl ConcurrencyAlgorithm for Algorithm {
         match self {
             Algorithm::Aimd(a) => a.record_dropped(),
             Algorithm::Vegas(v) => v.record_dropped(),
+            Algorithm::Gradient2(g) => g.record_dropped(),
         }
     }
 
@@ -466,6 +493,7 @@ impl ConcurrencyAlgorithm for Algorithm {
         match self {
             Algorithm::Aimd(a) => a.limit(),
             Algorithm::Vegas(v) => v.limit(),
+            Algorithm::Gradient2(g) => g.limit(),
         }
     }
 
@@ -473,6 +501,7 @@ impl ConcurrencyAlgorithm for Algorithm {
         match self {
             Algorithm::Aimd(a) => a.min_limit(),
             Algorithm::Vegas(v) => v.min_limit(),
+            Algorithm::Gradient2(g) => g.min_limit(),
         }
     }
 
@@ -480,6 +509,7 @@ impl ConcurrencyAlgorithm for Algorithm {
         match self {
             Algorithm::Aimd(a) => a.max_limit(),
             Algorithm::Vegas(v) => v.max_limit(),
+            Algorithm::Gradient2(g) => g.max_limit(),
         }
     }
 }
@@ -593,6 +623,9 @@ mod tests {
 
         let vegas = Algorithm::Vegas(Vegas::builder().initial_limit(20).build().unwrap());
         assert_eq!(vegas.limit(), 20);
+
+        let gradient2 = Algorithm::Gradient2(Gradient2::builder().build().unwrap());
+        assert_eq!(gradient2.limit(), 20);
     }
 }
 
