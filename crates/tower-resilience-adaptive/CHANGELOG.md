@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-adaptive-v0.13.0...tower-resilience-adaptive-v0.14.0) - 2026-09-29
+
+### Added
+
+- *(adaptive)* add Gradient2 concurrency algorithm ([#475](https://github.com/joshrotenberg/tower-resilience/pull/475))
+
 ### Added
 
 - add the load-aware Gradient2 adaptive concurrency algorithm, with validated
