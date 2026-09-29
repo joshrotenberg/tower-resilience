@@ -5,7 +5,7 @@
 //!
 //! ## Available Patterns
 //!
-//! - [Adaptive Concurrency](adaptive) - Dynamic concurrency limiting with AIMD/Vegas
+//! - [Adaptive Concurrency](adaptive) - Dynamic concurrency limiting with AIMD/Vegas/Gradient2
 //! - [Bulkhead](bulkhead) - Isolate resources with concurrency limits
 //! - [Cache](cache) - Memoize expensive operations
 //! - [Circuit Breaker](circuit_breaker) - Stop calling failing services
@@ -58,6 +58,12 @@ pub mod adaptive {
     //!
     //! More stable than AIMD, avoids sawtooth pattern, better for latency-sensitive
     //! applications.
+    //!
+    //! ### Gradient2
+    //!
+    //! Compares latest RTT with a smoothed long-term baseline. It reduces the
+    //! limit on queueing, grows under healthy latency and sufficient load, and
+    //! stays put when traffic is too light to provide a useful congestion signal.
     //!
     //! ## When to Use
     //!

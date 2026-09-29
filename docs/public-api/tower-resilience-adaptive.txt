@@ -17,6 +17,7 @@ impl<E> core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::A
 impl<E> core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::AdaptiveError<E> where E: core::panic::unwind_safe::UnwindSafe
 pub enum tower_resilience_adaptive::Algorithm
 pub tower_resilience_adaptive::Algorithm::Aimd(tower_resilience_adaptive::Aimd)
+pub tower_resilience_adaptive::Algorithm::Gradient2(tower_resilience_adaptive::Gradient2)
 pub tower_resilience_adaptive::Algorithm::Vegas(tower_resilience_adaptive::Vegas)
 impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Algorithm
 pub fn tower_resilience_adaptive::Algorithm::limit(&self) -> usize
@@ -25,6 +26,7 @@ pub fn tower_resilience_adaptive::Algorithm::min_limit(&self) -> usize
 pub fn tower_resilience_adaptive::Algorithm::record_dropped(&self)
 pub fn tower_resilience_adaptive::Algorithm::record_failure(&self)
 pub fn tower_resilience_adaptive::Algorithm::record_success(&self, core::time::Duration)
+pub fn tower_resilience_adaptive::Algorithm::record_success_with_load(&self, core::time::Duration, usize)
 impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Algorithm
 pub type tower_resilience_adaptive::Algorithm::Algorithm = tower_resilience_adaptive::Algorithm
 pub fn tower_resilience_adaptive::Algorithm::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
@@ -35,6 +37,32 @@ impl core::marker::Unpin for tower_resilience_adaptive::Algorithm
 impl core::marker::UnsafeUnpin for tower_resilience_adaptive::Algorithm
 impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::Algorithm
 impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::Algorithm
+#[non_exhaustive] pub enum tower_resilience_adaptive::Gradient2ConfigError
+pub tower_resilience_adaptive::Gradient2ConfigError::InvalidRttTolerance(f64)
+pub tower_resilience_adaptive::Gradient2ConfigError::InvalidSmoothing(f64)
+pub tower_resilience_adaptive::Gradient2ConfigError::MinExceedsMax
+pub tower_resilience_adaptive::Gradient2ConfigError::MinExceedsMax::max_limit: usize
+pub tower_resilience_adaptive::Gradient2ConfigError::MinExceedsMax::min_limit: usize
+pub tower_resilience_adaptive::Gradient2ConfigError::ZeroLongWindow
+pub tower_resilience_adaptive::Gradient2ConfigError::ZeroWarmupSamples
+impl core::clone::Clone for tower_resilience_adaptive::Gradient2ConfigError
+pub fn tower_resilience_adaptive::Gradient2ConfigError::clone(&self) -> tower_resilience_adaptive::Gradient2ConfigError
+impl core::cmp::PartialEq for tower_resilience_adaptive::Gradient2ConfigError
+pub fn tower_resilience_adaptive::Gradient2ConfigError::eq(&self, &tower_resilience_adaptive::Gradient2ConfigError) -> bool
+impl core::error::Error for tower_resilience_adaptive::Gradient2ConfigError
+impl core::fmt::Debug for tower_resilience_adaptive::Gradient2ConfigError
+pub fn tower_resilience_adaptive::Gradient2ConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for tower_resilience_adaptive::Gradient2ConfigError
+pub fn tower_resilience_adaptive::Gradient2ConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for tower_resilience_adaptive::Gradient2ConfigError
+impl core::marker::StructuralPartialEq for tower_resilience_adaptive::Gradient2ConfigError
+impl core::marker::Freeze for tower_resilience_adaptive::Gradient2ConfigError
+impl core::marker::Send for tower_resilience_adaptive::Gradient2ConfigError
+impl core::marker::Sync for tower_resilience_adaptive::Gradient2ConfigError
+impl core::marker::Unpin for tower_resilience_adaptive::Gradient2ConfigError
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::Gradient2ConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::Gradient2ConfigError
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::Gradient2ConfigError
 #[non_exhaustive] pub enum tower_resilience_adaptive::VegasConfigError
 pub tower_resilience_adaptive::VegasConfigError::MinExceedsMax
 pub tower_resilience_adaptive::VegasConfigError::MinExceedsMax::max_limit: usize
@@ -88,6 +116,7 @@ impl<A> core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::Adap
 pub struct tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
 impl tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
 pub fn tower_resilience_adaptive::AdaptiveLimiterLayerBuilder::aimd(self) -> tower_resilience_adaptive::AimdBuilder
+pub fn tower_resilience_adaptive::AdaptiveLimiterLayerBuilder::gradient2(self) -> tower_resilience_adaptive::Gradient2Builder
 pub fn tower_resilience_adaptive::AdaptiveLimiterLayerBuilder::vegas(self) -> tower_resilience_adaptive::VegasBuilder
 impl core::marker::Freeze for tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
 impl core::marker::Send for tower_resilience_adaptive::AdaptiveLimiterLayerBuilder
@@ -133,6 +162,7 @@ pub fn tower_resilience_adaptive::Aimd::min_limit(&self) -> usize
 pub fn tower_resilience_adaptive::Aimd::record_dropped(&self)
 pub fn tower_resilience_adaptive::Aimd::record_failure(&self)
 pub fn tower_resilience_adaptive::Aimd::record_success(&self, core::time::Duration)
+pub fn tower_resilience_adaptive::Aimd::record_success_with_load(&self, core::time::Duration, usize)
 impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Aimd
 pub type tower_resilience_adaptive::Aimd::Algorithm = tower_resilience_adaptive::Aimd
 pub fn tower_resilience_adaptive::Aimd::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
@@ -165,6 +195,50 @@ impl core::marker::Unpin for tower_resilience_adaptive::AimdBuilder
 impl core::marker::UnsafeUnpin for tower_resilience_adaptive::AimdBuilder
 impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::AimdBuilder
 impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::AimdBuilder
+pub struct tower_resilience_adaptive::Gradient2
+impl tower_resilience_adaptive::Gradient2
+pub fn tower_resilience_adaptive::Gradient2::builder() -> tower_resilience_adaptive::Gradient2Builder
+impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Gradient2
+pub fn tower_resilience_adaptive::Gradient2::limit(&self) -> usize
+pub fn tower_resilience_adaptive::Gradient2::max_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Gradient2::min_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Gradient2::record_dropped(&self)
+pub fn tower_resilience_adaptive::Gradient2::record_failure(&self)
+pub fn tower_resilience_adaptive::Gradient2::record_success(&self, core::time::Duration)
+pub fn tower_resilience_adaptive::Gradient2::record_success_with_load(&self, core::time::Duration, usize)
+impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Gradient2
+pub type tower_resilience_adaptive::Gradient2::Algorithm = tower_resilience_adaptive::Gradient2
+pub fn tower_resilience_adaptive::Gradient2::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
+impl !core::marker::Freeze for tower_resilience_adaptive::Gradient2
+impl core::marker::Send for tower_resilience_adaptive::Gradient2
+impl core::marker::Sync for tower_resilience_adaptive::Gradient2
+impl core::marker::Unpin for tower_resilience_adaptive::Gradient2
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::Gradient2
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::Gradient2
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::Gradient2
+pub struct tower_resilience_adaptive::Gradient2Builder
+impl tower_resilience_adaptive::Gradient2Builder
+pub fn tower_resilience_adaptive::Gradient2Builder::build(self) -> core::result::Result<tower_resilience_adaptive::Gradient2, tower_resilience_adaptive::Gradient2ConfigError>
+pub fn tower_resilience_adaptive::Gradient2Builder::initial_limit(self, usize) -> Self
+pub fn tower_resilience_adaptive::Gradient2Builder::long_window(self, usize) -> Self
+pub fn tower_resilience_adaptive::Gradient2Builder::max_limit(self, usize) -> Self
+pub fn tower_resilience_adaptive::Gradient2Builder::min_limit(self, usize) -> Self
+pub fn tower_resilience_adaptive::Gradient2Builder::rtt_tolerance(self, f64) -> Self
+pub fn tower_resilience_adaptive::Gradient2Builder::smoothing(self, f64) -> Self
+pub fn tower_resilience_adaptive::Gradient2Builder::warmup_samples(self, usize) -> Self
+impl core::clone::Clone for tower_resilience_adaptive::Gradient2Builder
+pub fn tower_resilience_adaptive::Gradient2Builder::clone(&self) -> tower_resilience_adaptive::Gradient2Builder
+impl core::default::Default for tower_resilience_adaptive::Gradient2Builder
+pub fn tower_resilience_adaptive::Gradient2Builder::default() -> Self
+impl core::fmt::Debug for tower_resilience_adaptive::Gradient2Builder
+pub fn tower_resilience_adaptive::Gradient2Builder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for tower_resilience_adaptive::Gradient2Builder
+impl core::marker::Send for tower_resilience_adaptive::Gradient2Builder
+impl core::marker::Sync for tower_resilience_adaptive::Gradient2Builder
+impl core::marker::Unpin for tower_resilience_adaptive::Gradient2Builder
+impl core::marker::UnsafeUnpin for tower_resilience_adaptive::Gradient2Builder
+impl core::panic::unwind_safe::RefUnwindSafe for tower_resilience_adaptive::Gradient2Builder
+impl core::panic::unwind_safe::UnwindSafe for tower_resilience_adaptive::Gradient2Builder
 pub struct tower_resilience_adaptive::Vegas
 impl tower_resilience_adaptive::Vegas
 pub fn tower_resilience_adaptive::Vegas::builder() -> tower_resilience_adaptive::VegasBuilder
@@ -176,6 +250,7 @@ pub fn tower_resilience_adaptive::Vegas::min_limit(&self) -> usize
 pub fn tower_resilience_adaptive::Vegas::record_dropped(&self)
 pub fn tower_resilience_adaptive::Vegas::record_failure(&self)
 pub fn tower_resilience_adaptive::Vegas::record_success(&self, core::time::Duration)
+pub fn tower_resilience_adaptive::Vegas::record_success_with_load(&self, core::time::Duration, usize)
 impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Vegas
 pub type tower_resilience_adaptive::Vegas::Algorithm = tower_resilience_adaptive::Vegas
 pub fn tower_resilience_adaptive::Vegas::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
@@ -214,6 +289,7 @@ pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::min_limit(&self) -> usiz
 pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::record_dropped(&self)
 pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::record_failure(&self)
 pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::record_success(&self, core::time::Duration)
+pub fn tower_resilience_adaptive::ConcurrencyAlgorithm::record_success_with_load(&self, core::time::Duration, usize)
 impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Aimd
 pub fn tower_resilience_adaptive::Aimd::limit(&self) -> usize
 pub fn tower_resilience_adaptive::Aimd::max_limit(&self) -> usize
@@ -221,6 +297,7 @@ pub fn tower_resilience_adaptive::Aimd::min_limit(&self) -> usize
 pub fn tower_resilience_adaptive::Aimd::record_dropped(&self)
 pub fn tower_resilience_adaptive::Aimd::record_failure(&self)
 pub fn tower_resilience_adaptive::Aimd::record_success(&self, core::time::Duration)
+pub fn tower_resilience_adaptive::Aimd::record_success_with_load(&self, core::time::Duration, usize)
 impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Algorithm
 pub fn tower_resilience_adaptive::Algorithm::limit(&self) -> usize
 pub fn tower_resilience_adaptive::Algorithm::max_limit(&self) -> usize
@@ -228,6 +305,15 @@ pub fn tower_resilience_adaptive::Algorithm::min_limit(&self) -> usize
 pub fn tower_resilience_adaptive::Algorithm::record_dropped(&self)
 pub fn tower_resilience_adaptive::Algorithm::record_failure(&self)
 pub fn tower_resilience_adaptive::Algorithm::record_success(&self, core::time::Duration)
+pub fn tower_resilience_adaptive::Algorithm::record_success_with_load(&self, core::time::Duration, usize)
+impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Gradient2
+pub fn tower_resilience_adaptive::Gradient2::limit(&self) -> usize
+pub fn tower_resilience_adaptive::Gradient2::max_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Gradient2::min_limit(&self) -> usize
+pub fn tower_resilience_adaptive::Gradient2::record_dropped(&self)
+pub fn tower_resilience_adaptive::Gradient2::record_failure(&self)
+pub fn tower_resilience_adaptive::Gradient2::record_success(&self, core::time::Duration)
+pub fn tower_resilience_adaptive::Gradient2::record_success_with_load(&self, core::time::Duration, usize)
 impl tower_resilience_adaptive::ConcurrencyAlgorithm for tower_resilience_adaptive::Vegas
 pub fn tower_resilience_adaptive::Vegas::limit(&self) -> usize
 pub fn tower_resilience_adaptive::Vegas::max_limit(&self) -> usize
@@ -235,6 +321,7 @@ pub fn tower_resilience_adaptive::Vegas::min_limit(&self) -> usize
 pub fn tower_resilience_adaptive::Vegas::record_dropped(&self)
 pub fn tower_resilience_adaptive::Vegas::record_failure(&self)
 pub fn tower_resilience_adaptive::Vegas::record_success(&self, core::time::Duration)
+pub fn tower_resilience_adaptive::Vegas::record_success_with_load(&self, core::time::Duration, usize)
 pub trait tower_resilience_adaptive::IntoLayer
 pub type tower_resilience_adaptive::IntoLayer::Algorithm: tower_resilience_adaptive::ConcurrencyAlgorithm
 pub fn tower_resilience_adaptive::IntoLayer::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
@@ -244,6 +331,9 @@ pub fn tower_resilience_adaptive::Aimd::into_layer(self) -> tower_resilience_ada
 impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Algorithm
 pub type tower_resilience_adaptive::Algorithm::Algorithm = tower_resilience_adaptive::Algorithm
 pub fn tower_resilience_adaptive::Algorithm::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
+impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Gradient2
+pub type tower_resilience_adaptive::Gradient2::Algorithm = tower_resilience_adaptive::Gradient2
+pub fn tower_resilience_adaptive::Gradient2::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>
 impl tower_resilience_adaptive::IntoLayer for tower_resilience_adaptive::Vegas
 pub type tower_resilience_adaptive::Vegas::Algorithm = tower_resilience_adaptive::Vegas
 pub fn tower_resilience_adaptive::Vegas::into_layer(self) -> tower_resilience_adaptive::AdaptiveLimiterLayer<Self::Algorithm>

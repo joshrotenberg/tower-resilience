@@ -1,7 +1,7 @@
 //! Adaptive concurrency limiter for Tower services.
 //!
 //! This crate provides a Tower layer that dynamically adjusts concurrency limits
-//! based on observed latency and error rates, using algorithms like AIMD or Vegas.
+//! based on observed latency and error rates, using AIMD, Vegas, or Gradient2.
 //!
 //! Unlike static concurrency limits which require manual tuning, adaptive limiters
 //! automatically find the optimal concurrency for your downstream services.
@@ -24,6 +24,15 @@
 //! - Decreases limit when queue is large (congested)
 //!
 //! Vegas is more stable than AIMD and avoids the sawtooth pattern.
+//!
+//! ## Gradient2
+//!
+//! Gradient2 compares the latest RTT with a smoothed long-term RTT baseline.
+//! It reduces the limit when latency rises relative to that baseline and grows
+//! only when RTT remains healthy while the service is sufficiently utilized.
+//! The service supplies the current in-flight count through the additive
+//! [`ConcurrencyAlgorithm::record_success_with_load`] hook; existing custom
+//! algorithms keep their behavior through its default implementation.
 //!
 //! # Example
 //!
@@ -104,7 +113,8 @@ mod layer;
 mod service;
 
 pub use algorithm::{
-    Aimd, AimdBuilder, Algorithm, ConcurrencyAlgorithm, Vegas, VegasBuilder, VegasConfigError,
+    Aimd, AimdBuilder, Algorithm, ConcurrencyAlgorithm, Gradient2, Gradient2Builder,
+    Gradient2ConfigError, Vegas, VegasBuilder, VegasConfigError,
 };
 pub use layer::{AdaptiveLimiterLayer, AdaptiveLimiterLayerBuilder, IntoLayer};
 pub use service::{AdaptiveError, AdaptiveFuture, AdaptiveService};
@@ -216,6 +226,19 @@ mod tests {
 
         let response = service.ready().await.unwrap().call(21).await.unwrap();
         assert_eq!(response, 42);
+    }
+
+    #[tokio::test]
+    async fn gradient2_does_not_grow_for_sequential_light_load() {
+        let service = tower::service_fn(|req: i32| async move { Ok::<_, &str>(req * 2) });
+        let algorithm = Arc::new(Gradient2::builder().initial_limit(20).build().unwrap());
+        let mut service = AdaptiveService::new(service, Arc::clone(&algorithm));
+
+        for request in 0..30 {
+            service.ready().await.unwrap().call(request).await.unwrap();
+        }
+
+        assert_eq!(algorithm.limit(), 20);
     }
 
     #[tokio::test]

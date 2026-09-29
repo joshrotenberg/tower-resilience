@@ -9,7 +9,7 @@ A comprehensive resilience and fault-tolerance toolkit for [Tower](https://githu
 
 ## Resilience Patterns
 
-- **[Adaptive Concurrency](#adaptive-concurrency)** - Dynamic concurrency limiting using AIMD or Vegas algorithms
+- **[Adaptive Concurrency](#adaptive-concurrency)** - Dynamic concurrency limiting using AIMD, Vegas, or Gradient2 algorithms
 - **[Bulkhead](#bulkhead)** - Isolates resources to prevent system-wide failures
 - **[Cache](#cache)** - Response memoization to reduce load
 - **[Chaos](#chaos-testing-only)** - Inject failures and latency for testing resilience (development/testing only)
@@ -71,7 +71,7 @@ tower-resilience = { version = "0.12", features = ["full"] }
 
 | Feature | Pattern |
 |---------|---------|
-| `adaptive` | Adaptive concurrency limiting (AIMD/Vegas) |
+| `adaptive` | Adaptive concurrency limiting (AIMD/Vegas/Gradient2) |
 | `bulkhead` | Resource isolation / concurrency limits |
 | `cache` | Response memoization |
 | `chaos` | Fault and latency injection (testing) |
@@ -189,7 +189,7 @@ let breaker = CircuitBreakerLayer::fast_fail()
 Dynamically adjust concurrency limits based on observed latency and error rates:
 
 ```rust
-use tower_resilience::adaptive::{AdaptiveLimiterLayer, Aimd, Vegas};
+use tower_resilience::adaptive::{AdaptiveLimiterLayer, Aimd, Gradient2, Vegas};
 use tower::ServiceBuilder;
 use std::time::Duration;
 
@@ -204,6 +204,18 @@ let layer = AdaptiveLimiterLayer::new(
         .decrease_factor(0.5)                     // Halve on failure
         .latency_threshold(Duration::from_millis(100))
         .build()
+);
+
+// Gradient2: compares latest RTT with a smoothed long-term baseline and
+// grows only while the service is sufficiently utilized.
+let layer = AdaptiveLimiterLayer::new(
+    Gradient2::builder()
+        .initial_limit(20)
+        .min_limit(1)
+        .max_limit(200)
+        .rtt_tolerance(1.5)
+        .build()
+        .unwrap(),
 );
 
 // Vegas: More stable, uses RTT to estimate queue depth

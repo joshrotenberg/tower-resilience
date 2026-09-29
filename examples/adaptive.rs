@@ -1,13 +1,13 @@
 //! Adaptive Concurrency Limiter Example
 //!
 //! This example demonstrates how to use the adaptive concurrency limiter
-//! with both AIMD and Vegas algorithms.
+//! with AIMD, Vegas, and Gradient2 algorithms.
 //!
 //! Run with: cargo run --example adaptive
 
 use std::time::Duration;
 use tower::{Service, ServiceBuilder, ServiceExt};
-use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd, Vegas};
+use tower_resilience_adaptive::{AdaptiveLimiterLayer, Aimd, Gradient2, Vegas};
 
 #[derive(Clone)]
 struct SimulatedBackend {
@@ -135,7 +135,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!();
 
-    // Example 3: Concurrent requests
+    // Example 3: Gradient2
+    println!("--- Gradient2 Algorithm ---");
+    println!("Gradient2 compares latest RTT with a smoothed long-term baseline.");
+    let gradient2_layer = AdaptiveLimiterLayer::new(
+        Gradient2::builder()
+            .initial_limit(5)
+            .min_limit(1)
+            .max_limit(50)
+            .build()
+            .unwrap(),
+    );
+    let mut gradient2_service = ServiceBuilder::new()
+        .layer(gradient2_layer)
+        .service(SimulatedBackend::new(10));
+    for i in 0..10 {
+        let _ = gradient2_service
+            .ready()
+            .await?
+            .call(format!("gradient2-request-{i}"))
+            .await?;
+    }
+
+    // Example 4: Concurrent requests
     println!("--- Concurrent Requests ---");
     println!("The limiter automatically queues requests when at capacity.\n");
 
@@ -186,7 +208,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\nKey takeaways:");
     println!("- AIMD: Simple, aggressive probing, good for most use cases");
     println!("- Vegas: Smoother, RTT-based, better for latency-sensitive apps");
-    println!("- Both automatically find optimal concurrency without manual tuning");
+    println!("- Gradient2: Load-aware RTT gradient, robust under heterogeneous latency");
+    println!("- All algorithms automatically tune concurrency without manual tuning");
 
     Ok(())
 }

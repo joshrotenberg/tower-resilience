@@ -7,7 +7,8 @@ use tower_layer::Layer;
 /// A Tower layer that applies adaptive concurrency limiting.
 ///
 /// This layer dynamically adjusts the number of concurrent requests based
-/// on observed latency and error rates, using algorithms like AIMD or Vegas.
+/// on observed latency and error rates, using algorithms like AIMD, Vegas, or
+/// Gradient2.
 ///
 /// # Example
 ///
@@ -82,6 +83,11 @@ impl AdaptiveLimiterLayerBuilder {
     pub fn vegas(self) -> crate::VegasBuilder {
         crate::Vegas::builder()
     }
+
+    /// Use the Gradient2 algorithm.
+    pub fn gradient2(self) -> crate::Gradient2Builder {
+        crate::Gradient2::builder()
+    }
 }
 
 /// Extension trait for building layers from algorithm builders.
@@ -103,6 +109,14 @@ impl IntoLayer for crate::Aimd {
 
 impl IntoLayer for crate::Vegas {
     type Algorithm = crate::Vegas;
+
+    fn into_layer(self) -> AdaptiveLimiterLayer<Self::Algorithm> {
+        AdaptiveLimiterLayer::new(self)
+    }
+}
+
+impl IntoLayer for crate::Gradient2 {
+    type Algorithm = crate::Gradient2;
 
     fn into_layer(self) -> AdaptiveLimiterLayer<Self::Algorithm> {
         AdaptiveLimiterLayer::new(self)

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- add the load-aware Gradient2 adaptive concurrency algorithm, with validated
+  configuration and deterministic RTT/load tests
+- add `ConcurrencyAlgorithm::record_success_with_load` as a backwards-compatible
+  hook for algorithms that need the current in-flight count
+
 ## [0.13.0](https://github.com/joshrotenberg/tower-resilience/compare/tower-resilience-adaptive-v0.12.0...tower-resilience-adaptive-v0.13.0) - 2026-08-21
 
 ### Added
