@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-apalis = { version = "=1.0.0-rc.9", default-features = false }
+apalis = { version = "=1.0.0-rc.10", default-features = false }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tower-resilience-adaptive = { path = "../../crates/tower-resilience-adaptive" }
 tower-resilience-bulkhead = { path = "../../crates/tower-resilience-bulkhead" }
