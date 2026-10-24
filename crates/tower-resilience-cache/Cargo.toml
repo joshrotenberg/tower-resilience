@@ -15,7 +15,7 @@ categories = ["asynchronous", "network-programming", "caching"]
 tower-resilience-core = { workspace = true }
 tower = { workspace = true }
 futures = { workspace = true }
-lru = "0.18.0"
+lru = "0.19.0"
 
 # Optional dependencies
 metrics = { workspace = true, optional = true }
