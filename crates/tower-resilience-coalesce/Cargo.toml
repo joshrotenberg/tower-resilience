@@ -17,7 +17,7 @@ tower = { workspace = true }
 tower-layer = { workspace = true }
 tower-service = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
-parking_lot = "0.12"
+parking_lot = "0.13"
 hashbrown = "0.17"
 
 # Optional dependencies
